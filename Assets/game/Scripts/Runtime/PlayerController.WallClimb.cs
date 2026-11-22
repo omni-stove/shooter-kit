@@ -87,6 +87,7 @@ namespace Shooter.Runtime
             }
 
             BeginMantle(new VaultPath(probe.Path.Points, _motor.Spec.VaultSpeed), probe.Direction.ToUnity());
+            _mantleKeepsVaultExit = true;
             var overridden = false;
             TryOverrideMoveForMantle(false, deltaSeconds, ref overridden, ref displacement);
         }
