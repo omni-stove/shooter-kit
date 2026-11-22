@@ -90,11 +90,16 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            _mantlePath = result.Path;
+            BeginMantle(result.Path, result.Direction.ToUnity());
+            return true;
+        }
+
+        private void BeginMantle(VaultPath path, Vector3 direction)
+        {
+            _mantlePath = path;
             _mantleElapsed = 0f;
             Debug.Log(FormatMantlingLog(true), this);
-            MantleStarted?.Invoke(result.Direction.ToUnity());
-            return true;
+            MantleStarted?.Invoke(direction);
         }
 
         public bool CancelMantle()
