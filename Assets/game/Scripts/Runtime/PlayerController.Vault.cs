@@ -110,7 +110,7 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            FinishVault();
+            FinishVault(Vector3.zero);
             return true;
         }
 
@@ -149,16 +149,17 @@ namespace Shooter.Runtime
 
             if (after >= _vaultPath.Duration)
             {
-                FinishVault();
+                FinishVault(MomentumStep.VaultExitVelocity(_vaultPath, ParkourTuning.Momentum).ToUnity());
             }
         }
 
-        // 降りきった勢いを持ち越すと、着地で落下ダメージを受けたり跳ね返ったりするので、速度を 0 から始め直す。
-        private void FinishVault()
+        // 降りきった勢いをそのまま持ち越すと、着地で落下ダメージを受けたり跳ね返ったりするので、渡された速度から始め直す。
+        // たどり終えたときは越えた向きの水平の速さだけ (CharacterMotorSimulation.FollowVault と同じ)、やめさせたときは 0 を渡す。
+        private void FinishVault(Vector3 exitVelocity)
         {
             _vaultPath = null;
             _vaultElapsed = 0f;
-            _motor?.ResetVelocity();
+            _motor?.SetVelocity(exitVelocity.ToNumerics());
             Debug.Log(FormatVaultingLog(false), this);
             VaultEnded?.Invoke();
         }

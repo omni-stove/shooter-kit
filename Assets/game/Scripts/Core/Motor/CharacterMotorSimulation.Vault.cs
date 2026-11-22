@@ -27,7 +27,7 @@ namespace Shooter.Core
             return CharacterVaultState.Following(_vaultPath, 0f);
         }
 
-        // 軌跡を 1 tick たどる。たどり終えたら乗り越えをやめ、着地で跳ね返らないよう速度を 0 にする (PlayerController と同じ)
+        // 軌跡を 1 tick たどる。たどり終えたら乗り越えをやめ、越えた向きの水平の速さだけを MomentumTuning.VaultExitSpeedKeep の割合で残す (PlayerController と同じ)
         private Vector3 FollowVault(ref CharacterVaultState vault)
         {
             if (_vaultPath == null || !vault.HasSamePath(_vaultPath))
@@ -43,7 +43,7 @@ namespace Shooter.Core
             if (after >= _vaultPath.Duration)
             {
                 vault = CharacterVaultState.None;
-                return Vector3.Zero;
+                return MomentumStep.VaultExitVelocity(_vaultPath, _parkour.Momentum);
             }
 
             vault = vault.WithElapsed(after);
