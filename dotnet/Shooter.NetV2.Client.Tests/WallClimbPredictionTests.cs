@@ -39,7 +39,7 @@ namespace Shooter.NetV2.Tests
             Assert.That(mantled, Is.True, "the mantle at the ledge needs no mantle rule, which the client does not know");
             Assert.That(client.Current, Is.EqualTo(state));
             Assert.That(state.IsGrounded, Is.True);
-            Assert.That(server.Body.FeetY(state.Position), Is.EqualTo(_wallTop).Within(0.05f), "standing on the top");
+            Assert.That(server.Body.FeetY(state.Position), Is.EqualTo(_wallTop + CapsuleMoverSpec.DefaultSkinWidth).Within(0.05f), "standing on the top, resting a skin width above it");
         }
 
         [Test]
