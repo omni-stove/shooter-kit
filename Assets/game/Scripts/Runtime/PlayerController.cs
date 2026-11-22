@@ -324,6 +324,7 @@ namespace Shooter.Runtime
 
             MoveFilter?.Filter(ref move, ref sprint, ref crouch, ref jumpPressed);
             FilterInputForDodge(ref sprint, ref crouch, ref jumpPressed);
+            FilterInputForLandingRoll(ref sprint, ref crouch, ref jumpPressed);
             FilterInputForVault(ref sprint, ref crouch, ref jumpPressed);
             FilterInputForProne(ref sprint, ref jumpPressed);
             FilterInputForMantle(ref sprint, ref crouch, ref jumpPressed);

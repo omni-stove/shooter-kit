@@ -335,6 +335,7 @@ namespace Shooter.Runtime
                 || !_mover.IsGrounded
                 || _mover.IsVaulting
                 || _mover.IsDodging
+                || _mover.IsLandingRolling
                 || _mover.IsControlHandedOff
                 || IsBlocked())
             {
