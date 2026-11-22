@@ -17,6 +17,20 @@ namespace Shooter.NetV2
 
         public RemotePose(
             Vector3 position, float yaw, PlayerStance stance, string weaponId, float lean, bool swimming, WallRunSide wallRun, bool parachuting)
+            : this(position, yaw, stance, weaponId, lean, swimming, wallRun, parachuting, ParkourMove.None)
+        {
+        }
+
+        public RemotePose(
+            Vector3 position,
+            float yaw,
+            PlayerStance stance,
+            string weaponId,
+            float lean,
+            bool swimming,
+            WallRunSide wallRun,
+            bool parachuting,
+            ParkourMove parkour)
         {
             Position = position;
             Yaw = yaw;
@@ -28,6 +42,9 @@ namespace Shooter.NetV2
             Swimming = swimming;
             WallRun = wallRun <= WallRunSide.Right ? wallRun : WallRunSide.None;
             Parachuting = parachuting;
+
+            // 壁走りの向きと同じく、見た目が知らない動きの番号で迷わないよう、範囲の外は何もしていないことにする
+            Parkour = parkour <= ParkourMove.LedgeClimbUp ? parkour : ParkourMove.None;
         }
 
         public Vector3 Position { get; }
@@ -50,12 +67,22 @@ namespace Shooter.NetV2
 
         public bool Parachuting { get; }
 
+        public ParkourMove Parkour { get; }
+
         // 伏せとしゃがみはサーバーが同時に立てないので、伏せを先に見る。
         public static RemotePose From(in Shooter.Protocol.PlayerSnapshot row)
         {
             var stance = row.IsProne ? PlayerStance.Prone : row.IsCrouched ? PlayerStance.Crouching : PlayerStance.Standing;
             return new RemotePose(
-                row.Position, row.Yaw, stance, row.WeaponId, row.Lean, row.Swimming, (WallRunSide)(byte)row.WallRunSide, row.IsParachuting);
+                row.Position,
+                row.Yaw,
+                stance,
+                row.WeaponId,
+                row.Lean,
+                row.Swimming,
+                (WallRunSide)(byte)row.WallRunSide,
+                row.IsParachuting,
+                (ParkourMove)(byte)row.ParkourMove);
         }
     }
 }

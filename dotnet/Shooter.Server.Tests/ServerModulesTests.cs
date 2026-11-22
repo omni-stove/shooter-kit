@@ -436,6 +436,35 @@ namespace Shooter.Server.Tests
             Assert.That(settings.WithSpawnPosition(Vector3.One).WallRun, Is.SameAs(wallRun), "moving the spawn keeps the wall run values");
         }
 
+        [Test]
+        public void MovementUsesTheParkourValuesOfTheRulesFile()
+        {
+            var parkour = new ParkourTuning(new WallKickTuning(true, 7f, 8f), ledgeHang: new LedgeHangTuning(true, 0.8f));
+            var defaults = NetMotorSettings.Default;
+            var motor = new NetMotorSettings(
+                defaults.Motor,
+                defaults.Stance,
+                defaults.Mover,
+                defaults.Prone,
+                defaults.Swim,
+                defaults.WallRun,
+                defaults.Parachute,
+                defaults.Slide,
+                defaults.Zipline,
+                parkour);
+            var data = new ServerRulesData("TeamDeathmatch", new NetMatchFile(
+                "TeamDeathmatch", GameRules.Default, NetMatchSettings.Default, "DefaultLoadout",
+                new LoadoutRule(new[] { new[] { WeaponCategory.AssaultRifle }, new[] { WeaponCategory.Handgun } }),
+                new[] { TestRules.Rifle(), TestRules.Handgun() }, 0.4f, null, null, motor), PingSpec.Default, "memory", null);
+
+            var settings = ServerModules.MotorSettingsFrom(data);
+
+            Assert.That(settings.Parkour, Is.SameAs(parkour));
+            Assert.That(settings.WithRules(GameRules.Default).Parkour, Is.SameAs(parkour), "changing the rules keeps the parkour values");
+            Assert.That(settings.WithSpawnPosition(Vector3.One).Parkour, Is.SameAs(parkour), "moving the spawn keeps the parkour values");
+            Assert.That(ServerMotorSettings.Default.Parkour, Is.SameAs(ParkourTuning.Default));
+        }
+
         private void WriteLocalFile()
         {
             var values = new List<KeyValuePair<string, string>>();

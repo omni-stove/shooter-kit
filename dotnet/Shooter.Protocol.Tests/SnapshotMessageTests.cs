@@ -561,8 +561,8 @@ namespace Shooter.Protocol.Tests
             var assisting = Build(100, 0f);
             assisting.Players[1].Assists = 1;
 
-            // 体を傾ける・泳ぐ・壁走り・空中ジャンプの 4 バイトとジャンプの猶予の 4 バイト、アシストの 4 バイト
-            Assert.That(Size(leaning, null), Is.EqualTo(Size(plain, null) + 8));
+            // 体を傾ける・泳ぐ・壁走り・空中ジャンプの 4 バイトとジャンプの猶予の 4 バイト、パルクールの動きの 1 バイト、アシストの 4 バイト
+            Assert.That(Size(leaning, null), Is.EqualTo(Size(plain, null) + 9));
             Assert.That(Size(assisting, null), Is.EqualTo(Size(plain, null) + 4));
             Assert.That(Send(plain, null).Players[0].Lean, Is.Zero);
         }
@@ -649,6 +649,7 @@ namespace Shooter.Protocol.Tests
                 w.WriteByte((byte)WallRunSide.Left);
                 w.WriteByte(1);
                 w.WriteSingle(0.05f);
+                w.WriteByte((byte)ParkourMove.LedgeShimmy);
                 w.WriteInt32(4);
             }));
 
@@ -657,7 +658,109 @@ namespace Shooter.Protocol.Tests
             Assert.That(got.Players[0].WallRunSide, Is.EqualTo(WallRunSide.Left));
             Assert.That(got.Players[0].AirJumpsUsed, Is.EqualTo(1));
             Assert.That(got.Players[0].JumpGraceLeft, Is.EqualTo(0.05f));
+            Assert.That(got.Players[0].ParkourMove, Is.EqualTo(ParkourMove.LedgeShimmy));
             Assert.That(got.Players[0].Assists, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ParkourMovesRoundTrip()
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].ParkourMove = ParkourMove.WallKick;
+            sent.Players[1].ParkourMove = ParkourMove.LedgeClimbUp;
+
+            var got = Send(sent, null);
+
+            Assert.That(got.Players[0].ParkourMove, Is.EqualTo(ParkourMove.WallKick));
+            Assert.That(got.Players[1].ParkourMove, Is.EqualTo(ParkourMove.LedgeClimbUp));
+            AssertSame(sent, got);
+        }
+
+        [Test]
+        public void ADeltaCarriesTheParkourMoveWhenOnlyItChanges()
+        {
+            var baseline = Build(100, 0f);
+            var current = Build(101, 0f);
+            current.Players[0].ParkourMove = ParkourMove.LandingRoll;
+            var received = Send(baseline, null);
+
+            var got = Send(current, baseline);
+
+            Assert.That(current.Players[0].ChangedBits(baseline.Players[0]), Is.EqualTo((int)PlayerFields.Traversal));
+            Assert.That(current.Players[1].ChangedBits(baseline.Players[1]), Is.Zero);
+            Assert.That(got.Players[0].Present, Is.EqualTo(PlayerFields.Traversal));
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Players[0].ParkourMove, Is.EqualTo(ParkourMove.LandingRoll));
+            AssertSame(current, got);
+        }
+
+        [Test]
+        public void ADeltaWithoutTheTraversalPartKeepsTheParkourMoveOfTheBaseline()
+        {
+            var baseline = Build(100, 0f);
+            baseline.Players[0].ParkourMove = ParkourMove.WallClimb;
+            var current = Build(101, 0f);
+            current.Players[0].ParkourMove = ParkourMove.WallClimb;
+            current.Players[0].Assists = 1;
+            var received = Send(baseline, null);
+
+            var got = Send(current, baseline);
+
+            Assert.That(got.Players[0].Present, Is.EqualTo(PlayerFields.Assists));
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Players[0].ParkourMove, Is.EqualTo(ParkourMove.WallClimb));
+        }
+
+        [Test]
+        public void AFullSnapshotLeavesOutTheParkourMoveWhileItIsNone()
+        {
+            var plain = Build(100, 0f);
+            var kicking = Build(100, 0f);
+            kicking.Players[0].ParkourMove = ParkourMove.WallKick;
+
+            // 体を傾ける・泳ぐ・壁走り・空中ジャンプの 4 バイトとジャンプの猶予の 4 バイト、パルクールの動きの 1 バイト
+            Assert.That(Size(kicking, null), Is.EqualTo(Size(plain, null) + 9));
+            Assert.That(Send(plain, null).Players[0].ParkourMove, Is.EqualTo(ParkourMove.None));
+        }
+
+        [Test]
+        public void AnUndefinedParkourMoveIsNotWritten()
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].ParkourMove = (ParkourMove)7;
+
+            Assert.Throws<InvalidOperationException>(() => new MessageWriter().WriteMessage(sent));
+        }
+
+        [Test]
+        public void AnUndefinedParkourMoveIsRejected()
+        {
+            var data = OnePlayerDelta(PlayerFields.Traversal, w =>
+            {
+                w.WriteByte(0);
+                w.WriteBool(false);
+                w.WriteByte((byte)WallRunSide.None);
+                w.WriteByte(0);
+                w.WriteSingle(0f);
+                w.WriteByte(7);
+            });
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
+        }
+
+        [Test]
+        public void TheParkourMoveNumbersMatchTheCoreOnes()
+        {
+            var names = Enum.GetNames(typeof(ParkourMove));
+
+            Assert.That(names, Is.EqualTo(Enum.GetNames(typeof(Shooter.Core.ParkourMove))));
+            foreach (var name in names)
+            {
+                Assert.That(
+                    (byte)(ParkourMove)Enum.Parse(typeof(ParkourMove), name),
+                    Is.EqualTo((byte)(Shooter.Core.ParkourMove)Enum.Parse(typeof(Shooter.Core.ParkourMove), name)),
+                    name);
+            }
         }
 
         [TestCase(-0.01f)]
@@ -683,6 +786,7 @@ namespace Shooter.Protocol.Tests
                 w.WriteByte((byte)WallRunSide.None);
                 w.WriteByte(0);
                 w.WriteSingle(grace);
+                w.WriteByte((byte)ParkourMove.None);
             });
 
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
@@ -716,6 +820,7 @@ namespace Shooter.Protocol.Tests
                 w.WriteByte((byte)wallRunSide);
                 w.WriteByte(0);
                 w.WriteSingle(0f);
+                w.WriteByte((byte)ParkourMove.None);
             });
 
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
@@ -770,6 +875,7 @@ namespace Shooter.Protocol.Tests
                 w.WriteByte(0);
                 w.WriteByte(0);
                 w.WriteInt32(0);
+                w.WriteByte(0);
             });
 
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));

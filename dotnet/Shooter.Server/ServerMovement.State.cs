@@ -85,6 +85,7 @@ namespace Shooter.Server
                 row.WallRunSide = (Shooter.Protocol.WallRunSide)(byte)state.WallRun.Side;
                 row.AirJumpsUsed = (byte)Math.Min(byte.MaxValue, state.AirJumpsUsed);
                 row.JumpGraceLeft = state.JumpGraceLeft;
+                row.ParkourMove = (Shooter.Protocol.ParkourMove)(byte)state.Parkour.Move;
                 row.IsParachuting = state.IsParachuting;
             }
 

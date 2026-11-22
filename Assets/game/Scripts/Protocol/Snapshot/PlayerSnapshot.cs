@@ -83,6 +83,9 @@ namespace Shooter.Protocol
         // 持ち主の予測が巻き戻した tick から猶予の続きを数えられるよう、地上のジャンプの猶予の残りも載せる
         public float JumpGraceLeft { get; set; }
 
+        // 秒数・壁・ふちは持ち主の予測が自分で持ち、他の人の姿は動きの種類だけで描けるので、種類の 1 バイトだけを載せる
+        public ParkourMove ParkourMove { get; set; }
+
         public int Assists { get; set; }
 
         public int GunGameTier { get; set; }
@@ -199,7 +202,8 @@ namespace Shooter.Protocol
                 || Swimming != baseline.Swimming
                 || WallRunSide != baseline.WallRunSide
                 || AirJumpsUsed != baseline.AirJumpsUsed
-                || !Same.Bits(JumpGraceLeft, baseline.JumpGraceLeft))
+                || !Same.Bits(JumpGraceLeft, baseline.JumpGraceLeft)
+                || ParkourMove != baseline.ParkourMove)
             {
                 bits |= PlayerFields.Traversal;
             }
@@ -327,6 +331,12 @@ namespace Shooter.Protocol
                 }
 
                 writer.WriteSingle(JumpGraceLeft);
+                if ((int)ParkourMove >= EnumRange<ParkourMove>.Count)
+                {
+                    throw new System.InvalidOperationException("parkour move " + (int)ParkourMove + " is not defined");
+                }
+
+                writer.WriteByte((byte)ParkourMove);
             }
 
             if ((fields & PlayerFields.Assists) != 0)
@@ -467,6 +477,8 @@ namespace Shooter.Protocol
                 {
                     throw new MessageReadException("jump grace must not be negative");
                 }
+
+                ParkourMove = (ParkourMove)reader.ReadByteBelow(EnumRange<ParkourMove>.Count, "parkour move");
             }
 
             if ((fields & PlayerFields.Assists) != 0)
@@ -574,6 +586,7 @@ namespace Shooter.Protocol
                 WallRunSide = baseline.WallRunSide;
                 AirJumpsUsed = baseline.AirJumpsUsed;
                 JumpGraceLeft = baseline.JumpGraceLeft;
+                ParkourMove = baseline.ParkourMove;
             }
 
             if ((missing & PlayerFields.Assists) != 0)

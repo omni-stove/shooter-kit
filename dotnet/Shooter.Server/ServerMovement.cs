@@ -137,6 +137,7 @@ namespace Shooter.Server
                 Swim = _settings.Swim,
                 WallRun = _settings.WallRun,
                 Parachute = _settings.Parachute,
+                Parkour = _settings.Parkour,
             };
             ConfigureSlide(simulation);
             return simulation;

@@ -12,6 +12,11 @@ namespace Shooter.Core
         public const string ZiplineItem = "zipline";
         public const string SwimItem = "swim";
         public const string WallRunItem = "wallRun";
+        public const string WallKickItem = "wallKick";
+        public const string LandingRollItem = "landingRoll";
+        public const string WallClimbItem = "wallClimb";
+        public const string LedgeHangItem = "ledgeHang";
+        public const string MomentumItem = "momentum";
 
         public const string StartSpeedItem = "startSpeed";
         public const string DecelerationItem = "deceleration";
@@ -41,9 +46,31 @@ namespace Shooter.Core
         public const string GravityScaleItem = "gravityScale";
         public const string JumpOffSpeedItem = "jumpOffSpeed";
 
+        public const string UpSpeedItem = "upSpeed";
+        public const string AwaySpeedItem = "awaySpeed";
+
+        public const string WindowSecondsItem = "windowSeconds";
+        public const string FallSpeedScaleItem = "fallSpeedScale";
+        public const string RollSecondsItem = "rollSeconds";
+        public const string MinFallSpeedItem = "minFallSpeed";
+
+        public const string ClimbSpeedItem = "climbSpeed";
+        public const string MaxHeightItem = "maxHeight";
+        public const string PushOffSpeedItem = "pushOffSpeed";
+
+        public const string GrabReachItem = "grabReach";
+        public const string ShimmySpeedItem = "shimmySpeed";
+        public const string ClimbUpSpeedItem = "climbUpSpeed";
+
+        public const string SlideJumpBoostItem = "slideJumpBoost";
+        public const string VaultExitSpeedKeepItem = "vaultExitSpeedKeep";
+
         private const string _kind = "traversal JSON";
 
-        public static IReadOnlyList<string> ItemNames { get; } = new[] { SlideItem, ParachuteItem, ZiplineItem, SwimItem, WallRunItem };
+        public static IReadOnlyList<string> ItemNames { get; } = new[]
+        {
+            SlideItem, ParachuteItem, ZiplineItem, SwimItem, WallRunItem, WallKickItem, LandingRollItem, WallClimbItem, LedgeHangItem, MomentumItem,
+        };
 
         // 項目名はコンストラクターの引数名にそろえ、値の検査で断られた項目を ParamName から示せるようにする。
         public static IReadOnlyList<string> SlideItemNames { get; } = new[]
@@ -90,6 +117,47 @@ namespace Shooter.Core
             JumpOffSpeedItem,
         };
 
+        public static IReadOnlyList<string> WallKickItemNames { get; } = new[]
+        {
+            EnabledItem,
+            UpSpeedItem,
+            AwaySpeedItem,
+        };
+
+        public static IReadOnlyList<string> LandingRollItemNames { get; } = new[]
+        {
+            EnabledItem,
+            WindowSecondsItem,
+            FallSpeedScaleItem,
+            RollSecondsItem,
+            MinFallSpeedItem,
+        };
+
+        public static IReadOnlyList<string> WallClimbItemNames { get; } = new[]
+        {
+            EnabledItem,
+            MinSpeedItem,
+            ClimbSpeedItem,
+            MaxSecondsItem,
+            MaxHeightItem,
+            PushOffSpeedItem,
+        };
+
+        public static IReadOnlyList<string> LedgeHangItemNames { get; } = new[]
+        {
+            EnabledItem,
+            GrabReachItem,
+            ShimmySpeedItem,
+            ClimbUpSpeedItem,
+            RegrabSecondsItem,
+        };
+
+        public static IReadOnlyList<string> MomentumItemNames { get; } = new[]
+        {
+            SlideJumpBoostItem,
+            VaultExitSpeedKeepItem,
+        };
+
         public static TraversalSpec Parse(string text, string sourceName)
         {
             var source = ServerDataJson.SourceOf(sourceName, _kind);
@@ -101,12 +169,23 @@ namespace Shooter.Core
                 var zipline = fields.Object(ZiplineItem, ZiplineItemNames);
                 var swim = fields.Object(SwimItem, SwimItemNames);
                 var wallRun = fields.Object(WallRunItem, WallRunItemNames);
+                var wallKick = fields.Object(WallKickItem, WallKickItemNames);
+                var landingRoll = fields.Object(LandingRollItem, LandingRollItemNames);
+                var wallClimb = fields.Object(WallClimbItem, WallClimbItemNames);
+                var ledgeHang = fields.Object(LedgeHangItem, LedgeHangItemNames);
+                var momentum = fields.Object(MomentumItem, MomentumItemNames);
                 return new TraversalSpec(
                     slide == null ? null : ReadSlide(slide),
                     parachute == null ? null : ReadParachute(parachute),
                     zipline == null ? null : ReadZipline(zipline),
                     swim == null ? null : ReadSwim(swim),
-                    wallRun == null ? null : ReadWallRun(wallRun));
+                    wallRun == null ? null : ReadWallRun(wallRun),
+                    new ParkourTuning(
+                        wallKick == null ? null : ReadWallKick(wallKick),
+                        landingRoll == null ? null : ReadLandingRoll(landingRoll),
+                        wallClimb == null ? null : ReadWallClimb(wallClimb),
+                        ledgeHang == null ? null : ReadLedgeHang(ledgeHang),
+                        momentum == null ? null : ReadMomentum(momentum)));
             }
             catch (ServerDataJsonException e)
             {
@@ -201,6 +280,92 @@ namespace Shooter.Core
             catch (ArgumentException e)
             {
                 throw Rejected(fields, WallRunItemNames, e);
+            }
+        }
+
+        private static WallKickTuning ReadWallKick(ServerDataJson.Fields fields)
+        {
+            var defaults = WallKickTuning.Default;
+            var enabled = fields.ReadBool(EnabledItem, defaults.Enabled);
+            var upSpeed = fields.ReadFloat(UpSpeedItem, defaults.UpSpeed);
+            var awaySpeed = fields.ReadFloat(AwaySpeedItem, defaults.AwaySpeed);
+            try
+            {
+                return new WallKickTuning(enabled, upSpeed, awaySpeed);
+            }
+            catch (ArgumentException e)
+            {
+                throw Rejected(fields, WallKickItemNames, e);
+            }
+        }
+
+        private static LandingRollTuning ReadLandingRoll(ServerDataJson.Fields fields)
+        {
+            var defaults = LandingRollTuning.Default;
+            var enabled = fields.ReadBool(EnabledItem, defaults.Enabled);
+            var windowSeconds = fields.ReadFloat(WindowSecondsItem, defaults.WindowSeconds);
+            var fallSpeedScale = fields.ReadFloat(FallSpeedScaleItem, defaults.FallSpeedScale);
+            var rollSeconds = fields.ReadFloat(RollSecondsItem, defaults.RollSeconds);
+            var minFallSpeed = fields.ReadFloat(MinFallSpeedItem, defaults.MinFallSpeed);
+            try
+            {
+                return new LandingRollTuning(enabled, windowSeconds, fallSpeedScale, rollSeconds, minFallSpeed);
+            }
+            catch (ArgumentException e)
+            {
+                throw Rejected(fields, LandingRollItemNames, e);
+            }
+        }
+
+        private static WallClimbTuning ReadWallClimb(ServerDataJson.Fields fields)
+        {
+            var defaults = WallClimbTuning.Default;
+            var enabled = fields.ReadBool(EnabledItem, defaults.Enabled);
+            var minSpeed = fields.ReadFloat(MinSpeedItem, defaults.MinSpeed);
+            var climbSpeed = fields.ReadFloat(ClimbSpeedItem, defaults.ClimbSpeed);
+            var maxSeconds = fields.ReadFloat(MaxSecondsItem, defaults.MaxSeconds);
+            var maxHeight = fields.ReadFloat(MaxHeightItem, defaults.MaxHeight);
+            var pushOffSpeed = fields.ReadFloat(PushOffSpeedItem, defaults.PushOffSpeed);
+            try
+            {
+                return new WallClimbTuning(enabled, minSpeed, climbSpeed, maxSeconds, maxHeight, pushOffSpeed);
+            }
+            catch (ArgumentException e)
+            {
+                throw Rejected(fields, WallClimbItemNames, e);
+            }
+        }
+
+        private static LedgeHangTuning ReadLedgeHang(ServerDataJson.Fields fields)
+        {
+            var defaults = LedgeHangTuning.Default;
+            var enabled = fields.ReadBool(EnabledItem, defaults.Enabled);
+            var grabReach = fields.ReadFloat(GrabReachItem, defaults.GrabReach);
+            var shimmySpeed = fields.ReadFloat(ShimmySpeedItem, defaults.ShimmySpeed);
+            var climbUpSpeed = fields.ReadFloat(ClimbUpSpeedItem, defaults.ClimbUpSpeed);
+            var regrabSeconds = fields.ReadFloat(RegrabSecondsItem, defaults.RegrabSeconds);
+            try
+            {
+                return new LedgeHangTuning(enabled, grabReach, shimmySpeed, climbUpSpeed, regrabSeconds);
+            }
+            catch (ArgumentException e)
+            {
+                throw Rejected(fields, LedgeHangItemNames, e);
+            }
+        }
+
+        private static MomentumTuning ReadMomentum(ServerDataJson.Fields fields)
+        {
+            var defaults = MomentumTuning.Default;
+            var slideJumpBoost = fields.ReadFloat(SlideJumpBoostItem, defaults.SlideJumpBoost);
+            var vaultExitSpeedKeep = fields.ReadFloat(VaultExitSpeedKeepItem, defaults.VaultExitSpeedKeep);
+            try
+            {
+                return new MomentumTuning(slideJumpBoost, vaultExitSpeedKeep);
+            }
+            catch (ArgumentException e)
+            {
+                throw Rejected(fields, MomentumItemNames, e);
             }
         }
 

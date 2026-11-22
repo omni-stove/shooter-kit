@@ -6,7 +6,7 @@ namespace Shooter.Protocol
     // 起動したかを知らないので、自分の持つ既定値で予測すると片方だけ変えたときに毎 tick ずれるため。
     public sealed class ConnectAcceptedMessage : IMessage
     {
-        public const byte CurrentVersion = 12;
+        public const byte CurrentVersion = 13;
 
         // .NET のサーバーの既定と同じにする。
         public const float DefaultKillPlaneY = -50f;
@@ -201,6 +201,80 @@ namespace Shooter.Protocol
             writer.WriteSingle(parachute.DescentSpeed);
             writer.WriteSingle(parachute.HorizontalSpeed);
             writer.WriteSingle(parachute.SteerAcceleration);
+
+            WriteParkour(writer, settings.Parkour);
+        }
+
+        private static void WriteParkour(MessageWriter writer, Shooter.Core.ParkourTuning parkour)
+        {
+            var wallKick = parkour.WallKick;
+            writer.WriteBool(wallKick.Enabled);
+            writer.WriteSingle(wallKick.UpSpeed);
+            writer.WriteSingle(wallKick.AwaySpeed);
+
+            var landingRoll = parkour.LandingRoll;
+            writer.WriteBool(landingRoll.Enabled);
+            writer.WriteSingle(landingRoll.WindowSeconds);
+            writer.WriteSingle(landingRoll.FallSpeedScale);
+            writer.WriteSingle(landingRoll.RollSeconds);
+            writer.WriteSingle(landingRoll.MinFallSpeed);
+
+            var wallClimb = parkour.WallClimb;
+            writer.WriteBool(wallClimb.Enabled);
+            writer.WriteSingle(wallClimb.MinSpeed);
+            writer.WriteSingle(wallClimb.ClimbSpeed);
+            writer.WriteSingle(wallClimb.MaxSeconds);
+            writer.WriteSingle(wallClimb.MaxHeight);
+            writer.WriteSingle(wallClimb.PushOffSpeed);
+
+            var ledgeHang = parkour.LedgeHang;
+            writer.WriteBool(ledgeHang.Enabled);
+            writer.WriteSingle(ledgeHang.GrabReach);
+            writer.WriteSingle(ledgeHang.ShimmySpeed);
+            writer.WriteSingle(ledgeHang.ClimbUpSpeed);
+            writer.WriteSingle(ledgeHang.RegrabSeconds);
+
+            var momentum = parkour.Momentum;
+            writer.WriteSingle(momentum.SlideJumpBoost);
+            writer.WriteSingle(momentum.VaultExitSpeedKeep);
+        }
+
+        // 範囲の検査は Core の型の作り方に任せ、通らない値は読めないメッセージとして断る
+        private static Shooter.Core.ParkourTuning ReadParkour(MessageReader reader)
+        {
+            var wallKickEnabled = reader.ReadBool();
+            var wallKick = ReadValues(reader, 2, "wall kick value");
+            var landingRollEnabled = reader.ReadBool();
+            var landingRoll = ReadValues(reader, 4, "landing roll value");
+            var wallClimbEnabled = reader.ReadBool();
+            var wallClimb = ReadValues(reader, 5, "wall climb value");
+            var ledgeHangEnabled = reader.ReadBool();
+            var ledgeHang = ReadValues(reader, 4, "ledge hang value");
+            var momentum = ReadValues(reader, 2, "momentum value");
+            try
+            {
+                return new Shooter.Core.ParkourTuning(
+                    new Shooter.Core.WallKickTuning(wallKickEnabled, wallKick[0], wallKick[1]),
+                    new Shooter.Core.LandingRollTuning(landingRollEnabled, landingRoll[0], landingRoll[1], landingRoll[2], landingRoll[3]),
+                    new Shooter.Core.WallClimbTuning(wallClimbEnabled, wallClimb[0], wallClimb[1], wallClimb[2], wallClimb[3], wallClimb[4]),
+                    new Shooter.Core.LedgeHangTuning(ledgeHangEnabled, ledgeHang[0], ledgeHang[1], ledgeHang[2], ledgeHang[3]),
+                    new Shooter.Core.MomentumTuning(momentum[0], momentum[1]));
+            }
+            catch (System.ArgumentException e)
+            {
+                throw new MessageReadException("parkour settings are out of range: " + e.Message, e);
+            }
+        }
+
+        private static float[] ReadValues(MessageReader reader, int count, string what)
+        {
+            var values = new float[count];
+            for (var i = 0; i < values.Length; i++)
+            {
+                values[i] = reader.ReadFiniteSingle(what);
+            }
+
+            return values;
         }
 
         private static void WriteDirection(MessageWriter writer, Shooter.Core.MoveDirectionScale direction)
@@ -275,6 +349,8 @@ namespace Shooter.Protocol
                 parachute[i] = reader.ReadFiniteSingle("parachute value");
             }
 
+            var parkour = ReadParkour(reader);
+
             try
             {
                 return new Shooter.Core.NetMotorSettings(
@@ -292,7 +368,10 @@ namespace Shooter.Protocol
                     new Shooter.Core.ProneSpec(prone[0], prone[1], prone[2], prone[3], prone[4], prone[5]),
                     new Shooter.Core.SwimTuning(swim[0], swim[1], swim[2]),
                     new Shooter.Core.WallRunTuning(wallRunEnabled, wallRun[0], wallRun[1], wallRun[2], wallRun[3]),
-                    new Shooter.Core.ParachuteTuning(parachute[0], parachute[1], parachute[2], parachute[3]));
+                    new Shooter.Core.ParachuteTuning(parachute[0], parachute[1], parachute[2], parachute[3]),
+                    Shooter.Core.SlideTuning.Default,
+                    Shooter.Core.ZiplineTuning.Default,
+                    parkour);
             }
             catch (System.ArgumentException e)
             {

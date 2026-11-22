@@ -568,7 +568,8 @@ namespace Shooter.Runtime
                 traversal.WallRun,
                 traversal.Parachute,
                 traversal.Slide,
-                traversal.Zipline);
+                traversal.Zipline,
+                traversal.Parkour);
         }
 
         public bool TryCreateLoadout(out ServerLoadout loadout, out string error)

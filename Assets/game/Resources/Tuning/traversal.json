@@ -32,5 +32,36 @@
     "minSpeed": 5,
     "gravityScale": 0.25,
     "jumpOffSpeed": 7
+  },
+  "wallKick": {
+    "enabled": false,
+    "upSpeed": 6,
+    "awaySpeed": 6
+  },
+  "landingRoll": {
+    "enabled": false,
+    "windowSeconds": 0.3,
+    "fallSpeedScale": 0.5,
+    "rollSeconds": 0.6,
+    "minFallSpeed": 6
+  },
+  "wallClimb": {
+    "enabled": false,
+    "minSpeed": 4,
+    "climbSpeed": 5,
+    "maxSeconds": 0.6,
+    "maxHeight": 2.5,
+    "pushOffSpeed": 5
+  },
+  "ledgeHang": {
+    "enabled": false,
+    "grabReach": 0.6,
+    "shimmySpeed": 1.5,
+    "climbUpSpeed": 3,
+    "regrabSeconds": 0.5
+  },
+  "momentum": {
+    "slideJumpBoost": 0,
+    "vaultExitSpeedKeep": 0
   }
 }

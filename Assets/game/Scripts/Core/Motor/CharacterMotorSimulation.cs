@@ -49,6 +49,8 @@ namespace Shooter.Core
 
         private SlideTuning _slideTuning = SlideTuning.Default;
 
+        private ParkourTuning _parkour = ParkourTuning.Default;
+
         // 状態から毎 tick 戻して使う作業用。tick をまたいで中身を持ち越さない
         private SlideMotion _slide = NewSlide(SlideTuning.Default);
 
@@ -166,6 +168,13 @@ namespace Shooter.Core
                 _slideTuning = value ?? throw new ArgumentNullException(nameof(value));
                 _slide = NewSlide(value);
             }
+        }
+
+        // 予測とサーバーで同じ値を渡す。片方だけ壁蹴りやぶら下がりを入れると、動いたかと位置が毎 tick 食い違う。
+        public ParkourTuning Parkour
+        {
+            get => _parkour;
+            set => _parkour = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         // 滑り出した tick だけ IsSliding。ログと見た目は呼び手が読んで出す (シミュレーションは予測のやり直しでも呼ばれるため)
