@@ -21,10 +21,18 @@ namespace Shooter.Core
 
         // ふつうの移動の道筋から、壁走りより先に呼ぶ。体を動かした tick は true を返し、壁走りとふつうの移動に回さない。
         // ぶら下がっている間に壁登りや壁蹴りを調べ直さないよう、掴まっている動きを先に見る。
+        // しゃがみはぶら下がりから手を離す入力なので、ぶら下がりにだけ渡す。
         private bool TryMoveParkour(
-            CharacterMotorState state, Vector2 move, float yaw, bool jump, bool allowed, ref CharacterParkourState parkour, out Vector3 velocity)
+            CharacterMotorState state,
+            Vector2 move,
+            float yaw,
+            bool jump,
+            bool crouch,
+            bool allowed,
+            ref CharacterParkourState parkour,
+            out Vector3 velocity)
         {
-            if (TryStepLedgeHang(_parkour.LedgeHang, state, move, yaw, jump, allowed, ref parkour, out velocity))
+            if (TryStepLedgeHang(_parkour.LedgeHang, state, move, yaw, jump, crouch, allowed, ref parkour, out velocity))
             {
                 return true;
             }

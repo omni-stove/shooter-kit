@@ -297,8 +297,11 @@ namespace Shooter.Core
 
         public bool IsSwimming => Swim.IsSwimming;
 
+        // 両手でふちを掴んでいる間は武器を持てないので、構えも射撃もさせない。
+        public bool IsHangingOnLedge => Parkour.IsHangingOnLedge;
+
         // シミュレーションは構えを持たないので、構えを止めるのはこれを読む構えを動かす側。
-        public bool CanAimDownSights => !IsSwimming;
+        public bool CanAimDownSights => !IsSwimming && !IsHangingOnLedge;
 
         public bool IsWallRunning => WallRun.IsRunning;
 

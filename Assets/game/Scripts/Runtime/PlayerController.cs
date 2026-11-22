@@ -363,7 +363,7 @@ namespace Shooter.Runtime
             else
             {
                 UpdateStance(crouch, IsProneActive);
-                if (TryOverrideMove(move, jumpPressed, deltaSeconds, out displacement))
+                if (TryOverrideMove(move, jumpPressed, crouch, deltaSeconds, out displacement))
                 {
                     StopWallRun();
                 }
@@ -418,7 +418,7 @@ namespace Shooter.Runtime
             FinishTraversal(footing, move, sprint, crouch, lean, deltaSeconds);
         }
 
-        private bool TryOverrideMove(Vector2 move, bool jumpPressed, float deltaSeconds, out Vector3 displacement)
+        private bool TryOverrideMove(Vector2 move, bool jumpPressed, bool crouch, float deltaSeconds, out Vector3 displacement)
         {
             var overridden = false;
             displacement = Vector3.zero;
@@ -434,7 +434,7 @@ namespace Shooter.Runtime
 
             if (!overridden)
             {
-                TryOverrideMoveForParkour(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
+                TryOverrideMoveForParkour(move, jumpPressed, crouch, deltaSeconds, ref overridden, ref displacement);
             }
 
             if (!overridden)

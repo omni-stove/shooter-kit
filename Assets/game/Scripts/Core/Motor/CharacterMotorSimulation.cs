@@ -176,6 +176,7 @@ namespace Shooter.Core
             LastParachuteVerdict = null;
             LastParachuteClose = null;
             ClearSlideReport();
+            ClearLedgeHangReport();
             Place(state);
             var busy = state.IsDodging || state.IsVaulting || state.IsDiving || state.IsProne || state.IsClimbing || state.IsKnockedBack
                 || state.IsSwimming || state.Cover.IsInCover;
@@ -209,6 +210,7 @@ namespace Shooter.Core
             ClearSlideReport();
             _slideBefore = state.Slide;
             _groundedBefore = state.IsGrounded;
+            ClearLedgeHangReport();
             Place(state);
             Ride(state, input.Platform);
 
@@ -259,8 +261,10 @@ namespace Shooter.Core
 
             // 回避・乗り越え・伏せ・はしご・パラシュートの最中はカバーに入らない (寄せる動きと転がり・乗り越えの軌跡がぶつかるため。CoverController と同じ)
             // 滑っている間も、オフラインで SlideMovement が移動を横取りしている間と同じく、カバー・回避・伏せを始めない
+            // ぶら下がっている間も、カバーの寄せる動きがふちに置き直す動きとぶつかるのでカバーに入らない
             var sliding = state.IsSliding;
-            var busy = _dodge.IsRolling || vault.IsVaulting || wasProne || _dive.IsDiving || ladder.IsClimbing || state.IsParachuting || sliding;
+            var busy = _dodge.IsRolling || vault.IsVaulting || wasProne || _dive.IsDiving || ladder.IsClimbing || state.IsParachuting || sliding
+                || state.Parkour.IsHangingOnLedge;
             var cover = StepCover(state.Cover, busy && !state.Cover.IsInCover ? input.WithoutCover() : input);
 
             if (input.Dodge && state.IsGrounded && !vault.IsVaulting && !cover.IsInCover && _dodge.IsReady
@@ -406,7 +410,7 @@ namespace Shooter.Core
 
                 // 壁走りと同じ条件を渡すのは、壁蹴り・壁登り・ぶら下がりも、立って、カバーに入っておらず、倒れていないときだけ始めるため
                 var parkour = state.Parkour;
-                var parkourMoved = TryMoveParkour(state, move, input.Yaw, jump, canWallRun, ref parkour, out var parkourVelocity);
+                var parkourMoved = TryMoveParkour(state, move, input.Yaw, jump, wantsCrouch, canWallRun, ref parkour, out var parkourVelocity);
                 traversal = traversal.WithParkour(parkour);
                 var run = parkourMoved
                     ? WallRunResult.Resting(WallRunStep.Stop(state.WallRun, state.IsGrounded))
@@ -578,7 +582,7 @@ namespace Shooter.Core
             traversal = traversal.WithParkour(SettleParkour(traversal.Parkour, input, velocity, grounded));
 
             // 跳んだ tick に着地・つかまったときも 0 にするので、tick の頭で数える AirJumpStep ではなく終わりで戻す
-            if (grounded || ladder.IsClimbing || traversal.Swim.IsSwimming || traversal.WallRun.IsRunning)
+            if (grounded || ladder.IsClimbing || traversal.Swim.IsSwimming || traversal.WallRun.IsRunning || traversal.Parkour.IsHangingOnLedge)
             {
                 traversal = traversal.WithAirJumpsUsed(0);
             }

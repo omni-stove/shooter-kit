@@ -205,7 +205,7 @@ namespace Shooter.Runtime
         // 跳んだ tick に着地・つかまったときも 0 に戻すので、CharacterMotorSimulation.Finish と同じく tick の終わりで戻す。
         private void FinishTraversal(bool footing, Vector2 move, bool sprint, bool crouch, int lean, float deltaSeconds)
         {
-            if (footing || _swim.IsSwimming || _wallRun.IsRunning || IsMovementOverridden)
+            if (footing || _swim.IsSwimming || _wallRun.IsRunning || IsMovementOverridden || _parkour.IsHangingOnLedge)
             {
                 _airJumpsUsed = 0;
             }

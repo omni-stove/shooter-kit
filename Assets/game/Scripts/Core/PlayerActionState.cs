@@ -26,7 +26,11 @@ namespace Shooter.Core
             | PlayerActionConditions.Ziplining
             | PlayerActionConditions.Parachuting
             | PlayerActionConditions.InVehicle
-            | PlayerActionConditions.AbilityMoving;
+            | PlayerActionConditions.AbilityMoving
+            | PlayerActionConditions.LedgeHanging;
+
+        // この中のどれかが立っている間は撃てない。回避・乗り越え・崖のぼりは今まで WeaponController.FireBlocker だけが止めていたので、ここには足さない。
+        public const PlayerActionConditions WeaponBlockingFlags = PlayerActionConditions.LedgeHanging;
 
         // 連射間隔がこれより短い (またはセミオートを 1 回だけ撃った) ときも、表示や見た目が 1 フレームで消えないようにする。
         public const float MinFiringSeconds = 0.1f;
@@ -75,6 +79,9 @@ namespace Shooter.Core
         public bool IsParachuting => Has(PlayerActionConditions.Parachuting);
         public bool IsInVehicle => Has(PlayerActionConditions.InVehicle);
         public bool IsAbilityMoving => Has(PlayerActionConditions.AbilityMoving);
+        public bool IsLedgeHanging => Has(PlayerActionConditions.LedgeHanging);
+
+        public bool CanFireWeapon => (Flags & WeaponBlockingFlags) == 0;
 
         public PlayerActionState(
             PlayerActionConditions flags,

@@ -48,5 +48,8 @@ namespace Shooter.Core
         InVehicle = 1 << 19,
 
         AbilityMoving = 1 << 20,
+
+        // ふちにぶら下がる・横に動く・登る間。両手でふちを掴んでいるので武器を撃てない (PlayerActionState.CanFireWeapon)。
+        LedgeHanging = 1 << 21,
     }
 }
