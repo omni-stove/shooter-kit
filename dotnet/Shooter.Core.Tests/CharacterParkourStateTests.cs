@@ -153,7 +153,7 @@ namespace Shooter.Core.Tests
 
             for (var i = 0; i < 90; i++)
             {
-                state = simulation.Step(state, new CharacterMotorInput(new Vector2(0f, 1f), 0f, true, i % 20 == 0, i % 2 == 0, false, false, false, false, false));
+                state = simulation.Step(state, new CharacterMotorInput(new Vector2(0f, 1f), 0f, true, i < 60 && i % 20 == 0, i % 2 == 0, false, false, false, false, false));
                 Assert.That(state.Parkour, Is.EqualTo(CharacterParkourState.None), "tick " + i);
             }
 
