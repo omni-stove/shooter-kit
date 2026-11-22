@@ -18,10 +18,15 @@ namespace Shooter.Runtime
             return Mathf.Max(0f, -verticalVelocity) * parkour.FallSpeedScale;
         }
 
-        // 乗り越え・崖のぼりが始まらなかったときに、回避より先に呼ぶ。CharacterMotorSimulation.TryMoveParkour と同じく、掴まっている動きを先に見る。
+        // 乗り越え・崖のぼりが始まらなかったときに、回避より先に呼ぶ。CharacterMotorSimulation.TryMoveParkour と同じく、続いている動き (転がる・掴まっている) を先に見る。
         private void TryOverrideMoveForParkour(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
         {
-            TryOverrideMoveForLedgeHang(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
+            TryOverrideMoveForLandingRoll(deltaSeconds, ref overridden, ref displacement);
+            if (!overridden)
+            {
+                TryOverrideMoveForLedgeHang(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
+            }
+
             if (!overridden)
             {
                 TryOverrideMoveForWallClimb(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
@@ -42,6 +47,7 @@ namespace Shooter.Runtime
         private void ResetParkour()
         {
             _parkour = CharacterParkourState.None;
+            _landingRollMoved = false;
         }
     }
 }

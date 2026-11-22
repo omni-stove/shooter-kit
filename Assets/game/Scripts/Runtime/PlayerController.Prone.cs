@@ -147,6 +147,7 @@ namespace Shooter.Runtime
                 && !IsDodging
                 && !IsVaulting
                 && !IsDiving
+                && !IsLandingRolling
                 && !IsMovementOverridden;
         }
 
