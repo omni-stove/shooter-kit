@@ -414,6 +414,7 @@ namespace Shooter.Core
                 // 壁走りと同じ条件を渡すのは、壁蹴り・壁登り・ぶら下がりも、立って、カバーに入っておらず、倒れていないときだけ始めるため
                 var parkour = state.Parkour;
                 var parkourMoved = TryMoveParkour(state, move, input.Yaw, jump, canWallRun, ref parkour, out var parkourVelocity);
+                vault = TakeWallClimbMantle(vault);
                 traversal = traversal.WithParkour(parkour);
                 var run = parkourMoved
                     ? WallRunResult.Resting(WallRunStep.Stop(state.WallRun, state.IsGrounded))

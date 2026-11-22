@@ -408,6 +408,7 @@ namespace Shooter.Runtime
             }
 
             SettleWallRun(wallRun, transform.position - before, collisions, deltaSeconds);
+            SettleWallClimb(collisions);
             StepStamina(sprinted, deltaSeconds);
 
             // 泳いでいる間は水底や天井に触れても立っていないので、着地・足音・落下のダメージに数えない。
