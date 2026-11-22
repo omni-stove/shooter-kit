@@ -195,6 +195,7 @@ namespace Shooter.Core.Tests
                 CharacterPose.LeanParameter,
                 CharacterPose.SwimmingParameter,
                 CharacterPose.WallRunParameter,
+                CharacterPose.ParkourParameter,
             };
 
             Assert.That(names, Is.Unique);

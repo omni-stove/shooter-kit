@@ -406,6 +406,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(_world.Mover.MotorSettings, Is.Null);
             Assert.That(_world.Mover.WallRunTuning, Is.SameAs(TraversalTuning.Current.WallRun));
             Assert.That(_world.Mover.SwimTuning, Is.SameAs(TraversalTuning.Current.Swim));
+            Assert.That(_world.Mover.ParkourTuning, Is.SameAs(TraversalTuning.Current.Parkour));
         }
 
         [Test]
@@ -644,7 +645,11 @@ namespace Shooter.Tests.EditMode
             var host = new GameObject("Bootstrap-Tuning");
             var settings = ScriptableObject.CreateInstance<MotorSettings>();
             settings.AirJumps = 1;
-            var traversal = new TextAsset("{ \"swim\": { \"speed\": 4 }, \"wallRun\": { \"enabled\": true } }") { name = "SceneTraversal" };
+            var traversal = new TextAsset(
+                "{ \"swim\": { \"speed\": 4 }, \"wallRun\": { \"enabled\": true }, \"wallKick\": { \"enabled\": true, \"upSpeed\": 7 }, \"ledgeHang\": { \"enabled\": true } }")
+            {
+                name = "SceneTraversal",
+            };
             BootstrapWorld world = null;
             try
             {
@@ -662,6 +667,10 @@ namespace Shooter.Tests.EditMode
                 Assert.That(world.Mover.Spec.AirJumps, Is.EqualTo(1));
                 Assert.That(world.Mover.WallRunTuning.Enabled, Is.True);
                 Assert.That(world.Mover.SwimTuning.Speed, Is.EqualTo(4f));
+                Assert.That(world.Mover.ParkourTuning.WallKick.Enabled, Is.True);
+                Assert.That(world.Mover.ParkourTuning.WallKick.UpSpeed, Is.EqualTo(7f));
+                Assert.That(world.Mover.ParkourTuning.LedgeHang.Enabled, Is.True);
+                Assert.That(world.Mover.ParkourTuning.LandingRoll.Enabled, Is.False, "items the scene leaves out keep their defaults");
                 Assert.That(world.Player.GetComponent<UnderwaterPresenter>().Swim, Is.SameAs(world.Mover.SwimTuning), "breath and drowning use the same swim values");
             }
             finally
@@ -692,6 +701,7 @@ namespace Shooter.Tests.EditMode
                 world = bootstrap.Build();
 
                 Assert.That(world.Mover.WallRunTuning, Is.SameAs(TraversalTuning.Current.WallRun));
+                Assert.That(world.Mover.ParkourTuning, Is.SameAs(TraversalTuning.Current.Parkour));
             }
             finally
             {

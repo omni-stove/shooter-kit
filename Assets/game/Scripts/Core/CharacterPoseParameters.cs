@@ -27,6 +27,8 @@ namespace Shooter.Core
 
         public int WallRun { get; }
 
+        public int Parkour { get; }
+
         public CharacterPoseParameters(
             float speed,
             bool crouch,
@@ -38,7 +40,8 @@ namespace Shooter.Core
             bool slide = false,
             float lean = 0f,
             bool swimming = false,
-            int wallRun = CharacterPose.WallRunNone)
+            int wallRun = CharacterPose.WallRunNone,
+            int parkour = CharacterPose.ParkourNone)
         {
             if (!(speed >= 0f && speed <= CharacterPose.RunSpeedValue))
             {
@@ -65,6 +68,11 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(wallRun), wallRun, "wallRun must be WallRunNone, WallRunLeft or WallRunRight");
             }
 
+            if (!CharacterPose.IsParkourValue(parkour))
+            {
+                throw new ArgumentOutOfRangeException(nameof(parkour), parkour, "parkour must be between ParkourNone and ParkourLedgeClimbUp");
+            }
+
             Speed = speed;
             Crouch = crouch;
             Aim = aim;
@@ -76,6 +84,7 @@ namespace Shooter.Core
             Lean = lean;
             Swimming = swimming;
             WallRun = wallRun;
+            Parkour = parkour;
         }
 
         public bool Equals(CharacterPoseParameters other)
@@ -90,7 +99,8 @@ namespace Shooter.Core
                 && Slide == other.Slide
                 && Lean.Equals(other.Lean)
                 && Swimming == other.Swimming
-                && WallRun == other.WallRun;
+                && WallRun == other.WallRun
+                && Parkour == other.Parkour;
         }
 
         public override bool Equals(object obj)
@@ -111,14 +121,14 @@ namespace Shooter.Core
         public override int GetHashCode()
         {
             var flags = (Crouch ? 1 : 0) | (Aim ? 2 : 0) | (Downed ? 4 : 0) | (Dead ? 8 : 0) | (Slide ? 16 : 0) | (Swimming ? 32 : 0);
-            return HashCode.Combine(Speed, flags, Cover, WeaponCategory, Lean, WallRun);
+            return HashCode.Combine(Speed, flags, Cover, WeaponCategory, Lean, WallRun, Parkour);
         }
 
         public override string ToString()
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "Speed={0:0.00} Crouch={1} Aim={2} Cover={3} Downed={4} Dead={5} WeaponCategory={6} Lean={7:0.00} Swimming={8} WallRun={9} Slide={10}",
+                "Speed={0:0.00} Crouch={1} Aim={2} Cover={3} Downed={4} Dead={5} WeaponCategory={6} Lean={7:0.00} Swimming={8} WallRun={9} Slide={10} Parkour={11}",
                 Speed,
                 Crouch,
                 Aim,
@@ -129,7 +139,8 @@ namespace Shooter.Core
                 Lean,
                 Swimming,
                 WallRun,
-                Slide);
+                Slide,
+                Parkour);
         }
     }
 }

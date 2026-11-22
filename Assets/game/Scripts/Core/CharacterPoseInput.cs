@@ -31,6 +31,8 @@ namespace Shooter.Core
 
         public WallRunSide WallRun { get; }
 
+        public ParkourMove Parkour { get; }
+
         public bool IsInCover => CoverHeight.HasValue;
 
         public CharacterPoseInput(
@@ -46,7 +48,8 @@ namespace Shooter.Core
             bool isSliding = false,
             float lean = 0f,
             bool isSwimming = false,
-            WallRunSide wallRun = WallRunSide.None)
+            WallRunSide wallRun = WallRunSide.None,
+            ParkourMove parkour = ParkourMove.None)
         {
             if (!(horizontalSpeed >= 0f) || float.IsInfinity(horizontalSpeed))
             {
@@ -73,6 +76,11 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(wallRun), wallRun, "wallRun is not a defined WallRunSide");
             }
 
+            if (!Enum.IsDefined(typeof(ParkourMove), parkour))
+            {
+                throw new ArgumentOutOfRangeException(nameof(parkour), parkour, "parkour is not a defined ParkourMove");
+            }
+
             HorizontalSpeed = horizontalSpeed;
             IsGrounded = isGrounded;
             IsCrouching = isCrouching;
@@ -86,6 +94,7 @@ namespace Shooter.Core
             Lean = lean;
             IsSwimming = isSwimming;
             WallRun = wallRun;
+            Parkour = parkour;
         }
 
         public CharacterPoseInput WithMotor(CharacterMotorState motor)
@@ -103,7 +112,8 @@ namespace Shooter.Core
                 IsSliding,
                 motor.Lean.Amount,
                 motor.IsSwimming,
-                motor.WallRun.Side);
+                motor.WallRun.Side,
+                motor.Parkour.Move);
         }
 
         public bool Equals(CharacterPoseInput other)
@@ -120,7 +130,8 @@ namespace Shooter.Core
                 && IsSliding == other.IsSliding
                 && Lean.Equals(other.Lean)
                 && IsSwimming == other.IsSwimming
-                && WallRun == other.WallRun;
+                && WallRun == other.WallRun
+                && Parkour == other.Parkour;
         }
 
         public override bool Equals(object obj)
@@ -148,14 +159,14 @@ namespace Shooter.Core
                 | (IsDead ? 32 : 0)
                 | (IsSliding ? 64 : 0)
                 | (IsSwimming ? 128 : 0);
-            return HashCode.Combine(HorizontalSpeed, flags, CoverHeight, WeaponCategory, Lean, WallRun);
+            return HashCode.Combine(HorizontalSpeed, flags, CoverHeight, WeaponCategory, Lean, WallRun, Parkour);
         }
 
         public override string ToString()
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "speed={0:0.00} grounded={1} crouch={2} sprint={3} aim={4} cover={5} downed={6} dead={7} weapon={8} lean={9:0.00} swim={10} wallRun={11} slide={12}",
+                "speed={0:0.00} grounded={1} crouch={2} sprint={3} aim={4} cover={5} downed={6} dead={7} weapon={8} lean={9:0.00} swim={10} wallRun={11} slide={12} parkour={13}",
                 HorizontalSpeed,
                 IsGrounded,
                 IsCrouching,
@@ -168,7 +179,8 @@ namespace Shooter.Core
                 Lean,
                 IsSwimming,
                 WallRun,
-                IsSliding);
+                IsSliding,
+                Parkour);
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Shooter.Runtime
         }
     }
 
-    public static class PlayerMockPose
+    public static partial class PlayerMockPose
     {
         public const float TorsoWidth = 0.6f;
         public const float TorsoDepth = 0.4f;
@@ -206,12 +206,16 @@ namespace Shooter.Runtime
 
         public static Quaternion TraversalLean(CharacterMotorState motor, float leanAngleDegrees)
         {
-            return TraversalLean(motor.Lean.Amount, motor.IsSwimming, motor.WallRun.Side, leanAngleDegrees);
+            return TryParkourTilt(motor.Parkour.Move, out var tilt)
+                ? tilt
+                : TraversalLean(motor.Lean.Amount, motor.IsSwimming, motor.WallRun.Side, leanAngleDegrees);
         }
 
         public static Quaternion TraversalLean(CharacterPoseParameters parameters, float leanAngleDegrees)
         {
-            return TraversalLean(parameters.Lean, parameters.Swimming, (WallRunSide)parameters.WallRun, leanAngleDegrees);
+            return TryParkourTilt((ParkourMove)parameters.Parkour, out var tilt)
+                ? tilt
+                : TraversalLean(parameters.Lean, parameters.Swimming, (WallRunSide)parameters.WallRun, leanAngleDegrees);
         }
 
         public static Quaternion TraversalLean(float lean, bool swimming, WallRunSide wallRun, float leanAngleDegrees)

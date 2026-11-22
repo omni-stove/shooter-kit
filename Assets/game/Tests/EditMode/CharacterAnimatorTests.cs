@@ -347,6 +347,63 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void WithoutAMotorStateTheParkourStaysDown()
+        {
+            _animator.TryBind();
+
+            Assert.That(_animator.Refresh(DeltaSeconds).Parkour, Is.EqualTo(CharacterPose.ParkourNone));
+        }
+
+        [TestCase(ParkourMove.WallKick, CharacterPose.ParkourWallKick)]
+        [TestCase(ParkourMove.LandingRoll, CharacterPose.ParkourLandingRoll)]
+        [TestCase(ParkourMove.WallClimb, CharacterPose.ParkourWallClimb)]
+        [TestCase(ParkourMove.LedgeHang, CharacterPose.ParkourLedgeHang)]
+        [TestCase(ParkourMove.LedgeShimmy, CharacterPose.ParkourLedgeShimmy)]
+        [TestCase(ParkourMove.LedgeClimbUp, CharacterPose.ParkourLedgeClimbUp)]
+        public void MotorStateOnTheBodyDrivesTheParkourMove(ParkourMove move, int expected)
+        {
+            var motor = _player.AddComponent<FakeCharacterMotorStateSource>();
+            _animator.TryBind();
+
+            motor.State = FakeCharacterMotorStateSource.Motor(parkour: move);
+            var moving = _animator.Refresh(DeltaSeconds);
+            Assert.That(moving.Parkour, Is.EqualTo(expected));
+            Assert.That(moving.Lean, Is.EqualTo(0f));
+
+            motor.State = FakeCharacterMotorStateSource.Motor();
+            Assert.That(_animator.Refresh(DeltaSeconds).Parkour, Is.EqualTo(CharacterPose.ParkourNone), "the move ends when the state drops it");
+        }
+
+        [Test]
+        public void AParkourMoveOutOfRangeIsSkippedWithOneWarning()
+        {
+            var motor = _player.AddComponent<FakeCharacterMotorStateSource>();
+            motor.State = FakeCharacterMotorStateSource.Motor(lean: 0.5f)
+                .WithParkour(new CharacterParkourState((ParkourMove)9, 0f, System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero));
+            _animator.TryBind();
+            LogAssert.Expect(LogType.Warning, new Regex(@"^\[CharacterAnimator\] 'Player' の移動の状態のリーンか壁走りかパルクールが範囲の外"));
+
+            var first = _animator.Refresh(DeltaSeconds);
+            _animator.Refresh(DeltaSeconds);
+
+            Assert.That(first.Parkour, Is.EqualTo(CharacterPose.ParkourNone));
+            Assert.That(first.Lean, Is.EqualTo(0f), "the whole motor state is skipped, not just the move");
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
+        public void TheOfflinePlayersParkourStateReachesTheParameters()
+        {
+            var source = _player.AddComponent<PlayerMotorStateSource>();
+            _animator.TryBind();
+
+            Assert.That(_animator.MotorSource, Is.SameAs(source));
+            Assert.That(_mover.TryGetMotorState(out var state), Is.True);
+            Assert.That(state.Parkour, Is.EqualTo(_mover.Parkour));
+            Assert.That(_animator.Refresh(DeltaSeconds).Parkour, Is.EqualTo(CharacterPose.ParkourValue(_mover.Parkour.Move)));
+        }
+
+        [Test]
         public void MotorStateOverridesThePoseSourcesValuesAndKeepsTheRest()
         {
             var body = CreateNetworkBody(out var source, out var animator);
@@ -402,7 +459,7 @@ namespace Shooter.Tests.EditMode
             var motor = _player.AddComponent<FakeCharacterMotorStateSource>();
             motor.State = FakeCharacterMotorStateSource.Motor(lean: float.NaN);
             _animator.TryBind();
-            LogAssert.Expect(LogType.Warning, new Regex(@"^\[CharacterAnimator\] 'Player' の移動の状態のリーンか壁走りが範囲の外"));
+            LogAssert.Expect(LogType.Warning, new Regex(@"^\[CharacterAnimator\] 'Player' の移動の状態のリーンか壁走りかパルクールが範囲の外"));
 
             var first = _animator.Refresh(DeltaSeconds);
             _animator.Refresh(DeltaSeconds);

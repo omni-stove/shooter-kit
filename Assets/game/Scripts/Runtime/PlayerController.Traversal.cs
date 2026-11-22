@@ -13,6 +13,7 @@ namespace Shooter.Runtime
         private IWaterVolumes _water = Traversal.WaterVolumes.Scene;
         private SwimTuning _swimTuning;
         private WallRunTuning _wallRunTuning;
+        private ParkourTuning _parkourTuning;
         private CharacterSwimState _swim;
         private CharacterLeanState _lean;
         private CharacterWallRunState _wallRun;
@@ -48,6 +49,13 @@ namespace Shooter.Runtime
         {
             get => _wallRunTuning ??= TraversalTuning.Current.WallRun;
             set => _wallRunTuning = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        // 壁走りと同じく動きごとに既定は切ってある (WallKickTuning.DefaultEnabled など) ので、パルクールは traversal の調整値で入れたゲームとシーンでだけ効く。
+        public ParkourTuning ParkourTuning
+        {
+            get => _parkourTuning ??= TraversalTuning.Current.Parkour;
+            set => _parkourTuning = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         public CharacterSwimState Swim => _swim;
@@ -306,13 +314,17 @@ namespace Shooter.Runtime
                 _swim,
                 _wallRun,
                 _airJumpsUsed,
-                _jumpGraceLeft);
+                _jumpGraceLeft,
+                CharacterParachuteState.None,
+                CharacterSlideState.None,
+                _parkour);
         }
 
         private void ResetTraversal()
         {
             SetSwim(CharacterSwimState.None);
             SetWallRun(CharacterWallRunState.None);
+            ResetParkour();
             _lean = CharacterLeanState.None;
             _airJumpsUsed = 0;
             _jumpGraceLeft = 0f;

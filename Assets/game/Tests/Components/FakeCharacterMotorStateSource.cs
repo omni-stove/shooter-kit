@@ -18,7 +18,8 @@ namespace Shooter.Tests.EditMode
             return HasState;
         }
 
-        public static CharacterMotorState Motor(float lean = 0f, bool swimming = false, WallRunSide wallRun = WallRunSide.None)
+        public static CharacterMotorState Motor(
+            float lean = 0f, bool swimming = false, WallRunSide wallRun = WallRunSide.None, ParkourMove parkour = ParkourMove.None)
         {
             var wallNormal = wallRun == WallRunSide.Left
                 ? new System.Numerics.Vector3(1f, 0f, 0f)
@@ -37,7 +38,9 @@ namespace Shooter.Tests.EditMode
                 new CharacterLeanState(lean),
                 new CharacterSwimState(swimming, 1f, false),
                 new CharacterWallRunState(wallRun, wallRun == WallRunSide.None ? 0f : 0.3f, wallNormal),
-                0);
+                0).WithParkour(parkour == ParkourMove.None
+                    ? CharacterParkourState.None
+                    : new CharacterParkourState(parkour, 0.1f, System.Numerics.Vector3.Zero, System.Numerics.Vector3.Zero));
         }
     }
 }
