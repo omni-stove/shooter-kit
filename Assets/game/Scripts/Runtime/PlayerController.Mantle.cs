@@ -10,6 +10,7 @@ namespace Shooter.Runtime
         private Mantle _mantleRule = Mantle.Off;
         private VaultPath _mantlePath;
         private float _mantleElapsed;
+        private bool _mantleKeepsVaultExit;
 
         public event Action<Vector3> MantleStarted;
 
@@ -90,11 +91,16 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            _mantlePath = result.Path;
+            BeginMantle(result.Path, result.Direction.ToUnity());
+            return true;
+        }
+
+        private void BeginMantle(VaultPath path, Vector3 direction)
+        {
+            _mantlePath = path;
             _mantleElapsed = 0f;
             Debug.Log(FormatMantlingLog(true), this);
-            MantleStarted?.Invoke(result.Direction.ToUnity());
-            return true;
+            MantleStarted?.Invoke(direction);
         }
 
         public bool CancelMantle()
@@ -146,11 +152,16 @@ namespace Shooter.Runtime
         }
 
         // 上がる勢いを持ち越すと、縁の上で跳ね上がるので速度を 0 から始め直す。
+        // 壁登りから始めたよじ登りは、シミュレーションの FollowVault と同じく、たどり終えたときだけ乗り越えの出口の速度を残す。
         private void FinishMantle()
         {
+            var exitVelocity = _mantleKeepsVaultExit && _mantlePath != null && _mantleElapsed >= _mantlePath.Duration
+                ? MomentumStep.VaultExitVelocity(_mantlePath, ParkourTuning.Momentum)
+                : System.Numerics.Vector3.Zero;
+            _mantleKeepsVaultExit = false;
             _mantlePath = null;
             _mantleElapsed = 0f;
-            _motor?.ResetVelocity();
+            _motor?.SetVelocity(exitVelocity);
             Debug.Log(FormatMantlingLog(false), this);
             MantleEnded?.Invoke();
         }
