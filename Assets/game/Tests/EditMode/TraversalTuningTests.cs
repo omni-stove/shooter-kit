@@ -96,6 +96,29 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.WallRun.MinSpeed, Is.EqualTo(WallRunTuning.DefaultMinSpeed));
             Assert.That(spec.WallRun.GravityScale, Is.EqualTo(WallRunTuning.DefaultGravityScale));
             Assert.That(spec.WallRun.JumpOffSpeed, Is.EqualTo(WallRunTuning.DefaultJumpOffSpeed));
+
+            var parkour = spec.Parkour;
+            Assert.That(parkour.WallKick.Enabled, Is.False, "a game turns wall kicks on");
+            Assert.That(parkour.WallKick.UpSpeed, Is.EqualTo(WallKickTuning.DefaultUpSpeed));
+            Assert.That(parkour.WallKick.AwaySpeed, Is.EqualTo(WallKickTuning.DefaultAwaySpeed));
+            Assert.That(parkour.LandingRoll.Enabled, Is.False, "a game turns landing rolls on");
+            Assert.That(parkour.LandingRoll.WindowSeconds, Is.EqualTo(LandingRollTuning.DefaultWindowSeconds));
+            Assert.That(parkour.LandingRoll.FallSpeedScale, Is.EqualTo(LandingRollTuning.DefaultFallSpeedScale));
+            Assert.That(parkour.LandingRoll.RollSeconds, Is.EqualTo(LandingRollTuning.DefaultRollSeconds));
+            Assert.That(parkour.LandingRoll.MinFallSpeed, Is.EqualTo(LandingRollTuning.DefaultMinFallSpeed));
+            Assert.That(parkour.WallClimb.Enabled, Is.False, "a game turns wall climbing on");
+            Assert.That(parkour.WallClimb.MinSpeed, Is.EqualTo(WallClimbTuning.DefaultMinSpeed));
+            Assert.That(parkour.WallClimb.ClimbSpeed, Is.EqualTo(WallClimbTuning.DefaultClimbSpeed));
+            Assert.That(parkour.WallClimb.MaxSeconds, Is.EqualTo(WallClimbTuning.DefaultMaxSeconds));
+            Assert.That(parkour.WallClimb.MaxHeight, Is.EqualTo(WallClimbTuning.DefaultMaxHeight));
+            Assert.That(parkour.WallClimb.PushOffSpeed, Is.EqualTo(WallClimbTuning.DefaultPushOffSpeed));
+            Assert.That(parkour.LedgeHang.Enabled, Is.False, "a game turns ledge hanging on");
+            Assert.That(parkour.LedgeHang.GrabReach, Is.EqualTo(LedgeHangTuning.DefaultGrabReach));
+            Assert.That(parkour.LedgeHang.ShimmySpeed, Is.EqualTo(LedgeHangTuning.DefaultShimmySpeed));
+            Assert.That(parkour.LedgeHang.ClimbUpSpeed, Is.EqualTo(LedgeHangTuning.DefaultClimbUpSpeed));
+            Assert.That(parkour.LedgeHang.RegrabSeconds, Is.EqualTo(LedgeHangTuning.DefaultRegrabSeconds));
+            Assert.That(parkour.Momentum.SlideJumpBoost, Is.Zero, "jumping out of a slide keeps today's speed");
+            Assert.That(parkour.Momentum.VaultExitSpeedKeep, Is.Zero, "a vault still ends at rest");
         }
 
         [Test]

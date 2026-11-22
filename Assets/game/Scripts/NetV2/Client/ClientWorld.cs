@@ -176,6 +176,7 @@ namespace Shooter.NetV2
                 WallRun = motor.WallRun,
                 Parachute = motor.Parachute,
                 Slide = motor.Slide,
+                Parkour = motor.Parkour,
             };
         }
 

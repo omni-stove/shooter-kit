@@ -7,13 +7,19 @@ namespace Shooter.Core
         public static readonly TraversalSpec Default = new TraversalSpec();
 
         public TraversalSpec(
-            SlideTuning slide = null, ParachuteTuning parachute = null, ZiplineTuning zipline = null, SwimTuning swim = null, WallRunTuning wallRun = null)
+            SlideTuning slide = null,
+            ParachuteTuning parachute = null,
+            ZiplineTuning zipline = null,
+            SwimTuning swim = null,
+            WallRunTuning wallRun = null,
+            ParkourTuning parkour = null)
         {
             Slide = slide ?? SlideTuning.Default;
             Parachute = parachute ?? ParachuteTuning.Default;
             Zipline = zipline ?? ZiplineTuning.Default;
             Swim = swim ?? SwimTuning.Default;
             WallRun = wallRun ?? WallRunTuning.Default;
+            Parkour = parkour ?? ParkourTuning.Default;
         }
 
         public SlideTuning Slide { get; }
@@ -25,6 +31,8 @@ namespace Shooter.Core
         public SwimTuning Swim { get; }
 
         public WallRunTuning WallRun { get; }
+
+        public ParkourTuning Parkour { get; }
     }
 
     public sealed class SwimTuning
@@ -127,6 +135,14 @@ namespace Shooter.Core
             if (!(value > 0f) || float.IsInfinity(value))
             {
                 throw new ArgumentOutOfRangeException(name, value, $"{name} must be finite and positive");
+            }
+        }
+
+        public static void RequireFraction(float value, string name)
+        {
+            if (!(value >= 0f && value <= 1f))
+            {
+                throw new ArgumentOutOfRangeException(name, value, $"{name} must be between 0 and 1");
             }
         }
     }

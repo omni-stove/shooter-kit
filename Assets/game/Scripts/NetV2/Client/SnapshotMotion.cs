@@ -15,11 +15,13 @@ namespace Shooter.NetV2
 
         // 吹き飛ばしは持ち主にだけ送るので (OwnerSnapshot.Knockback)、行とは別に受け取る。
         // 泳ぎと壁走りは有無と向きしか届かないので、ここでは水面・息・壁の向き・走った秒数を推し量らず空にし、持ち主の予測だけが Complete で埋める。
+        // パルクールの動きも種類しか届かないので、秒数・壁・ふち・落下の割合は同じく空にして Complete に任せる。
         public static CharacterMotorState ToState(in PlayerSnapshot row, CharacterKnockbackState knockback)
         {
             var cover = row.Cover;
             var vault = row.Vault;
             var wallRunSide = (Shooter.Core.WallRunSide)(byte)row.WallRunSide;
+            var parkourMove = (Shooter.Core.ParkourMove)(byte)row.ParkourMove;
             return new CharacterMotorState(
                 row.Position,
                 row.Velocity,
@@ -40,7 +42,11 @@ namespace Shooter.NetV2
                     : new CharacterWallRunState(wallRunSide, 0f, Vector3.Zero),
                 row.AirJumpsUsed,
                 row.JumpGraceLeft,
-                ToParachute(row));
+                ToParachute(row),
+                CharacterSlideState.None,
+                parkourMove == Shooter.Core.ParkourMove.None
+                    ? CharacterParkourState.None
+                    : new CharacterParkourState(parkourMove, 0f, Vector3.Zero, Vector3.Zero));
         }
 
         // 開いている間の速度の横はパラシュートの横の速さそのもの (ServerMovement が CharacterMotorSimulation の速度をそのまま載せる) なので、
@@ -86,7 +92,8 @@ namespace Shooter.NetV2
                 authoritative.AirJumpsUsed,
                 authoritative.JumpGraceLeft,
                 authoritative.Parachute,
-                authoritative.Slide);
+                authoritative.Slide,
+                CompleteParkour(authoritative.Parkour, predicted.Parkour));
         }
 
         public static CharacterMotorState WithWallRun(CharacterMotorState state, CharacterWallRunState wallRun)
@@ -108,7 +115,14 @@ namespace Shooter.NetV2
                 state.AirJumpsUsed,
                 state.JumpGraceLeft,
                 state.Parachute,
-                state.Slide);
+                state.Slide,
+                state.Parkour);
+        }
+
+        // 動きの種類が予測と同じなら、届かない秒数・壁・ふち・落下の割合は予測のものを使い、やり直しで動きの途中から始め直さないようにする。
+        private static CharacterParkourState CompleteParkour(CharacterParkourState authoritative, CharacterParkourState predicted)
+        {
+            return predicted.Move == authoritative.Move ? predicted : authoritative;
         }
 
         private static CharacterSwimState CompleteSwim(

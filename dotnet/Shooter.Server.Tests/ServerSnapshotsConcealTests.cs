@@ -68,6 +68,7 @@ namespace Shooter.Server.Tests
             Assert.That(enemy.IsGrounded, Is.False);
             Assert.That(enemy.IsCrouched, Is.False);
             Assert.That(enemy.WeaponId, Is.Empty);
+            Assert.That(enemy.ParkourMove, Is.EqualTo(Shooter.Protocol.ParkourMove.None), "hanging on a ledge tells where the enemy is");
             Assert.That(enemy.Team, Is.EqualTo(Team.Bravo));
             Assert.That(enemy.Health, Is.EqualTo(NetMatchSettings.DefaultMaxHealth));
         }
@@ -87,6 +88,7 @@ namespace Shooter.Server.Tests
                 Assert.That(rows[id].Position, Is.EqualTo(PositionOf(id)), "player " + id);
                 Assert.That(rows[id].Velocity, Is.EqualTo(_velocity), "player " + id);
                 Assert.That(rows[id].WeaponId, Is.EqualTo(_weaponId), "player " + id);
+                Assert.That(rows[id].ParkourMove, Is.EqualTo(Shooter.Protocol.ParkourMove.LedgeHang), "player " + id);
             }
         }
 
@@ -291,6 +293,7 @@ namespace Shooter.Server.Tests
                     ref var row = ref snapshot.Players[i];
                     row.Velocity = _velocity;
                     row.WeaponId = _weaponId;
+                    row.ParkourMove = Shooter.Protocol.ParkourMove.LedgeHang;
                 }
             }
         }

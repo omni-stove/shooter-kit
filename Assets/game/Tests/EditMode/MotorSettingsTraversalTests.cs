@@ -198,6 +198,23 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void NetMatchToMotorCarriesTheSameParkourTuningAsOffline()
+        {
+            _match = ScriptableObject.CreateInstance<NetMatchDefinition>();
+            _match.MotorSettings = _settings;
+
+            var motor = _match.ToMotor();
+
+            Assert.That(motor.Parkour.SameAs(TraversalTuning.Current.Parkour), Is.True);
+            Assert.That(motor.Parkour.WallKick.Enabled, Is.False, "the kit's traversal.json keeps wall kicks off");
+            Assert.That(motor.Parkour.LandingRoll.Enabled, Is.False);
+            Assert.That(motor.Parkour.WallClimb.Enabled, Is.False);
+            Assert.That(motor.Parkour.LedgeHang.Enabled, Is.False);
+            Assert.That(motor.Parkour.Momentum.SlideJumpBoost, Is.Zero);
+            Assert.That(motor.Parkour.Momentum.VaultExitSpeedKeep, Is.Zero);
+        }
+
+        [Test]
         public void PlayerControllerReadsTheProneFromItsSettings()
         {
             _settings.Prone = new ProneSpec(1.1f, 2.4f, 20f, 0.25f, 4f, 0.8f);

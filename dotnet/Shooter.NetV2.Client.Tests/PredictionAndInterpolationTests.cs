@@ -593,6 +593,7 @@ namespace Shooter.NetV2.Tests
                 WallRunSide = (Shooter.Protocol.WallRunSide)(byte)state.WallRun.Side,
                 AirJumpsUsed = (byte)state.AirJumpsUsed,
                 JumpGraceLeft = state.JumpGraceLeft,
+                ParkourMove = (Shooter.Protocol.ParkourMove)(byte)state.Parkour.Move,
             };
         }
 

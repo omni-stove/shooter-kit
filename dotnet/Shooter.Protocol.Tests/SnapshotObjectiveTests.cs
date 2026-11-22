@@ -18,11 +18,12 @@ namespace Shooter.Protocol.Tests
 
         // 25 で持ち主にスタミナ・よろけ・制圧が増え、26 で同期するルールにエモート (MatchRulesSync.Emote) が増え、
         // 27 で乗り物に撒いたフレア (VehicleSnapshot.Flares) と、持ち主に Horde の補強の案内 (OwnerSnapshot.HordeOffer) が増え、
-        // 28 でダウン (DownedSync) にとどめを刺している人と進み具合が増えた
+        // 28 でダウン (DownedSync) にとどめを刺している人と進み具合が増え、
+        // 29 で移動の部分 (PlayerFields.Traversal) にパルクールの動き (PlayerSnapshot.ParkourMove) が増えた
         [Test]
-        public void TheVersionIs28()
+        public void TheVersionIs29()
         {
-            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(28));
+            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(29));
         }
 
         [Test]

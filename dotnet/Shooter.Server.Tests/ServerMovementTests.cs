@@ -495,6 +495,31 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void WithTheDefaultTuningNoParkourMoveIsMadeOrSent()
+        {
+            // 壁走りの試験と同じく体の右 0.1 に壁を立て、壁際で跳ぶ・しゃがんで落ちる、を既定の調整値で行う
+            var world = new WorldMap(new[]
+            {
+                WorldCollider.Box(1, 0, WorldCollider.StaticGroup, Vector3.Zero, new Vector3(10f, 0.5f, 10f), Quaternion.Identity),
+                WorldCollider.Box(2, 0, WorldCollider.StaticGroup, new Vector3(0.85f, 4f, 0f), new Vector3(0.25f, 4f, 10f), Quaternion.Identity),
+            });
+            Start(world: world);
+            Settle();
+
+            for (var i = 0; i < 60; i++)
+            {
+                var buttons = InputButtons.Sprint | (i % 15 == 0 ? InputButtons.Jump : InputButtons.None) | (i % 15 > 10 ? InputButtons.Crouch : InputButtons.None);
+                Send(new Vector2(0f, 1f), buttons);
+                _movement.TryGetState(1, out var state);
+                Assert.That(state.Parkour, Is.EqualTo(CharacterParkourState.None), "tick " + i);
+            }
+
+            _transport.Sent.Clear();
+            _host.Tick(_tickSeconds);
+            Assert.That(OnlySnapshot().Players[0].ParkourMove, Is.EqualTo(Shooter.Protocol.ParkourMove.None));
+        }
+
+        [Test]
         public void WallRunningIsOffUnlessTheTuningTurnsItOn()
         {
             var world = new WorldMap(new[]

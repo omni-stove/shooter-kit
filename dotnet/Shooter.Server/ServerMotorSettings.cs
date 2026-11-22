@@ -105,7 +105,26 @@ namespace Shooter.Server
             GameRules rules,
             float killPlaneY,
             Vector3 spawnPosition)
+            : this(motor, stance, mover, prone, swim, wallRun, parachute, slide, zipline, ParkourTuning.Default, rules, killPlaneY, spawnPosition)
         {
+        }
+
+        public ServerMotorSettings(
+            MotorSpec motor,
+            StanceGeometry stance,
+            CapsuleMoverSpec mover,
+            ProneSpec prone,
+            SwimTuning swim,
+            WallRunTuning wallRun,
+            ParachuteTuning parachute,
+            SlideTuning slide,
+            ZiplineTuning zipline,
+            ParkourTuning parkour,
+            GameRules rules,
+            float killPlaneY,
+            Vector3 spawnPosition)
+        {
+            Parkour = parkour ?? throw new ArgumentNullException(nameof(parkour));
             Slide = slide ?? throw new ArgumentNullException(nameof(slide));
             Zipline = zipline ?? throw new ArgumentNullException(nameof(zipline));
             Prone = prone ?? throw new ArgumentNullException(nameof(prone));
@@ -153,6 +172,8 @@ namespace Shooter.Server
 
         public ZiplineTuning Zipline { get; }
 
+        public ParkourTuning Parkour { get; }
+
         public GameRules Rules { get; }
 
         public float KillPlaneY { get; }
@@ -161,12 +182,14 @@ namespace Shooter.Server
 
         public ServerMotorSettings WithRules(GameRules rules)
         {
-            return new ServerMotorSettings(Motor, Stance, Mover, Prone, Swim, WallRun, Parachute, Slide, Zipline, rules, KillPlaneY, SpawnPosition);
+            return new ServerMotorSettings(
+                Motor, Stance, Mover, Prone, Swim, WallRun, Parachute, Slide, Zipline, Parkour, rules, KillPlaneY, SpawnPosition);
         }
 
         public ServerMotorSettings WithSpawnPosition(Vector3 spawnPosition)
         {
-            return new ServerMotorSettings(Motor, Stance, Mover, Prone, Swim, WallRun, Parachute, Slide, Zipline, Rules, KillPlaneY, spawnPosition);
+            return new ServerMotorSettings(
+                Motor, Stance, Mover, Prone, Swim, WallRun, Parachute, Slide, Zipline, Parkour, Rules, KillPlaneY, spawnPosition);
         }
     }
 }

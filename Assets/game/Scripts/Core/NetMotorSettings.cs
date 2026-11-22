@@ -64,7 +64,23 @@ namespace Shooter.Core
             ParachuteTuning parachute,
             SlideTuning slide,
             ZiplineTuning zipline)
+            : this(motor, stance, mover, prone, swim, wallRun, parachute, slide, zipline, ParkourTuning.Default)
         {
+        }
+
+        public NetMotorSettings(
+            MotorSpec motor,
+            StanceGeometry stance,
+            CapsuleMoverSpec mover,
+            ProneSpec prone,
+            SwimTuning swim,
+            WallRunTuning wallRun,
+            ParachuteTuning parachute,
+            SlideTuning slide,
+            ZiplineTuning zipline,
+            ParkourTuning parkour)
+        {
+            Parkour = parkour ?? throw new ArgumentNullException(nameof(parkour));
             Slide = slide ?? throw new ArgumentNullException(nameof(slide));
             Zipline = zipline ?? throw new ArgumentNullException(nameof(zipline));
             Motor = motor ?? throw new ArgumentNullException(nameof(motor));
@@ -106,6 +122,8 @@ namespace Shooter.Core
 
         // 掴む距離・ぶら下がる高さ・掴み直しの待ちは線ごとでなく人ごとの値なので、マップの線 (NetMapZiplines) でなくここで受け取る
         public ZiplineTuning Zipline { get; }
+
+        public ParkourTuning Parkour { get; }
 
         // PlayerController と同じく、カプセルが取れる高さ (半径の 2 倍以上、しゃがみ以下) に収める。
         // 伏せの高さをゲームが変えても、カプセルを作れずに動けなくなるより近い高さで伏せる方がよいため。

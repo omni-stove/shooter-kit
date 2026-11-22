@@ -293,6 +293,7 @@ namespace Shooter.Server
             row.WallRunSide = default;
             row.AirJumpsUsed = 0;
             row.JumpGraceLeft = 0f;
+            row.ParkourMove = default;
         }
 
         private sealed class ClientHistory
