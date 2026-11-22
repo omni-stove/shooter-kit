@@ -213,36 +213,25 @@ namespace Shooter.Tests.EditMode
         }
 
         [TestCase(ParkourMove.None)]
-        [TestCase(ParkourMove.WallKick)]
-        [TestCase(ParkourMove.LandingRoll)]
-        [TestCase(ParkourMove.WallClimb)]
-        [TestCase(ParkourMove.LedgeHang)]
-        [TestCase(ParkourMove.LedgeShimmy)]
-        [TestCase(ParkourMove.LedgeClimbUp)]
         [TestCase((ParkourMove)9)]
-        public void NoParkourMoveTiltsTheBodyYet(ParkourMove move)
+        public void NoneOrAnUnknownParkourMoveDoesNotTilt(ParkourMove move)
         {
             Assert.That(PlayerMockPose.TryParkourTilt(move, out var tilt), Is.False);
             Assert.That(tilt, Is.EqualTo(Quaternion.identity));
         }
 
+        [TestCase(ParkourMove.None)]
         [TestCase(ParkourMove.WallKick)]
         [TestCase(ParkourMove.LedgeHang)]
-        public void DuringAParkourMoveTheLeanSwimAndWallRunStillTilt(ParkourMove move)
+        public void TheAnimatorParametersLeaveTheParkourMoveToTheAnimator(ParkourMove move)
         {
-            var leaning = FakeCharacterMotorStateSource.Motor(lean: 0.5f);
-            var wallRunning = FakeCharacterMotorStateSource.Motor(wallRun: WallRunSide.Left);
-
-            Assert.That(
-                PlayerMockPose.TraversalLean(FakeCharacterMotorStateSource.Motor(lean: 0.5f, parkour: move), 15f),
-                Is.EqualTo(PlayerMockPose.TraversalLean(leaning, 15f)));
-            Assert.That(
-                PlayerMockPose.TraversalLean(FakeCharacterMotorStateSource.Motor(wallRun: WallRunSide.Left, parkour: move), 15f),
-                Is.EqualTo(PlayerMockPose.TraversalLean(wallRunning, 15f)));
-
             var hanging = new CharacterPoseParameters(
-                0f, false, false, CharacterPose.CoverNone, false, false, CharacterPose.NoWeapon, parkour: CharacterPose.ParkourValue(move));
-            Assert.That(PlayerMockPose.TraversalLean(hanging, 15f), Is.EqualTo(Quaternion.identity), "a move alone stands upright for now");
+                0f, false, false, CharacterPose.CoverNone, false, false, CharacterPose.NoWeapon, lean: 0.5f, parkour: CharacterPose.ParkourValue(move));
+
+            Assert.That(
+                PlayerMockPose.TraversalLean(hanging, 15f),
+                Is.EqualTo(PlayerMockPose.TraversalLean(FakeCharacterMotorStateSource.Motor(lean: 0.5f), 15f)),
+                "the Parkour parameter drives the clip, so the rig only takes the lean");
         }
 
         [Test]

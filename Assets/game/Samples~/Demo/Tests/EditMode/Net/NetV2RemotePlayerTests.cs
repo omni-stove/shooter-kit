@@ -163,5 +163,46 @@ namespace Shooter.Net.Tests
             Assert.That(_remote.IsParachuting, Is.False);
             Assert.That(Quaternion.Angle(_remote.Tilt, Quaternion.identity), Is.GreaterThan(1f));
         }
+
+        [Test]
+        public void AParkourMoveTiltsTheBodyLikeTheOfflineMockBody()
+        {
+            _remote.Show(new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 1f, false, WallRunSide.None, false, ParkourMove.WallClimb));
+
+            // 壁登りは前へ 15 度。届いたリーンより先に使う
+            Assert.That(Quaternion.Angle(_remote.Tilt, Quaternion.Euler(15f, 0f, 0f)), Is.EqualTo(0f).Within(1e-3f));
+            Assert.That(_remote.Drop, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void HangingFromALedgeLowersTheBodyAndEndingTheMoveBringsItBack()
+        {
+            var standingY = _remote.Body.localPosition.y;
+
+            _remote.Show(new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 0f, false, WallRunSide.None, false, ParkourMove.LedgeHang));
+
+            Assert.That(_remote.Drop, Is.EqualTo(0.35f).Within(1e-5f));
+            Assert.That(_remote.Body.localPosition.y, Is.EqualTo(standingY - 0.35f).Within(1e-4f));
+            Assert.That(Quaternion.Angle(_remote.Tilt, Quaternion.identity), Is.EqualTo(0f).Within(1e-3f), "hangs straight down");
+
+            // 寄せは前のフレームの長さで進むので、見え直しの置き直しで終わった姿をそのまま見る
+            _remote.SetConcealed(true);
+            _remote.SetConcealed(false);
+            _remote.Show(new RemotePose(System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null));
+
+            Assert.That(_remote.Drop, Is.EqualTo(0f));
+            Assert.That(_remote.Body.localPosition.y, Is.EqualTo(standingY).Within(1e-4f));
+        }
+
+        [Test]
+        public void AnOpenParachuteDoesNotHangFromALedge()
+        {
+            _remote.Show(new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 0f, true, WallRunSide.None, true, ParkourMove.LedgeHang));
+
+            Assert.That(_remote.Drop, Is.EqualTo(0f));
+        }
     }
 }

@@ -406,9 +406,20 @@ namespace Shooter.Runtime
             var targetScale = PlayerMockPose.CoverStanceScale(state, stance, CoverCrouch);
             var targetShift = PlayerMockPose.BodyShift(state, localNormal);
             var targetLean = motor.HasValue
-                ? PlayerMockPose.BodyLean(state, localMove, localNormal, motor.Value, leanAngleDegrees)
+                ? PlayerMockPose.BodyLean(
+                    state, localMove, localNormal, motor.Value, leanAngleDegrees, transform.InverseTransformDirection(motor.Value.Parkour.WallNormal.ToUnity()))
                 : PlayerMockPose.BodyLean(state, localMove, localNormal);
             var targetGun = PlayerMockPose.BodyGun(state, aimPitch, stance);
+            if (motor.HasValue && !state.IsDowned)
+            {
+                var move = motor.Value.Parkour.Move;
+                targetShift += Vector3.down * PlayerMockPose.ParkourDrop(move);
+                if (PlayerMockPose.TryParkourGun(move, out var hangGun))
+                {
+                    targetGun = hangGun;
+                }
+            }
+
             var targetView = PlayerMockPose.ViewModel(state);
 
             if (!_hasPose)
