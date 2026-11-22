@@ -751,14 +751,14 @@ namespace Shooter.Protocol.Tests
         [Test]
         public void TheParkourMoveNumbersMatchTheCoreOnes()
         {
-            var names = Enum.GetNames(typeof(ParkourMove));
+            var names = Enum.GetNames<ParkourMove>();
 
-            Assert.That(names, Is.EqualTo(Enum.GetNames(typeof(Shooter.Core.ParkourMove))));
+            Assert.That(names, Is.EqualTo(Enum.GetNames<Shooter.Core.ParkourMove>()));
             foreach (var name in names)
             {
                 Assert.That(
-                    (byte)(ParkourMove)Enum.Parse(typeof(ParkourMove), name),
-                    Is.EqualTo((byte)(Shooter.Core.ParkourMove)Enum.Parse(typeof(Shooter.Core.ParkourMove), name)),
+                    (byte)Enum.Parse<ParkourMove>(name),
+                    Is.EqualTo((byte)Enum.Parse<Shooter.Core.ParkourMove>(name)),
                     name);
             }
         }
