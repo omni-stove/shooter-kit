@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Shooter.Core;
 using Shooter.Editor;
@@ -48,11 +49,14 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void TheFourMovesAreLinedUpInThePlayground()
+        public void TheTraversalMovesAreLinedUpInThePlayground()
         {
             Assert.That(
                 TraversalFeatureSceneBuilder.Features,
-                Is.EqualTo(new[] { TraversalFeature.Lean, TraversalFeature.Swim, TraversalFeature.WallRun, TraversalFeature.DoubleJump }));
+                Is.EqualTo(new[]
+                {
+                    TraversalFeature.Lean, TraversalFeature.Swim, TraversalFeature.WallRun, TraversalFeature.DoubleJump, TraversalFeature.Parkour,
+                }));
 
             var names = FeatureSceneBuilder.PlaygroundStations().Select(s => s.Fixture.Name).ToArray();
             foreach (var feature in TraversalFeatureSceneBuilder.Features)
@@ -80,6 +84,145 @@ namespace Shooter.Tests.EditMode
             Assert.That(MotorSpec.Default.AirJumps, Is.EqualTo(0));
             Assert.That(TraversalTuning.Current.WallRun.Enabled, Is.False, "the game-wide traversal.json leaves the wall run off");
             Assert.That(MotorSettings.Resolve(null).AirJumps, Is.EqualTo(0), "the game-wide motor settings leave the double jump off");
+        }
+
+        [Test]
+        public void TheKitDefaultsKeepTheParkourMovesOffForOtherScenes()
+        {
+            Assert.That(WallKickTuning.Default.Enabled, Is.False);
+            Assert.That(LandingRollTuning.Default.Enabled, Is.False);
+            Assert.That(WallClimbTuning.Default.Enabled, Is.False);
+            Assert.That(LedgeHangTuning.Default.Enabled, Is.False);
+
+            var parkour = TraversalTuning.Current.Parkour;
+            Assert.That(parkour.WallKick.Enabled, Is.False, "the game-wide traversal.json leaves the wall kick off");
+            Assert.That(parkour.LandingRoll.Enabled, Is.False);
+            Assert.That(parkour.WallClimb.Enabled, Is.False);
+            Assert.That(parkour.LedgeHang.Enabled, Is.False);
+            Assert.That(parkour.Momentum.SameAs(MomentumTuning.Default), Is.True, "the game-wide momentum stays as it was");
+        }
+
+        [Test]
+        public void PlaygroundTraversalJsonTurnsTheParkourMovesOnAndCarriesMomentum()
+        {
+            var parkour = TraversalJson.Parse(TraversalFeatureSceneBuilder.TraversalTuningJson(), "test").Parkour;
+
+            Assert.That(parkour.WallKick.Enabled, Is.True);
+            Assert.That(parkour.LandingRoll.Enabled, Is.True);
+            Assert.That(parkour.WallClimb.Enabled, Is.True);
+            Assert.That(parkour.LedgeHang.Enabled, Is.True);
+            Assert.That(parkour.Momentum.SlideJumpBoost, Is.EqualTo(2f));
+            Assert.That(parkour.Momentum.VaultExitSpeedKeep, Is.EqualTo(0.5f));
+
+            // 入り切りのほかは初期値のままにし、コースの大きさを初期値から決めたとおりに動く
+            Assert.That(parkour.WallKick.UpSpeed, Is.EqualTo(WallKickTuning.DefaultUpSpeed));
+            Assert.That(parkour.LandingRoll.FallSpeedScale, Is.EqualTo(LandingRollTuning.DefaultFallSpeedScale));
+            Assert.That(parkour.WallClimb.MaxHeight, Is.EqualTo(WallClimbTuning.DefaultMaxHeight));
+            Assert.That(parkour.LedgeHang.GrabReach, Is.EqualTo(LedgeHangTuning.DefaultGrabReach));
+        }
+
+        [Test]
+        public void PlaygroundTraversalJsonIsWrittenTheSameUnderACommaDecimalCulture()
+        {
+            var previous = CultureInfo.CurrentCulture;
+            string json;
+            try
+            {
+                CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+                json = TraversalFeatureSceneBuilder.TraversalTuningJson();
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+
+            Assert.That(json, Is.EqualTo(TraversalFeatureSceneBuilder.TraversalTuningJson()));
+            Assert.That(TraversalJson.Parse(json, "test").Parkour.Momentum.VaultExitSpeedKeep, Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void ParkourCourseLinesUpSixBoxesSizedFromTheDefaults()
+        {
+            var station = StationOf(TraversalFeatureSceneBuilder.ParkourCourseName);
+            Populate();
+
+            var course = Find(TraversalFeatureSceneBuilder.ParkourCourseName).transform;
+            Assert.That(course.childCount, Is.EqualTo(6));
+            Assert.That(Vector3.Distance(course.position, station.Offset), Is.LessThan(Epsilon), "moved with the station");
+
+            var vault = course.Find(TraversalFeatureSceneBuilder.VaultBlockName);
+            var left = course.Find(TraversalFeatureSceneBuilder.LeftKickWallName);
+            var right = course.Find(TraversalFeatureSceneBuilder.RightKickWallName);
+            var climb = course.Find(TraversalFeatureSceneBuilder.ClimbWallName);
+            var platform = course.Find(TraversalFeatureSceneBuilder.RollPlatformName);
+            var ledge = course.Find(TraversalFeatureSceneBuilder.LedgeWallName);
+
+            AssertBox(vault, new Vector3(0f, 0.5f, 0.25f), new Vector3(4f, 1f, 0.5f));
+            AssertBox(left, new Vector3(-1.65f, 2.5f, 7.5f), new Vector3(0.5f, 5f, 6f));
+            AssertBox(right, new Vector3(1.65f, 2.5f, 7.5f), new Vector3(0.5f, 5f, 6f));
+            AssertBox(climb, new Vector3(0f, 1.725f, 15.5f), new Vector3(4f, 3.45f, 2f));
+            AssertBox(platform, new Vector3(0f, 2.575f, 18f), new Vector3(4f, 5.15f, 3f));
+            AssertBox(ledge, new Vector3(0f, 1.6f, 32.25f), new Vector3(10f, 3.2f, 1.5f));
+
+            var footprint = TraversalFeatureSceneBuilder.Fixture(TraversalFeature.Parkour).Footprint;
+            Assert.That(footprint.size.x, Is.EqualTo(10f).Within(Epsilon));
+            Assert.That(footprint.size.y, Is.EqualTo(5.15f).Within(Epsilon));
+            Assert.That(footprint.size.z, Is.EqualTo(33f).Within(Epsilon));
+        }
+
+        [Test]
+        public void ParkourCourseFitsEachMoveAtItsDefaultTuning()
+        {
+            var gravity = MotorSpec.DefaultGravity;
+
+            // 乗り越え: 走って越えられる低く薄い箱
+            Assert.That(TraversalFeatureSceneBuilder.VaultBlockHeight, Is.InRange(MotorSpec.DefaultVaultMinHeight, MotorSpec.DefaultVaultMaxHeight));
+            Assert.That(TraversalFeatureSceneBuilder.VaultBlockDepth, Is.LessThanOrEqualTo(MotorSpec.DefaultVaultMaxDepth));
+
+            // 壁蹴り: 蹴ってから上がり切るまでに進む幅に体の幅を足すと、向かいの壁に届く
+            var kickReach = WallKickTuning.DefaultAwaySpeed * (WallKickTuning.DefaultUpSpeed / gravity);
+            Assert.That(TraversalFeatureSceneBuilder.KickWallGap, Is.EqualTo(kickReach + (GameBootstrap.PlayerRadius * 2f)).Within(Epsilon));
+            Assert.That(TraversalFeatureSceneBuilder.KickWallGap, Is.LessThan(TraversalFeatureSceneBuilder.CorridorWidth), "narrower than the wall-run corridor");
+            var kickRise = WallKickTuning.DefaultUpSpeed * WallKickTuning.DefaultUpSpeed / (2f * gravity);
+            Assert.That(
+                TraversalFeatureSceneBuilder.KickWallHeight,
+                Is.GreaterThan(GameBootstrap.PlayerHeight + MotorSpec.DefaultJumpHeight + kickRise),
+                "a kick at the top of a jump stays below the top");
+
+            // 駆け上がり: よじ登りでは届かず、駆け上がれる高さと秒数のうちにふちがよじ登れる所まで下りてくる
+            var climbNeeded = TraversalFeatureSceneBuilder.ClimbWallHeight - MotorSpec.DefaultMantleMaxHeight;
+            Assert.That(climbNeeded, Is.GreaterThan(0f), "too high to mantle from the floor");
+            Assert.That(climbNeeded, Is.LessThan(WallClimbTuning.DefaultMaxHeight));
+            Assert.That(climbNeeded, Is.LessThan(WallClimbTuning.DefaultClimbSpeed * WallClimbTuning.DefaultMaxSeconds));
+            Assert.That(MotorSpec.DefaultWalkSpeed, Is.GreaterThanOrEqualTo(WallClimbTuning.DefaultMinSpeed), "a walk into the wall is fast enough");
+            Assert.That(TraversalFeatureSceneBuilder.ClimbWallDepth, Is.GreaterThanOrEqualTo(GameBootstrap.PlayerRadius * 2f), "room to stand on top");
+
+            // 受け身: 駆け上がった壁の上からよじ登る高台で、床から駆け上がっては届かない
+            var step = TraversalFeatureSceneBuilder.RollPlatformHeight - TraversalFeatureSceneBuilder.ClimbWallHeight;
+            Assert.That(step, Is.GreaterThan(MotorSpec.DefaultVaultMaxHeight));
+            Assert.That(step, Is.LessThanOrEqualTo(MotorSpec.DefaultMantleMaxHeight));
+            Assert.That(
+                TraversalFeatureSceneBuilder.RollPlatformHeight,
+                Is.GreaterThan(MotorSpec.DefaultMantleMaxHeight + WallClimbTuning.DefaultMaxHeight),
+                "no wall climb onto it from the floor");
+
+            // 落ちる速さは傷む速さを超え、受け身を取ると下回る
+            var fallSpeed = Mathf.Sqrt(2f * gravity * TraversalFeatureSceneBuilder.RollPlatformHeight);
+            Assert.That(fallSpeed, Is.GreaterThan(MotorSpec.DefaultSafeFallSpeed), "hurts without a roll");
+            Assert.That(fallSpeed * LandingRollTuning.DefaultFallSpeedScale, Is.LessThanOrEqualTo(MotorSpec.DefaultSafeFallSpeed), "safe with a roll");
+            Assert.That(fallSpeed, Is.GreaterThanOrEqualTo(LandingRollTuning.DefaultMinFallSpeed), "fast enough to roll");
+            var fallSeconds = fallSpeed / gravity;
+            var sprintAndRoll = MotorSpec.DefaultSprintSpeed * (fallSeconds + LandingRollTuning.DefaultRollSeconds);
+            Assert.That(TraversalFeatureSceneBuilder.RollLandingLength, Is.GreaterThan(sprintAndRoll), "the roll ends before the ledge wall");
+
+            // ぶら下がり: 立ったジャンプの頂点で手の届く範囲に上端があり、よじ登りでは届かない横に長いふち
+            var handAtApex = GameBootstrap.PlayerHeight + MotorSpec.DefaultJumpHeight;
+            Assert.That(
+                TraversalFeatureSceneBuilder.LedgeHeight,
+                Is.InRange(handAtApex - LedgeHangTuning.DefaultGrabReach, handAtApex + LedgeHangTuning.DefaultGrabReach));
+            Assert.That(TraversalFeatureSceneBuilder.LedgeHeight, Is.GreaterThan(MotorSpec.DefaultMantleMaxHeight));
+            Assert.That(TraversalFeatureSceneBuilder.LedgeLength, Is.GreaterThan(TraversalFeatureSceneBuilder.CourseWidth), "long enough to shimmy along");
+            Assert.That(TraversalFeatureSceneBuilder.LedgeDepth, Is.GreaterThanOrEqualTo(GameBootstrap.PlayerRadius * 2f), "room to stand after climbing up");
         }
 
         [Test]
@@ -154,7 +297,7 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void PlaygroundTraversalJsonTurnsOnlyTheWallRunOnBesideACorridor()
+        public void PlaygroundTraversalJsonTurnsTheWallRunOnBesideACorridor()
         {
             var traversal = NewText(TraversalFeatureSceneBuilder.TraversalTuningJson());
 
@@ -233,6 +376,13 @@ namespace Shooter.Tests.EditMode
             Assert.Throws<ArgumentOutOfRangeException>(() => TraversalFeatureSceneBuilder.Fixture((TraversalFeature)99));
             Assert.Throws<ArgumentOutOfRangeException>(() => TraversalFeatureSceneBuilder.Boxes((TraversalFeature)99));
             Assert.Throws<ArgumentOutOfRangeException>(() => TraversalFeatureSceneBuilder.Waters((TraversalFeature)99));
+        }
+
+        private static void AssertBox(Transform box, Vector3 center, Vector3 size)
+        {
+            Assert.That(box, Is.Not.Null);
+            Assert.That(Vector3.Distance(box.localPosition, center), Is.LessThan(Epsilon), box.name + " center");
+            Assert.That(Vector3.Distance(box.localScale, size), Is.LessThan(Epsilon), box.name + " size");
         }
 
         private static FeatureStation StationOf(string name)

@@ -108,6 +108,7 @@ namespace Shooter.Tests.EditMode
                 TraversalFeatureSceneBuilder.SwimPoolsName,
                 TraversalFeatureSceneBuilder.WallRunCorridorName,
                 TraversalFeatureSceneBuilder.DoubleJumpStepsName,
+                TraversalFeatureSceneBuilder.ParkourCourseName,
             }));
         }
 
@@ -160,6 +161,7 @@ namespace Shooter.Tests.EditMode
                 TraversalFeatureSceneBuilder.SwimPoolsName,
                 TraversalFeatureSceneBuilder.WallRunCorridorName,
                 TraversalFeatureSceneBuilder.DoubleJumpStepsName,
+                TraversalFeatureSceneBuilder.ParkourCourseName,
             };
             var rest = stations.Where(s => !names.Contains(s.Fixture.Name)).ToArray();
             var row = names.Select(n => stations.Single(s => s.Fixture.Name == n)).ToArray();

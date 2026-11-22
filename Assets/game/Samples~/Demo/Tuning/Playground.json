@@ -1,5 +1,21 @@
 {
   "wallRun": {
     "enabled": true
+  },
+  "wallKick": {
+    "enabled": true
+  },
+  "landingRoll": {
+    "enabled": true
+  },
+  "wallClimb": {
+    "enabled": true
+  },
+  "ledgeHang": {
+    "enabled": true
+  },
+  "momentum": {
+    "slideJumpBoost": 2,
+    "vaultExitSpeedKeep": 0.5
   }
 }
