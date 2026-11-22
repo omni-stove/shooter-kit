@@ -45,7 +45,7 @@ namespace Shooter.Core.Tests
             Assert.That(sliding, Is.Not.EqualTo(crouching));
             Assert.That(sliding.ToString(), Does.EndWith("Slide=True Parkour=0"));
             Assert.That(Input(sliding: true), Is.Not.EqualTo(Input(sliding: false)));
-            Assert.That(Input(sliding: true).ToString(), Does.EndWith("slide=True"));
+            Assert.That(Input(sliding: true).ToString(), Does.EndWith("slide=True parkour=None"));
         }
 
         private static CharacterPoseInput Input(bool sliding, bool dead = false, bool downed = false, CoverHeight? cover = null)
