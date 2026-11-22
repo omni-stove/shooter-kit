@@ -208,6 +208,11 @@ namespace Shooter.Core.Tests
             }
 
             Assert.That(state.IsGrounded, Is.True, "it fell to the floor");
+            for (var i = 0; i < 30; i++)
+            {
+                state = simulation.Step(state, Input());
+            }
+
             Assert.That(state.Position.Y, Is.EqualTo(1f).Within(0.05f));
         }
 
