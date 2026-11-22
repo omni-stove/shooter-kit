@@ -43,7 +43,7 @@ namespace Shooter.Core.Tests
             var crouching = new CharacterPoseParameters(1f, true, false, CharacterPose.CoverNone, false, false, CharacterPose.NoWeapon);
 
             Assert.That(sliding, Is.Not.EqualTo(crouching));
-            Assert.That(sliding.ToString(), Does.EndWith("Slide=True"));
+            Assert.That(sliding.ToString(), Does.EndWith("Slide=True Parkour=0"));
             Assert.That(Input(sliding: true), Is.Not.EqualTo(Input(sliding: false)));
             Assert.That(Input(sliding: true).ToString(), Does.EndWith("slide=True"));
         }
