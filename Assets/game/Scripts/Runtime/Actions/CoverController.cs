@@ -268,7 +268,7 @@ namespace Shooter.Runtime
             _state.Spec = _player.Motor.Spec;
             _state.BodyRadius = BodyRadius();
             var wasInCover = _state.IsInCover;
-            if (!wasInCover && (!coverPressed || _player.IsDodging || _player.IsVaulting || _player.IsMantling))
+            if (!wasInCover && (!coverPressed || _player.IsDodging || _player.IsVaulting || _player.IsMantling || _player.IsHangingOnLedge))
             {
                 return;
             }
