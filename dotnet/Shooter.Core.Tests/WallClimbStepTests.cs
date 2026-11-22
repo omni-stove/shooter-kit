@@ -139,7 +139,7 @@ namespace Shooter.Core.Tests
             Assert.That(result.HasEnded, Is.True);
         }
 
-        private static readonly float[] ExpectedRises = { 0.5f, 0.5f, 0.25f };
+        private static readonly float[] _expectedRises ={ 0.5f, 0.5f, 0.25f };
 
         [Test]
         public void StopsAtTheHighestHeight()
@@ -158,7 +158,7 @@ namespace Shooter.Core.Tests
                 result = WallClimbStep.Step(state, _tallWall, result.Velocity, false, false, PlayerStance.Standing, MotorSpec.Default, lowCap, _tick);
             }
 
-            Assert.That(rises, Is.EqualTo(ExpectedRises), "the last tick rises only what is left");
+            Assert.That(rises, Is.EqualTo(_expectedRises), "the last tick rises only what is left");
             Assert.That(height, Is.EqualTo(1.25f));
             Assert.That(state.Elapsed, Is.EqualTo(0.375f), "it ends before the 0.5 second limit");
             Assert.That(WallClimbStep.ClimbedHeight(state, lowCap), Is.EqualTo(1.25f));
