@@ -129,7 +129,7 @@ namespace Shooter.Core.Tests
             }
 
             Assert.That(state.IsGrounded, Is.True);
-            Assert.That(state.Position.Y, Is.EqualTo(3.9f).Within(0.05f), "standing on the top at 2.9");
+            Assert.That(state.Position.Y, Is.EqualTo(3.9f + CapsuleMoverSpec.DefaultSkinWidth).Within(0.05f), "standing on the top at 2.9, within the skin");
         }
 
         [Test]
@@ -168,6 +168,32 @@ namespace Shooter.Core.Tests
             }
 
             Assert.That(landed, Is.True);
+            Assert.That(state.Parkour, Is.EqualTo(CharacterParkourState.None), "the regrab wait is over");
+        }
+
+        [Test]
+        public void WithLandingRollOnTheRegrabWaitCountsOnceATickAndDoesNotRoll()
+        {
+            var simulation = NewSimulation(true, landingRoll: true);
+            var state = simulation.Step(Falling(new Vector3(0f, 2.2f, 0.4f)), Input());
+            state = simulation.Step(state, Input(crouch: true));
+            Assert.That(state.Parkour.Elapsed, Is.Zero, "the landing roll does not count the crouch that let go");
+
+            for (var i = 0; i < 5; i++)
+            {
+                state = simulation.Step(state, Input());
+            }
+
+            Assert.That(LedgeHangStep.IsWaitingToRegrab(state.Parkour), Is.True);
+            Assert.That(state.Parkour.Elapsed, Is.EqualTo(5 * _tick).Within(1e-4f));
+
+            for (var i = 0; i < 60; i++)
+            {
+                state = simulation.Step(state, Input());
+                Assert.That(state.Parkour.Move, Is.Not.EqualTo(ParkourMove.LandingRoll), "tick " + i);
+            }
+
+            Assert.That(state.IsGrounded, Is.True);
             Assert.That(state.Parkour, Is.EqualTo(CharacterParkourState.None), "the regrab wait is over");
         }
 
@@ -213,7 +239,7 @@ namespace Shooter.Core.Tests
                 state = simulation.Step(state, Input());
             }
 
-            Assert.That(state.Position.Y, Is.EqualTo(1f).Within(0.05f));
+            Assert.That(state.Position.Y, Is.EqualTo(1f + CapsuleMoverSpec.DefaultSkinWidth).Within(0.05f), "standing on the floor, within the skin");
         }
 
         [Test]
@@ -285,7 +311,7 @@ namespace Shooter.Core.Tests
             Assert.That(actual.Z, Is.EqualTo(expected.Z).Within(_tolerance), "z");
         }
 
-        private static CharacterMotorSimulation NewSimulation(bool ledgeHang, bool withCeiling = false)
+        private static CharacterMotorSimulation NewSimulation(bool ledgeHang, bool withCeiling = false, bool landingRoll = false)
         {
             var colliders = new System.Collections.Generic.List<WorldCollider>
             {
@@ -302,7 +328,8 @@ namespace Shooter.Core.Tests
             var simulation = new CharacterMotorSimulation(body, new PlayerMotor(MotorSpec.Default), _tick, -50f);
             if (ledgeHang)
             {
-                simulation.Parkour = new ParkourTuning(ledgeHang: new LedgeHangTuning(true));
+                simulation.Parkour = new ParkourTuning(
+                    landingRoll: landingRoll ? new LandingRollTuning(true) : null, ledgeHang: new LedgeHangTuning(true));
             }
 
             return simulation;
