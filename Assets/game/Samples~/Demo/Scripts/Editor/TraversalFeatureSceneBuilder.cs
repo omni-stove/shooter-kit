@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Shooter.Core;
 using Shooter.Runtime;
@@ -19,15 +20,21 @@ namespace Shooter.Editor
         WallRun,
 
         DoubleJump,
+
+        Parkour,
     }
 
-    // 傾き・泳ぎ・壁走り・二段ジャンプの置く物と、それを試すための移動の調整値を Playground (FeatureSceneBuilder) に渡す。
-    // 壁走りと二段ジャンプはキットの既定で切ってあるので、ゲーム全体の値 (Resources・入口) は変えず、Playground の GameBootstrap にだけ調整値を渡す。
+    // 傾き・泳ぎ・壁走り・二段ジャンプ・パルクールの置く物と、それを試すための移動の調整値を Playground (FeatureSceneBuilder) に渡す。
+    // 壁走り・二段ジャンプ・パルクールの動きはキットの既定で切ってあるので、ゲーム全体の値 (Resources・入口) は変えず、Playground の GameBootstrap にだけ調整値を渡す。
     public static class TraversalFeatureSceneBuilder
     {
         public const string LogTag = "[TraversalFeatureSceneBuilder]";
 
         public const int DoubleJumpAirJumps = 1;
+
+        // キットの既定 (0) では今の動きと変わらず試せないので、滑りから跳ぶと目に見えて速くなり、乗り越えた先へ半分の勢いで出る値にする。
+        public const float PlaygroundSlideJumpBoost = 2f;
+        public const float PlaygroundVaultExitSpeedKeep = 0.5f;
 
         public const string LeanCornerName = "LeanCorner";
         public const string CornerFrontWallName = "LeanCorner_Front";
@@ -92,12 +99,63 @@ namespace Shooter.Editor
         public const float StepWidth = 4f;
         public const float StepDepth = 3f;
 
+        public const string ParkourCourseName = "ParkourCourse";
+        public const string VaultBlockName = "ParkourCourse_VaultBlock";
+        public const string LeftKickWallName = "ParkourCourse_KickWallLeft";
+        public const string RightKickWallName = "ParkourCourse_KickWallRight";
+        public const string ClimbWallName = "ParkourCourse_ClimbWall";
+        public const string RollPlatformName = "ParkourCourse_RollPlatform";
+        public const string LedgeWallName = "ParkourCourse_Ledge";
+
+        public const float CourseWidth = 4f;
+
+        // 走って乗り越えて勢いを残せるよう、MotorSpec.DefaultVaultMinHeight と DefaultVaultMaxHeight の間の高さで、DefaultVaultMaxDepth より薄くする。
+        public const float VaultBlockHeight = 1f;
+        public const float VaultBlockDepth = 0.5f;
+
+        // 箱の間を空け、次の壁へ走り込む (WallClimbTuning.DefaultMinSpeed に届く) 助走にする。
+        public const float RunUpLength = 4f;
+
+        // 高台から走って跳び出しても、落ちて受け身で転がり終える (LandingRollTuning.DefaultRollSeconds) までにふちの壁へ当たらない長さにする。
+        public const float RollLandingLength = 12f;
+
+        // 片方の壁から蹴った速さ (WallKickTuning の初期値) で、上がり切るまでに体の幅を足した向かいの壁へ届く幅にする。
+        public const float KickWallGap =
+            (WallKickTuning.DefaultAwaySpeed * WallKickTuning.DefaultUpSpeed / MotorSpec.DefaultGravity) + (2f * GameBootstrap.PlayerRadius);
+
+        // ジャンプの頂点で蹴ってさらに上がっても、上端を越えない高さにする。
+        public const float KickWallHeight = 5f;
+
+        public const float KickWallLength = 6f;
+        public const float KickWallThickness = 0.5f;
+
+        // よじ登れる高さ (MotorSpec.DefaultMantleMaxHeight) より高く、駆け上がれる高さ (WallClimbTuning.DefaultMaxHeight) の途中でふちに届く壁にする。
+        public const float ClimbWallHeight = MotorSpec.DefaultMantleMaxHeight + (WallClimbTuning.DefaultMaxHeight / 2f);
+
+        public const float ClimbWallDepth = 2f;
+
+        // 駆け上がった壁の上から乗り越えでなくよじ登りで上がる段にし、床からは駆け上がりで届かない高さにする。
+        // そこから落ちる速さは MotorSpec.DefaultSafeFallSpeed を超え、受け身 (LandingRollTuning.DefaultFallSpeedScale) を取ると下回る。
+        public const float RollPlatformHeight = ClimbWallHeight + ((MotorSpec.DefaultMantleMaxHeight + MotorSpec.DefaultVaultMaxHeight) / 2f);
+
+        public const float RollPlatformDepth = 3f;
+
+        // 立ったジャンプの頂点で手 (体の上端) が届き、よじ登りでは届かない高さにする。
+        public const float LedgeHeight = GameBootstrap.PlayerHeight + MotorSpec.DefaultJumpHeight;
+
+        // ふちに沿って横へ動かせるよう、コースの幅より長くする。
+        public const float LedgeLength = 10f;
+
+        // 登り切った上に立てる奥行きにする。
+        public const float LedgeDepth = 1.5f;
+
         public static IReadOnlyList<TraversalFeature> Features { get; } = new[]
         {
             TraversalFeature.Lean,
             TraversalFeature.Swim,
             TraversalFeature.WallRun,
             TraversalFeature.DoubleJump,
+            TraversalFeature.Parkour,
         };
 
         public static string MotorSettingsPath => ShooterKitRoot.OutputPath("Movement/" + FeatureSceneBuilder.PlaygroundName + ".asset");
@@ -123,6 +181,8 @@ namespace Shooter.Editor
                     return new TraversalFeatureFixture(WallRunCorridorName, TraversalFeature.WallRun);
                 case TraversalFeature.DoubleJump:
                     return new TraversalFeatureFixture(DoubleJumpStepsName, TraversalFeature.DoubleJump);
+                case TraversalFeature.Parkour:
+                    return new TraversalFeatureFixture(ParkourCourseName, TraversalFeature.Parkour);
                 default:
                     throw Undefined(feature);
             }
@@ -140,6 +200,8 @@ namespace Shooter.Editor
                     return CorridorBoxes();
                 case TraversalFeature.DoubleJump:
                     return StepBoxes();
+                case TraversalFeature.Parkour:
+                    return ParkourBoxes();
                 default:
                     throw Undefined(feature);
             }
@@ -166,8 +228,14 @@ namespace Shooter.Editor
         public static string TraversalTuningJson()
         {
             return "{\n"
-                + $"  \"{TraversalJson.WallRunItem}\": {{\n"
-                + $"    \"{TraversalJson.EnabledItem}\": true\n"
+                + EnabledOnly(TraversalJson.WallRunItem)
+                + EnabledOnly(TraversalJson.WallKickItem)
+                + EnabledOnly(TraversalJson.LandingRollItem)
+                + EnabledOnly(TraversalJson.WallClimbItem)
+                + EnabledOnly(TraversalJson.LedgeHangItem)
+                + $"  \"{TraversalJson.MomentumItem}\": {{\n"
+                + $"    \"{TraversalJson.SlideJumpBoostItem}\": {Number(PlaygroundSlideJumpBoost)},\n"
+                + $"    \"{TraversalJson.VaultExitSpeedKeepItem}\": {Number(PlaygroundVaultExitSpeedKeep)}\n"
                 + "  }\n"
                 + "}\n";
         }
@@ -241,6 +309,20 @@ namespace Shooter.Editor
             return Path.Combine(project ?? string.Empty, assetPath);
         }
 
+        // 入れる項目だけを書き、ほかの値はキットの初期値のまま読ませる。
+        private static string EnabledOnly(string item)
+        {
+            return $"  \"{item}\": {{\n"
+                + $"    \"{TraversalJson.EnabledItem}\": true\n"
+                + "  },\n";
+        }
+
+        // 小数点がカンマになるロケールで、読めない JSON を書かないため。
+        private static string Number(float value)
+        {
+            return value.ToString("R", CultureInfo.InvariantCulture);
+        }
+
         // 手前 (-Z) から近づき、正面の壁の右端 (+X) の角から覗く。低い壁は横に離して、しゃがんで隠れてから傾ける。
         private static IReadOnlyList<LevelBox> LeanBoxes()
         {
@@ -303,6 +385,36 @@ namespace Shooter.Editor
             }
 
             return boxes;
+        }
+
+        // 手前 (-Z) から奥へ 1 本に並べ、乗り越え (勢い)・壁蹴り・駆け上がり・受け身・ぶら下がりの順に試す。
+        // 駆け上がる壁と受け身の高台を別の箱にするのは、CharacterFrontWallSensor が当たった箱の上端だけを測り、高台の上端を壁の上端と取らないため。
+        private static IReadOnlyList<LevelBox> ParkourBoxes()
+        {
+            var half = CourseWidth / 2f;
+            var kickStart = VaultBlockDepth + RunUpLength;
+            var kickEnd = kickStart + KickWallLength;
+            var climbStart = kickEnd + RunUpLength;
+            var climbEnd = climbStart + ClimbWallDepth;
+            var platformEnd = climbEnd + RollPlatformDepth;
+            var ledgeStart = platformEnd + RollLandingLength;
+            var kickInner = KickWallGap / 2f;
+            var ledgeHalf = LedgeLength / 2f;
+            return new[]
+            {
+                Corners(VaultBlockName, new Vector3(-half, 0f, 0f), new Vector3(half, VaultBlockHeight, VaultBlockDepth)),
+                Corners(
+                    LeftKickWallName,
+                    new Vector3(-kickInner - KickWallThickness, 0f, kickStart),
+                    new Vector3(-kickInner, KickWallHeight, kickEnd)),
+                Corners(
+                    RightKickWallName,
+                    new Vector3(kickInner, 0f, kickStart),
+                    new Vector3(kickInner + KickWallThickness, KickWallHeight, kickEnd)),
+                Corners(ClimbWallName, new Vector3(-half, 0f, climbStart), new Vector3(half, ClimbWallHeight, climbEnd)),
+                Corners(RollPlatformName, new Vector3(-half, 0f, climbEnd), new Vector3(half, RollPlatformHeight, platformEnd)),
+                Corners(LedgeWallName, new Vector3(-ledgeHalf, 0f, ledgeStart), new Vector3(ledgeHalf, LedgeHeight, ledgeStart + LedgeDepth)),
+            };
         }
 
         private static LevelBox Corners(string name, Vector3 min, Vector3 max)
