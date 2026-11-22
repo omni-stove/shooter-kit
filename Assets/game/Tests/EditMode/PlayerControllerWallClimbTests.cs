@@ -185,6 +185,30 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void PushingOffUnderAnOverhangDropsTheUpwardSpeedLikeTheSimulation()
+        {
+            AddBlock(8f, 3f);
+            RunIntoTheWall();
+
+            // 立った頭の上端は y = 2。1 tick 登って 2.1 になった後、跳び離れの 1 tick (約 0.14 m) で下面 2.2 の張り出しに当たる
+            var overhang = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            overhang.transform.position = new Vector3(0f, 2.7f, 0.5f);
+            overhang.transform.localScale = new Vector3(10f, 1f, 3f);
+            _walls.Add(overhang);
+            Physics.SyncTransforms();
+
+            JumpAtTheWall();
+            Assert.That(_player.IsWallClimbing, Is.True);
+            LogAssert.Expect(LogType.Log, new Regex("^" + Regex.Escape(WallClimbLog.EndPrefixFor(WallClimbMotion.PushedOff))));
+            _player.Tick(Vector2.zero, false, false, true, _tickSeconds);
+
+            Assert.That(_player.IsWallClimbing, Is.False);
+            Assert.That(_player.TryGetMotorState(out var state), Is.True);
+            Assert.That(state.Velocity.Y, Is.EqualTo(0f), "the head hit the overhang");
+            Assert.That(state.Velocity.Z, Is.EqualTo(-5f).Within(1e-4f), "still away from the wall");
+        }
+
+        [Test]
         public void WithTheDefaultTuningTheSameJumpIsAPlainJump()
         {
             _player.ParkourTuning = ParkourTuning.Default;

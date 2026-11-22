@@ -11,6 +11,9 @@ namespace Shooter.Runtime
         private CharacterFrontWallSensor _frontWallSensor;
         private CharacterBody _frontWallSensorBody;
 
+        // この tick の移動を壁登りが決めたか。_controller.Move の後で SettleWallClimb が天井の当たりを見るため
+        private bool _wallClimbMoved;
+
         public bool IsWallClimbing => _parkour.Move == ParkourMove.WallClimb;
 
         // 崖のぼりのルール (MantleRule) を見ないのは、予測とサーバーがそのルールを知らずにふちで上に乗るので、オフラインだけ落ちると動きが分かれるため。
@@ -59,6 +62,23 @@ namespace Shooter.Runtime
 
             displacement = result.Displacement.ToUnity();
             overridden = true;
+            _wallClimbMoved = true;
+        }
+
+        // CharacterMotorSimulation.TryStepWallClimb と同じく、頭が天井に当たったら上向きの速さを捨てる
+        private void SettleWallClimb(CollisionFlags collisions)
+        {
+            if (!_wallClimbMoved)
+            {
+                return;
+            }
+
+            _wallClimbMoved = false;
+            var velocity = _motor.Velocity;
+            if ((collisions & CollisionFlags.Above) != 0 && velocity.Y > 0f)
+            {
+                _motor.SetVelocity(new NVector3(velocity.X, 0f, velocity.Z));
+            }
         }
 
         private void ReportWallClimb(CharacterParkourState before, WallClimbResult result, NVector3 velocity, FrontWallContact wall, WallClimbTuning tuning)
