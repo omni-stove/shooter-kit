@@ -95,7 +95,7 @@ namespace Shooter.Core.Tests
             }
 
             Assert.That(state.IsGrounded, Is.True);
-            Assert.That(state.Position.Y, Is.EqualTo(4f).Within(0.05f), "standing on the 3 m top");
+            Assert.That(state.Position.Y, Is.EqualTo(3f + 1f + CapsuleMoverSpec.DefaultSkinWidth).Within(0.05f), "standing on the 3 m top");
             Assert.That(state.Position.Z, Is.GreaterThan(_faceZ + 0.4f), "the body is past the face");
         }
 
@@ -256,7 +256,7 @@ namespace Shooter.Core.Tests
             Assert.That(next.Parkour, Is.EqualTo(CharacterParkourState.None));
         }
 
-        private CharacterMotorState ClimbToTheLedge(CharacterMotorSimulation simulation)
+        private static CharacterMotorState ClimbToTheLedge(CharacterMotorSimulation simulation)
         {
             var state = simulation.Step(RunningAtTheWall(simulation, 6f), Input(jump: true));
             for (var i = 0; i < 60 && !state.IsVaulting; i++)
