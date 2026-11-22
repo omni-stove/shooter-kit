@@ -92,6 +92,26 @@ namespace Shooter.Core
                 KickVelocity(velocity, wall.Normal, tuning));
         }
 
+        // 蹴った tick の動きを、予測・サーバー (CharacterMotorSimulation) とオフライン (PlayerController) で同じ式にするため Core に置く。
+        // 空中の操作を掛けないのは、オフラインと予測で運ぶ重さの倍率の受け取り方が違い、蹴った tick だけでも食い違わせないため。
+        public static Vector3 Fly(Vector3 velocity, float gravity, float tickSeconds, out Vector3 displacement)
+        {
+            if (!(gravity >= 0f) || float.IsInfinity(gravity))
+            {
+                throw new ArgumentOutOfRangeException(nameof(gravity), gravity, "gravity must be finite and not negative");
+            }
+
+            if (!(tickSeconds > 0f) || float.IsInfinity(tickSeconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(tickSeconds), tickSeconds, "tickSeconds must be positive and finite");
+            }
+
+            var verticalEnd = velocity.Y - (gravity * tickSeconds);
+            displacement = new Vector3(
+                velocity.X * tickSeconds, (velocity.Y + verticalEnd) * 0.5f * tickSeconds, velocity.Z * tickSeconds);
+            return new Vector3(velocity.X, verticalEnd, velocity.Z);
+        }
+
         public static CharacterParkourState Land(CharacterParkourState parkour)
         {
             return parkour.Move == ParkourMove.WallKick ? CharacterParkourState.None : parkour;

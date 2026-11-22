@@ -211,6 +211,7 @@ namespace Shooter.Core
             _slideBefore = state.Slide;
             _groundedBefore = state.IsGrounded;
             ClearLedgeHangReport();
+            BeginLandingRoll();
             Place(state);
             Ride(state, input.Platform);
 
@@ -261,25 +262,29 @@ namespace Shooter.Core
 
             // 回避・乗り越え・伏せ・はしご・パラシュートの最中はカバーに入らない (寄せる動きと転がり・乗り越えの軌跡がぶつかるため。CoverController と同じ)
             // 滑っている間も、オフラインで SlideMovement が移動を横取りしている間と同じく、カバー・回避・伏せを始めない
+            // 受け身で転がっている間も、オフラインの PlayerController が転がる間に回避・伏せ・滑りを断るのと同じく、カバー・回避・伏せ・滑りを始めない
             // ぶら下がっている間も、カバーの寄せる動きがふちに置き直す動きとぶつかるのでカバーに入らない
             var sliding = state.IsSliding;
+            var landingRolling = state.Parkour.Move == ParkourMove.LandingRoll;
             var busy = _dodge.IsRolling || vault.IsVaulting || wasProne || _dive.IsDiving || ladder.IsClimbing || state.IsParachuting || sliding
-                || state.Parkour.IsHangingOnLedge;
+                || landingRolling || state.Parkour.IsHangingOnLedge;
             var cover = StepCover(state.Cover, busy && !state.Cover.IsInCover ? input.WithoutCover() : input);
 
             if (input.Dodge && state.IsGrounded && !vault.IsVaulting && !cover.IsInCover && _dodge.IsReady
-                && !ladder.IsClimbing && !wasProne && !_dive.IsDiving && !sliding)
+                && !ladder.IsClimbing && !wasProne && !_dive.IsDiving && !sliding && !landingRolling)
             {
                 _dodge.TryStart(DodgeMotion.ResolveDirection(input.Move, input.Yaw));
             }
 
-            UpdateProne(state, input, ladder.IsClimbing || cover.IsInCover || sliding, startVelocity);
+            UpdateProne(state, input, ladder.IsClimbing || cover.IsInCover || sliding || landingRolling, startVelocity);
 
             var move = input.Move;
             var sprint = input.Sprint;
             var jump = input.Jump && !wasProne;
             var wantsCrouch = input.Crouch;
-            if (_dodge.IsRolling || vault.IsVaulting)
+
+            // オフラインの PlayerController.FilterInputForLandingRoll と同じく、転がる間はダッシュ・ジャンプ・しゃがみを読まない
+            if (_dodge.IsRolling || vault.IsVaulting || landingRolling)
             {
                 sprint = false;
                 jump = false;
@@ -339,7 +344,8 @@ namespace Shooter.Core
                 }
             }
 
-            var slideBusy = _dodge.IsRolling || vault.IsVaulting || wasProne || _proneInput.IsActive || _dive.IsDiving || cover.IsInCover;
+            var slideBusy = _dodge.IsRolling || vault.IsVaulting || wasProne || _proneInput.IsActive || _dive.IsDiving || cover.IsInCover
+                || landingRolling;
             var slide = UpdateSlide(state, input, slideBusy, startVelocity, jump, out var slideJumped);
             if (slide.IsSliding)
             {

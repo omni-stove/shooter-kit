@@ -70,7 +70,7 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            if (IsProne || IsProneActive || IsDiving)
+            if (IsProne || IsProneActive || IsDiving || IsLandingRolling)
             {
                 return false;
             }
