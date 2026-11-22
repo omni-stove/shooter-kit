@@ -16,12 +16,28 @@ namespace Shooter.Core
         public const string LeanParameter = "Lean";
         public const string SwimmingParameter = "Swimming";
         public const string WallRunParameter = "WallRun";
+        public const string ParkourParameter = "Parkour";
 
         public const int WallRunNone = (int)WallRunSide.None;
 
         public const int WallRunLeft = (int)WallRunSide.Left;
 
         public const int WallRunRight = (int)WallRunSide.Right;
+
+        // Animator の遷移の条件にそのまま書けるよう、ParkourMove の番号をそのまま渡す。
+        public const int ParkourNone = (int)ParkourMove.None;
+
+        public const int ParkourWallKick = (int)ParkourMove.WallKick;
+
+        public const int ParkourLandingRoll = (int)ParkourMove.LandingRoll;
+
+        public const int ParkourWallClimb = (int)ParkourMove.WallClimb;
+
+        public const int ParkourLedgeHang = (int)ParkourMove.LedgeHang;
+
+        public const int ParkourLedgeShimmy = (int)ParkourMove.LedgeShimmy;
+
+        public const int ParkourLedgeClimbUp = (int)ParkourMove.LedgeClimbUp;
 
         public const int CoverNone = 0;
 
@@ -84,6 +100,7 @@ namespace Shooter.Core
         // 死亡・ダウンのときは他のパラメーターを寝かせ、Animator が死亡・ダウンを他の姿勢と取り違えないようにする。
         // カバー中は姿勢が壁の高さで決まるので Crouch は立てない。スライディング中に Crouch も立てるのは、滑る姿勢の無いリグをしゃがみで見せるため。
         // 壁走り・水泳の間はしゃがみ・スライディング・リーンを寝かせるのは、体の向きがそれぞれの姿勢で決まるため。カバー中にリーンを 0 にするのは、覗き込みをカバーの姿勢で見せるため。
+        // パルクールの動きの間も同じく、体の向きは動きの姿勢で決まるので、しゃがみ・スライディング・リーンを寝かせる。
         public CharacterPoseParameters Evaluate(CharacterPoseInput input)
         {
             var weapon = input.WeaponCategory.HasValue ? (int)input.WeaponCategory.Value : NoWeapon;
@@ -101,7 +118,8 @@ namespace Shooter.Core
             var cover = CoverValue(input.CoverHeight);
             var wallRun = cover == CoverNone ? WallRunValue(input.WallRun) : WallRunNone;
             var swimming = input.IsSwimming && cover == CoverNone && wallRun == WallRunNone;
-            var free = cover == CoverNone && wallRun == WallRunNone && !swimming;
+            var parkour = cover == CoverNone && wallRun == WallRunNone && !swimming ? ParkourValue(input.Parkour) : ParkourNone;
+            var free = cover == CoverNone && wallRun == WallRunNone && !swimming && parkour == ParkourNone;
             var slide = input.IsSliding && free;
             var crouch = (input.IsCrouching || slide) && free;
             var lean = free ? input.Lean : 0f;
@@ -120,7 +138,22 @@ namespace Shooter.Core
                 speed = input.IsGrounded ? SpeedValue(input.HorizontalSpeed, crouch, input.IsSprinting) : IdleSpeedValue;
             }
 
-            return new CharacterPoseParameters(speed, crouch, input.IsAiming, cover, false, false, weapon, slide, lean, swimming, wallRun);
+            return new CharacterPoseParameters(speed, crouch, input.IsAiming, cover, false, false, weapon, slide, lean, swimming, wallRun, parkour);
+        }
+
+        public static int ParkourValue(ParkourMove move)
+        {
+            if (!(move >= ParkourMove.None && move <= ParkourMove.LedgeClimbUp))
+            {
+                throw new ArgumentOutOfRangeException(nameof(move), move, "move is not a defined ParkourMove");
+            }
+
+            return (int)move;
+        }
+
+        public static bool IsParkourValue(int value)
+        {
+            return value >= ParkourNone && value <= ParkourLedgeClimbUp;
         }
 
         public static int WallRunValue(WallRunSide side)

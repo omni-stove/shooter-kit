@@ -412,6 +412,7 @@ namespace Shooter.Runtime
             // 泳いでいる間は水底や天井に触れても立っていないので、着地・足音・落下のダメージに数えない。
             var footing = _controller.isGrounded && !_swim.IsSwimming;
             EndRide(footing, canRide);
+            FinishParkour(footing, crouch, deltaSeconds);
             ReportLanding(footing);
             ReportGrounded(footing);
             FinishTraversal(footing, move, sprint, crouch, lean, deltaSeconds);
@@ -429,6 +430,11 @@ namespace Shooter.Runtime
             if (!overridden)
             {
                 TryOverrideMoveForMantle(jumpPressed, deltaSeconds, ref overridden, ref displacement);
+            }
+
+            if (!overridden)
+            {
+                TryOverrideMoveForParkour(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
             }
 
             if (!overridden)

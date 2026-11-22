@@ -111,8 +111,29 @@ namespace Shooter.Tests.EditMode
                 { CharacterPose.LeanParameter, AnimatorControllerParameterType.Float },
                 { CharacterPose.SwimmingParameter, AnimatorControllerParameterType.Bool },
                 { CharacterPose.WallRunParameter, AnimatorControllerParameterType.Int },
+                { CharacterPose.ParkourParameter, AnimatorControllerParameterType.Int },
                 { CharacterRigBuilder.StaggerParameter, AnimatorControllerParameterType.Int },
             }));
+        }
+
+        [Test]
+        public void TheParkourParameterStartsWithoutAMove()
+        {
+            Build();
+            var controller = LoadController();
+
+            AnimatorControllerParameter parkour = null;
+            foreach (var parameter in controller.parameters)
+            {
+                if (parameter.name == CharacterPose.ParkourParameter)
+                {
+                    parkour = parameter;
+                }
+            }
+
+            Assert.That(parkour, Is.Not.Null);
+            Assert.That(parkour.type, Is.EqualTo(AnimatorControllerParameterType.Int));
+            Assert.That(parkour.defaultInt, Is.EqualTo(CharacterPose.ParkourNone));
         }
 
         [Test]

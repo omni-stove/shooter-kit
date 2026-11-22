@@ -172,6 +172,7 @@ namespace Shooter.Runtime
             {
                 mover.SwimTuning = tuning.Traversal.Swim;
                 mover.WallRunTuning = tuning.Traversal.WallRun;
+                mover.ParkourTuning = tuning.Traversal.Parkour;
             }
 
             // 射撃は視点の向きで撃つのでカメラに付ける。参照の解決は FirstPersonLook と同じく Play 中の Awake に任せる。

@@ -665,6 +665,44 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void TheLandingSpeedIsScaledByTheParkourFallSpeedScale()
+        {
+            var landed = new CharacterMotorState(Vector3.Zero, new Vector3(1f, -16f, 0f), true, false);
+
+            Assert.That(ServerMovement.LandingSpeed(landed), Is.EqualTo(16f), "without a roll the whole fall speed counts");
+            Assert.That(
+                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0.5f))),
+                Is.EqualTo(8f));
+            Assert.That(
+                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0f))),
+                Is.Zero);
+            Assert.That(
+                ServerMovement.LandingSpeed(new CharacterMotorState(Vector3.Zero, new Vector3(0f, 3f, 0f), true, false)),
+                Is.Zero,
+                "rising onto a floor is not a fall");
+        }
+
+        [Test]
+        public void LandingWithTheDefaultParkourTuningReportsTheWholeFallSpeed()
+        {
+            Start();
+            var landings = new List<float>();
+            _movement.Landed += (player, tick, speed) => landings.Add(speed);
+            Assert.That(_movement.Teleport(1, new Vector3(0f, 10f, 0f)), Is.True);
+
+            for (var i = 0; i < 120 && landings.Count == 0; i++)
+            {
+                Send(Vector2.Zero, InputButtons.Crouch);
+            }
+
+            _movement.TryGetState(1, out var state);
+            Assert.That(landings, Has.Count.EqualTo(1));
+            Assert.That(state.Parkour.FallSpeedScale, Is.EqualTo(1f), "the landing roll is off unless traversal turns it on");
+            var expected = MathF.Sqrt(2f * MotorSpec.DefaultGravity * (10f - (_floorTop + 1f)));
+            Assert.That(landings[0], Is.EqualTo(expected).Within(0.5f), "crouching through the fall does not soften it");
+        }
+
+        [Test]
         public void FallDamageFollowsTheRules()
         {
             Start(GameRules.Default.WithFallDamage(FallDamage.On));

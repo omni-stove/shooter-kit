@@ -110,8 +110,14 @@ namespace Shooter.Server
             // 線に吊られたまま足が床に触れた tick は落ちてきたのではない (速さは線を滑る速さ) ので、落下のダメージに数えない
             if (!ziplined && !previous.IsGrounded && current.IsGrounded)
             {
-                Landed?.Invoke(mover.Player, tick, Math.Max(0f, -current.Velocity.Y));
+                Landed?.Invoke(mover.Player, tick, LandingSpeed(current));
             }
+        }
+
+        // 受け身で転がった tick は、状態が持つ割合 (FallSpeedScale) だけ着地の速さを落とし、落下の傷みを減らす。
+        internal static float LandingSpeed(CharacterMotorState landed)
+        {
+            return Math.Max(0f, -landed.Velocity.Y) * landed.Parkour.FallSpeedScale;
         }
     }
 }

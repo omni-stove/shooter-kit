@@ -105,6 +105,7 @@ namespace Shooter.Runtime
         private static readonly int LeanHash = Animator.StringToHash(CharacterPose.LeanParameter);
         private static readonly int SwimmingHash = Animator.StringToHash(CharacterPose.SwimmingParameter);
         private static readonly int WallRunHash = Animator.StringToHash(CharacterPose.WallRunParameter);
+        private static readonly int ParkourHash = Animator.StringToHash(CharacterPose.ParkourParameter);
 
         public GameObject RigPrefab
         {
@@ -471,12 +472,12 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            // 壊れた状態で毎フレーム例外を投げると、ほかの姿勢まで止まるので、リーン・水泳・壁走りだけを諦める。
-            if (!motor.Lean.IsValid || !motor.WallRun.IsValid)
+            // 壊れた状態で毎フレーム例外を投げると、ほかの姿勢まで止まるので、リーン・水泳・壁走り・パルクールだけを諦める。
+            if (!motor.Lean.IsValid || !motor.WallRun.IsValid || !motor.Parkour.IsValid)
             {
                 if (!_warnedInvalidMotor)
                 {
-                    Debug.LogWarning($"{LogTag} '{name}' の移動の状態のリーンか壁走りが範囲の外なので、それらを読まずに姿勢を決めます。", this);
+                    Debug.LogWarning($"{LogTag} '{name}' の移動の状態のリーンか壁走りかパルクールが範囲の外なので、それらを読まずに姿勢を決めます。", this);
                     _warnedInvalidMotor = true;
                 }
 
@@ -753,6 +754,7 @@ namespace Shooter.Runtime
 
             SetBool(SwimmingHash, parameters.Swimming);
             SetInt(WallRunHash, parameters.WallRun);
+            SetInt(ParkourHash, parameters.Parkour);
         }
 
         // 壁の高さはプレイヤーの CoverController しか測らないので、敵とネットの体は立ったまま (0) にする。
@@ -806,6 +808,7 @@ namespace Shooter.Runtime
             AddIfMissing(missing, CharacterPose.LeanParameter, LeanHash);
             AddIfMissing(missing, CharacterPose.SwimmingParameter, SwimmingHash);
             AddIfMissing(missing, CharacterPose.WallRunParameter, WallRunHash);
+            AddIfMissing(missing, CharacterPose.ParkourParameter, ParkourHash);
             if (missing.Count > 0)
             {
                 Debug.LogWarning(

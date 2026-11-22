@@ -90,7 +90,7 @@ namespace Shooter.Runtime
         {
             if (_lastGrounded == false && grounded)
             {
-                var fallSpeed = Mathf.Max(0f, -_motor.Velocity.Y);
+                var fallSpeed = LandingSpeed(_motor.Velocity.Y, _parkour);
                 CombatEvents.RaiseLanded(gameObject, fallSpeed);
                 OnLanded(fallSpeed);
             }
