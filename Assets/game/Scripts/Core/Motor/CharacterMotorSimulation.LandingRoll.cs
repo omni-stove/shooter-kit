@@ -50,7 +50,8 @@ namespace Shooter.Core
             bool wasGrounded,
             bool grounded)
         {
-            if (_landingRollMoved)
+            // 掴み直しの待ちの間は、ぶら下がりの段が Elapsed を離してからの秒数として持つ。受け身の段が押下の秒数として読むと、待ちが倍の速さで進み、押していない受け身が始まる。
+            if (_landingRollMoved || LedgeHangStep.IsWaitingToRegrab(parkour))
             {
                 return parkour;
             }

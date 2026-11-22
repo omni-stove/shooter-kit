@@ -170,6 +170,7 @@ namespace Shooter.Runtime
             Set(ref flags, PlayerActionConditions.Reloading, weapon != null && weapon.IsReloading);
             Set(ref flags, PlayerActionConditions.Downed, _damageable.IsDowned);
             Set(ref flags, PlayerActionConditions.Meleeing, IsMeleeing());
+            Set(ref flags, PlayerActionConditions.LedgeHanging, _mover.IsHangingOnLedge);
             flags |= _mover.MovementOverrideConditions;
 
             _current = new PlayerActionState(

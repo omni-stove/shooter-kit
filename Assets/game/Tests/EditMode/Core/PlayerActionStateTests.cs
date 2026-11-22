@@ -138,7 +138,21 @@ namespace Shooter.Core.Tests
         [Test]
         public void RejectsUndefinedFlagBits()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Create((PlayerActionConditions)(1 << 21)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => Create((PlayerActionConditions)(1 << 22)));
+        }
+
+        [Test]
+        public void HangingOnALedgeIsReadBackAndBlocksTheWeapon()
+        {
+            var hanging = Create(PlayerActionConditions.LedgeHanging);
+
+            Assert.That(hanging.IsLedgeHanging, Is.True);
+            Assert.That(hanging.CanFireWeapon, Is.False);
+            Assert.That(hanging.IsGrounded || hanging.IsMantling || hanging.IsOnLadder, Is.False);
+            Assert.That(Create(PlayerActionConditions.Grounded).CanFireWeapon, Is.True);
+            Assert.That(Create(PlayerActionConditions.Dodging).CanFireWeapon, Is.True, "dodging is still stopped by WeaponController.FireBlocker alone");
+            Assert.That(default(PlayerActionState).CanFireWeapon, Is.True);
+            Assert.That(PlayerActionState.WeaponBlockingFlags, Is.EqualTo(PlayerActionConditions.LedgeHanging));
         }
 
         [Test]
@@ -167,8 +181,10 @@ namespace Shooter.Core.Tests
                 | PlayerActionConditions.Ziplining
                 | PlayerActionConditions.Parachuting
                 | PlayerActionConditions.InVehicle
-                | PlayerActionConditions.AbilityMoving);
+                | PlayerActionConditions.AbilityMoving
+                | PlayerActionConditions.LedgeHanging);
 
+            Assert.That(state.IsLedgeHanging, Is.True);
             Assert.That(state.IsMeleeing, Is.True);
             Assert.That(state.IsStaggered, Is.True);
             Assert.That(state.IsSliding, Is.True);

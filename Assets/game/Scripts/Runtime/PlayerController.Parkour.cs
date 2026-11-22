@@ -19,12 +19,14 @@ namespace Shooter.Runtime
         }
 
         // 乗り越え・崖のぼりが始まらなかったときに、回避より先に呼ぶ。CharacterMotorSimulation.TryMoveParkour と同じく、続いている動き (転がる・掴まっている) を先に見る。
-        private void TryOverrideMoveForParkour(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
+        // しゃがみはぶら下がりから手を離す入力なので、ぶら下がりにだけ渡す。
+        private void TryOverrideMoveForParkour(
+            Vector2 move, bool jumpPressed, bool crouch, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
         {
             TryOverrideMoveForLandingRoll(deltaSeconds, ref overridden, ref displacement);
             if (!overridden)
             {
-                TryOverrideMoveForLedgeHang(move, jumpPressed, deltaSeconds, ref overridden, ref displacement);
+                TryOverrideMoveForLedgeHang(move, jumpPressed, crouch, deltaSeconds, ref overridden, ref displacement);
             }
 
             if (!overridden)
@@ -47,6 +49,7 @@ namespace Shooter.Runtime
         private void ResetParkour()
         {
             _parkour = CharacterParkourState.None;
+            ResetLedgeHang();
             _landingRollMoved = false;
         }
     }

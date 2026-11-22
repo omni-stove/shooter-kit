@@ -59,7 +59,8 @@ namespace Shooter.Runtime
                 return;
             }
 
-            if (!(deltaSeconds > 0f) || float.IsInfinity(deltaSeconds))
+            // CharacterMotorSimulation.StepLandingRoll と同じく、掴み直しの待ちの Elapsed はぶら下がりの段が持つので、押下の秒数として読まない。
+            if (!(deltaSeconds > 0f) || float.IsInfinity(deltaSeconds) || LedgeHangStep.IsWaitingToRegrab(_parkour))
             {
                 return;
             }

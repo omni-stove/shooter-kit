@@ -101,6 +101,7 @@ namespace Shooter.Core
             switch (parkour.Move)
             {
                 case ParkourMove.None:
+                case ParkourMove.WallKick:
                     return TryGrab(parkour, ledge, position, velocity, grounded, crouch, geometry, tuning, tickSeconds);
                 case ParkourMove.LedgeHang:
                 case ParkourMove.LedgeShimmy:

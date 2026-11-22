@@ -230,7 +230,8 @@ namespace Shooter.Runtime
 
             if (weapon != null)
             {
-                weapon.FireBlocker = () => mover != null && (mover.IsDodging || mover.IsVaulting || mover.IsMantling || mover.IsSwimming);
+                weapon.FireBlocker = () => mover != null
+                    && (mover.IsDodging || mover.IsVaulting || mover.IsMantling || mover.IsSwimming || mover.IsHangingOnLedge);
             }
 
             if (ads == null)
@@ -302,7 +303,8 @@ namespace Shooter.Runtime
             }
 
             grenades.ThrowBlocker = () =>
-                (mover != null && (mover.IsDodging || mover.IsVaulting || mover.IsMantling)) || (weapon != null && weapon.IsHolstered);
+                (mover != null && (mover.IsDodging || mover.IsVaulting || mover.IsMantling || mover.IsHangingOnLedge))
+                || (weapon != null && weapon.IsHolstered);
 
             if (weapon != null)
             {

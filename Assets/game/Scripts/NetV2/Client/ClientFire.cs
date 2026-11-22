@@ -35,7 +35,8 @@ namespace Shooter.NetV2
 
             var row = latest.Players[own];
             if (row.Health <= 0 || row.Downed.IsDowned
-                || predicted.IsDodging || predicted.IsVaulting || predicted.IsDiving || predicted.Ladder.IsClimbing)
+                || predicted.IsDodging || predicted.IsVaulting || predicted.IsDiving || predicted.Ladder.IsClimbing
+                || predicted.IsHangingOnLedge)
             {
                 return FireDecision.Hold;
             }
