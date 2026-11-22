@@ -21,11 +21,14 @@ namespace Shooter.NetV2
         private float _standingY;
         private PlayerStance _stance = PlayerStance.Standing;
         private Quaternion _tilt = Quaternion.identity;
+        private float _drop;
         private bool _snapTilt = true;
 
         public int PlayerId { get; private set; }
 
         public Quaternion Tilt => _tilt;
+
+        public float Drop => _drop;
 
         public bool IsParachuting { get; private set; }
 
@@ -137,8 +140,11 @@ namespace Shooter.NetV2
             IsParachuting = pose.Parachuting;
             var target = pose.Parachuting
                 ? Quaternion.identity
-                : PlayerMockPose.TraversalLean(pose.Lean, pose.Swimming, pose.WallRun, _leanAngleDegrees);
-            _tilt = _snapTilt ? target : Quaternion.Slerp(_tilt, target, PlayerMockPose.BlendFactor(Time.deltaTime));
+                : PlayerMockPose.TraversalLean(pose.Lean, pose.Swimming, pose.WallRun, pose.Parkour, _leanAngleDegrees);
+            var targetDrop = pose.Parachuting ? 0f : PlayerMockPose.ParkourDrop(pose.Parkour);
+            var blend = PlayerMockPose.BlendFactor(Time.deltaTime);
+            _tilt = _snapTilt ? target : Quaternion.Slerp(_tilt, target, blend);
+            _drop = _snapTilt ? targetDrop : Mathf.Lerp(_drop, targetDrop, blend);
             _snapTilt = false;
             PlaceBody();
         }
@@ -211,7 +217,7 @@ namespace Shooter.NetV2
             var shape = _geometry.Shape(_stance);
             var upright = new Vector3(0f, _standingY + shape.CenterY - standing.CenterY, 0f);
             var feet = new Vector3(0f, shape.BottomY, 0f);
-            _body.localPosition = feet + (_tilt * (upright - feet));
+            _body.localPosition = feet + (_tilt * (upright - feet)) + (Vector3.down * _drop);
             _body.localRotation = _tilt;
         }
     }

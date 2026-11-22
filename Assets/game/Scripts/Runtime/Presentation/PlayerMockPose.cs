@@ -196,26 +196,50 @@ namespace Shooter.Runtime
         public static Quaternion BodyLean(
             PlayerActionState state, Vector3 localMove, Vector3 localCoverNormal, CharacterMotorState motor, float leanAngleDegrees)
         {
+            return BodyLean(state, localMove, localCoverNormal, motor, leanAngleDegrees, motor.Parkour.WallNormal.ToUnity());
+        }
+
+        public static Quaternion BodyLean(
+            PlayerActionState state,
+            Vector3 localMove,
+            Vector3 localCoverNormal,
+            CharacterMotorState motor,
+            float leanAngleDegrees,
+            Vector3 localWallNormal)
+        {
             if (state.IsDowned || state.IsVaulting || state.IsDodging || state.IsInCover)
             {
                 return BodyLean(state, localMove, localCoverNormal);
             }
 
-            return TraversalLean(motor, leanAngleDegrees);
+            return TraversalLean(motor, leanAngleDegrees, localWallNormal);
         }
 
+        // 体の向きを受け取らない呼び手のため、蹴った壁の法線を体の向きへ回さずそのまま使う (体が世界の +Z を向いているとみなす)。
         public static Quaternion TraversalLean(CharacterMotorState motor, float leanAngleDegrees)
         {
-            return TryParkourTilt(motor.Parkour.Move, out var tilt)
+            return TraversalLean(motor, leanAngleDegrees, motor.Parkour.WallNormal.ToUnity());
+        }
+
+        public static Quaternion TraversalLean(CharacterMotorState motor, float leanAngleDegrees, Vector3 localWallNormal)
+        {
+            return TryParkourTilt(motor.Parkour.Move, localWallNormal, out var tilt)
                 ? tilt
                 : TraversalLean(motor.Lean.Amount, motor.IsSwimming, motor.WallRun.Side, leanAngleDegrees);
         }
 
+        // Animator のある体 (CharacterAnimator) が使う。パルクールの姿勢は Parkour パラメーターで AnimatorController のクリップに任せ、
+        // ここで根まで傾けるとクリップの姿勢と二重になるので、パルクールの動きは読まない。
         public static Quaternion TraversalLean(CharacterPoseParameters parameters, float leanAngleDegrees)
         {
-            return TryParkourTilt((ParkourMove)parameters.Parkour, out var tilt)
-                ? tilt
-                : TraversalLean(parameters.Lean, parameters.Swimming, (WallRunSide)parameters.WallRun, leanAngleDegrees);
+            return TraversalLean(parameters.Lean, parameters.Swimming, (WallRunSide)parameters.WallRun, leanAngleDegrees);
+        }
+
+        // オンラインのほかの人の体 (NetV2RemotePlayer) が使う。壁の法線は届かないので、壁蹴りは TryParkourTilt の分からないときの向きになる。
+        public static Quaternion TraversalLean(float lean, bool swimming, WallRunSide wallRun, ParkourMove parkour, float leanAngleDegrees)
+        {
+            var tilt = TraversalLean(lean, swimming, wallRun, leanAngleDegrees);
+            return TryParkourTilt(parkour, Vector3.zero, out var parkourTilt) ? parkourTilt : tilt;
         }
 
         public static Quaternion TraversalLean(float lean, bool swimming, WallRunSide wallRun, float leanAngleDegrees)
