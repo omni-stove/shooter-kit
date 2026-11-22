@@ -390,10 +390,11 @@ namespace Shooter.Runtime
             _expectedHorizontal = Vector3.Dot(displacement, direction);
         }
 
-        // 滑ってきた勢いを水平の速度に残したまま、PlayerMotor のジャンプと同じ初速で跳ぶ。続きの宙の動きは PlayerMotor が受け持つ。
+        // 滑ってきた勢いに勢いのつながりの上乗せ (MomentumTuning.SlideJumpBoost) を足して水平の速度に残し、PlayerMotor のジャンプと同じ初速で跳ぶ。
+        // 続きの宙の動きは PlayerMotor が受け持つ。予測・サーバーの CharacterMotorSimulation.SlideJump と同じ計算。
         private MovementOverrideStep Jump(PlayerController mover, Vector3 direction, float deltaSeconds)
         {
-            var horizontal = direction * _motion.Speed;
+            var horizontal = direction * MomentumStep.SlideJumpSpeed(_motion.Speed, mover.ParkourTuning.Momentum);
             var start = SlideStep.JumpSpeed(mover.Gravity, mover.JumpHeight);
             var end = start - (mover.Gravity * deltaSeconds);
             var displacement = (horizontal * deltaSeconds) + (Vector3.up * ((start + end) * 0.5f * deltaSeconds));

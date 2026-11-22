@@ -136,10 +136,12 @@ namespace Shooter.Core
             return velocity;
         }
 
-        // SlideMovement.Jump と同じく、滑ってきた勢いを水平に残したまま PlayerMotor のジャンプと同じ初速で跳ぶ。続きの宙の動きは PlayerMotor が受け持つ。
+        // SlideMovement.Jump と同じく、滑ってきた勢いに勢いのつながりの上乗せ (MomentumTuning.SlideJumpBoost) を足して水平に残し、PlayerMotor のジャンプと同じ初速で跳ぶ。
+        // 続きの宙の動きは PlayerMotor が受け持つ。
         private Vector3 SlideJump(CharacterSlideState slide)
         {
-            var horizontal = new Vector3(slide.Direction.X, 0f, slide.Direction.Y) * slide.Speed;
+            var speed = MomentumStep.SlideJumpSpeed(slide.Speed, _parkour.Momentum);
+            var horizontal = new Vector3(slide.Direction.X, 0f, slide.Direction.Y) * speed;
             var start = SlideStep.JumpSpeed(_motor.Spec.Gravity, _motor.Spec.JumpHeight);
             var end = start - (_motor.Spec.Gravity * TickSeconds);
             Body.Move((horizontal * TickSeconds) + (Vector3.UnitY * ((start + end) * 0.5f * TickSeconds)));
