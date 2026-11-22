@@ -93,6 +93,7 @@ namespace Shooter.Core
                 case ParkourMove.LedgeShimmy:
                     return release ? LedgeContact.None : LedgeSensor.Follow(parkour.LedgePoint, parkour.WallNormal);
                 case ParkourMove.None:
+                case ParkourMove.WallKick:
                     var waiting = LedgeHangStep.IsWaitingToRegrab(parkour) && parkour.Elapsed + TickSeconds < tuning.RegrabSeconds;
                     return release || waiting || velocity.Y > 0f ? LedgeContact.None : LedgeSensor.Probe(position, yaw, tuning.GrabReach);
                 default:
