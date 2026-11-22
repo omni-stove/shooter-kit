@@ -139,7 +139,7 @@ namespace Shooter.Core.Tests
             Assert.That(result.HasEnded, Is.True);
         }
 
-        private static readonly float[] _expectedRises ={ 0.5f, 0.5f, 0.25f };
+        private static readonly float[] _expectedRises = { 0.5f, 0.5f, 0.25f };
 
         [Test]
         public void StopsAtTheHighestHeight()
