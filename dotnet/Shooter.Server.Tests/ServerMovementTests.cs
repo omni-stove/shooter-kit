@@ -671,10 +671,10 @@ namespace Shooter.Server.Tests
 
             Assert.That(ServerMovement.LandingSpeed(landed), Is.EqualTo(16f), "without a roll the whole fall speed counts");
             Assert.That(
-                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0.5f))),
+                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(Shooter.Core.ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0.5f))),
                 Is.EqualTo(8f));
             Assert.That(
-                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0f))),
+                ServerMovement.LandingSpeed(landed.WithParkour(new CharacterParkourState(Shooter.Core.ParkourMove.LandingRoll, 0f, Vector3.Zero, Vector3.Zero, 0f))),
                 Is.Zero);
             Assert.That(
                 ServerMovement.LandingSpeed(new CharacterMotorState(Vector3.Zero, new Vector3(0f, 3f, 0f), true, false)),

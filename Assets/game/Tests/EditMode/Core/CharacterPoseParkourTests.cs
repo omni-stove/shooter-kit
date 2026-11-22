@@ -108,8 +108,10 @@ namespace Shooter.Core.Tests
         public void TheMoveTakesPartInEqualityAndText()
         {
             Assert.That(Input(parkour: ParkourMove.WallKick), Is.Not.EqualTo(Input()));
-            Assert.That(Input(parkour: ParkourMove.WallKick), Is.EqualTo(Input(parkour: ParkourMove.WallKick)));
-            Assert.That(Input(parkour: ParkourMove.WallKick).GetHashCode(), Is.EqualTo(Input(parkour: ParkourMove.WallKick).GetHashCode()));
+            var kickA = Input(parkour: ParkourMove.WallKick);
+            var kickB = Input(parkour: ParkourMove.WallKick);
+            Assert.That(kickA, Is.EqualTo(kickB));
+            Assert.That(kickA.GetHashCode(), Is.EqualTo(kickB.GetHashCode()));
             Assert.That(Input(parkour: ParkourMove.LedgeHang).ToString(), Does.EndWith("parkour=LedgeHang"));
 
             var hanging = new CharacterPoseParameters(
