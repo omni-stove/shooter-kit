@@ -349,11 +349,13 @@ namespace Shooter.Runtime
             if (movementOverride != null)
             {
                 StopWallRun();
+                DropLedgeHangSilently();
                 displacement = StepMovementOverride(movementOverride, move, sprint, crouch, jumpPressed, deltaSeconds);
             }
             else if (_swim.IsSwimming && !IsVaulting && !IsMantling)
             {
                 StopWallRun();
+                DropLedgeHangSilently();
                 UpdateStance(false, false);
                 if (!TryClimbOutOfWater(jumpPressed, deltaSeconds, out displacement))
                 {

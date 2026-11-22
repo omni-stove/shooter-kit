@@ -18,6 +18,15 @@ namespace Shooter.Runtime
 
         public LedgeHangResult LastLedgeHang { get; private set; }
 
+        // 横取り・泳ぎはシミュレーションでは Parkour = None から始まるので、ぶら下がりを黙って離す。
+        private void DropLedgeHangSilently()
+        {
+            if (_parkour.IsHangingOnLedge)
+            {
+                _parkour = CharacterParkourState.None;
+            }
+        }
+
         // CharacterMotorSimulation.TryStepLedgeHang と同じく、立っていない・カバー・倒れているときはしゃがみと同じく掴まず、掴んでいれば離す。
         private void TryOverrideMoveForLedgeHang(
             Vector2 move, bool jumpPressed, bool crouch, float deltaSeconds, ref bool overridden, ref Vector3 displacement)

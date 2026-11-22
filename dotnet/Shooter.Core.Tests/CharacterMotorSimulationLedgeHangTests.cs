@@ -256,7 +256,10 @@ namespace Shooter.Core.Tests
         {
             var simulation = NewSimulation(true);
 
-            Assert.That(simulation.LedgeSensor, Is.SameAs(simulation.LedgeSensor));
+            var first = simulation.LedgeSensor;
+            var second = simulation.LedgeSensor;
+
+            Assert.That(second, Is.SameAs(first));
             Assert.That(simulation.LedgeSensor.HandHeight, Is.EqualTo(1f));
         }
 
