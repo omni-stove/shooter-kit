@@ -33,6 +33,8 @@ namespace Shooter.Core
 
         Melee,
 
+        Takedown,
+
         Stagger,
 
         Slide,

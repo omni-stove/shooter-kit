@@ -90,6 +90,11 @@ namespace Shooter.Server
             }
 
             output.WriteLine(rules.LogLine);
+            var modeTuning = ServerModeTuningLog.For(rules.Rules.Objective, rules.Settings);
+            if (modeTuning != null)
+            {
+                output.WriteLine(modeTuning);
+            }
 
             // 持ち物庫を置けない Extraction の試合を始めると、脱出しても持ち帰れないので、待ち受ける前に止める
             problem = launch.StashProblem(Objectives(rules, playlist));

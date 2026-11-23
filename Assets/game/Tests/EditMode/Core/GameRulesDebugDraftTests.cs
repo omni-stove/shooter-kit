@@ -57,7 +57,8 @@ namespace Shooter.Core.Tests
 #pragma warning restore CA2263
 
             Assert.That(GameRulesDebugDraft.Fields, Is.EqualTo(defined));
-            Assert.That(defined.Length, Is.EqualTo(33));
+            Assert.That(defined.Length, Is.EqualTo(34));
+            Assert.That((int)GameRulesDebugField.Takedown, Is.EqualTo((int)GameRulesDebugField.Melee + 1), "takedowns sit next to the melee in the panel");
         }
 
         [Test]
@@ -66,6 +67,7 @@ namespace Shooter.Core.Tests
             var newFields = new[]
             {
                 GameRulesDebugField.Melee,
+                GameRulesDebugField.Takedown,
                 GameRulesDebugField.Stagger,
                 GameRulesDebugField.Slide,
                 GameRulesDebugField.Mantle,
@@ -245,6 +247,7 @@ namespace Shooter.Core.Tests
                 GameRulesDebugField.Vault,
                 GameRulesDebugField.Grenade,
                 GameRulesDebugField.Melee,
+                GameRulesDebugField.Takedown,
                 GameRulesDebugField.Stagger,
                 GameRulesDebugField.Slide,
                 GameRulesDebugField.Mantle,

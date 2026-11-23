@@ -788,13 +788,13 @@ namespace Shooter.Protocol.Tests
         public void AnUnknownItemKindIsUnreadable()
         {
             var sent = Build(100);
-            AddItem(sent, 1, ObjectiveItemKind.AmmoCrate, Team.Alpha, PlayerIds.None, Vector3.Zero, ObjectiveItemState.Home, PlayerIds.None);
+            AddItem(sent, 1, ObjectiveItemKind.Vip, Team.Alpha, PlayerIds.None, Vector3.Zero, ObjectiveItemState.Home, PlayerIds.None);
             var bytes = Bytes(sent, null);
 
             // 物の種類は、末尾の 種類 (1)・陣営 (1)・持ち主 (4)・位置 (12)・状態 (1)・運んでいる人 (4)・設置物の並びの数 (1) の頭にある
             var kindAt = bytes.Length - (1 + 1 + 4 + 12 + 1 + 4 + 1);
-            Assert.That(bytes[kindAt], Is.EqualTo((byte)ObjectiveItemKind.AmmoCrate));
-            bytes[kindAt] = (byte)(ObjectiveItemKind.AmmoCrate + 1);
+            Assert.That(bytes[kindAt], Is.EqualTo((byte)ObjectiveItemKind.Vip));
+            bytes[kindAt] = (byte)(ObjectiveItemKind.Vip + 1);
 
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(new ArraySegment<byte>(bytes)));
         }
@@ -807,20 +807,26 @@ namespace Shooter.Protocol.Tests
             Assert.That((int)ObjectiveItemKind.Leader, Is.EqualTo(8));
             Assert.That((int)ObjectiveItemKind.WeaponPickup, Is.EqualTo(9));
             Assert.That((int)ObjectiveItemKind.AmmoCrate, Is.EqualTo(14));
-            Assert.That(Enum.GetValues<ObjectiveItemKind>().Length, Is.EqualTo(15));
+            Assert.That((int)ObjectiveItemKind.Juggernaut, Is.EqualTo(15));
+            Assert.That((int)ObjectiveItemKind.Vip, Is.EqualTo(16));
+            Assert.That(Enum.GetValues<ObjectiveItemKind>().Length, Is.EqualTo(17));
         }
 
-        [TestCase(ObjectiveItemState.Carried, 4)]
-        [TestCase(ObjectiveItemState.Dropped, PlayerIds.None)]
-        public void AGuardianLeaderRoundTrips(ObjectiveItemState state, int carrier)
+        [TestCase(ObjectiveItemKind.Leader, ObjectiveItemState.Carried, 4)]
+        [TestCase(ObjectiveItemKind.Leader, ObjectiveItemState.Dropped, PlayerIds.None)]
+        [TestCase(ObjectiveItemKind.Juggernaut, ObjectiveItemState.Carried, 4)]
+        [TestCase(ObjectiveItemKind.Juggernaut, ObjectiveItemState.Dropped, PlayerIds.None)]
+        [TestCase(ObjectiveItemKind.Vip, ObjectiveItemState.Carried, 4)]
+        [TestCase(ObjectiveItemKind.Vip, ObjectiveItemState.Dropped, PlayerIds.None)]
+        public void APersonMarkerRoundTrips(ObjectiveItemKind kind, ObjectiveItemState state, int carrier)
         {
             var sent = Build(100);
-            AddItem(sent, 1, ObjectiveItemKind.Leader, Team.Bravo, 4, new Vector3(3f, 1f, -4f), state, carrier);
+            AddItem(sent, 1, kind, Team.Bravo, 4, new Vector3(3f, 1f, -4f), state, carrier);
 
             var got = Send(sent, null);
 
             Assert.That(got.ObjectiveItems.Count, Is.EqualTo(1));
-            Assert.That(got.ObjectiveItems[0].Kind, Is.EqualTo(ObjectiveItemKind.Leader));
+            Assert.That(got.ObjectiveItems[0].Kind, Is.EqualTo(kind));
             Assert.That(got.ObjectiveItems[0].Team, Is.EqualTo(Team.Bravo));
             Assert.That(got.ObjectiveItems[0].HasOwner, Is.True);
             Assert.That(got.ObjectiveItems[0].OwnerId, Is.EqualTo(4));

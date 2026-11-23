@@ -36,5 +36,10 @@ namespace Shooter.Protocol
 
         // 弾薬箱。Opened は使ってから次に使えるまでの間、Radius は使える範囲
         AmmoCrate,
+
+        // Juggernaut のジャガーノートと VIP 護衛の VIP。Leader と同じく、持ち主がその人で、立っている間は Carried、倒れたら Dropped
+        Juggernaut,
+
+        Vip,
     }
 }

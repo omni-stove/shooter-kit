@@ -199,16 +199,27 @@ namespace Shooter.Server.Tests
             }
         }
 
+        // Juggernaut・Vip は列挙とルールのファイルだけを先に足し、サーバーのルールは後から足す
         [Test]
-        public void EveryObjectiveIsSupported()
+        public void EveryObjectiveButTheOnesAddedAheadIsSupported()
         {
             foreach (var objective in Enum.GetValues<MatchObjective>())
             {
-                Assert.That(ServerObjectiveFactory.Supports(objective), Is.True, objective.ToString());
+                var ahead = objective == MatchObjective.Juggernaut || objective == MatchObjective.Vip;
+                Assert.That(ServerObjectiveFactory.Supports(objective), Is.EqualTo(!ahead), objective.ToString());
             }
 
             Assert.That(ServerObjectiveFactory.Supported.Count, Is.EqualTo(16));
             Assert.That(ServerObjectiveFactory.Supports((MatchObjective)99), Is.False);
+        }
+
+        [TestCase(MatchObjective.Juggernaut)]
+        [TestCase(MatchObjective.Vip)]
+        public void TheObjectivesAddedAheadAreRefusedByName(MatchObjective objective)
+        {
+            var e = Assert.Throws<InvalidOperationException>(() => ServerObjectiveFactory.Create(objective, new NetMatchSettings(), _host));
+
+            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective " + objective));
         }
 
         // 部品をつながずに作る口 (MatchRulesModule の既定の選び方) でも、試合の場を使わない目的は作れる

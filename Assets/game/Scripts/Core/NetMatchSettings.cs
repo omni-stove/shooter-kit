@@ -77,7 +77,9 @@ namespace Shooter.Core
             int maxDisplayNameLength = DefaultMaxDisplayNameLength,
             InfectedSpec infected = null,
             ExecutionSpec execution = null,
-            HordeSettings horde = null)
+            HordeSettings horde = null,
+            JuggernautSpec juggernaut = null,
+            VipSpec vip = null)
         {
             RequirePositive(scoreLimit, nameof(scoreLimit));
             RequirePositive(timeLimitSeconds, nameof(timeLimitSeconds));
@@ -144,6 +146,8 @@ namespace Shooter.Core
             Infected = infected ?? InfectedSpec.Default;
             Execution = execution ?? ExecutionSpec.Default;
             Horde = horde ?? HordeSettings.Default;
+            Juggernaut = juggernaut ?? JuggernautSpec.Default;
+            Vip = vip ?? VipSpec.Default;
             MapPool = CopyMapPool(mapPool);
             MapVoteSeconds = mapVoteSeconds;
             MaxTeamSizeDifference = maxTeamSizeDifference;
@@ -212,7 +216,9 @@ namespace Shooter.Core
                 maxDisplayNameLength: MaxDisplayNameLength,
                 infected: Infected,
                 execution: Execution,
-                horde: Horde);
+                horde: Horde,
+                juggernaut: Juggernaut,
+                vip: Vip);
         }
 
         public int ScoreLimit { get; }
@@ -293,6 +299,10 @@ namespace Shooter.Core
         public ExecutionSpec Execution { get; }
 
         public HordeSettings Horde { get; }
+
+        public JuggernautSpec Juggernaut { get; }
+
+        public VipSpec Vip { get; }
 
         private static string OptionalId(string id, string name)
         {

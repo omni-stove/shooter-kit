@@ -90,6 +90,8 @@ namespace Shooter.Core
 
         public WeaponJam Jam { get; }
 
+        public Takedown Takedown { get; }
+
         // 構えでリロードを止めるなら、構えを押したときにリロードの方を取り消すので、構えは止めない。
         public bool BlocksAimWhileReloading() => AimWhileReloading == AimWhileReloading.Off && !InterruptsReload(ReloadInterrupt.Aim);
 
@@ -125,7 +127,8 @@ namespace Shooter.Core
             Stamina stamina = Stamina.Off,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
             AimWhileReloading aimWhileReloading = AimWhileReloading.On,
-            WeaponJam jam = WeaponJam.Off)
+            WeaponJam jam = WeaponJam.Off,
+            Takedown takedown = Takedown.Off)
         {
             if (!Enum.IsDefined(typeof(Downed), downed))
             {
@@ -213,6 +216,7 @@ namespace Shooter.Core
             RequireDefined(stamina, nameof(stamina));
             RequireDefined(aimWhileReloading, nameof(aimWhileReloading));
             RequireDefined(jam, nameof(jam));
+            RequireDefined(takedown, nameof(takedown));
             var interrupts = reloadInterruptedBy == null ? DefaultReloadInterruptedBy : CopyInterrupts(reloadInterruptedBy);
 
             Downed = downed;
@@ -247,6 +251,7 @@ namespace Shooter.Core
             ReloadInterruptedBy = interrupts;
             AimWhileReloading = aimWhileReloading;
             Jam = jam;
+            Takedown = takedown;
         }
 
         public bool InterruptsReload(ReloadInterrupt action)
@@ -327,6 +332,8 @@ namespace Shooter.Core
 
         public ActionRules WithJam(WeaponJam value) => Copy(jam: value);
 
+        public ActionRules WithTakedown(Takedown value) => Copy(takedown: value);
+
         // 空は許すのは、どの動作でもリロードを止めないゲームもあるため。
         private static ReadOnlyCollection<ReloadInterrupt> CopyInterrupts(IReadOnlyList<ReloadInterrupt> reloadInterruptedBy)
         {
@@ -391,7 +398,8 @@ namespace Shooter.Core
             Stamina? stamina = null,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
             AimWhileReloading? aimWhileReloading = null,
-            WeaponJam? jam = null)
+            WeaponJam? jam = null,
+            Takedown? takedown = null)
         {
             return new ActionRules(
                 downed ?? Downed,
@@ -425,7 +433,8 @@ namespace Shooter.Core
                 stamina ?? Stamina,
                 reloadInterruptedBy ?? ReloadInterruptedBy,
                 aimWhileReloading ?? AimWhileReloading,
-                jam ?? Jam);
+                jam ?? Jam,
+                takedown ?? Takedown);
         }
     }
 }

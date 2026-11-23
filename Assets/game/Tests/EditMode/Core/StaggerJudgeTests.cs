@@ -175,6 +175,84 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void ImposeStaggersForTheGivenKindAndSecondsWithoutAHit()
+        {
+            var judge = new StaggerJudge(Spec(immunitySeconds: 2f));
+            judge.Hit(HitZone.Body, DamageKind.Bullet, 5, 0f);
+
+            var verdict = judge.Impose(StaggerKind.Blast, 3f);
+
+            Assert.That(verdict.Outcome, Is.EqualTo(StaggerOutcome.Staggered));
+            Assert.That(verdict.Kind, Is.EqualTo(StaggerKind.Blast));
+            Assert.That(verdict.Seconds, Is.EqualTo(3f), "the spec's blast seconds (0.8) are not used");
+            Assert.That(judge.Current, Is.EqualTo(StaggerKind.Blast));
+            Assert.That(judge.SecondsRemaining, Is.EqualTo(3f));
+            Assert.That(judge.ImmunityRemaining, Is.EqualTo(5f), "the stagger plus the spec's immunity");
+            Assert.That(judge.AccumulatedDamage, Is.Zero, "imposing starts the count over like a hit stagger");
+
+            Assert.That(judge.Tick(2.5f), Is.EqualTo(StaggerKind.None));
+            Assert.That(judge.Tick(0.5f), Is.EqualTo(StaggerKind.Blast));
+            Assert.That(judge.IsStaggered, Is.False);
+        }
+
+        [Test]
+        public void ImposeIgnoresTheImmunityAndTheZeroDurationOfTheSpec()
+        {
+            var judge = new StaggerJudge(StaggerSpec.PlayerDefault);
+            judge.Hit(null, DamageKind.Melee, 1, 0f);
+            Assert.That(judge.IsImmune, Is.True);
+
+            var kneel = judge.Impose(StaggerKind.Kneel, 1f);
+
+            Assert.That(kneel.Outcome, Is.EqualTo(StaggerOutcome.Staggered), "the player spec never kneels from a hit, but an imposed kneel holds");
+            Assert.That(judge.Current, Is.EqualTo(StaggerKind.Kneel));
+        }
+
+        [Test]
+        public void ImposeNeverShortensALongerStagger()
+        {
+            var judge = new StaggerJudge(Spec(kneelSeconds: 1.5f, immunitySeconds: 2f));
+            judge.Hit(HitZone.Limb, DamageKind.Bullet, 19, 0f);
+
+            var shorter = judge.Impose(StaggerKind.Stumble, 0.5f);
+
+            Assert.That(shorter.Seconds, Is.EqualTo(1.5f));
+            Assert.That(judge.Current, Is.EqualTo(StaggerKind.Stumble), "the newer kind shows");
+            Assert.That(judge.SecondsRemaining, Is.EqualTo(1.5f));
+            Assert.That(judge.ImmunityRemaining, Is.EqualTo(3.5f), "the immunity from the hit is kept");
+
+            var longer = judge.Impose(StaggerKind.Blast, 4f);
+
+            Assert.That(longer.Seconds, Is.EqualTo(4f));
+            Assert.That(judge.SecondsRemaining, Is.EqualTo(4f));
+            Assert.That(judge.ImmunityRemaining, Is.EqualTo(6f));
+        }
+
+        [Test]
+        public void ImposingNothingOrZeroSecondsDoesNotStagger()
+        {
+            var judge = new StaggerJudge(Spec());
+
+            Assert.That(judge.Impose(StaggerKind.None, 2f).Outcome, Is.EqualTo(StaggerOutcome.NoReaction));
+            Assert.That(judge.Impose(StaggerKind.Stumble, 0f).Outcome, Is.EqualTo(StaggerOutcome.NoReaction));
+            Assert.That(judge.IsStaggered, Is.False);
+            Assert.That(judge.IsImmune, Is.False);
+            Assert.That(judge.Hit(HitZone.Limb, DamageKind.Bullet, 19, 0f).Outcome, Is.EqualTo(StaggerOutcome.Staggered), "nothing was imposed");
+        }
+
+        [Test]
+        public void ImposeRejectsInvalidArguments()
+        {
+            var judge = new StaggerJudge(Spec());
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => judge.Impose((StaggerKind)99, 1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => judge.Impose(StaggerKind.Stumble, -1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => judge.Impose(StaggerKind.Stumble, float.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => judge.Impose(StaggerKind.Stumble, float.PositiveInfinity));
+            Assert.That(judge.IsStaggered, Is.False);
+        }
+
+        [Test]
         public void RejectsInvalidArguments()
         {
             Assert.Throws<ArgumentNullException>(() => _ = new StaggerJudge(null));

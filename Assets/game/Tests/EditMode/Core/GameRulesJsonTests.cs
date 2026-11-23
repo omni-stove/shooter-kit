@@ -73,7 +73,8 @@ namespace Shooter.Core.Tests
     ""jump"": ""Off"",
     ""emote"": ""On"",
     ""stamina"": ""On"",
-    ""jam"": ""On""
+    ""jam"": ""On"",
+    ""takedown"": ""On""
   },
   ""spawnProtectionSeconds"": 1.5,
   ""fallDamage"": ""On"",
@@ -381,7 +382,7 @@ namespace Shooter.Core.Tests
         public void ItemNamesMatchTheRulesConstructors()
         {
             Assert.That(GameRulesJson.ItemNames.Count, Is.EqualTo(28));
-            Assert.That(GameRulesJson.ActionItemNames.Count, Is.EqualTo(32));
+            Assert.That(GameRulesJson.ActionItemNames.Count, Is.EqualTo(33));
             Assert.That(GameRulesJson.ItemNames, Does.Contain(GameRulesJson.ActionsItem));
         }
 
@@ -546,6 +547,27 @@ namespace Shooter.Core.Tests
             Assert.That(actions.Abilities, Is.EqualTo(Abilities.Off));
             Assert.That(actions.SlowMotion, Is.EqualTo(SlowMotion.Off));
             Assert.That(actions.AimToFire, Is.EqualTo(AimToFire.Off));
+            Assert.That(actions.Takedown, Is.EqualTo(Takedown.Off));
+        }
+
+        [Test]
+        public void OmittedTakedownIsOffAndAWrittenValueReadsBack()
+        {
+            Assert.That(GameRulesJson.Parse("{}", _source).Actions.Takedown, Is.EqualTo(Takedown.Off));
+            Assert.That(GameRulesJson.Parse("{\"actions\": {\"melee\": \"On\"}}", _source).Actions.Takedown, Is.EqualTo(Takedown.Off), "melee does not bring takedowns with it");
+
+            var on = GameRules.Default.WithActions(ActionRules.Default.WithTakedown(Takedown.On));
+            var written = GameRulesJson.Write(on);
+
+            Assert.That(written, Does.Contain("\"takedown\": \"On\""));
+            Assert.That(GameRulesJson.Parse(written, _source).Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesJson.Parse(GameRulesJson.Write(GameRules.Default), _source).Actions.Takedown, Is.EqualTo(Takedown.Off));
+        }
+
+        [Test]
+        public void ActionRulesRejectsAnUndefinedTakedown()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => ActionRules.Default.WithTakedown((Takedown)7));
         }
 
         [Test]
@@ -577,6 +599,7 @@ namespace Shooter.Core.Tests
         [TestCase("abilities")]
         [TestCase("slowMotion")]
         [TestCase("aimToFire")]
+        [TestCase("takedown")]
         public void EachNewActionItemIsReadAndRejectsUnknownNames(string item)
         {
             var on = GameRulesJson.Parse("{\"actions\": {\"" + item + "\": \"On\"}}", _source);
@@ -681,7 +704,8 @@ namespace Shooter.Core.Tests
                 Jump.Off,
                 emote: Emote.On,
                 stamina: Stamina.On,
-                jam: WeaponJam.On);
+                jam: WeaponJam.On,
+                takedown: Takedown.On);
         }
 
         private static readonly RespawnAnchor[] _everyAnchor = { RespawnAnchor.Beacon, RespawnAnchor.Squad, RespawnAnchor.Base };
@@ -950,6 +974,7 @@ namespace Shooter.Core.Tests
             Assert.That(a.ReloadInterruptedBy, Is.EqualTo(b.ReloadInterruptedBy), "actions.reloadInterruptedBy");
             Assert.That(a.AimWhileReloading, Is.EqualTo(b.AimWhileReloading), "actions.aimWhileReloading");
             Assert.That(a.Jam, Is.EqualTo(b.Jam), "actions.jam");
+            Assert.That(a.Takedown, Is.EqualTo(b.Takedown), "actions.takedown");
         }
     }
 }

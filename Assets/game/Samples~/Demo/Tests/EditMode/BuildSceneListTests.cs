@@ -10,6 +10,11 @@ namespace Shooter.Tests.EditMode
     {
         private const string Other = "Assets/Scenes/SampleScene.unity";
 
+        // ルールのアセットだけを先に足し、シーンとその並びは後から足すモード
+        private static readonly string[] _modesWithoutScenes = { GameRulesAssetBuilder.JuggernautName, GameRulesAssetBuilder.VipName };
+
+        private static string[] ModesWithScenes => GameRulesAssetBuilder.ModeNames.Except(_modesWithoutScenes).ToArray();
+
         [Test]
         public void BuildersSaveToTheListedPaths()
         {
@@ -94,7 +99,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ListHasEveryModeSceneNamedAfterItsRules()
         {
-            foreach (var name in GameRulesAssetBuilder.ModeNames)
+            foreach (var name in ModesWithScenes)
             {
                 var scene = BuildSceneList.ModeScene(name);
                 Assert.That(scene, Is.EqualTo(DemoSample.Root + "/Scenes/" + name + ".unity"), name);
@@ -142,7 +147,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ArrangeSkipsTheModeScenesUntilTheyAreBuilt()
         {
-            var modeScenes = GameRulesAssetBuilder.ModeNames.Select(BuildSceneList.ModeScene).ToArray();
+            var modeScenes = ModesWithScenes.Select(BuildSceneList.ModeScene).ToArray();
 
             var scenes = BuildSceneList.Arrange(null, path => !modeScenes.Contains(path));
 

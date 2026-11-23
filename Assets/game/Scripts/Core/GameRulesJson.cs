@@ -76,6 +76,7 @@ namespace Shooter.Core
         public const string ReloadInterruptedByItem = "reloadInterruptedBy";
         public const string AimWhileReloadingItem = "aimWhileReloading";
         public const string JamItem = "jam";
+        public const string TakedownItem = "takedown";
 
         public static IReadOnlyList<string> ItemNames { get; } = new[]
         {
@@ -143,6 +144,7 @@ namespace Shooter.Core
             ReloadInterruptedByItem,
             AimWhileReloadingItem,
             JamItem,
+            TakedownItem,
         };
 
         // 弱点の倍率はルールで変えるものではないので書けるようにせず、土台のルールの値のままにする。
@@ -283,6 +285,7 @@ namespace Shooter.Core
             writer.EnumArray(ReloadInterruptedByItem, actions.ReloadInterruptedBy);
             writer.Enum(AimWhileReloadingItem, actions.AimWhileReloading);
             writer.Enum(JamItem, actions.Jam);
+            writer.Enum(TakedownItem, actions.Takedown);
             writer.EndObject();
             writer.Float(SpawnProtectionSecondsItem, rules.SpawnProtectionSeconds);
             writer.Enum(FallDamageItem, rules.FallDamage);
@@ -350,7 +353,8 @@ namespace Shooter.Core
                     fields.ReadEnum(StaminaItem, defaults.Stamina),
                     fields.ReadEnumArray(ReloadInterruptedByItem, defaults.ReloadInterruptedBy),
                     fields.ReadEnum(AimWhileReloadingItem, defaults.AimWhileReloading),
-                    fields.ReadEnum(JamItem, defaults.Jam));
+                    fields.ReadEnum(JamItem, defaults.Jam),
+                    fields.ReadEnum(TakedownItem, defaults.Takedown));
             }
             catch (ArgumentException e)
             {

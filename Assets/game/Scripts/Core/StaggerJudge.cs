@@ -124,6 +124,33 @@ namespace Shooter.Core
             return new StaggerVerdict(StaggerOutcome.Staggered, reaction, seconds, accumulated, threshold);
         }
 
+        // 当たりの判定 (たまったダメージ・怯みにくさ・怯んだ直後の効かない間) を通さないのは、ドアの突入のように
+        // 起こした側が種類と秒数を決めて確実に止めたいものがあるため。今より長く怯んでいれば縮めない。
+        public StaggerVerdict Impose(StaggerKind kind, float seconds)
+        {
+            if (!Enum.IsDefined(typeof(StaggerKind), kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a defined StaggerKind");
+            }
+
+            if (!(seconds >= 0f) || float.IsInfinity(seconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "seconds must be non-negative and finite");
+            }
+
+            if (kind == StaggerKind.None || seconds <= 0f)
+            {
+                return new StaggerVerdict(StaggerOutcome.NoReaction, kind, 0f, _accumulated, 0f);
+            }
+
+            var total = IsStaggered ? Math.Max(SecondsRemaining, seconds) : seconds;
+            Current = kind;
+            SecondsRemaining = total;
+            _immunityRemaining = Math.Max(_immunityRemaining, total + Spec.ImmunitySeconds);
+            ClearDamage();
+            return new StaggerVerdict(StaggerOutcome.Staggered, kind, total, 0f, 0f);
+        }
+
         // 怯みが解けた Tick にだけ、解けた種類を返す。
         public StaggerKind Tick(float deltaSeconds)
         {

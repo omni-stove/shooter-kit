@@ -14,6 +14,7 @@
   "debug.rules.field.Vault": "Vault",
   "debug.rules.field.Grenade": "Grenades",
   "debug.rules.field.Melee": "Melee",
+  "debug.rules.field.Takedown": "Takedowns",
   "debug.rules.field.Stagger": "Stagger",
   "debug.rules.field.Slide": "Slide",
   "debug.rules.field.Mantle": "Mantle",

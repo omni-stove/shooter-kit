@@ -35,7 +35,8 @@ namespace Shooter.Core.Tests
             AimToFire.On,
             Jump.Off,
             emote: Emote.On,
-            stamina: Stamina.On);
+            stamina: Stamina.On,
+            takedown: Takedown.On);
 
         private static readonly GameRules _rules = new GameRules(
             FriendlyFire.On,
@@ -143,6 +144,7 @@ namespace Shooter.Core.Tests
                 (nameof(ActionRules.ReloadInterruptedBy), a => a.WithReloadInterruptedBy(new[] { ReloadInterrupt.Grenade }), new[] { ReloadInterrupt.Grenade }),
                 (nameof(ActionRules.AimWhileReloading), a => a.WithAimWhileReloading(AimWhileReloading.Off), AimWhileReloading.Off),
                 (nameof(ActionRules.Jam), a => a.WithJam(WeaponJam.On), WeaponJam.On),
+                (nameof(ActionRules.Takedown), a => a.WithTakedown(Takedown.Off), Takedown.Off),
             };
 
             // Cover は BlindFire が On のままでは Off にできないので、BlindFire を切った値から確かめる。
@@ -247,6 +249,7 @@ namespace Shooter.Core.Tests
             AssertRejected(() => _actions.WithStamina((Stamina)99), "stamina");
             AssertRejected(() => _actions.WithAimWhileReloading((AimWhileReloading)99), "aimWhileReloading");
             AssertRejected(() => _actions.WithJam((WeaponJam)99), "jam");
+            AssertRejected(() => _actions.WithTakedown((Takedown)99), "takedown");
         }
 
         [Test]
@@ -271,6 +274,7 @@ namespace Shooter.Core.Tests
             Assert.That(actions.Emote, Is.EqualTo(Emote.Off));
             Assert.That(actions.Stamina, Is.EqualTo(Stamina.Off));
             Assert.That(actions.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(actions.Takedown, Is.EqualTo(Takedown.Off));
         }
 
         [Test]
