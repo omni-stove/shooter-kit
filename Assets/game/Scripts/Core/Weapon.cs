@@ -156,7 +156,7 @@ namespace Shooter.Core
             Ammo.Consume();
             _cooldownRemaining = Trigger.MinShotSpacingSeconds;
             Fired?.Invoke();
-            if (Jam != null && Jam.RegisterShot(_jamRoll.Next()))
+            if (Jam != null && Jam.RegisterShot(_jamRoll.Draw()))
             {
                 Jammed?.Invoke();
             }

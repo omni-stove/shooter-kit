@@ -41,7 +41,7 @@ namespace Shooter.Core.Tests
             public int Calls { get; private set; }
 
             // 列を使い切ったら最後の値を返し続ける。
-            public float Next()
+            public float Draw()
             {
                 var value = _values[Math.Min(Calls, _values.Length - 1)];
                 Calls++;
@@ -253,7 +253,7 @@ namespace Shooter.Core.Tests
             var reference = new JamRoll(12345);
             for (var shot = 0; shot < 60; shot++)
             {
-                if (reference.Next() < 0.3f)
+                if (reference.Draw() < 0.3f)
                 {
                     expected.Add(shot);
                 }

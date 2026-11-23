@@ -6,7 +6,7 @@ namespace Shooter.Core
     public interface IJamRoll
     {
         // [0,1) の値を返す。
-        float Next();
+        float Draw();
     }
 
     public sealed class JamRoll : IJamRoll
@@ -26,7 +26,7 @@ namespace Shooter.Core
         }
 
         // System.Random は実装 (Mono と .NET) で列が変わりうるので使わず、MapVote と同じ Lehmer の乗算合同法 (MINSTD) で決める (Unity と dotnet で同じ種から同じ結果にするため)。
-        public float Next()
+        public float Draw()
         {
             _state = _state * _multiplier % _modulus;
             return ((_state - 1L) >> 7) / _scale;

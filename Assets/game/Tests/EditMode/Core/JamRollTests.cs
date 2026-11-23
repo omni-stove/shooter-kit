@@ -12,8 +12,8 @@ namespace Shooter.Core.Tests
             var roll = new JamRoll(0);
 
             // 状態 1 → 48271 → 48271^2 mod (2^31 - 1) = 182605794。値は (状態 - 1) の上位 24 ビット / 2^24。
-            Assert.That(roll.Next(), Is.EqualTo(377f / 16777216f));
-            Assert.That(roll.Next(), Is.EqualTo(1426607f / 16777216f));
+            Assert.That(roll.Draw(), Is.EqualTo(377f / 16777216f));
+            Assert.That(roll.Draw(), Is.EqualTo(1426607f / 16777216f));
         }
 
         [Test]
@@ -24,7 +24,7 @@ namespace Shooter.Core.Tests
 
             for (var i = 0; i < 5; i++)
             {
-                Assert.That(b.Next(), Is.EqualTo(a.Next()), "draw " + i);
+                Assert.That(b.Draw(), Is.EqualTo(a.Draw()), "draw " + i);
             }
         }
 
@@ -36,7 +36,7 @@ namespace Shooter.Core.Tests
                 var roll = new JamRoll(seed);
                 for (var i = 0; i < 10000; i++)
                 {
-                    var value = roll.Next();
+                    var value = roll.Draw();
                     Assert.That(value >= 0f && value < 1f, Is.True, "seed " + seed + " draw " + i + " gave " + value);
                 }
             }
@@ -50,7 +50,7 @@ namespace Shooter.Core.Tests
 
             for (var i = 0; i < 20; i++)
             {
-                Assert.That(b.Next(), Is.EqualTo(a.Next()), "draw " + i);
+                Assert.That(b.Draw(), Is.EqualTo(a.Draw()), "draw " + i);
             }
         }
 
@@ -78,7 +78,7 @@ namespace Shooter.Core.Tests
 
             for (var i = 0; i < 5; i++)
             {
-                Assert.That(fromId.Next(), Is.EqualTo(fromSeed.Next()), "draw " + i);
+                Assert.That(fromId.Draw(), Is.EqualTo(fromSeed.Draw()), "draw " + i);
             }
         }
     }
