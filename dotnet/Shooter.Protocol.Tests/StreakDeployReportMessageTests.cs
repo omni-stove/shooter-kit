@@ -18,12 +18,13 @@ namespace Shooter.Protocol.Tests
         // 37 で承認の壁登りの調整値に、ふちで上に乗るか (WallClimbTuning.MantleAtLedge) が増え、
         // 38 でしまう・構えるの要求 (HolsterRequestMessage) と、スナップショットの武器の部分にその状態が増え、
         // 39 でスナップショットの持ち主に武器を出してはいけない場所の状態 (OwnerSnapshot.WeaponFreeZone) が増え、
-        // 40 で持ち主の武器 (WeaponSync) に二丁持ちの左の手の弾倉とリロードが増えた。
+        // 40 で持ち主の武器 (WeaponSync) に二丁持ちの左の手の弾倉とリロードが増え、
+        // 41 でドアの突入の要求と状態 (BreachRequestMessage・DoorStateMessage) が増えた。
         // 前の版のクライアントはそれを読めないので、つなぐときに断る
         [Test]
-        public void TheProtocolVersionIs40()
+        public void TheProtocolVersionIs41()
         {
-            Assert.That(MatchProtocol.Version, Is.EqualTo(40));
+            Assert.That(MatchProtocol.Version, Is.EqualTo(41));
         }
 
         [Test]
