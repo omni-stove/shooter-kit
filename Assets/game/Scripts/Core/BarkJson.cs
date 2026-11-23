@@ -21,6 +21,8 @@ namespace Shooter.Core
 
         public const string GrenadeWarningRadiusItem = "grenadeWarningRadius";
 
+        public const string SpeakSecondsItem = "speakSeconds";
+
         private const string _kind = "bark JSON";
 
         public static IReadOnlyList<string> ItemNames { get; } = new[]
@@ -32,6 +34,7 @@ namespace Shooter.Core
             MaxSpeakersInCrowdItem,
             HearingDistanceItem,
             GrenadeWarningRadiusItem,
+            SpeakSecondsItem,
         };
 
         public static IReadOnlyList<string> KindItemNames { get; } = KindNames();
@@ -73,6 +76,7 @@ namespace Shooter.Core
                 var maxSpeakersInCrowd = fields.ReadInt(MaxSpeakersInCrowdItem, BarkSpec.DefaultMaxSpeakersInCrowd);
                 var hearingDistance = fields.ReadFloat(HearingDistanceItem, BarkSpec.DefaultHearingDistance);
                 var grenadeWarningRadius = fields.ReadFloat(GrenadeWarningRadiusItem, BarkSpec.DefaultGrenadeWarningRadius);
+                var speakSeconds = fields.ReadFloat(SpeakSecondsItem, BarkSpec.DefaultSpeakSeconds);
                 try
                 {
                     return new BarkSpec(
@@ -82,7 +86,8 @@ namespace Shooter.Core
                         crowdRadius,
                         maxSpeakersInCrowd,
                         hearingDistance,
-                        grenadeWarningRadius);
+                        grenadeWarningRadius,
+                        speakSeconds);
                 }
                 catch (ArgumentException e)
                 {
