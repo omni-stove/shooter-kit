@@ -289,6 +289,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("場面ごとの BGM (メニュー・試合中・勝ち・負け・試合の終わり)。空なら Resources/Presentation/MusicCatalog、それも無ければ BGM を流さない")]
         private MusicCatalog _music;
 
+        [SerializeField, Tooltip("ウェポンライトの見た目 (attachment.light.visualId ごとのプレハブ)。空なら Resources/Presentation/WeaponLightCatalog、それも無ければコードで Spot の Light を作る")]
+        private WeaponLightCatalog _weaponLights;
+
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
         private static GameContent _override;
         private static GameContent _found;
@@ -816,6 +819,12 @@ namespace Shooter.Runtime
         {
             get => _music;
             set => _music = value;
+        }
+
+        public WeaponLightCatalog WeaponLights
+        {
+            get => _weaponLights;
+            set => _weaponLights = value;
         }
 
         public static GameContent Current

@@ -22,6 +22,7 @@ namespace Shooter.Editor
         public const string CompensatorId = "3fc98d19-5fb3-4680-bd5f-30d30d14f84e";
         public const string ForegripId = "6142e02c-15a1-4fe8-9f31-015752f1ca2e";
         public const string ExtendedMagazineId = "eb45e06b-489d-410d-ae0d-f1095df96a0b";
+        public const string WeaponLightId = "f3a7c2e9-58b1-4d06-9e4a-2c7b8d1f6a35";
 
         public const string ModelFolderName = "AttachmentModels";
         public const string ModelPrefix = "Attachment_";
@@ -61,6 +62,7 @@ namespace Shooter.Editor
                 new AttachmentModelEntry(CompensatorId, null, AttachmentAnchor.Front, new Vector3(0.03f, 0.03f, 0.05f)),
                 new AttachmentModelEntry(ForegripId, null, AttachmentAnchor.Bottom, new Vector3(0.025f, 0.08f, 0.025f)),
                 new AttachmentModelEntry(ExtendedMagazineId, null, AttachmentAnchor.Bottom, new Vector3(0.03f, 0.14f, 0.05f)),
+                new AttachmentModelEntry(WeaponLightId, null, AttachmentAnchor.Bottom, new Vector3(0.03f, 0.04f, 0.09f)),
             };
         }
 
@@ -84,6 +86,8 @@ namespace Shooter.Editor
                     return ModelPrefix + "Foregrip";
                 case ExtendedMagazineId:
                     return ModelPrefix + "ExtendedMagazine";
+                case WeaponLightId:
+                    return ModelPrefix + "WeaponLight";
                 default:
                     throw new ArgumentException($"no attachment model for item '{itemId}'", nameof(itemId));
             }
@@ -174,6 +178,20 @@ namespace Shooter.Editor
                     parts.Add(new WeaponPart("MagazineBody", WeaponPartShape.Box, new Vector3(0f, -0.065f, 0.006f), new Vector3(0.026f, 0.13f, 0.05f), WeaponPaint.Body, new Vector3(-8f, 0f, 0f)));
                     parts.Add(new WeaponPart("MagazineFloorPlate", WeaponPartShape.Box, new Vector3(0f, -0.132f, 0.016f), new Vector3(0.032f, 0.01f, 0.058f), WeaponPaint.Furniture, new Vector3(-8f, 0f, 0f)));
                     return new AttachmentShape(parts, null, Vector3.zero);
+
+                // 光と光の筋は WeaponLightCatalog の見た目が受け持つので、ここは銃身の下に付く筒の本体だけを作る。
+                case WeaponLightId:
+                    {
+                        const float diameter = 0.026f;
+                        const float length = 0.08f;
+                        const float mount = 0.012f;
+                        var y = -mount - (diameter * 0.5f);
+                        parts.Add(new WeaponPart("LightMount", WeaponPartShape.Box, new Vector3(0f, -mount * 0.5f, 0f), new Vector3(0.022f, mount, 0.03f), WeaponPaint.Furniture));
+                        parts.Add(new WeaponPart("LightBody", WeaponPartShape.Cylinder, new Vector3(0f, y, 0f), new Vector3(diameter, diameter, length), WeaponPaint.Body));
+                        parts.Add(new WeaponPart("LightBezel", WeaponPartShape.Cylinder, new Vector3(0f, y, (length * 0.5f) + 0.004f), new Vector3(diameter * 1.2f, diameter * 1.2f, 0.008f), WeaponPaint.Furniture));
+                        parts.Add(new WeaponPart("LightLens", WeaponPartShape.Cylinder, new Vector3(0f, y, (length * 0.5f) + 0.009f), new Vector3(diameter, diameter, 0.002f), WeaponPaint.Glass));
+                        return new AttachmentShape(parts, null, Vector3.zero);
+                    }
 
                 default:
                     throw new ArgumentException($"no attachment model for item '{itemId}'", nameof(itemId));

@@ -114,6 +114,8 @@ namespace Shooter.Runtime
 
         public static GameSignal<HolsterStatus?> Holster { get; } = new GameSignal<HolsterStatus?>(nameof(Holster));
 
+        public static GameSignal<WeaponLightStatus?> WeaponLight { get; } = new GameSignal<WeaponLightStatus?>(nameof(WeaponLight));
+
         public static GameSignal<WeaponFreeZoneStatus?> WeaponFreeZone { get; } = new GameSignal<WeaponFreeZoneStatus?>(nameof(WeaponFreeZone));
 
         public static GameSignal<VoteKickStatus?> VoteKick { get; } = new GameSignal<VoteKickStatus?>(nameof(VoteKick));
@@ -196,6 +198,7 @@ namespace Shooter.Runtime
             LockOnWarning.Reset();
             Emotes.Reset();
             Holster.Reset();
+            WeaponLight.Reset();
             WeaponFreeZone.Reset();
             VoteKick.Reset();
             VoteKickSender.Reset();
