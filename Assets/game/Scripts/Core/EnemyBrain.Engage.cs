@@ -9,16 +9,9 @@ namespace Shooter.Core
             _lostElapsed = 0f;
             _lastSeen = target;
 
-            var distance = Vector3.Distance(self, target);
-            if (distance > _spec.FireRange)
-            {
-                _engaging = false;
-                SetState(EnemyState.Chase);
-                return new EnemyDecision(target, target, false);
-            }
-
             // 撃ちながら近づいて Attack に入ったときは構え直さない。入った途端に撃つのをやめると、近づくほど撃たなくなって見える。
-            if (_engaging && (State == EnemyState.Attack || State == EnemyState.Chase))
+            // FireRange の外で見続けていた間も構え時間に数える。FireRange に入ってから数え始めると、構え終わるまで撃たずに走る距離ができる。
+            if (_watching && (State == EnemyState.Attack || State == EnemyState.Chase))
             {
                 _reactionElapsed += deltaSeconds;
             }
@@ -26,6 +19,15 @@ namespace Shooter.Core
             {
                 _reactionElapsed = 0f;
                 _shotsInAttack = 0;
+            }
+
+            _watching = true;
+            var distance = Vector3.Distance(self, target);
+            if (distance > _spec.FireRange)
+            {
+                _engaging = false;
+                SetState(EnemyState.Chase);
+                return new EnemyDecision(target, target, false);
             }
 
             _engaging = true;
@@ -43,6 +45,7 @@ namespace Shooter.Core
         private EnemyDecision Pursue(float deltaSeconds)
         {
             _engaging = false;
+            _watching = false;
             _lostElapsed += deltaSeconds;
             if (_lostElapsed >= _spec.LoseSightSeconds)
             {

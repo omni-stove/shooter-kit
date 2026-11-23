@@ -54,6 +54,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(root.Q<Label>(HudView.AmmoTypeLabelName), Is.Not.Null);
             Assert.That(root.Q<Label>(HudView.MagnificationLabelName), Is.Not.Null);
             Assert.That(root.Q<Label>(HudView.LockOnLabelName), Is.Not.Null);
+            Assert.That(root.Q<Label>(HudView.JamLabelName), Is.Not.Null);
             Assert.That(root.Q<VisualElement>(HudView.AimBlockMarkerName), Is.Not.Null);
         }
 
@@ -1005,6 +1006,8 @@ namespace Shooter.Tests.EditMode
                 [HudView.MagnificationKey] = "x{0}",
                 [HudView.LockOnKey] = "Lock {0}%",
                 [HudView.LockedOnKey] = "Locked",
+                [HudView.JammedKey] = "Jammed",
+                [HudView.ClearingJamKey] = "Clearing jam: {0}% left",
                 ["ammo.slug"] = "Slug",
             });
             GameText.Use(() => table);
@@ -1018,6 +1021,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(view.AmmoTypeLabel.style.display.value, Is.EqualTo(DisplayStyle.None), "ammo type");
             Assert.That(view.MagnificationLabel.style.display.value, Is.EqualTo(DisplayStyle.None), "magnification");
             Assert.That(view.LockOnLabel.style.display.value, Is.EqualTo(DisplayStyle.None), "lock-on");
+            Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.None), "jam");
         }
 
         [Test]
@@ -1088,6 +1092,109 @@ namespace Shooter.Tests.EditMode
             view.ApplyVisibility(HudVisibility.Full);
             Assert.That(view.ChargeLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             Assert.That(view.LockOnLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+        }
+
+        [Test]
+        public void TheJamLabelShowsJammedThenClearingWithTheRemainingShareAndHidesWhenCleared()
+        {
+            var previous = UseGaugeTexts();
+            try
+            {
+                var model = new HudModel();
+                var view = new HudView(CloneLayout(), model);
+
+                model.SetJam();
+                Assert.That(view.JamLabel.text, Is.EqualTo("Jammed"));
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+                model.SetJam(1f);
+                Assert.That(view.JamLabel.text, Is.EqualTo("Clearing jam: 100% left"));
+
+                model.SetJam(0.25f);
+                Assert.That(view.JamLabel.text, Is.EqualTo("Clearing jam: 25% left"));
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+                model.ClearJam();
+                Assert.That(view.JamLabel.text, Is.Empty);
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.None));
+            }
+            finally
+            {
+                GameText.Use(previous);
+            }
+        }
+
+        [Test]
+        public void TheJamLabelFollowsAJammedWeaponThroughItsClear()
+        {
+            var previous = UseGaugeTexts();
+            try
+            {
+                var rules = GameRules.Default.WithActions(ActionRules.Default.WithJam(WeaponJam.On));
+                var spec = new WeaponSpec(
+                    "00000000-0000-4000-8000-000000000001",
+                    "weapon.ref.carbine556",
+                    WeaponCategory.AssaultRifle,
+                    trigger: new TriggerSpec(FireMode.Auto, 0.25f),
+                    ammo: new AmmoSpec(10, 20, 2f, jam: new JamSpec(1f, 0f, 0f, 1f, 1f)));
+                var weapon = new Weapon(spec, rules);
+                var model = new HudModel();
+                model.BindWeapon(weapon);
+                var view = new HudView(CloneLayout(), model);
+
+                weapon.TryFire();
+                Assert.That(view.JamLabel.text, Is.EqualTo("Jammed"));
+
+                weapon.TryStartClearJam();
+                Assert.That(view.JamLabel.text, Is.EqualTo("Clearing jam: 100% left"));
+
+                weapon.Tick(0.5f);
+                model.RefreshWeaponGauges();
+                Assert.That(view.JamLabel.text, Is.EqualTo("Clearing jam: 50% left"));
+
+                weapon.Tick(0.5f);
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.None));
+            }
+            finally
+            {
+                GameText.Use(previous);
+            }
+        }
+
+        [Test]
+        public void HidingTheAmmoHidesTheJamLabelEvenWhileJammed()
+        {
+            var previous = UseGaugeTexts();
+            try
+            {
+                var model = new HudModel();
+                model.SetJam();
+
+                var view = new HudView(CloneLayout(), model, HudVisibility.Hardcore);
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+                view.ApplyVisibility(HudVisibility.Full);
+                Assert.That(view.JamLabel.text, Is.EqualTo("Jammed"));
+                Assert.That(view.JamLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            }
+            finally
+            {
+                GameText.Use(previous);
+            }
+        }
+
+        [Test]
+        public void ALayoutWithoutTheJamLabelStillBuilds()
+        {
+            var root = CloneLayout();
+            var jam = root.Q<Label>(HudView.JamLabelName);
+            jam.RemoveFromHierarchy();
+            var model = new HudModel();
+
+            var view = new HudView(root, model);
+            model.SetJam();
+
+            Assert.That(view.JamLabel, Is.Null);
         }
     }
 }

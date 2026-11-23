@@ -12,6 +12,16 @@ namespace Shooter.Core
             return $"{Prefix(doorId)} kicked by={Name(breacherId)} phase={BreachDoorPhase.Opened}";
         }
 
+        public static string KickBegan(string doorId, string breacherId, float kickSeconds)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0} kick-began by={1} kickSeconds={2:0.00}", Prefix(doorId), Name(breacherId), kickSeconds);
+        }
+
+        public static string KickCancelled(string doorId, string breacherId, string reason)
+        {
+            return $"{Prefix(doorId)} kick-cancelled by={Name(breacherId)} reason={Name(reason)}";
+        }
+
         public static string PlantBegan(string doorId, string planterId, float plantSeconds, float fuseSeconds)
         {
             return string.Format(
@@ -26,6 +36,16 @@ namespace Shooter.Core
         public static string PlantCancelled(string doorId, string planterId, string reason)
         {
             return $"{Prefix(doorId)} plant-cancelled by={Name(planterId)} reason={Name(reason)}";
+        }
+
+        public static string ChargeSpent(string doorId, string planterId, string itemId, int left)
+        {
+            return $"{Prefix(doorId)} charge-spent by={Name(planterId)} item={Name(itemId)} left={left.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        public static string ChargeReturned(string doorId, string planterId, string itemId, bool returned)
+        {
+            return $"{Prefix(doorId)} charge-returned by={Name(planterId)} item={Name(itemId)} returned={(returned ? "yes" : "no")}";
         }
 
         public static string Armed(string doorId, string planterId, float fuseSeconds)
@@ -72,7 +92,7 @@ namespace Shooter.Core
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "{0} spec kickSeconds={1:0.00} plantSeconds={2:0.00} fuseSeconds={3:0.00} reach={4:0.00} room=({5:0.00}, {6:0.00}, {7:0.00}) "
-                + "stagger=({8:0.00}, {9:0.00}) charge=({10}, {11:0.00}) sound=({12:0.00}, {13:0.00}) slowMotion=({14:0.00}, {15:0.00}) chargeItem={16}",
+                + "stagger=({8:0.00}, {9:0.00}) charge=({10}, {11:0.00}) sound=({12:0.00}, {13:0.00}) slowMotion=({14:0.00}, {15:0.00}) chargeItem={16} holdSeconds={17:0.00}",
                 Tag,
                 spec.KickSeconds,
                 spec.PlantSeconds,
@@ -89,7 +109,8 @@ namespace Shooter.Core
                 spec.ChargeSoundRadius,
                 spec.SlowMotionScale,
                 spec.SlowMotionSeconds,
-                Name(spec.ChargeItemId));
+                Name(spec.ChargeItemId),
+                spec.HoldSeconds);
         }
 
         private static string Prefix(string doorId)

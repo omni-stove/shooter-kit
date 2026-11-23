@@ -22,7 +22,7 @@ namespace Shooter.Core
 
         public int Count => _markers.Count;
 
-        public PingPlacement Place(PingHit hit, int? targetKey, float now)
+        public PingPlacement Place(PingHit hit, int? targetKey, double now)
         {
             RequireFinite(now, nameof(now));
             if (!hit.HasTarget)
@@ -65,7 +65,7 @@ namespace Shooter.Core
             return new PingPlacement(marker, false, replaced);
         }
 
-        public PingPlacement Reveal(int targetKey, Vector3 position, float now, float lifetimeSeconds)
+        public PingPlacement Reveal(int targetKey, Vector3 position, double now, float lifetimeSeconds)
         {
             RequireFinite(now, nameof(now));
             if (!PingAim.IsFinite(position))
@@ -142,7 +142,7 @@ namespace Shooter.Core
             return PingTrackResult.Moved;
         }
 
-        public int Expire(float now, List<PingMarker> expired)
+        public int Expire(double now, List<PingMarker> expired)
         {
             RequireFinite(now, nameof(now));
             var removed = 0;
@@ -196,7 +196,7 @@ namespace Shooter.Core
         }
 
         // 付け直しで消える時刻を縮めない。UAV の長い印に手で付け直したときに、UAV の秒数を失わないため。
-        private bool TryRefresh(int targetKey, Vector3 position, float now, float expiresAt, out PingMarker refreshed)
+        private bool TryRefresh(int targetKey, Vector3 position, double now, double expiresAt, out PingMarker refreshed)
         {
             var existing = IndexOfTarget(targetKey);
             if (existing < 0)
@@ -253,9 +253,9 @@ namespace Shooter.Core
             return -1;
         }
 
-        private static void RequireFinite(float value, string name)
+        private static void RequireFinite(double value, string name)
         {
-            if (float.IsNaN(value) || float.IsInfinity(value))
+            if (double.IsNaN(value) || double.IsInfinity(value))
             {
                 throw new ArgumentOutOfRangeException(name, value, name + " must be finite");
             }

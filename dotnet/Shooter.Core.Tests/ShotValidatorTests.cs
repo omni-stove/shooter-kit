@@ -6,6 +6,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class ShotValidatorTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private static readonly ShotTime _valid = new ShotTime(100, 0.5f);
 
         [Test]
@@ -60,6 +63,57 @@ namespace Shooter.Core.Tests
             Assert.That(ShotValidator.Check(Vector3.Zero, new Vector3(0, 0, 0.01f), _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.None));
         }
 
+        [TestCase(1e20f, 0f, 0f)]
+        [TestCase(0f, -1e20f, 0f)]
+        [TestCase(1.5e19f, 1.5e19f, 1.5e19f)]
+        [TestCase(float.MaxValue, float.MaxValue, float.MaxValue)]
+        public void RejectsDirectionWhoseSquaredLengthOverflows(float x, float y, float z)
+        {
+            var direction = new Vector3(x, y, z);
+
+            Assert.That(float.IsPositiveInfinity(direction.LengthSquared()), Is.True, "the case must overflow to be a regression test");
+            Assert.That(ShotValidator.Check(Vector3.Zero, direction, _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.InvalidDirection));
+            Assert.That(ShotValidator.TryNormalizeDirection(direction, 1e-12f, out var unit), Is.False);
+            Assert.That(unit, Is.EqualTo(Vector3.Zero));
+        }
+
+        [Test]
+        public void AcceptsTheLongestDirectionWhoseSquaredLengthIsFinite()
+        {
+            var direction = new Vector3(0f, 0f, 1e19f);
+
+            Assert.That(ShotValidator.Check(Vector3.Zero, direction, _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.None));
+            Assert.That(ShotValidator.TryNormalizeDirection(direction, 1e-12f, out var unit), Is.True);
+            Assert.That(unit.X, Is.EqualTo(0f));
+            Assert.That(unit.Y, Is.EqualTo(0f));
+            Assert.That(unit.Z, Is.EqualTo(1f).Within(1e-6f));
+        }
+
+        [Test]
+        public void NormalizesAnAcceptedDirectionToAFiniteUnitVector()
+        {
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(3f, 0f, 4f), 1e-12f, out var unit), Is.True);
+            Assert.That(unit.X, Is.EqualTo(0.6f).Within(1e-6f));
+            Assert.That(unit.Y, Is.EqualTo(0f));
+            Assert.That(unit.Z, Is.EqualTo(0.8f).Within(1e-6f));
+
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, -2e-6f, 0f), 1e-12f, out var tiny), Is.True);
+            Assert.That(tiny.Y, Is.EqualTo(-1f).Within(1e-6f));
+            Assert.That(tiny.Length(), Is.EqualTo(1f).Within(1e-6f));
+        }
+
+        [Test]
+        public void TryNormalizeDirectionRejectsZeroShortAndNonFiniteInput()
+        {
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.Zero, 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, 0f, 1e-5f), 1e-8f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, 0f, 1e-3f), 1e-8f, out _), Is.True);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(float.NaN, 0f, 1f), 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, float.PositiveInfinity, 0f), 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.Zero, 0f, out _), Is.False, "a zero limit must not let the zero vector through");
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.UnitZ, float.NaN, out _), Is.False);
+        }
+
         [Test]
         public void RejectsInvalidTime()
         {
@@ -81,6 +135,30 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => ShotValidator.Check(Vector3.Zero, Vector3.UnitZ, _valid, Vector3.Zero, float.NaN));
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => ShotValidator.Check(Vector3.Zero, Vector3.UnitZ, _valid, Vector3.Zero, float.PositiveInfinity));
+        }
+
+        [Test]
+        public void AShotTimeKeepsItsFractionPastTheFloatRange()
+        {
+            Assert.That(new ShotTime(_lateTick, 0.25f).ToTick(), Is.EqualTo(16777217.25d));
+
+            var time = ShotTime.FromTick(16777217.25d);
+
+            Assert.That(time.Tick, Is.EqualTo(16777217));
+            Assert.That(time.Alpha, Is.EqualTo(0.25f));
+            Assert.That(time.IsValid, Is.True);
+        }
+
+        [Test]
+        public void AShotTimeFromATickJustBelowTheNextStaysValid()
+        {
+            var time = ShotTime.FromTick(6d - 1e-12d);
+
+            Assert.That(time.Tick, Is.EqualTo(5));
+            Assert.That(time.Alpha, Is.EqualTo(0.99999994f));
+            Assert.That(time.IsValid, Is.True);
+            Assert.That(ShotTime.FromTick(0d).Tick, Is.EqualTo(0));
+            Assert.That(ShotTime.FromTick(0d).Alpha, Is.EqualTo(0f));
         }
     }
 }

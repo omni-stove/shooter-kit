@@ -18,14 +18,6 @@ namespace Shooter.Runtime
 
         public const string ReasonRespawn = "respawn";
 
-        // 低い壁 (1.1m 未満) にも段差より上で当たる高さにする。
-        public const float DefaultProbeHeight = 0.5f;
-
-        // 足元の Ray が車体の下の隙間を抜けたとき、車のように浮いた物にも当たる高さで探し直す。低い壁 (1.1m) より下にする。
-        public const float DefaultUpperProbeHeight = CharacterCoverSensor.UpperProbeHeight;
-
-        public const float DefaultTopProbeHeight = 3f;
-
         private const string LogTag = CoverState.LogTag;
 
         // 壁の上端を下ろす Ray で探すとき、当たった面から壁の内側へ入れる距離 (m)。面ちょうどだと上端の角を外すことがある。
@@ -41,15 +33,6 @@ namespace Shooter.Runtime
 
         [SerializeField, Tooltip("カバーにする壁として当たるレイヤー")]
         private LayerMask _wallMask = Physics.DefaultRaycastLayers;
-
-        [SerializeField, Min(0f), Tooltip("壁を探す Ray の、足元からの高さ (m)")]
-        private float _probeHeight = DefaultProbeHeight;
-
-        [SerializeField, Min(0f), Tooltip("足元の Ray が下を抜けたときに壁を探し直す Ray の、足元からの高さ (m)")]
-        private float _upperProbeHeight = DefaultUpperProbeHeight;
-
-        [SerializeField, Min(0f), Tooltip("壁の上端を探す Ray の始点の、足元からの高さ (m)")]
-        private float _topProbeHeight = DefaultTopProbeHeight;
 
         // 初期化前にも IsInCover などを読まれるので空の状態を先に作る。値は Tick ごとに PlayerController の移動の設定に差し替える。
         private readonly CoverState _state = new CoverState(MotorSpec.Default);
@@ -480,10 +463,10 @@ namespace Shooter.Runtime
         private CoverProbeResult Probe(Vector3 bodyPosition, Vector3 direction, Vector3 facing)
         {
             var feetY = FeetY();
-            var origin = new Vector3(bodyPosition.x, feetY + _probeHeight, bodyPosition.z);
+            var origin = new Vector3(bodyPosition.x, feetY + _state.Spec.CoverProbeHeight, bodyPosition.z);
             if (!TryCast(origin, direction, _state.Spec.CoverMaxEnterDistance, out var hit))
             {
-                origin = new Vector3(bodyPosition.x, feetY + _upperProbeHeight, bodyPosition.z);
+                origin = new Vector3(bodyPosition.x, feetY + _state.Spec.CoverUpperProbeHeight, bodyPosition.z);
                 if (!TryCast(origin, direction, _state.Spec.CoverMaxEnterDistance, out hit))
                 {
                     return CoverProbeResult.None;
@@ -518,9 +501,10 @@ namespace Shooter.Runtime
         private float MeasureTopHeight(RaycastHit hit, float feetY)
         {
             var inset = hit.point - (Flatten(hit.normal) * TopProbeInset);
-            var start = new Vector3(inset.x, feetY + _topProbeHeight, inset.z);
+            var topProbeHeight = _state.Spec.CoverTopProbeHeight;
+            var start = new Vector3(inset.x, feetY + topProbeHeight, inset.z);
             var ray = new Ray(start, Vector3.down);
-            return hit.collider.Raycast(ray, out var top, _topProbeHeight) ? top.point.y - feetY : _topProbeHeight;
+            return hit.collider.Raycast(ray, out var top, topProbeHeight) ? top.point.y - feetY : topProbeHeight;
         }
 
         private bool TryCast(Vector3 origin, Vector3 direction, float distance, out RaycastHit nearest)

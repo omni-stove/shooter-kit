@@ -59,6 +59,9 @@ namespace Shooter.Tests.EditMode
             nameof(KnockbackSmokeRun),
             nameof(DominationSmokeRun),
             nameof(CaptureTheFlagSmokeRun),
+
+            // SmokeSuite.Runs へはつなぎ込みの issue で足すので、それまではスイートの外に置く。
+            nameof(JuggernautSmokeRun),
         };
 
         [Test]

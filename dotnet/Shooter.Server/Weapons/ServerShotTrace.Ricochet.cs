@@ -10,7 +10,7 @@ namespace Shooter.Server
         // 当たった点から撃ち直すと、浮動小数の誤差で跳ねた面そのものにもう一度当たることがあるので、面から少し離して撃つ (Unity の ShotCast と同じ値)。
         public const float RicochetSurfaceOffset = 0.01f;
 
-        partial void Ricochet(RoundSpec round, float tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments, int first)
+        partial void Ricochet(RoundSpec round, double tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments, int first)
         {
             // 貫通する弾は止まった面で跳ねない (オフラインの HitscanDelivery と同じ)。
             var ricochet = round.Ricochet;

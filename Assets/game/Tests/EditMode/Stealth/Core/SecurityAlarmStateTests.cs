@@ -211,5 +211,22 @@ namespace Shooter.Core.Tests
             Assert.That(SecurityAlarmLog.Stopped("cam-a", at), Does.StartWith(SecurityAlarmLog.Prefix("cam-a")));
             Assert.Throws<ArgumentNullException>(() => SecurityAlarmLog.Raised(SecurityAlarmRaise.Started, "cam-a", at, null));
         }
+
+        [Test]
+        public void TheEnemyLineNamesTheEnemyTheCameraAndWhatItDid()
+        {
+            var at = new Vector3(1f, 0f, -2.5f);
+
+            Assert.That(
+                SecurityAlarmLog.Received("enemy-1", "cam-a", at, HearingOutcome.Investigating, Stealth.On),
+                Is.EqualTo("[Stealth] id=enemy-1 security-alarm camera=cam-a at=(1.00, 0.00, -2.50) outcome=Investigating rule=On"));
+            Assert.That(
+                SecurityAlarmLog.Received("enemy-2", string.Empty, Vector3.Zero, HearingOutcome.Engaged, Stealth.Off),
+                Is.EqualTo("[Stealth] id=enemy-2 security-alarm camera=- at=(0.00, 0.00, 0.00) outcome=Engaged rule=Off"));
+            Assert.That(SecurityAlarmLog.ReceivedPrefix("enemy-1"), Is.EqualTo("[Stealth] id=enemy-1 security-alarm "));
+            Assert.That(
+                SecurityAlarmLog.Received("enemy-1", "cam-a", at, HearingOutcome.Investigating, Stealth.On),
+                Does.StartWith(SecurityAlarmLog.ReceivedPrefix("enemy-1")));
+        }
     }
 }

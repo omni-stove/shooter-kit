@@ -203,7 +203,7 @@ namespace Shooter.Server
             });
         }
 
-        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, float shotTick)
+        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, double shotTick)
         {
             Add(shooterId, new Record { Kind = RecordKind.Shot, Tick = shotTick, First = origin, Second = direction });
         }

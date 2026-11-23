@@ -22,9 +22,14 @@ namespace Shooter.Runtime
         [NonSerialized]
         private InputAction _action;
 
+        // 進み具合は扉の案内と別の持ち主で出し、扉の案内を覚えたまま上に重ねる。進み具合が消えたら覚えた案内に戻す
+        private readonly object _breachOwner = new object();
+
         public override string ElementName => UxmlName;
 
         public bool IsShown => _owner != null;
+
+        public bool IsShowingBreachProgress => _owner != null && _owner == _breachOwner;
 
         public string Text => IsShown ? _text : string.Empty;
 
@@ -44,6 +49,8 @@ namespace Shooter.Runtime
                 case VehicleBoardHint board:
                     text = VehicleBoardPrompt.Describe(board, keyLabel);
                     return true;
+                case BreachHint breach:
+                    return BreachPrompt.TryDescribe(breach, keyLabel, out text);
                 case SecurityCameraHint camera:
                     text = SecurityCameraPrompt.Describe(camera, keyLabel);
                     return true;
@@ -63,6 +70,8 @@ namespace Shooter.Runtime
                     return crate.InputActionPath;
                 case VehicleBoardHint board:
                     return board.InputActionPath;
+                case BreachHint breach:
+                    return breach.InputActionPath;
                 case SecurityCameraHint camera:
                     return camera.InputActionPath;
                 default:
@@ -98,7 +107,11 @@ namespace Shooter.Runtime
         {
             if (hint == null || hint.Value.Source == null)
             {
-                if (_hint.HasValue)
+                if (IsShowingBreachProgress)
+                {
+                    _hint = null;
+                }
+                else if (_hint.HasValue)
                 {
                     Clear();
                 }
@@ -107,7 +120,32 @@ namespace Shooter.Runtime
             }
 
             _hint = hint;
+            if (IsShowingBreachProgress)
+            {
+                return;
+            }
+
             ShowHint(KeyLabelFor(hint.Value.Detail));
+        }
+
+        public void Show(BreachStatus? status)
+        {
+            if (BreachPrompt.TryDescribeProgress(status, out var text) && Write(_breachOwner, text))
+            {
+                return;
+            }
+
+            if (!IsShowingBreachProgress)
+            {
+                return;
+            }
+
+            var hint = _hint;
+            Clear();
+            if (hint.HasValue)
+            {
+                Show(hint);
+            }
         }
 
         private void ShowHint(string keyLabel)
@@ -163,7 +201,7 @@ namespace Shooter.Runtime
 
         private void Update()
         {
-            if (!_hint.HasValue)
+            if (!_hint.HasValue || IsShowingBreachProgress)
             {
                 return;
             }
@@ -182,6 +220,12 @@ namespace Shooter.Runtime
             if (hint.HasValue || _hint.HasValue)
             {
                 Show(hint);
+            }
+
+            var breach = GameSignals.Breach.Value;
+            if (breach.HasValue || IsShowingBreachProgress)
+            {
+                Show(breach);
             }
 
             // 要素を持っていない間の言語の変更は届かないので、受けたときに今の言語で文にし直す
@@ -211,6 +255,7 @@ namespace Shooter.Runtime
             if (!_subscribed)
             {
                 GameSignals.InteractHint.Changed += HandleHintChanged;
+                GameSignals.Breach.Changed += HandleBreachChanged;
                 _subscribed = true;
             }
         }
@@ -220,6 +265,7 @@ namespace Shooter.Runtime
             if (_subscribed)
             {
                 GameSignals.InteractHint.Changed -= HandleHintChanged;
+                GameSignals.Breach.Changed -= HandleBreachChanged;
                 _subscribed = false;
             }
         }
@@ -234,6 +280,18 @@ namespace Shooter.Runtime
             }
 
             Show(hint);
+        }
+
+        private void HandleBreachChanged(BreachStatus? status)
+        {
+            // HandleHintChanged と同じく、消えた後に届いた通知で購読を外す
+            if (this == null)
+            {
+                GameSignals.Breach.Changed -= HandleBreachChanged;
+                return;
+            }
+
+            Show(status);
         }
 
         private void ResolveText()

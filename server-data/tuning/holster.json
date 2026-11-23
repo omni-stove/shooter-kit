@@ -1,0 +1,5 @@
+{
+  "moveSpeedMultiplier": 1,
+  "armedPhases": ["Drawn", "Drawing"],
+  "armedWhileHeldByOthers": false
+}

@@ -9,6 +9,9 @@ namespace Shooter.NetV2.Tests
 {
     public sealed class PredictionAndInterpolationTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private const float _tickSeconds = 1f / TickClock.DefaultTickRate;
         private static readonly Vector3 _spawn = new Vector3(0f, 1.25f, 0f);
 
@@ -620,6 +623,43 @@ namespace Shooter.NetV2.Tests
         private static NetMapWater Pool()
         {
             return new NetMapWater(new[] { new MapWater(new WaterBox(new Vector3(-20f, -1f, -20f), new Vector3(20f, 4f, 20f), 4f)) });
+        }
+
+        [Test]
+        public void TheClockKeepsAdvancingEveryFramePastTheFloatRange()
+        {
+            const float frameSeconds = 1f / 144f;
+            var clock = new InterpolationClock(60);
+            clock.Advance(0f, _lateTick + 2);
+            Assert.That(clock.RenderTick, Is.EqualTo(16777217d));
+
+            clock.Advance(frameSeconds, _lateTick + 2);
+            Assert.That(clock.RenderTick, Is.EqualTo(16777217d + ((double)frameSeconds * 60d)).Within(1e-9d));
+
+            var previous = clock.RenderTick;
+            for (var frame = 0; frame < 3; frame++)
+            {
+                clock.Advance(frameSeconds, _lateTick + 2);
+                Assert.That(clock.RenderTick, Is.GreaterThan(previous), "frame " + frame);
+                Assert.That(clock.RenderTick - previous, Is.InRange(0.3d, 0.5d), "frame " + frame);
+                previous = clock.RenderTick;
+            }
+
+            Assert.That(clock.RenderTick, Is.InRange(16777218d, 16777219d), "it stays behind the newest tick it has");
+        }
+
+        [Test]
+        public void ATrackInterpolatesBetweenTicksPastTheFloatRange()
+        {
+            var track = new RemoteTrack();
+            track.Record(_lateTick, new RemotePose(Vector3.Zero, 0f, PlayerStance.Standing, ""));
+            track.Record(_lateTick + 1, new RemotePose(new Vector3(4f, 0f, 0f), 1f, PlayerStance.Standing, ""));
+
+            Assert.That(track.TrySample(_lateTick + 0.25d, out var quarter), Is.True);
+            Assert.That(quarter.Position.X, Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(quarter.Yaw, Is.EqualTo(0.25f).Within(1e-5f));
+            Assert.That(track.TrySample(_lateTick + 0.75d, out var later), Is.True);
+            Assert.That(later.Position.X, Is.EqualTo(3f).Within(1e-5f));
         }
     }
 }

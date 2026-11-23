@@ -46,6 +46,31 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheOwningAccountIsWrittenAndReadBack()
+        {
+            var stamps = new CloudSaveStamps { Account = "a1" };
+            stamps.Set("profile", new CloudSaveStamp(20, false));
+
+            var json = stamps.ToJson();
+
+            Assert.That(json, Is.EqualTo("{\"version\":1,\"account\":\"a1\",\"slots\":{\"profile\":{\"savedAt\":20,\"deleted\":false}}}"));
+            var read = CloudSaveStamps.FromJson(json);
+            Assert.That(read.Account, Is.EqualTo("a1"));
+            Assert.That(read.TryGet("profile", out var profile), Is.True);
+            Assert.That(profile, Is.EqualTo(new CloudSaveStamp(20, false)));
+        }
+
+        [Test]
+        public void StampsWrittenBeforeAccountsWereRecordedHaveNoOwner()
+        {
+            var read = CloudSaveStamps.FromJson("{\"version\":1,\"slots\":{\"profile\":{\"savedAt\":20,\"deleted\":false}}}");
+
+            Assert.That(read.Account, Is.Null);
+            Assert.That(read.TryGet("profile", out var profile), Is.True);
+            Assert.That(profile, Is.EqualTo(new CloudSaveStamp(20, false)));
+        }
+
+        [Test]
         public void SettingASlotAgainReplacesIt()
         {
             var stamps = new CloudSaveStamps();
@@ -65,6 +90,8 @@ namespace Shooter.Core.Tests
         [TestCase("{\"version\":1,\"slots\":{\"profile\":{\"savedAt\":1}}}")]
         [TestCase("{\"version\":1,\"slots\":{\"profile\":{\"savedAt\":1,\"deleted\":false,\"extra\":0}}}")]
         [TestCase("{\"version\":1,\"slots\":{\"\":{\"savedAt\":1,\"deleted\":false}}}")]
+        [TestCase("{\"version\":1,\"account\":\"\",\"slots\":{}}")]
+        [TestCase("{\"version\":1,\"account\":7,\"slots\":{}}")]
         public void BrokenDataIsRejected(string json)
         {
             Assert.Throws<FormatException>(() => CloudSaveStamps.FromJson(json));

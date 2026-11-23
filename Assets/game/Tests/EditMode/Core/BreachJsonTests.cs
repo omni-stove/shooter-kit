@@ -26,6 +26,7 @@ namespace Shooter.Core.Tests
             "slowMotionScale",
             "slowMotionSeconds",
             "chargeItemId",
+            "holdSeconds",
         };
 
         [Test]
@@ -35,7 +36,7 @@ namespace Shooter.Core.Tests
                 "{\"kickSeconds\": 0.4, \"plantSeconds\": 3, \"fuseSeconds\": 1.5, \"reach\": 2, \"roomDepth\": 6, \"roomWidth\": 5, \"roomHeight\": 3,"
                 + " \"kickStaggerSeconds\": 1, \"chargeStaggerSeconds\": 2.5, \"chargeDamage\": 75, \"chargeRadius\": 3.5,"
                 + " \"kickSoundRadius\": 20, \"chargeSoundRadius\": 80, \"slowMotionScale\": 0.5, \"slowMotionSeconds\": 2,"
-                + " \"chargeItemId\": \"" + _itemId + "\"}",
+                + " \"chargeItemId\": \"" + _itemId + "\", \"holdSeconds\": 0.5}",
                 "breach.json");
 
             Assert.That(spec.KickSeconds, Is.EqualTo(0.4f));
@@ -55,6 +56,7 @@ namespace Shooter.Core.Tests
             Assert.That(spec.SlowMotionSeconds, Is.EqualTo(2f));
             Assert.That(spec.ChargeItemId, Is.EqualTo(_itemId));
             Assert.That(spec.NeedsChargeItem, Is.True);
+            Assert.That(spec.HoldSeconds, Is.EqualTo(0.5f));
         }
 
         [Test]
@@ -75,6 +77,7 @@ namespace Shooter.Core.Tests
             Assert.That(empty.ChargeItemId, Is.Empty);
             Assert.That(empty.NeedsChargeItem, Is.False, "without an item id the charge needs nothing from the inventory");
             Assert.That(empty.SlowsMotion, Is.True);
+            Assert.That(empty.HoldSeconds, Is.EqualTo(0.35f));
         }
 
         [Test]
@@ -93,7 +96,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void WhatIsWrittenReadsBackTheSame()
         {
-            var spec = new BreachSpec(0.3f, 1.25f, 0f, 1.75f, 7f, 3f, 2f, 0f, 4f, 0, 0f, 0f, 45f, 1f, 0f, " " + _itemId + " ");
+            var spec = new BreachSpec(0.3f, 1.25f, 0f, 1.75f, 7f, 3f, 2f, 0f, 4f, 0, 0f, 0f, 45f, 1f, 0f, " " + _itemId + " ", 0.25f);
 
             var written = BreachJson.Write(spec);
             var read = BreachJson.Parse(written, "breach.json");
@@ -104,6 +107,7 @@ namespace Shooter.Core.Tests
             Assert.That(read.KickStaggerSeconds, Is.Zero, "0 turns the kick stagger off");
             Assert.That(read.ChargeDamage, Is.Zero);
             Assert.That(read.SlowsMotion, Is.False);
+            Assert.That(read.HoldSeconds, Is.EqualTo(0.25f));
             foreach (var item in _expectedItemNames)
             {
                 Assert.That(written, Does.Contain("\"" + item + "\""), item);
@@ -149,6 +153,7 @@ namespace Shooter.Core.Tests
         [TestCase("{\"slowMotionScale\": 1.5}", "slowMotionScale")]
         [TestCase("{\"slowMotionSeconds\": -1}", "slowMotionSeconds")]
         [TestCase("{\"chargeItemId\": \"Breach-Charge\"}", "chargeItemId")]
+        [TestCase("{\"holdSeconds\": 0}", "holdSeconds")]
         public void AValueOutOfRangeNamesItsItem(string json, string item)
         {
             var rejected = Assert.Throws<TuningJsonException>(() => BreachJson.Parse(json, "breach.json"));
@@ -184,7 +189,7 @@ namespace Shooter.Core.Tests
             Assert.That(
                 BreachLog.Loaded(BreachSpec.Default),
                 Is.EqualTo("[Breach] spec kickSeconds=0.60 plantSeconds=2.50 fuseSeconds=2.00 reach=1.50 room=(5.00, 4.00, 2.50) "
-                    + "stagger=(1.50, 3.00) charge=(40, 2.50) sound=(25.00, 60.00) slowMotion=(0.35, 1.50) chargeItem=-"));
+                    + "stagger=(1.50, 3.00) charge=(40, 2.50) sound=(25.00, 60.00) slowMotion=(0.35, 1.50) chargeItem=- holdSeconds=0.35"));
             Assert.That(BreachLog.Kicked("door-1", "player-1"), Is.EqualTo("[Breach] door=door-1 kicked by=player-1 phase=Opened"));
             Assert.That(
                 BreachLog.PlantCancelled("door-1", null, "staggered"),
@@ -195,6 +200,16 @@ namespace Shooter.Core.Tests
             Assert.That(
                 BreachLog.Staggered("door-1", BreachMethod.Kick, StaggerKind.Stumble, 1.5f, 2),
                 Is.EqualTo("[Breach] door=door-1 staggered method=Kick kind=Stumble seconds=1.50 count=2"));
+            Assert.That(BreachLog.KickBegan("door-1", "player-1", 0.6f), Is.EqualTo("[Breach] door=door-1 kick-began by=player-1 kickSeconds=0.60"));
+            Assert.That(
+                BreachLog.KickCancelled("door-1", "player-1", "left"),
+                Is.EqualTo("[Breach] door=door-1 kick-cancelled by=player-1 reason=left"));
+            Assert.That(
+                BreachLog.ChargeSpent("door-1", "player-1", _itemId, 2),
+                Is.EqualTo("[Breach] door=door-1 charge-spent by=player-1 item=" + _itemId + " left=2"));
+            Assert.That(
+                BreachLog.ChargeReturned("door-1", "player-1", _itemId, true),
+                Is.EqualTo("[Breach] door=door-1 charge-returned by=player-1 item=" + _itemId + " returned=yes"));
         }
     }
 }

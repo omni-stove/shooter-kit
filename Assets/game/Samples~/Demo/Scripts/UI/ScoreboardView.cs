@@ -832,7 +832,7 @@ namespace Shooter.Runtime
         {
             var reasons = new VisualElement { pickingMode = PickingMode.Ignore };
             reasons.AddToClassList(ReasonsRowClass);
-            reasons.Add(new Label(Localizer.Resolve(ModerationText.ReportPrompt(shownName))) { pickingMode = PickingMode.Ignore });
+            reasons.Add(new Label(Localizer.Resolve(ModerationText.ReportPrompt(shownName))) { pickingMode = PickingMode.Ignore, enableRichText = false });
             foreach (var reason in _reasons)
             {
                 var chosen = reason;
@@ -906,7 +906,7 @@ namespace Shooter.Runtime
 
         private static Label Cell(string text, string className)
         {
-            var label = new Label(text) { pickingMode = PickingMode.Ignore };
+            var label = new Label(text) { pickingMode = PickingMode.Ignore, enableRichText = false };
             label.AddToClassList(className);
             return label;
         }

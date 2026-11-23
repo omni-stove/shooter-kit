@@ -49,11 +49,12 @@
             <ui:VisualElement name="hud-reload-fill" class="hud__reload-fill" picking-mode="Ignore" />
             <ui:VisualElement name="hud-reload-window" class="hud__reload-window" picking-mode="Ignore" />
         </ui:VisualElement>
-        <!-- 武器の溜め・熱・弾薬の種類。武器にその値があるときだけ HudView が行ごと出す。 -->
+        <!-- 武器の溜め・熱・弾薬の種類・弾詰まり (解除中は残りの割合)。武器にその値があるときだけ HudView が行ごと出す。 -->
         <ui:VisualElement name="hud-weapon-gauges" class="hud__weapon-gauges" picking-mode="Ignore">
             <ui:Label name="hud-ammo-type" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
             <ui:Label name="hud-charge" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
             <ui:Label name="hud-heat" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
+            <ui:Label name="hud-jam" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
         </ui:VisualElement>
         <!-- 照準の下に出す倍率とロックオンの進み。値があるときだけ HudView が出す。 -->
         <ui:VisualElement name="hud-aim-readout" class="hud__aim-readout" picking-mode="Ignore">
@@ -114,6 +115,8 @@
         <ui:VisualElement name="lock-warning" class="lock-warning" picking-mode="Ignore" style="display: none;" />
         <!-- 武器を出してはいけない場所で構えている警告。GameSignals.WeaponFreeZone の中にいて GameSignals.Holster が武装の間だけ WeaponFreeZoneView が出し、反応ごとの文字 (weapon-free-warning__text) を入れ、敵対までの秒読みは hostile の、自動でしまう・構えられないは forced の修飾クラスを付ける。 -->
         <ui:VisualElement name="weapon-free-warning" class="weapon-free-warning" picking-mode="Ignore" style="display: none;" />
+        <!-- 持っている銃のウェポンライトの点灯・消灯。GameSignals.WeaponLight が HasLight の間だけ WeaponLightView が出し、印 (weapon-light__icon) と文字 (weapon-light__text) を入れ、点灯中は on の修飾クラスを付ける。 -->
+        <ui:VisualElement name="weapon-light" class="weapon-light" picking-mode="Ignore" style="display: none;" />
         <!-- 監視カメラに見つかって警報が鳴っている知らせ。GameSignals.StealthAlarm が鳴っている間だけ SecurityAlarmView が出し、警報の文字と残り秒数 (security-alarm__text) を入れる。 -->
         <ui:VisualElement name="security-alarm" class="security-alarm" picking-mode="Ignore" style="display: none;" />
         <!-- エモートを選ぶ輪。GameSignals.Emotes がある間に Emote を長押しすると EmoteWheelView が出し、エモートごとの枠 (emote-wheel__slot) を円に並べ、中央 (emote-wheel__center) に指している名前を入れる。 -->

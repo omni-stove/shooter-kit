@@ -12,6 +12,8 @@ namespace Shooter.Core.Tests
 
             Assert.That(spec.Brain.SightRange, Is.EqualTo(40f));
             Assert.That(spec.Brain.AttackRange, Is.EqualTo(25f));
+            Assert.That(spec.Brain.FireRange, Is.EqualTo(40f));
+            Assert.That(NetBotSpec.DefaultFireRange, Is.EqualTo(EnemySpec.DefaultFireRange));
             Assert.That(spec.Brain.LoseSightSeconds, Is.EqualTo(2f));
             Assert.That(spec.Brain.SearchSeconds, Is.EqualTo(6f));
             Assert.That(spec.Brain.ReactionSeconds, Is.EqualTo(0.6f));

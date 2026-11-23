@@ -51,6 +51,7 @@ namespace Shooter.Tests.EditMode
             _storage = new FileSaveStorage(_root);
             _reloads = 0;
             CampaignLaunchSelection.Clear();
+            CampaignRunner.ForgetPassedCheckpoints();
             GameSignals.ResetAll();
         }
 
@@ -71,6 +72,7 @@ namespace Shooter.Tests.EditMode
             _assets.Clear();
             Object.DestroyImmediate(_definition);
             CampaignLaunchSelection.Clear();
+            CampaignRunner.ForgetPassedCheckpoints();
             GameSignals.ResetAll();
 
             if (Directory.Exists(_root))
@@ -1011,6 +1013,99 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void AZeroSavedNoticeSavesOnceWithoutShowingTheNotice()
+        {
+            var catalog = ScriptableObject.CreateInstance<MissionCatalog>();
+            _assets.Add(catalog);
+            catalog.SavedNoticeSeconds = 0f;
+            var scene = BuildScene();
+            scene.Campaign.Missions = catalog;
+            BeginQuietly(scene);
+            Assert.That(scene.Campaign.SavedNoticeSeconds, Is.Zero);
+
+            ExpectCampaign($"saved mission={MissionName} checkpoint={CheckpointId} health=100 equipped={RifleId} ammo={RifleId}:30/90,{HandgunId}:30/90");
+            Assert.That(scene.Checkpoint.HandleEnter(scene.PlayerCollider), Is.True);
+
+            Assert.That(scene.Checkpoint.IsReached, Is.True);
+            Assert.That(scene.Campaign.LastCheckpointId, Is.EqualTo(CheckpointId));
+            Assert.That(scene.Campaign.Notice.Notice, Is.EqualTo(HudNotice.None));
+
+            scene.Player.TakeDamage(30);
+            Assert.That(scene.Checkpoint.HandleEnter(scene.PlayerCollider), Is.False, "entering again does not save again");
+            Assert.That(_storage.TryRead(Slot, out var text), Is.True);
+            Assert.That(CampaignSave.FromJson(text).Health, Is.EqualTo(100), "the save is still the first one");
+        }
+
+        [Test]
+        public void PassedCheckpointsAreRememberedPerMission()
+        {
+            const string secondCheckpointId = "cp2";
+            const string otherMission = "CampaignTestMissionB";
+            const string otherSlot = CampaignSaveSlots.Prefix + otherMission;
+
+            var first = BuildScene();
+            var firstSecond = AddCheckpoint(first, secondCheckpointId);
+            BeginQuietly(first);
+            ExpectCampaign(new Regex($@"^\[Campaign\] saved mission={MissionName} checkpoint={CheckpointId} "));
+            Assert.That(first.Checkpoint.HandleEnter(first.PlayerCollider), Is.True);
+            ExpectCampaign(new Regex($@"^\[Campaign\] saved mission={MissionName} checkpoint={secondCheckpointId} "));
+            Assert.That(firstSecond.HandleEnter(first.PlayerCollider), Is.True);
+            first.Dispose();
+
+            _definition.Id = otherMission;
+            _storage.Write(otherSlot, SaveAtCheckpoint(otherMission, 45).ToJson());
+            var other = BuildScene();
+            var otherSecond = AddCheckpoint(other, secondCheckpointId);
+            ExpectCampaign($"started mission={otherMission}");
+            ExpectCampaign(new Regex($@"^\[Campaign\] restored mission={otherMission} checkpoint={CheckpointId} health=45 "));
+            other.Begin(_storage, () => _reloads++);
+
+            Assert.That(other.Checkpoint.IsReached, Is.True);
+            Assert.That(otherSecond.IsReached, Is.False, "a checkpoint passed in another mission is not passed here");
+            ExpectCampaign(new Regex($@"^\[Campaign\] saved mission={otherMission} checkpoint={secondCheckpointId} health=45 "));
+            Assert.That(otherSecond.HandleEnter(other.PlayerCollider), Is.True);
+            Assert.That(_storage.TryRead(otherSlot, out var text), Is.True);
+            Assert.That(CampaignSave.FromJson(text).CheckpointId, Is.EqualTo(secondCheckpointId));
+            other.Dispose();
+
+            _definition.Id = MissionName;
+            var again = BuildScene();
+            var againSecond = AddCheckpoint(again, secondCheckpointId);
+            ExpectCampaign($"started mission={MissionName}");
+            ExpectCampaign(new Regex($@"^\[Campaign\] restored mission={MissionName} checkpoint={secondCheckpointId} health=100 "));
+            again.Begin(_storage, () => _reloads++);
+
+            Assert.That(againSecond.IsReached, Is.True);
+            Assert.That(again.Checkpoint.IsReached, Is.True, "the first mission still remembers its earlier checkpoint");
+        }
+
+        [Test]
+        public void ForgetPassedCheckpointsLeavesOnlyTheCheckpointOfTheSave()
+        {
+            const string secondCheckpointId = "cp2";
+
+            var first = BuildScene();
+            var firstSecond = AddCheckpoint(first, secondCheckpointId);
+            BeginQuietly(first);
+            ExpectCampaign(new Regex($@"^\[Campaign\] saved mission={MissionName} checkpoint={CheckpointId} "));
+            Assert.That(first.Checkpoint.HandleEnter(first.PlayerCollider), Is.True);
+            ExpectCampaign(new Regex($@"^\[Campaign\] saved mission={MissionName} checkpoint={secondCheckpointId} "));
+            Assert.That(firstSecond.HandleEnter(first.PlayerCollider), Is.True);
+            first.Dispose();
+
+            CampaignRunner.ForgetPassedCheckpoints();
+
+            var second = BuildScene();
+            var secondSecond = AddCheckpoint(second, secondCheckpointId);
+            ExpectCampaign($"started mission={MissionName}");
+            ExpectCampaign(new Regex($@"^\[Campaign\] restored mission={MissionName} checkpoint={secondCheckpointId} health=100 "));
+            second.Begin(_storage, () => _reloads++);
+
+            Assert.That(secondSecond.IsReached, Is.True);
+            Assert.That(second.Checkpoint.IsReached, Is.False);
+        }
+
+        [Test]
         public void ASetReloadDelayOverridesTheMissionCatalog()
         {
             var catalog = ScriptableObject.CreateInstance<MissionCatalog>();
@@ -1117,6 +1212,17 @@ namespace Shooter.Tests.EditMode
             var scene = new CampaignScene(_definition, _checkpointPosition, _spawnPosition);
             _scenes.Add(scene);
             return scene;
+        }
+
+        private static CheckpointTrigger AddCheckpoint(CampaignScene scene, string id)
+        {
+            var checkpoint = Track(scene, new GameObject("Checkpoint-" + id));
+            checkpoint.transform.position = _checkpointPosition + new Vector3(20f, 0f, 0f);
+            checkpoint.AddComponent<BoxCollider>().isTrigger = true;
+            var trigger = checkpoint.AddComponent<CheckpointTrigger>();
+            trigger.CheckpointId = id;
+            trigger.Runner = scene.Campaign;
+            return trigger;
         }
 
         private static T Track<T>(CampaignScene scene, T created)

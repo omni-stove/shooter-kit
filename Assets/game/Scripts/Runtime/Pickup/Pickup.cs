@@ -77,6 +77,10 @@ namespace Shooter.Runtime
         private float _age;
         private bool _reportedInvalid;
 
+        // 一部だけ拾われる前の中身。Unity が private の欄まで写すホットリロードで、設定でない値を残さないよう NonSerialized にする。
+        [NonSerialized]
+        private PickupContents _stocked;
+
         public event Action<PickupCollection> Collected;
 
         public PickupContents Contents
@@ -91,6 +95,7 @@ namespace Shooter.Runtime
 
                 _spec = value.ToSpec();
                 _contents = value;
+                _stocked = null;
                 _reportedInvalid = false;
             }
         }
@@ -341,6 +346,11 @@ namespace Shooter.Runtime
 
         public void Restock()
         {
+            if (_stocked != null)
+            {
+                Contents = _stocked;
+            }
+
             _collected = false;
             _age = 0f;
             _inside.Clear();

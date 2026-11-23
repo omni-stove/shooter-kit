@@ -220,7 +220,7 @@ namespace Shooter.Core.Tests
             }
         }
 
-        // 警報と監視カメラの長押しの案内を HUD に足したので、片方の言語だけに足したキーが画面に出ないよう、hud.json のキーをそろえる。
+        // 警報と監視カメラの長押しの案内とウェポンライトの印の文を HUD に足したので、片方の言語だけに足したキーが画面に出ないよう、hud.json のキーをそろえる。
         [Test]
         public void TheHudFileHasTheSameKeysInEnglishAndJapanese()
         {
@@ -234,6 +234,18 @@ namespace Shooter.Core.Tests
             {
                 Assert.That(StringTable.PlaceholdersOf(english.Get(key)), Is.EqualTo(StringTable.PlaceholdersOf(japanese.Get(key))), "hud.json " + key);
             }
+
+            foreach (var key in WeaponLightText.Keys)
+            {
+                Assert.That(english.Contains(key), Is.True, "en/hud.json " + key);
+                Assert.That(japanese.Contains(key), Is.True, "ja/hud.json " + key);
+                Assert.That(StringTable.PlaceholdersOf(japanese.Get(key)), Is.Empty, key + " takes no arguments");
+            }
+
+            Assert.That(english.Get(WeaponLightText.OnKey), Is.EqualTo("Light ON"));
+            Assert.That(english.Get(WeaponLightText.OffKey), Is.EqualTo("Light OFF"));
+            Assert.That(japanese.Get(WeaponLightText.OnKey), Is.EqualTo("ライト 点灯"));
+            Assert.That(japanese.Get(WeaponLightText.OffKey), Is.EqualTo("ライト 消灯"));
 
             foreach (var key in new[] { SecurityAlarmText.RingingKey, SecurityCameraPrompt.DisableKey, SecurityCameraPrompt.DisablingKey, SecurityCameraPrompt.DisabledKey })
             {
@@ -249,6 +261,24 @@ namespace Shooter.Core.Tests
             Assert.That(english.Get(SecurityCameraPrompt.DisablingKey), Is.EqualTo("Disabling the camera... {0}%"));
             Assert.That(japanese.Get(SecurityCameraPrompt.DisabledKey), Is.EqualTo("カメラは止まっている"));
             Assert.That(english.Get(SecurityCameraPrompt.DisabledKey), Is.EqualTo("The camera is disabled"));
+        }
+
+        [Test]
+        public void TheJamTextsAreReadFromTheHudTableOfEveryLanguage()
+        {
+            var english = LayerOf(GameLanguage.English, "hud.json");
+            var japanese = LayerOf(GameLanguage.Japanese, "hud.json");
+
+            foreach (var key in new[] { HudView.JammedKey, HudView.ClearingJamKey })
+            {
+                Assert.That(english.Keys, Does.Contain(key), "en/hud.json " + key);
+                Assert.That(japanese.Keys, Does.Contain(key), "ja/hud.json " + key);
+            }
+
+            Assert.That(english.Get(HudView.JammedKey), Is.EqualTo("Jammed"));
+            Assert.That(japanese.Get(HudView.JammedKey), Is.EqualTo("弾詰まり"));
+            Assert.That(english.Format(HudView.ClearingJamKey, 40), Is.EqualTo("Clearing jam: 40% left"));
+            Assert.That(japanese.Format(HudView.ClearingJamKey, 40), Is.EqualTo("解除中 残り 40%"));
         }
 
         [Test]

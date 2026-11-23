@@ -48,6 +48,11 @@ namespace Shooter.Runtime
         // 仕掛けの途中は GameSignals.Breach で毎フレーム読めるので、ここは破れた瞬間だけを流す。
         public static event Action<DoorBreach> DoorBreached;
 
+        // 詰まっている間・解除の途中は HudModel の Jam で毎フレーム読めるので、ここは詰まった瞬間と解除し終えた瞬間だけを流す。
+        public static event Action<WeaponJamInfo> WeaponJammed;
+
+        public static event Action<WeaponJamInfo> WeaponJamCleared;
+
         public static ShotAttribution? CurrentAttribution => _attribution;
 
         // ルートを辿らないのは、敵や標的が 1 つの親の下にまとめて置かれ、ルートでは全員が同じ Id になるため。
@@ -154,6 +159,16 @@ namespace Shooter.Runtime
             Invoke(DoorBreached, new DoorBreach(door, method, breacher));
         }
 
+        public static void RaiseWeaponJammed(GameObject holder, string weaponId)
+        {
+            Invoke(WeaponJammed, new WeaponJamInfo(holder, weaponId));
+        }
+
+        public static void RaiseWeaponJamCleared(GameObject holder, string weaponId)
+        {
+            Invoke(WeaponJamCleared, new WeaponJamInfo(holder, weaponId));
+        }
+
         // 他のアセンブリの出来事に自前で呼ばせないのは、購読者の例外で戦闘の処理を止めない流し方をここの出来事と揃えるため。
         public static void Notify<T>(Action<T> handlers, T value)
         {
@@ -188,6 +203,8 @@ namespace Shooter.Runtime
             PurchaseAnswered = null;
             HolsterChanged = null;
             DoorBreached = null;
+            WeaponJammed = null;
+            WeaponJamCleared = null;
             _attribution = null;
             foreach (var clear in _clears)
             {
@@ -429,6 +446,22 @@ namespace Shooter.Runtime
             Door = door;
             Method = method;
             Breacher = breacher;
+        }
+    }
+
+    public readonly struct WeaponJamInfo
+    {
+        private readonly string _weaponId;
+
+        // null を断らないのは、ネット対戦では HUD が持ち主の武器の値から流し、この端末の人の体を持たないため。
+        public GameObject Holder { get; }
+
+        public string WeaponId => _weaponId ?? string.Empty;
+
+        public WeaponJamInfo(GameObject holder, string weaponId)
+        {
+            Holder = holder;
+            _weaponId = weaponId ?? string.Empty;
         }
     }
 

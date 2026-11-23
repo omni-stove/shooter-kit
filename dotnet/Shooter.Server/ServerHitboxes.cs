@@ -65,7 +65,7 @@ namespace Shooter.Server
             LastRecordedTick = tick;
         }
 
-        public bool TryRewindCenter(int playerId, float tick, out Vector3 center)
+        public bool TryRewindCenter(int playerId, double tick, out Vector3 center)
         {
             center = default;
             if (!HasHistory)
@@ -92,7 +92,7 @@ namespace Shooter.Server
         }
 
         public bool Cast(
-            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, float tick, int shooterId, Func<int, bool> hittable,
+            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, double tick, int shooterId, Func<int, bool> hittable,
             List<ShotHit> hits)
         {
             ArgumentNullException.ThrowIfNull(hits);
@@ -127,16 +127,16 @@ namespace Shooter.Server
 
         // 太い弾の判定。埋まるまでは handled を立てず、細い線の判定で代える
         partial void CastSphere(
-            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, float tick, int shooterId, Func<int, bool> hittable,
+            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, double tick, int shooterId, Func<int, bool> hittable,
             List<ShotHit> hits, ref bool handled);
 
         // 1 本の線で複数の当たりを拾う判定。埋まるまでは handled を立てず、最初の当たりだけを拾う
         partial void CastMany(
-            Vector3 origin, Vector3 direction, float range, int maxHits, float tick, int shooterId, Func<int, bool> hittable,
+            Vector3 origin, Vector3 direction, float range, int maxHits, double tick, int shooterId, Func<int, bool> hittable,
             List<ShotHit> hits, ref bool handled);
 
         public bool Raycast(
-            Vector3 origin, Vector3 direction, float range, float tick, int shooterId, Func<int, bool> hittable, out ShotHit hit)
+            Vector3 origin, Vector3 direction, float range, double tick, int shooterId, Func<int, bool> hittable, out ShotHit hit)
         {
             Validate(origin, direction, range, hittable);
             return Nearest(origin, Vector3.Normalize(direction), 0f, range, tick, shooterId, hittable, true, out hit);
@@ -144,7 +144,7 @@ namespace Shooter.Server
 
         // 置いた物の撃つ弾は、撃った物自身を飛ばして持ち主の陣営で通すかを決めるので、置いた物の当たりは撃つ側 (ServerDeployables) が見る
         public bool RaycastIgnoringDeployables(
-            Vector3 origin, Vector3 direction, float range, float tick, int shooterId, Func<int, bool> hittable, out ShotHit hit)
+            Vector3 origin, Vector3 direction, float range, double tick, int shooterId, Func<int, bool> hittable, out ShotHit hit)
         {
             Validate(origin, direction, range, hittable);
             return Nearest(origin, Vector3.Normalize(direction), 0f, range, tick, shooterId, hittable, false, out hit);
@@ -170,7 +170,7 @@ namespace Shooter.Server
         }
 
         private bool Nearest(
-            Vector3 origin, Vector3 unit, float radius, float range, float tick, int shooterId, Func<int, bool> hittable, bool deployables,
+            Vector3 origin, Vector3 unit, float radius, float range, double tick, int shooterId, Func<int, bool> hittable, bool deployables,
             out ShotHit hit)
         {
             hit = default;
@@ -217,11 +217,11 @@ namespace Shooter.Server
 
             // 盾の板は持ち主の体より前にあるので、体の当たりを決めた後に、それより手前で板に当たるかを見る
             found |= NearerHeldShield(origin, unit, radius, found ? hit.Distance : range, clamped, _rewound, ref hit);
-            hit = hit.WithRewind(LastRecordedTick - clamped);
+            hit = hit.WithRewind((float)(LastRecordedTick - clamped));
             return found;
         }
 
-        private List<(int Id, RewoundBody Body)> RewindBodies(float clamped, int shooterId, Func<int, bool> hittable)
+        private List<(int Id, RewoundBody Body)> RewindBodies(double clamped, int shooterId, Func<int, bool> hittable)
         {
             var positions = _lag.Rewind(clamped);
             var crouched = _lag.RewindCrouched(clamped);
@@ -272,7 +272,7 @@ namespace Shooter.Server
         }
 
         // 車体は人より手前で弾を止めるので、人の当たりより先に、世界の当たりと比べて近い方を残す。
-        private bool NearerVehicle(Vector3 origin, Vector3 unit, float limit, float tick, int shooterId, ref ShotHit hit)
+        private bool NearerVehicle(Vector3 origin, Vector3 unit, float limit, double tick, int shooterId, ref ShotHit hit)
         {
             if (_vehicles == null
                 || !_vehicles.Raycast(

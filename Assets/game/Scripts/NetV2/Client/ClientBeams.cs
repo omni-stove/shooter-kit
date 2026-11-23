@@ -113,7 +113,7 @@ namespace Shooter.NetV2
             switch (request.Trigger)
             {
                 case TriggerEdge.Pressed:
-                    var round = RoundFor(spec, request.AmmoTypeIndex);
+                    var round = ClientProjectiles.RoundFor(spec, request.AmmoTypeIndex);
                     if (round.Delivery != RoundDelivery.Beam)
                     {
                         return;
@@ -162,13 +162,6 @@ namespace Shooter.NetV2
         private static float TickSecondsOf(RoundSpec round)
         {
             return round?.Beam != null ? round.Beam.TickSeconds : BeamView.DefaultHoldSeconds;
-        }
-
-        // ClientProjectiles と同じ引き方にして、弾薬の種類で届け方が変わる武器の扱いを揃える
-        private static RoundSpec RoundFor(WeaponSpec spec, int ammoTypeIndex)
-        {
-            var types = spec.AmmoTypes;
-            return ammoTypeIndex < types.Count ? types[ammoTypeIndex].RoundOr(spec.Round) : spec.Round;
         }
 
         private static bool IsFinite(Vector3 value)
