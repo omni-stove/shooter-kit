@@ -98,7 +98,7 @@ namespace Shooter.Runtime
                 _visuals = BreachDoorVisuals.For(gameObject);
             }
 
-            _spec = _tuning != null ? KitTuning.Read(_tuning.text, _tuning.name, BreachJson.Parse, KitTuning.Breach) : KitTuning.Breach;
+            _spec = _tuning != null ? KitTuning.Read(_tuning.text, _tuning.name, (text, name) => BreachJson.Parse(text, name, KitTuning.Breach), KitTuning.Breach) : KitTuning.Breach;
             _visuals.EnsurePanel();
             _panelColliders = _visuals.PanelColliders();
             if (_panelColliders.Length == 0)
