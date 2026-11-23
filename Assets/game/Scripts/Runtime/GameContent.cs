@@ -107,6 +107,12 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("Infected の調整値の JSON。空なら Resources/Tuning/infected")]
         private TextAsset _infectedTuning;
 
+        [SerializeField, Tooltip("Juggernaut の調整値の JSON。空なら Resources/Tuning/juggernaut")]
+        private TextAsset _juggernautTuning;
+
+        [SerializeField, Tooltip("VIP 護衛の調整値の JSON。空なら Resources/Tuning/vip")]
+        private TextAsset _vipTuning;
+
         [SerializeField, Tooltip("箱から出る物の表の JSON。空なら Resources/Tuning/loot")]
         private TextAsset _lootTuning;
 
@@ -462,6 +468,18 @@ namespace Shooter.Runtime
         {
             get => _infectedTuning;
             set => _infectedTuning = value;
+        }
+
+        public TextAsset JuggernautTuning
+        {
+            get => _juggernautTuning;
+            set => _juggernautTuning = value;
+        }
+
+        public TextAsset VipTuning
+        {
+            get => _vipTuning;
+            set => _vipTuning = value;
         }
 
         public TextAsset LootTuning

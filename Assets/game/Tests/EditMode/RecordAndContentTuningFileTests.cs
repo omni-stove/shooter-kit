@@ -101,6 +101,52 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheJuggernautFileHoldsTheDefaults()
+        {
+            var spec = JuggernautJson.Parse(Bundled(JuggernautJson.ResourcePath), JuggernautJson.ResourcePath);
+
+            Assert.That(spec.JuggernautMaxHealth, Is.EqualTo(JuggernautSpec.DefaultJuggernautMaxHealth));
+            Assert.That(spec.JuggernautSpeedMultiplier, Is.EqualTo(JuggernautSpec.DefaultJuggernautSpeedMultiplier));
+            Assert.That(spec.ScorePerKillAsJuggernaut, Is.EqualTo(JuggernautSpec.DefaultScorePerKillAsJuggernaut));
+            Assert.That(spec.ScorePerJuggernautKill, Is.EqualTo(JuggernautSpec.DefaultScorePerJuggernautKill));
+            Assert.That(spec.ScoreLimit, Is.EqualTo(JuggernautSpec.DefaultScoreLimit));
+            Assert.That(spec.TimeLimitSeconds, Is.EqualTo(JuggernautSpec.DefaultTimeLimitSeconds));
+            Assert.That(spec.StartDelaySeconds, Is.EqualTo(JuggernautSpec.DefaultStartDelaySeconds));
+        }
+
+        [Test]
+        public void TheVipFileHoldsTheDefaults()
+        {
+            var spec = VipJson.Parse(Bundled(VipJson.ResourcePath), VipJson.ResourcePath);
+
+            Assert.That(spec.VipMaxHealth, Is.EqualTo(VipSpec.DefaultVipMaxHealth));
+            Assert.That(spec.RoundSeconds, Is.EqualTo(VipSpec.DefaultRoundSeconds));
+            Assert.That(spec.WinsToWin, Is.EqualTo(VipSpec.DefaultWinsToWin));
+            Assert.That(spec.ExitHoldSeconds, Is.EqualTo(VipSpec.DefaultExitHoldSeconds));
+            Assert.That(spec.SwapEveryRounds, Is.EqualTo(VipSpec.DefaultSwapEveryRounds));
+        }
+
+        [Test]
+        public void KitTuningReadsTheBundledJuggernautAndVipFiles()
+        {
+            var content = Track(ScriptableObject.CreateInstance<GameContent>());
+            content.name = "Empty";
+            GameContent.Use(content);
+
+            Assert.That(KitTuning.Juggernaut.SameAs(JuggernautSpec.Default), Is.True);
+            Assert.That(KitTuning.Vip.SameAs(VipSpec.Default), Is.True);
+
+            var juggernaut = Track(new TextAsset("{\"juggernautMaxHealth\": 420}"));
+            var vip = Track(new TextAsset("{\"winsToWin\": 2}"));
+            content.JuggernautTuning = juggernaut;
+            content.VipTuning = vip;
+            GameContent.Use(content);
+
+            Assert.That(KitTuning.Juggernaut.JuggernautMaxHealth, Is.EqualTo(420), "the GameContent slot is read before Resources");
+            Assert.That(KitTuning.Vip.WinsToWin, Is.EqualTo(2));
+        }
+
+        [Test]
         public void ThePayloadFileHoldsTheDefaults()
         {
             var spec = PayloadJson.Parse(Bundled(PayloadJson.ResourcePath), PayloadJson.ResourcePath);
@@ -176,6 +222,8 @@ namespace Shooter.Tests.EditMode
             (KitTuning.RedeployResourcePath, c => c.RedeployTuning, (c, v) => c.RedeployTuning = v),
             (KitTuning.MutatorsResourcePath, c => c.MutatorsTuning, (c, v) => c.MutatorsTuning = v),
             (KitTuning.PlaylistsResourcePath, c => c.PlaylistsTuning, (c, v) => c.PlaylistsTuning = v),
+            (JuggernautJson.ResourcePath, c => c.JuggernautTuning, (c, v) => c.JuggernautTuning = v),
+            (VipJson.ResourcePath, c => c.VipTuning, (c, v) => c.VipTuning = v),
         };
 
         private readonly List<Object> _created = new List<Object>();
@@ -205,7 +253,11 @@ namespace Shooter.Tests.EditMode
                 paths.Add(slot.path);
             }
 
-            Assert.That(paths, Is.EqualTo(new[] { "Tuning/payload", "Tuning/economy", "Tuning/supply-drops", "Tuning/redeploy", "Tuning/mutators", "Tuning/playlists" }));
+            Assert.That(paths, Is.EqualTo(new[]
+            {
+                "Tuning/payload", "Tuning/economy", "Tuning/supply-drops", "Tuning/redeploy", "Tuning/mutators", "Tuning/playlists",
+                "Tuning/juggernaut", "Tuning/vip",
+            }));
             Assert.That(paths, Is.Unique);
         }
 

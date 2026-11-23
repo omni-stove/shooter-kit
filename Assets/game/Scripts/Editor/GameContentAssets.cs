@@ -90,6 +90,8 @@ namespace Shooter.Editor
             new TuningSlot("WeatherTuning", WeatherJson.ResourcePath, c => c.WeatherTuning, (c, v) => c.WeatherTuning = v),
             new TuningSlot("TelemetryTuning", TelemetryJson.ResourcePath, c => c.TelemetryTuning, (c, v) => c.TelemetryTuning = v),
             new TuningSlot("InfectedTuning", InfectedJson.ResourcePath, c => c.InfectedTuning, (c, v) => c.InfectedTuning = v),
+            new TuningSlot("JuggernautTuning", JuggernautJson.ResourcePath, c => c.JuggernautTuning, (c, v) => c.JuggernautTuning = v),
+            new TuningSlot("VipTuning", VipJson.ResourcePath, c => c.VipTuning, (c, v) => c.VipTuning = v),
             new TuningSlot("LootTuning", LootJson.ResourcePath, c => c.LootTuning, (c, v) => c.LootTuning = v),
             new TuningSlot("StashTuning", StashJson.ResourcePath, c => c.StashTuning, (c, v) => c.StashTuning = v),
             new TuningSlot("ExtractionTuning", ExtractionJson.ResourcePath, c => c.ExtractionTuning, (c, v) => c.ExtractionTuning = v),

@@ -44,5 +44,7 @@
   "serverBrowser.mode.horde": "ホード",
   "serverBrowser.mode.infected": "感染",
   "serverBrowser.mode.guardian": "ガーディアン",
-  "serverBrowser.mode.execution": "処刑"
+  "serverBrowser.mode.execution": "処刑",
+  "serverBrowser.mode.juggernaut": "ジャガーノート",
+  "serverBrowser.mode.vip": "VIP 護衛"
 }

@@ -81,6 +81,11 @@ namespace Shooter.Runtime
 
         public static InfectedSpec Infected => Load(c => c.InfectedTuning, InfectedJson.ResourcePath, InfectedJson.Parse, InfectedSpec.Default);
 
+        public static JuggernautSpec Juggernaut =>
+            Load(c => c.JuggernautTuning, JuggernautJson.ResourcePath, JuggernautJson.Parse, JuggernautSpec.Default);
+
+        public static VipSpec Vip => Load(c => c.VipTuning, VipJson.ResourcePath, VipJson.Parse, VipSpec.Default);
+
         public static EconomyRules Economy => Load(c => c.EconomyTuning, EconomyResourcePath, EconomyJson.Parse, EconomyRules.Default);
 
         public static PayloadSpec Payload => Load(c => c.PayloadTuning, PayloadResourcePath, PayloadJson.Parse, PayloadSpec.Default);

@@ -195,13 +195,17 @@ namespace Shooter.Core.Tests
             Assert.That((int)MatchObjective.Infected, Is.EqualTo(13));
             Assert.That((int)MatchObjective.Guardian, Is.EqualTo(14));
             Assert.That((int)MatchObjective.Execution, Is.EqualTo(15));
-            Assert.That(Enum.GetValues<MatchObjective>().Length, Is.EqualTo(16));
+            Assert.That((int)MatchObjective.Juggernaut, Is.EqualTo(16));
+            Assert.That((int)MatchObjective.Vip, Is.EqualTo(17));
+            Assert.That(Enum.GetValues<MatchObjective>().Length, Is.EqualTo(18));
         }
 
         [TestCase(MatchObjective.Horde)]
         [TestCase(MatchObjective.Infected)]
         [TestCase(MatchObjective.Guardian)]
         [TestCase(MatchObjective.Execution)]
+        [TestCase(MatchObjective.Juggernaut)]
+        [TestCase(MatchObjective.Vip)]
         public void KeepsTheObjectivesAddedForTheOnlineModes(MatchObjective objective)
         {
             Assert.That(Rules(objective: objective).Objective, Is.EqualTo(objective));

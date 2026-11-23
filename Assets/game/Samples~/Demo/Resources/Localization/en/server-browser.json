@@ -44,5 +44,7 @@
   "serverBrowser.mode.horde": "Horde",
   "serverBrowser.mode.infected": "Infected",
   "serverBrowser.mode.guardian": "Guardian",
-  "serverBrowser.mode.execution": "Execution"
+  "serverBrowser.mode.execution": "Execution",
+  "serverBrowser.mode.juggernaut": "Juggernaut",
+  "serverBrowser.mode.vip": "VIP Escort"
 }

@@ -150,6 +150,38 @@ namespace Shooter.Server.Tests
             Assert.That(_output.ToString(), Does.Contain("[Domination] net points=3 scoreLimit=100 captureSeconds=8 pointsPerSecond=1 maxCapturers=3"));
         }
 
+        // 目的の列挙とルールのファイルの節だけを先に足したので、調整値の行まで出してから、目的のルールが無いと断って止まる
+        [TestCase(
+            MatchObjective.Juggernaut,
+            "[Juggernaut] tuning maxHealth=250 speedMultiplier=1.2 scorePerKillAsJuggernaut=1 scorePerJuggernautKill=3 scoreLimit=15 timeLimit=600 startDelay=5")]
+        [TestCase(MatchObjective.Vip, "[Vip] tuning maxHealth=200 roundSeconds=150 winsToWin=4 exitHold=3 swapEveryRounds=1")]
+        public void TheAsymmetricRulesPrintTheirTuningAndAreRefusedUntilTheirRulesExist(MatchObjective objective, string tuningLine)
+        {
+            var name = objective.ToString();
+            var settings = new NetMatchSettings(juggernaut: new JuggernautSpec(juggernautMaxHealth: 250, juggernautSpeedMultiplier: 1.2f));
+            TestRules.Write(_data.Path, name, TestRules.File(GameRules.Default.WithObjective(objective), settings, name));
+
+            var code = ServerProgram.Run(Args("-rules", name), new IServerModule[] { new MatchRulesModule() }, Runtime());
+
+            Assert.That(code, Is.EqualTo(ServerProgram.ExitFailure));
+            var log = _output.ToString();
+            Assert.That(log, Does.Contain("[Server] rules " + name + " objective=" + name));
+            Assert.That(log, Does.Contain(tuningLine + Environment.NewLine));
+            Assert.That(
+                log.IndexOf(tuningLine, StringComparison.Ordinal),
+                Is.GreaterThan(log.IndexOf("[Server] rules " + name, StringComparison.Ordinal)),
+                "the tuning follows the rules line");
+            Assert.That(_error.ToString(), Does.Contain("[Server] failed to start: the dedicated server has no rules for the match objective " + name));
+        }
+
+        [Test]
+        public void OtherRulesPrintNoAsymmetricTuning()
+        {
+            Run();
+
+            Assert.That(_output.ToString(), Does.Not.Contain("[Juggernaut]").And.Not.Contain("[Vip]"));
+        }
+
         [Test]
         public void TwoCandidateMapsAreBothLoadedAtStart()
         {

@@ -107,6 +107,10 @@ namespace Shooter.Core
         // 節の中の項目名は ExecutionSpec.ItemNames。ラウンドの勝ち数・待ち・制限時間は Elimination と同じ round* を使う
         public const string ExecutionItem = "execution";
 
+        // 節の中の項目名は、Infected と同じくオフラインの調整値 (Resources/Tuning/juggernaut.json・vip.json) と同じ JuggernautJson・VipJson の名前にする
+        public const string JuggernautItem = "juggernaut";
+        public const string VipItem = "vip";
+
         public const string HordeItem = "horde";
         public const string StartingCurrencyItem = "startingCurrency";
         public const string KillRewardPerWaveItem = "killRewardPerWave";
@@ -277,7 +281,7 @@ namespace Shooter.Core
             ChatIntervalSecondsItem, MaxChatLengthItem, MaxDisplayNameLengthItem, RoundWinsToWinItem, RoundPreparationSecondsItem,
             RoundTimeLimitSecondsItem, WeatherIdItem, TimeOfDayIdItem,
             CaptureTheFlagItem, HardpointItem, SearchAndDestroyItem, FreeForAllItem, KillConfirmedItem, GunGameItem,
-            VoteKickItem, PayloadItem, EconomyItem, InfectedItem, ExecutionItem, HordeItem,
+            VoteKickItem, PayloadItem, EconomyItem, InfectedItem, ExecutionItem, HordeItem, JuggernautItem, VipItem,
         };
 
         private static readonly string[] _captureTheFlagItems =
@@ -648,6 +652,33 @@ namespace Shooter.Core
                 writer.EndObject();
             }
 
+            // Infected の節と同じく、節を足す前に書き出したルールのファイルをそのまま使えるよう、その目的でなく既定値のままなら書かない
+            var juggernaut = s.Juggernaut;
+            if (file.Rules.Objective == MatchObjective.Juggernaut || !juggernaut.SameAs(JuggernautSpec.Default))
+            {
+                writer.BeginObject(JuggernautItem);
+                writer.Int(JuggernautJson.JuggernautMaxHealthItem, juggernaut.JuggernautMaxHealth);
+                writer.Float(JuggernautJson.JuggernautSpeedMultiplierItem, juggernaut.JuggernautSpeedMultiplier);
+                writer.Int(JuggernautJson.ScorePerKillAsJuggernautItem, juggernaut.ScorePerKillAsJuggernaut);
+                writer.Int(JuggernautJson.ScorePerJuggernautKillItem, juggernaut.ScorePerJuggernautKill);
+                writer.Int(JuggernautJson.ScoreLimitItem, juggernaut.ScoreLimit);
+                writer.Float(JuggernautJson.TimeLimitSecondsItem, juggernaut.TimeLimitSeconds);
+                writer.Float(JuggernautJson.StartDelaySecondsItem, juggernaut.StartDelaySeconds);
+                writer.EndObject();
+            }
+
+            var vip = s.Vip;
+            if (file.Rules.Objective == MatchObjective.Vip || !vip.SameAs(VipSpec.Default))
+            {
+                writer.BeginObject(VipItem);
+                writer.Int(VipJson.VipMaxHealthItem, vip.VipMaxHealth);
+                writer.Float(VipJson.RoundSecondsItem, vip.RoundSeconds);
+                writer.Int(VipJson.WinsToWinItem, vip.WinsToWin);
+                writer.Float(VipJson.ExitHoldSecondsItem, vip.ExitHoldSeconds);
+                writer.Int(VipJson.SwapEveryRoundsItem, vip.SwapEveryRounds);
+                writer.EndObject();
+            }
+
             writer.EndObject();
 
             var motor = file.Motor.Motor;
@@ -820,6 +851,8 @@ namespace Shooter.Core
             var infected = ReadInfected(match.Object(InfectedItem, InfectedJson.ItemNames), d.Infected);
             var execution = ReadExecution(match.Object(ExecutionItem, ExecutionSpec.ItemNames), d.Execution);
             var horde = ReadHorde(match.Object(HordeItem, _hordeItems), d.Horde);
+            var juggernaut = ReadJuggernaut(match.Object(JuggernautItem, JuggernautJson.ItemNames), d.Juggernaut);
+            var vip = ReadVip(match.Object(VipItem, VipJson.ItemNames), d.Vip);
             try
             {
                 return new NetMatchSettings(
@@ -860,7 +893,9 @@ namespace Shooter.Core
                     match.ReadInt(MaxDisplayNameLengthItem, d.MaxDisplayNameLength),
                     infected,
                     execution,
-                    horde);
+                    horde,
+                    juggernaut,
+                    vip);
             }
             catch (ArgumentException e)
             {
@@ -1137,6 +1172,52 @@ namespace Shooter.Core
                 return new ExecutionSpec(
                     fields.ReadFloat(ExecutionSpec.ExecuteSecondsItem, fallback.ExecuteSeconds),
                     fields.ReadFloat(ExecutionSpec.ExecuteRangeItem, fallback.ExecuteRange));
+            }
+            catch (ArgumentException e)
+            {
+                throw RejectedSpec(fields, e);
+            }
+        }
+
+        private static JuggernautSpec ReadJuggernaut(ServerDataJson.Fields fields, JuggernautSpec fallback)
+        {
+            if (fields == null)
+            {
+                return fallback;
+            }
+
+            try
+            {
+                return new JuggernautSpec(
+                    fields.ReadInt(JuggernautJson.JuggernautMaxHealthItem, fallback.JuggernautMaxHealth),
+                    fields.ReadFloat(JuggernautJson.JuggernautSpeedMultiplierItem, fallback.JuggernautSpeedMultiplier),
+                    fields.ReadInt(JuggernautJson.ScorePerKillAsJuggernautItem, fallback.ScorePerKillAsJuggernaut),
+                    fields.ReadInt(JuggernautJson.ScorePerJuggernautKillItem, fallback.ScorePerJuggernautKill),
+                    fields.ReadInt(JuggernautJson.ScoreLimitItem, fallback.ScoreLimit),
+                    fields.ReadFloat(JuggernautJson.TimeLimitSecondsItem, fallback.TimeLimitSeconds),
+                    fields.ReadFloat(JuggernautJson.StartDelaySecondsItem, fallback.StartDelaySeconds));
+            }
+            catch (ArgumentException e)
+            {
+                throw RejectedSpec(fields, e);
+            }
+        }
+
+        private static VipSpec ReadVip(ServerDataJson.Fields fields, VipSpec fallback)
+        {
+            if (fields == null)
+            {
+                return fallback;
+            }
+
+            try
+            {
+                return new VipSpec(
+                    fields.ReadInt(VipJson.VipMaxHealthItem, fallback.VipMaxHealth),
+                    fields.ReadFloat(VipJson.RoundSecondsItem, fallback.RoundSeconds),
+                    fields.ReadInt(VipJson.WinsToWinItem, fallback.WinsToWin),
+                    fields.ReadFloat(VipJson.ExitHoldSecondsItem, fallback.ExitHoldSeconds),
+                    fields.ReadInt(VipJson.SwapEveryRoundsItem, fallback.SwapEveryRounds));
             }
             catch (ArgumentException e)
             {
