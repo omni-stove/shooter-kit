@@ -18,7 +18,14 @@
     "activeReloadWindowLength": 0.15,
     "activeReloadFailSeconds": 0.6,
     "reloadStyle": "PerRound",
-    "reloadSecondsPerRound": 0.5
+    "reloadSecondsPerRound": 0.5,
+    "jam": {
+      "chancePerShot": 0.04,
+      "chancePerSustainedShot": 0,
+      "sustainedResetSeconds": 0.5,
+      "maxChance": 0.04,
+      "clearSeconds": 1.5
+    }
   },
   "round": {
     "delivery": "Hitscan",
