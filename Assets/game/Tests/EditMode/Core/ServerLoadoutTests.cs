@@ -290,6 +290,77 @@ namespace Shooter.Core.Tests
             Assert.That(budget, Is.Null);
         }
 
+        private static WeaponSpec AkimboHandgun()
+        {
+            return new WeaponSpec(
+                _handgun,
+                null,
+                WeaponCategory.Handgun,
+                new TriggerSpec(FireMode.Semi, 2f),
+                new AmmoSpec(8, 24, 1f),
+                akimbo: AkimboSpec.Default);
+        }
+
+        [Test]
+        public void EachAkimboHandHasItsOwnBudget()
+        {
+            var handgun = AkimboHandgun();
+            var loadout = new ServerLoadout(Rule(), new[] { Rifle(), handgun }, 0.5f, 1);
+
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Right), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Right), Is.EqualTo(ShotRejection.FireRateExceeded));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.FireRateExceeded));
+
+            // 手を付けない TryFire は右の手の枠を使う
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 1d), Is.EqualTo(ShotRejection.FireRateExceeded));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 2d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 2d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.PlayerCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheLeftHandOfAWeaponWithoutAnAkimboPartIsRefusedWithoutUsingTheBudget()
+        {
+            var loadout = Loadout();
+            var handgun = loadout.Weapons[1];
+
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.NotAkimbo));
+            Assert.That(loadout.PlayerCount, Is.Zero);
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Right), Is.EqualTo(ShotRejection.None));
+            Assert.Throws<ArgumentOutOfRangeException>(() => loadout.TryFire(1, handgun, _handgun, 0d, (AkimboHand)2));
+        }
+
+        [Test]
+        public void SwitchingAwayAndBackDoesNotRefillTheLeftHandBudget()
+        {
+            var handgun = AkimboHandgun();
+            var rifle = Rifle();
+            var loadout = new ServerLoadout(Rule(), new[] { rifle, handgun }, 0.5f, 1);
+
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0.25d), Is.EqualTo(ShotRejection.None));
+
+            // handgun の間隔は 2 秒なので、0.5 秒では左の手の枠は 1 発ぶんも回復していない
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0.5d, AkimboHand.Left), Is.EqualTo(ShotRejection.FireRateExceeded));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0.5d, AkimboHand.Right), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 2d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+        }
+
+        [Test]
+        public void ResetAndRemoveAlsoClearTheLeftHandBudget()
+        {
+            var handgun = AkimboHandgun();
+            var loadout = new ServerLoadout(Rule(), new[] { Rifle(), handgun }, 0.5f, 1);
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+
+            loadout.ResetBudgets();
+
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.Remove(1), Is.True, "only the left hand had a budget");
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d, AkimboHand.Left), Is.EqualTo(ShotRejection.None));
+        }
+
         private const string _smg = "00000000-0000-4000-8000-000000000004";
 
         private static WeaponSpec Smg()

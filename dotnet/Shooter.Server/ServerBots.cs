@@ -769,7 +769,7 @@ namespace Shooter.Server
 
             var trigger = agent.TriggerFor(spec);
             trigger.Tick(dt);
-            if (state.IsReloading || state.IsSwitching)
+            if (state.IsSwitching)
             {
                 return;
             }
@@ -780,9 +780,17 @@ namespace Shooter.Server
                 return;
             }
 
-            if (state.AmmoInMagazine <= 0)
+            // 二丁持ちでは片方の手が込めている・空でも、もう片方の手で撃つ (撃つ手はサーバーが右から選ぶ)
+            var akimbo = spec.IsAkimbo;
+            var ready = (!state.IsReloading && state.AmmoInMagazine > 0)
+                || (akimbo && !state.IsOffhandReloading && state.OffhandAmmoInMagazine > 0);
+            if (!ready)
             {
-                _combat.BotReload(playerId);
+                if (!state.IsReloading || (akimbo && !state.IsOffhandReloading))
+                {
+                    _combat.BotReload(playerId);
+                }
+
                 return;
             }
 

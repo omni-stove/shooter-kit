@@ -50,6 +50,9 @@ namespace Shooter.Core
         // 武器をしまっている・しまう途中・構える途中 (オフラインの WeaponController.IsFireBlocked の IsHolstered と同じ)。
         Holstered,
 
+        // 二丁持ちでない武器を左の手で撃とうとした (FireRequestMessage.Hand が Left)。
+        NotAkimbo,
+
         // 弾が詰まっていて、解除し終えるまで撃てない。
         Jammed,
     }
