@@ -18,6 +18,7 @@ namespace Shooter.Net.Tests
         private const int _localId = 3;
         private const int _otherId = 7;
         private const string _ammo = "5b0c55a4-8f0e-4a43-9c55-0b1f3ad1e001";
+        private const string _rifle = "5b0c55a4-8f0e-4a43-9c55-0b1f3ad1e002";
 
         private readonly List<Object> _created = new List<Object>();
         private NetV2Hud _hud;
@@ -765,6 +766,91 @@ namespace Shooter.Net.Tests
             _hud.ClearSignals();
             Assert.That(GameSignals.Stash.Value, Is.Null);
             Assert.That(GameSignals.ModeStatus.Value, Is.Null);
+        }
+
+        [Test]
+        public void TheOwnWeaponsJamIsWrittenToTheModelAndItsStartAndEndAreRaised()
+        {
+            var spec = new WeaponSpec(_rifle, "", WeaponCategory.AssaultRifle, ammo: new AmmoSpec(30, 90, 2f, jam: new JamSpec(clearSeconds: 2f)));
+            var hud = NetV2Hud.Create(_localId, 100, id => id == _rifle ? spec : null, tickRate: 30);
+            _created.Add(hud.gameObject);
+            var holder = new GameObject("JamHolder");
+            _created.Add(holder);
+            hud.JamHolder = holder;
+            var jammed = new List<WeaponJamInfo>();
+            var cleared = new List<WeaponJamInfo>();
+            CombatEvents.WeaponJammed += jammed.Add;
+            CombatEvents.WeaponJamCleared += cleared.Add;
+            try
+            {
+                var snapshot = Snapshot(MatchObjective.None);
+                snapshot.HasOwner = true;
+                snapshot.Owner.EquippedWeaponIds.Add(_rifle);
+                snapshot.Tick = 270;
+                snapshot.Owner.Weapon = new WeaponSync { WeaponCount = 1, AmmoInMagazine = 20, ReserveAmmo = 90 };
+                hud.Apply(snapshot);
+
+                Assert.That(hud.Model.IsJammed, Is.False);
+
+                snapshot.Tick = 271;
+                snapshot.Owner.Weapon = new WeaponSync { WeaponCount = 1, AmmoInMagazine = 19, ReserveAmmo = 90, IsJammed = true };
+                hud.Apply(snapshot);
+
+                Assert.That(hud.Model.IsJammed, Is.True);
+                Assert.That(hud.Model.IsClearingJam, Is.False);
+                Assert.That(jammed, Has.Count.EqualTo(1));
+                Assert.That(jammed[0].WeaponId, Is.EqualTo(_rifle));
+                Assert.That(jammed[0].Holder, Is.SameAs(holder));
+                Assert.That(cleared, Is.Empty);
+
+                snapshot.Owner.Weapon = new WeaponSync { WeaponCount = 1, AmmoInMagazine = 19, ReserveAmmo = 90, IsJammed = true, JamClearEndsAt = 12.0 };
+                snapshot.Tick = 300;
+                hud.Apply(snapshot);
+
+                Assert.That(hud.Model.JamClearRemaining, Is.EqualTo(1f), "tick 300 is 10 s, 2 s before the end of the 2 s clear");
+
+                snapshot.Tick = 330;
+                hud.Apply(snapshot);
+
+                Assert.That(hud.Model.JamClearRemaining, Is.EqualTo(0.5f), "the clear shrinks with the snapshot's tick though the weapon values stay the same");
+                Assert.That(jammed, Has.Count.EqualTo(1), "starting the clear is not a new jam");
+
+                snapshot.Tick = 360;
+                snapshot.Owner.Weapon = new WeaponSync { WeaponCount = 1, AmmoInMagazine = 19, ReserveAmmo = 90 };
+                hud.Apply(snapshot);
+
+                Assert.That(hud.Model.IsJammed, Is.False);
+                Assert.That(hud.Model.JamClearRemaining, Is.Null);
+                Assert.That(hud.Model.MagazineAmmo, Is.EqualTo(19), "shots refused while jammed took no rounds");
+                Assert.That(cleared, Has.Count.EqualTo(1));
+                Assert.That(cleared[0].WeaponId, Is.EqualTo(_rifle));
+
+                snapshot.Tick = 361;
+                hud.Apply(snapshot);
+
+                Assert.That(cleared, Has.Count.EqualTo(1), "raised once");
+            }
+            finally
+            {
+                CombatEvents.WeaponJammed -= jammed.Add;
+                CombatEvents.WeaponJamCleared -= cleared.Add;
+            }
+        }
+
+        [Test]
+        public void ASnapshotWithoutTheOwnWeaponTakesTheJamAway()
+        {
+            var snapshot = Snapshot(MatchObjective.None);
+            snapshot.HasOwner = true;
+            snapshot.Owner.EquippedWeaponIds.Add(_rifle);
+            snapshot.Owner.Weapon = new WeaponSync { WeaponCount = 1, AmmoInMagazine = 19, IsJammed = true };
+            _hud.Apply(snapshot);
+
+            Assert.That(_hud.Model.IsJammed, Is.True, "the server's jam is shown even when the weapon's values are not known");
+
+            _hud.Apply(Snapshot(MatchObjective.None));
+
+            Assert.That(_hud.Model.IsJammed, Is.False);
         }
 
         private static SnapshotMessage BattleRoyaleSnapshot(int squadsRemaining)
