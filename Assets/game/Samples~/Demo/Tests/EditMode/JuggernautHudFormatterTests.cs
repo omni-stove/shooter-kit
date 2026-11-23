@@ -18,7 +18,7 @@ namespace Shooter.Tests.EditMode
         private static readonly string[] _expectedOtherJuggernaut = { "ジャガーノート: Ann", "ジャガーノートを倒すと次のジャガーノートになる", "自分の点 3" };
         private static readonly string[] _expectedUnlistedJuggernaut = { "ジャガーノート: Player 4", "ジャガーノートを倒すと次のジャガーノートになる" };
         private static readonly string[] _expectedBotsOnly = { "ジャガーノート: Player 4" };
-        private static readonly string[] _expectedScores = { "SIDE 0 7", "SIDE 1 3" };
+        private static readonly string[] _expectedScores = { "ALPHA 7", "BRAVO 3" };
 
         private static readonly Side _localSide = new Side(0);
         private static readonly Side _otherSide = new Side(1);
@@ -112,7 +112,7 @@ namespace Shooter.Tests.EditMode
             var formatter = new JuggernautHudFormatter();
             var detail = new JuggernautStatus(_localId, 0f, true);
 
-            Assert.That(Localizer.Resolve(formatter.Result(new ModeStatus(0f, null, null, null, true, _otherSide, detail))), Is.EqualTo("SIDE 1 の勝ち"));
+            Assert.That(Localizer.Resolve(formatter.Result(new ModeStatus(0f, null, null, null, true, _otherSide, detail))), Is.EqualTo("BRAVO の勝ち"));
             Assert.That(Localizer.Resolve(formatter.Result(new ModeStatus(0f, null, null, null, true, null, detail))), Is.EqualTo("引き分け"));
             Assert.That(formatter.Result(new ModeStatus(10f, null, null, null, false, null, detail)), Is.EqualTo(default(LocalizedText)));
         }
