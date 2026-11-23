@@ -11,7 +11,7 @@ namespace Shooter.Core.Tests
         private static readonly string[] _expectedItemNames =
         {
             "footstepNoiseRadius", "walkStride", "sprintStride", "crouchStride", "walkVolume", "sprintVolume", "crouchVolume",
-            "minLandingFallSpeed", "hardLandingFallSpeed", "minLandingVolume",
+            "minLandingFallSpeed", "hardLandingFallSpeed", "minLandingVolume", "armedGainFactor",
         };
 
         [Test]
@@ -73,6 +73,36 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void ReadsTheArmedGainFactor()
+        {
+            var tuning = StealthNoiseJson.ParseTuning("{\"armedGainFactor\": 2, \"footstepNoiseRadius\": 30}", "stealth.json");
+
+            Assert.That(tuning.ArmedGainFactor, Is.EqualTo(2f));
+            Assert.That(tuning.Noise.FootstepNoiseRadius, Is.EqualTo(30f));
+            Assert.That(tuning.ApplyTo(AwarenessSpec.Default).ArmedGainFactor, Is.EqualTo(2f));
+            Assert.That(
+                StealthNoiseJson.Parse("{\"armedGainFactor\": 2}", "stealth.json").FootstepNoiseRadius,
+                Is.EqualTo(StealthNoiseSpec.DefaultFootstepNoiseRadius),
+                "the noise reader accepts the awareness item");
+            Assert.That(StealthNoiseJson.ParseTuning("{\"armedGainFactor\": 0}", "stealth.json").ArmedGainFactor, Is.Zero);
+        }
+
+        [Test]
+        public void AnOmittedArmedGainFactorKeepsTheEnemysOwnValue()
+        {
+            var tuning = StealthNoiseJson.ParseTuning("{}", "stealth.json");
+            var own = new AwarenessSpec(armedGainFactor: 3f);
+
+            Assert.That(tuning.ArmedGainFactor, Is.Null);
+            Assert.That(tuning.ApplyTo(own), Is.SameAs(own));
+            Assert.That(StealthTuningSpec.Default.ArmedGainFactor, Is.Null);
+            Assert.That(StealthTuningSpec.Default.Noise, Is.SameAs(StealthNoiseSpec.Default));
+            Assert.Throws<ArgumentNullException>(() => tuning.ApplyTo(null));
+            Assert.Throws<ArgumentNullException>(() => _ = new StealthTuningSpec(null, null));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new StealthTuningSpec(StealthNoiseSpec.Default, -1f));
+        }
+
+        [Test]
         public void ARadiusOfZeroIsSilent()
         {
             Assert.That(StealthNoiseJson.Parse("{\"footstepNoiseRadius\": 0}", "stealth.json").FootstepNoiseRadius, Is.Zero);
@@ -87,6 +117,9 @@ namespace Shooter.Core.Tests
         [TestCase("{\"minLandingVolume\": -0.1}", "minLandingVolume")]
         [TestCase("{\"walkVolume\": \"loud\"}", "walkVolume")]
         [TestCase("{\"walkStride\": null}", "walkStride")]
+        [TestCase("{\"armedGainFactor\": -1}", "armedGainFactor")]
+        [TestCase("{\"armedGainFactor\": \"high\"}", "armedGainFactor")]
+        [TestCase("{\"armedGainFactor\": null}", "armedGainFactor")]
         public void InvalidItemsAreNamed(string json, string item)
         {
             var e = Assert.Throws<TuningJsonException>(() => StealthNoiseJson.Parse(json, "stealth.json"));

@@ -15,10 +15,11 @@ namespace Shooter.Core
         public const string MinLandingFallSpeedItem = "minLandingFallSpeed";
         public const string HardLandingFallSpeedItem = "hardLandingFallSpeed";
         public const string MinLandingVolumeItem = "minLandingVolume";
+        public const string ArmedGainFactorItem = "armedGainFactor";
 
         private const string _kind = "stealth JSON";
 
-        // 項目名は StealthNoiseSpec のコンストラクターの引数名にそろえ、値の検査で断られた項目を ParamName からそのまま示せるようにする
+        // 項目名は StealthNoiseSpec と AwarenessSpec のコンストラクターの引数名にそろえ、値の検査で断られた項目を ParamName からそのまま示せるようにする
         public static IReadOnlyList<string> ItemNames { get; } = new[]
         {
             FootstepNoiseRadiusItem,
@@ -31,9 +32,15 @@ namespace Shooter.Core
             MinLandingFallSpeedItem,
             HardLandingFallSpeedItem,
             MinLandingVolumeItem,
+            ArmedGainFactorItem,
         };
 
         public static StealthNoiseSpec Parse(string text, string sourceName)
+        {
+            return ParseTuning(text, sourceName).Noise;
+        }
+
+        public static StealthTuningSpec ParseTuning(string text, string sourceName)
         {
             var source = ServerDataJson.SourceOf(sourceName, _kind);
 
@@ -52,9 +59,11 @@ namespace Shooter.Core
                 var minLandingFallSpeed = fields.ReadFloat(MinLandingFallSpeedItem, defaults.MinLandingFallSpeed);
                 var hardLandingFallSpeed = fields.ReadFloat(HardLandingFallSpeedItem, defaults.HardLandingFallSpeed);
                 var minLandingVolume = fields.ReadFloat(MinLandingVolumeItem, defaults.MinLandingVolume);
+                var armedNode = fields.Find(ArmedGainFactorItem);
+                float? armedGainFactor = armedNode == null ? (float?)null : fields.ToFloat(ArmedGainFactorItem, armedNode);
                 try
                 {
-                    return new StealthNoiseSpec(
+                    var noise = new StealthNoiseSpec(
                         radius,
                         walkStride,
                         sprintStride,
@@ -65,6 +74,7 @@ namespace Shooter.Core
                         minLandingFallSpeed,
                         hardLandingFallSpeed,
                         minLandingVolume);
+                    return new StealthTuningSpec(noise, armedGainFactor);
                 }
                 catch (ArgumentException e)
                 {
