@@ -22,7 +22,6 @@ server-only pickup-drops.json
 resources-only achievements.json
 resources-only aim-assist.json
 resources-only barks.json
-resources-only breach.json
 resources-only cosmetics.json
 resources-only gamepad-layouts.json
 resources-only graphics.json
