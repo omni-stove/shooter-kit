@@ -374,7 +374,7 @@ namespace Shooter.Editor
 
                 // 当たりの無い板はサーバーで道を塞がず、破っても外す物が無い
                 // GroupOf は入れ子の板の当たりを近い方のドアの組に入れるので、ここも近い板がこのドアの当たりだけ数える
-                if (!Array.Exists(panel.GetComponentsInChildren<Collider>(true), c => IsExported(c) && NearestPanel(c, allPanels) == panel))
+                if (!Array.Exists(panel.GetComponentsInChildren<Collider>(true), c => IsExported(c) && ToWorldCollider(c, 0, 0) != null && NearestPanel(c, allPanels) == panel))
                 {
                     invalid.Add(PathOf(component.transform) + " (its panel " + PathOf(panel) + " has no enabled, non-trigger collider)");
                     continue;
