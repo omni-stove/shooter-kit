@@ -33,8 +33,9 @@ namespace Shooter.NetV2
                 return FireDecision.Hold;
             }
 
+            // しまっている・しまう途中・構える途中はサーバー (ServerHolster) が断るので、射撃もリロードも頼まない。押した射撃は NetV2HolsterPart が構える要求にする
             var row = latest.Players[own];
-            if (row.Health <= 0 || row.Downed.IsDowned
+            if (row.Health <= 0 || row.Downed.IsDowned || row.HolsterPhase != HolsterPhase.Drawn
                 || predicted.IsDodging || predicted.IsVaulting || predicted.IsDiving || predicted.Ladder.IsClimbing
                 || predicted.IsHangingOnLedge)
             {

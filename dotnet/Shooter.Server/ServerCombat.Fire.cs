@@ -56,6 +56,13 @@ namespace Shooter.Server
 
             var spec = weapons.CurrentSpec;
 
+            // 座席の武器は手の武器をしまっていても撃てるので、手の武器だけを見る。連射の枠を使わないよう、ServerLoadout.TryFire より先に断る
+            if (weapons == shooter.Weapons && IsHolsterLowered(shooterId))
+            {
+                WarnRejected(shooterId, ShotRejection.Holstered);
+                return false;
+            }
+
             // 連射の枠を使わないよう、ServerLoadout.TryFire より先に断る
             if (spec != null && spec.IsShield)
             {
@@ -362,6 +369,13 @@ namespace Shooter.Server
             if (motion.IsDodging || motion.IsVaulting)
             {
                 rejection = motion.IsDodging ? ShotRejection.Dodging : ShotRejection.Vaulting;
+                return false;
+            }
+
+            // 照射を押したまましまい始めたら、そこで止める
+            if (weapons == fighter.Weapons && IsHolsterLowered(shooterId))
+            {
+                rejection = ShotRejection.Holstered;
                 return false;
             }
 

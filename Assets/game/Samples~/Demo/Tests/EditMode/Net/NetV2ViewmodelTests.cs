@@ -190,6 +190,41 @@ namespace Shooter.Net.Tests
         }
 
         [Test]
+        public void AWeaponHolsteredByThePlayerIsHidden()
+        {
+            var snapshot = Snapshot(100, false);
+            snapshot.Players[0].HolsterPhase = HolsterPhase.Holstered;
+            snapshot.Players[0].HolsterLowering = 1f;
+
+            Assert.That(
+                NetV2Viewmodel.HiddenReason(snapshot, LocalPlayerId, Standing(), false),
+                Is.EqualTo(ViewmodelPresenter.ReasonHolstered));
+        }
+
+        [TestCase(HolsterPhase.Holstering)]
+        [TestCase(HolsterPhase.Drawing)]
+        public void AWeaponOnItsWayDownOrUpStaysShown(HolsterPhase phase)
+        {
+            var snapshot = Snapshot(100, false);
+            snapshot.Players[0].HolsterPhase = phase;
+            snapshot.Players[0].HolsterLowering = 0.5f;
+
+            Assert.That(NetV2Viewmodel.HiddenReason(snapshot, LocalPlayerId, Standing(), false), Is.Null);
+        }
+
+        [Test]
+        public void DeathHidesAHolsteredWeaponForItsOwnReason()
+        {
+            var snapshot = Snapshot(0, false);
+            snapshot.Players[0].HolsterPhase = HolsterPhase.Holstered;
+            snapshot.Players[0].HolsterLowering = 1f;
+
+            Assert.That(
+                NetV2Viewmodel.HiddenReason(snapshot, LocalPlayerId, Standing(), false),
+                Is.EqualTo(ViewmodelPresenter.ReasonDead));
+        }
+
+        [Test]
         public void WithoutTheOwnRowOnlyTheMotionDecides()
         {
             Assert.That(NetV2Viewmodel.HiddenReason(null, LocalPlayerId, Standing(), false), Is.Null);
