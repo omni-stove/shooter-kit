@@ -21,6 +21,7 @@ server-only pickup-drops.json
 # サーバーが読まない、クライアントとオフラインの調整値。
 resources-only achievements.json
 resources-only aim-assist.json
+resources-only barks.json
 resources-only breach.json
 resources-only cosmetics.json
 resources-only gamepad-layouts.json
