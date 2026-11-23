@@ -46,6 +46,22 @@ namespace Shooter.NetV2
             bool parachuting,
             ParkourMove parkour,
             float holsterLowering)
+            : this(position, yaw, stance, weaponId, lean, swimming, wallRun, parachuting, parkour, holsterLowering, false)
+        {
+        }
+
+        public RemotePose(
+            Vector3 position,
+            float yaw,
+            PlayerStance stance,
+            string weaponId,
+            float lean,
+            bool swimming,
+            WallRunSide wallRun,
+            bool parachuting,
+            ParkourMove parkour,
+            float holsterLowering,
+            bool weaponLightOn)
         {
             Position = position;
             Yaw = yaw;
@@ -63,6 +79,7 @@ namespace Shooter.NetV2
 
             // リーンと同じく、見た目の下げ (PlayerMockPose の Lowered) が範囲の外で迷わないよう、届いた値はここで収める
             HolsterLowering = float.IsNaN(holsterLowering) ? 0f : (holsterLowering < 0f ? 0f : (holsterLowering > 1f ? 1f : holsterLowering));
+            WeaponLightOn = weaponLightOn;
         }
 
         public Vector3 Position { get; }
@@ -96,6 +113,12 @@ namespace Shooter.NetV2
         // 体に持たせて見せる武器。しまい切っていれば空。WeaponId はしまっていても持っている武器のまま残す
         public string ShownWeaponId => IsWeaponHidden ? "" : WeaponId;
 
+        // 点灯の条件 (ライトが付いているか・しまっているか) はサーバー (ServerWeaponLight) が確かめて送るので、ここは届いた値をそのまま持つ
+        public bool WeaponLightOn { get; }
+
+        // 銃を隠している間に光だけが残らないよう、見せる光は銃が見えている時に限る
+        public bool ShowsWeaponLight => WeaponLightOn && !IsWeaponHidden && WeaponId.Length > 0;
+
         // 伏せとしゃがみはサーバーが同時に立てないので、伏せを先に見る。
         public static RemotePose From(in Shooter.Protocol.PlayerSnapshot row)
         {
@@ -110,7 +133,8 @@ namespace Shooter.NetV2
                 (WallRunSide)(byte)row.WallRunSide,
                 row.IsParachuting,
                 (ParkourMove)(byte)row.ParkourMove,
-                row.HolsterLowering);
+                row.HolsterLowering,
+                row.WeaponLightOn);
         }
     }
 }

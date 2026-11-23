@@ -56,6 +56,9 @@ namespace Shooter.NetV2
         // スナップショットの武器の Id から武器を引く。近接の部品が、ルールの Melee が Off でも近接武器なら振ると決めるため。null なら近接武器を引かない
         public Func<string, WeaponSpec> FindWeapon { get; set; }
 
+        // 自分の武器に付けた物の Id。ウェポンライトの部品が、ライトの無い武器で断られると分かっている要求を送らないため。null なら何も付けていないとみなす
+        public Func<string, IReadOnlyList<string>> OwnAttachments { get; set; }
+
         public StreakSpec Streaks { get; set; }
 
         // ロードアウトの能力の並び。つないだ直後の Ability1・Ability2 で置く種類をここから引く
@@ -108,6 +111,7 @@ namespace Shooter.NetV2
                 NetV2VisionPart.Create,
                 NetV2HordePart.Create,
                 NetV2HolsterPart.Create,
+                NetV2WeaponLightPart.Create,
             };
 
         public static List<INetV2ClientPart> Create(NetV2ClientPartsContext context)

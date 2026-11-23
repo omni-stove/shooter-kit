@@ -115,6 +115,30 @@ namespace Shooter.Core
                 spec.Akimbo);
         }
 
+        // 武器に付かない物を数えないよう Keep を通してから探す。サーバー (ServerWeaponLight) とクライアント (NetV2WeaponLightPart) が同じ答えを出すため
+        public static WeaponLightSpec LightOf(ItemCatalog catalog, string weaponId, IReadOnlyList<string> attachmentItemIds)
+        {
+            if (catalog == null)
+            {
+                throw new ArgumentNullException(nameof(catalog));
+            }
+
+            if (string.IsNullOrEmpty(weaponId))
+            {
+                return null;
+            }
+
+            foreach (var item in Resolve(catalog, weaponId, attachmentItemIds))
+            {
+                if (item.Attachment.IsLight)
+                {
+                    return item.Attachment.Light;
+                }
+            }
+
+            return null;
+        }
+
         public static IReadOnlyList<string> Keep(ItemCatalog catalog, string weaponId, IEnumerable<string> attachmentItemIds)
         {
             if (catalog == null)

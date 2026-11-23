@@ -43,6 +43,7 @@ namespace Shooter.Protocol
         public const ushort HordeFortifyRequest = 40;
         public const ushort HolsterRequest = 41;
         public const ushort BreachRequest = 42;
+        public const ushort WeaponLightRequest = 43;
 
         public const ushort Snapshot = 48;
         public const ushort StructureState = 49;

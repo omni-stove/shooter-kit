@@ -290,6 +290,7 @@ namespace Shooter.Server
             row.WeaponId = "";
             row.HolsterPhase = HolsterPhase.Drawn;
             row.HolsterLowering = 0f;
+            row.WeaponLightOn = false;
             row.Lean = 0f;
             row.Swimming = false;
             row.WallRunSide = default;

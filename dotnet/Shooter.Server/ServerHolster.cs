@@ -386,6 +386,12 @@ namespace Shooter.Server
                 && body.HasSpawned;
         }
 
+        // ServerWeaponLight が、しまい始めたライトを消すのに使う。ゾーンと同じ数え方にするのは、オフラインの WeaponLightController も HolsterStatus.IsArmed で消すため
+        public bool IsArmed(int playerId)
+        {
+            return IsInWorld(playerId, out var body) && IsArmed(playerId, body);
+        }
+
         // オフラインの HolsterController.Status.IsArmed と同じく、はしごや乗り物がしまわせている間は holster.json の armedWhileHeldByOthers で数える
         private bool IsArmed(int playerId, ServerBody body)
         {
