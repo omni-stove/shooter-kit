@@ -21,7 +21,7 @@ namespace Shooter.Tests.EditMode
 
             var spec = KeySharingJson.Parse(asset.text, "Resources/Tuning/key-sharing.json");
 
-            Assert.That(spec.Shared.Count, Is.EqualTo(4));
+            Assert.That(spec.Shared.Count, Is.EqualTo(5));
             Assert.That(spec.Allows("Melee", "Interact"), Is.True);
             Assert.That(spec.Allows("Reload", "Interact"), Is.True);
             Assert.That(spec.Allows("Melee", "Reload"), Is.False);
@@ -42,6 +42,11 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.Allows("Emote", "Ping"), Is.True);
             Assert.That(spec.YieldsTo("Ping"), Is.EqualTo(new[] { "Emote" }));
             Assert.That(spec.YieldsTo("Emote"), Is.Empty);
+
+            Assert.That(spec.Allows("HoldBreath", "Countermeasure"), Is.True, "breath is held only while aiming on foot and flares fire only in a vehicle");
+            Assert.That(spec.YieldsTo("HoldBreath"), Is.Empty);
+            Assert.That(spec.YieldsTo("Countermeasure"), Is.Empty);
+            Assert.That(spec.Allows("HoldBreath", "Cover"), Is.False);
 
             Assert.That(spec.Allows("Emote", "Cover"), Is.False);
             Assert.That(spec.Allows("Countermeasure", "Ping"), Is.False);

@@ -16,6 +16,11 @@ namespace Shooter.Tests.EditMode
         private static readonly RebindSlot JumpPad = new RebindSlot("Jump", InputDeviceKind.Gamepad);
         private static readonly RebindSlot MoveUpKey = new RebindSlot("Move", InputDeviceKind.KeyboardMouse, "up");
 
+        private static readonly string[] StartsWithoutAGamepadButton =
+        {
+            "Melee", "Prone", "Ability1", "Ability2", "SquadCommand", "SwitchAmmoType", "CycleMagnification", "HoldBreath", "SwitchGrenade", "SwitchStreak", "Inventory", "Previous", "Holster",
+        };
+
         private InputActionAsset _asset;
         private PlayerBindings _bindings;
 
@@ -46,6 +51,12 @@ namespace Shooter.Tests.EditMode
                 Assert.That(InputBinding.MaskByGroup(PlayerBindings.GroupOf(slot.Device)).Matches(binding), Is.True, slot.ToString());
                 Assert.That(binding.isComposite, Is.False, slot.ToString());
                 Assert.That(binding.isPartOfComposite, Is.EqualTo(slot.Part != null), slot.ToString());
+                if (slot.Device == InputDeviceKind.Gamepad && StartsWithoutAGamepadButton.Contains(slot.ActionName))
+                {
+                    Assert.That(_bindings.PathOf(slot), Is.Null.Or.Empty, slot.ToString());
+                    continue;
+                }
+
                 Assert.That(_bindings.PathOf(slot), Is.Not.Empty, slot.ToString());
                 Assert.That(_bindings.DisplayOf(slot), Is.Not.Empty, slot.ToString());
             }
@@ -66,28 +77,40 @@ namespace Shooter.Tests.EditMode
                 "the gamepad moves with the stick");
         }
 
-        [TestCase("Melee")]
-        [TestCase("Prone")]
-        [TestCase("Ability1")]
-        [TestCase("Ability2")]
-        [TestCase("SquadCommand")]
-        [TestCase("SwitchAmmoType")]
-        [TestCase("CycleMagnification")]
-        [TestCase("HoldBreath")]
-        [TestCase("SwitchGrenade")]
-        [TestCase("SwitchStreak")]
-        [TestCase("Inventory")]
-        [TestCase("Previous")]
         [TestCase("LeanLeft")]
         [TestCase("LeanRight")]
         [TestCase("Chat")]
         [TestCase("TeamChat")]
         [TestCase("PushToTalk")]
-        [TestCase("Holster")]
         public void KeyboardOnlyButtonsHaveOnlyAKeyboardRow(string actionName)
         {
             Assert.That(PlayerBindings.Slots, Has.Member(new RebindSlot(actionName, InputDeviceKind.KeyboardMouse)));
             Assert.That(PlayerBindings.Slots, Has.No.Member(new RebindSlot(actionName, InputDeviceKind.Gamepad)));
+        }
+
+        [Test]
+        public void ButtonsWithNoFreeGamepadButtonStillHaveAnEmptyGamepadRow()
+        {
+            foreach (var actionName in StartsWithoutAGamepadButton)
+            {
+                var slot = new RebindSlot(actionName, InputDeviceKind.Gamepad);
+
+                Assert.That(PlayerBindings.Slots, Has.Member(slot), actionName);
+                Assert.That(_bindings.Has(slot), Is.True, actionName);
+                Assert.That(_bindings.PathOf(slot), Is.Null.Or.Empty, actionName);
+                Assert.That(_bindings.FindConflicts(slot), Is.Empty, actionName + " has no button, so nothing overlaps");
+            }
+        }
+
+        [Test]
+        public void AnEmptyGamepadRowCanBeGivenAButton()
+        {
+            var melee = new RebindSlot("Melee", InputDeviceKind.Gamepad);
+
+            _bindings.ApplyOverride(melee, "<Gamepad>/rightStickPress");
+
+            Assert.That(_bindings.PathOf(melee), Is.EqualTo("<Gamepad>/rightStickPress"));
+            Assert.That(_bindings.FindConflicts(melee).Select(c => c.ActionName), Is.EqualTo(new[] { "SwapShoulder" }));
         }
 
         [TestCase("Emote", "<Gamepad>/dpad/up", "Ping")]

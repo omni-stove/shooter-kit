@@ -17,6 +17,7 @@ namespace Shooter.Tests.EditMode
     {
         private static readonly RebindSlot ReloadKey = new RebindSlot("Reload", InputDeviceKind.KeyboardMouse);
         private static readonly RebindSlot ReloadPad = new RebindSlot("Reload", InputDeviceKind.Gamepad);
+        private static readonly RebindSlot JumpPad = new RebindSlot("Jump", InputDeviceKind.Gamepad);
 
         private ControlSettings _appliedBefore;
         private GameLanguage _languageBefore;
@@ -72,7 +73,8 @@ namespace Shooter.Tests.EditMode
             {
                 var button = _container.Q<Button>(SettingsView.RebindButtonName(slot));
                 Assert.That(button, Is.Not.Null, slot.ToString());
-                Assert.That(button.text, Is.EqualTo(_view.Bindings.DisplayOf(slot)), slot.ToString());
+                Assert.That(button.text, Is.EqualTo(SettingsView.BindingText(_view.Bindings, slot)), slot.ToString());
+                Assert.That(button.text, Is.Not.Empty, slot.ToString());
             }
 
             Assert.That(_container.Q<Button>(SettingsView.BindingsResetButtonName).enabledSelf, Is.True);
@@ -311,6 +313,137 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(SettingsView.FormatConflict("W", conflicts), Is.EqualTo("W は「前へ移動」「調べる・起こす」にも割り当てられています。"));
             Assert.That(SettingsView.FormatConflict("W", Array.Empty<BindingConflict>()), Is.Empty);
+        }
+
+        [Test]
+        public void AGamepadRowWithNoButtonSaysNone()
+        {
+            _view.Open(_container);
+
+            var melee = new RebindSlot("Melee", InputDeviceKind.Gamepad);
+
+            Assert.That(_container.Q<Button>(SettingsView.RebindButtonName(melee)).text, Is.EqualTo("なし"));
+            Assert.That(_container.Q<Button>(SettingsView.RebindButtonName(ReloadPad)).text, Is.EqualTo(_view.Bindings.DisplayOf(ReloadPad)));
+        }
+
+        [Test]
+        public void TheTemplateButtonsNameTheDefaultTemplateWhenNothingIsChanged()
+        {
+            _view.Open(_container);
+
+            Assert.That(_container.Q<Button>(SettingsView.GamepadLayoutButtonName).text, Is.EqualTo("既定"));
+            Assert.That(_container.Q<Button>(SettingsView.GamepadSwapButtonName).text, Is.EqualTo("そのまま"));
+            Assert.That(_container.Q<Button>(SettingsView.GamepadLayoutButtonName).enabledSelf, Is.True);
+        }
+
+        [Test]
+        public void TheLayoutButtonAppliesTheNextTemplateAtOnceAndItIsSavedOnClose()
+        {
+            _view.Open(_container);
+            var melee = new RebindSlot("Melee", InputDeviceKind.Gamepad);
+
+            Assert.That(_view.NextGamepadLayout(), Is.True);
+
+            Assert.That(_container.Q<Button>(SettingsView.GamepadLayoutButtonName).text, Is.EqualTo("標準 (FPS)"));
+            Assert.That(_container.Q<Button>(SettingsView.GamepadSwapButtonName).text, Is.EqualTo("そのまま"));
+            Assert.That(_view.Bindings.PathOf(melee), Is.EqualTo("<Gamepad>/rightStickPress"));
+            Assert.That(_container.Q<Button>(SettingsView.RebindButtonName(melee)).text, Is.EqualTo(_view.Bindings.DisplayOf(melee)));
+            Assert.That(_view.HasUnsavedChanges, Is.True);
+            Assert.That(PlayerPrefs.HasKey(_bindingStore.Key), Is.False, "nothing is written until the view closes");
+
+            Assert.That(_view.Close(), Is.True);
+
+            _restarted = ProjectActionsClone.Create();
+            Assert.That(new InputBindingOverridesStore(_bindingStore.Key).Load(_restarted), Is.True);
+            using (var reloaded = new PlayerBindings(_restarted))
+            {
+                Assert.That(reloaded.TryFindGamepadLayout(KitTuning.GamepadLayouts, out var layout, out var swap), Is.True);
+                Assert.That(layout.Id, Is.EqualTo("standard"));
+                Assert.That(swap.Id, Is.EqualTo("none"));
+            }
+        }
+
+        [Test]
+        public void TheSwapButtonKeepsTheLayout()
+        {
+            _view.Open(_container);
+            _view.NextGamepadLayout();
+
+            Assert.That(_view.NextGamepadSwap(), Is.True);
+
+            Assert.That(_view.TryGetGamepadLayout(out var layout, out var swap), Is.True);
+            Assert.That(layout.Id, Is.EqualTo("standard"));
+            Assert.That(swap.Id, Is.EqualTo("southpaw"));
+            Assert.That(_container.Q<Button>(SettingsView.GamepadSwapButtonName).text, Is.EqualTo("左右スティック入れ替え"));
+            Assert.That(_view.Bindings.PathOf(new RebindSlot("Sprint", InputDeviceKind.Gamepad)), Is.EqualTo("<Gamepad>/rightStickPress"));
+        }
+
+        [Test]
+        public void TheLayoutButtonGoesRoundBackToTheDefault()
+        {
+            _view.Open(_container);
+            var count = _view.GamepadLayouts.Layouts.Count;
+            Assert.That(count, Is.EqualTo(6));
+
+            for (var i = 0; i < count; i++)
+            {
+                _view.NextGamepadLayout();
+            }
+
+            Assert.That(_view.TryGetGamepadLayout(out var layout, out _), Is.True);
+            Assert.That(layout.Id, Is.EqualTo("default"));
+            Assert.That(_view.Bindings.HasOverrides, Is.False);
+        }
+
+        [Test]
+        public void ChangingOneButtonShowsCustomAndTheSwapButtonStartsAgainFromTheLastTemplate()
+        {
+            _view.Open(_container);
+            _view.NextGamepadLayout();
+            _view.SetBinding(JumpPad, "<Gamepad>/dpad/down");
+
+            Assert.That(_view.TryGetGamepadLayout(out _, out _), Is.False);
+            Assert.That(_container.Q<Button>(SettingsView.GamepadLayoutButtonName).text, Is.EqualTo("カスタム"));
+            Assert.That(_container.Q<Button>(SettingsView.GamepadSwapButtonName).text, Is.EqualTo("カスタム"));
+            Assert.That(_view.PendingConflict, Is.Not.Null, "Dodge is on the d-pad down in the standard layout");
+
+            _view.NextGamepadSwap();
+
+            Assert.That(_view.TryGetGamepadLayout(out var layout, out var swap), Is.True);
+            Assert.That(layout.Id, Is.EqualTo("standard"), "the layout the player started from");
+            Assert.That(swap.Id, Is.EqualTo("none"), "a custom set starts again from the first swap");
+            Assert.That(_view.PendingConflict, Is.Null, "applying a template settles the overlap");
+            Assert.That(_view.Bindings.PathOf(JumpPad), Is.EqualTo("<Gamepad>/buttonSouth"));
+        }
+
+        [Test]
+        public void ResettingTheBindingsGoesBackToTheDefaultTemplate()
+        {
+            _view.Open(_container);
+            _view.NextGamepadLayout();
+
+            _view.ResetBindingsToDefaults();
+
+            Assert.That(_container.Q<Button>(SettingsView.GamepadLayoutButtonName).text, Is.EqualTo("既定"));
+        }
+
+        [Test]
+        public void EveryBundledTemplateNameIsInEveryLanguage()
+        {
+            var keys = KitTuning.GamepadLayouts.Layouts.Select(l => l.NameKey)
+                .Concat(KitTuning.GamepadLayouts.Swaps.Select(s => s.NameKey))
+                .Concat(new[] { SettingsView.UnboundTextKey, SettingsView.CustomLayoutTextKey })
+                .ToList();
+            Assert.That(keys, Has.Count.EqualTo(12));
+
+            foreach (var language in Localizer.AvailableLanguages())
+            {
+                var table = Localizer.TableOf(language);
+                foreach (var key in keys)
+                {
+                    Assert.That(table.Contains(key), Is.True, language + " " + key);
+                }
+            }
         }
 
         private static bool IsDisplayed(VisualElement element)

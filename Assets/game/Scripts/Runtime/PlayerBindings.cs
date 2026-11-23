@@ -36,8 +36,9 @@ namespace Shooter.Runtime
         // スティックの方向は少し倒れているだけでも拾い、メニューを動かすつもりの入力が割り当てになりやすい。
         private static readonly string[] _gamepadExcluded = { "<Gamepad>/leftStick", "<Gamepad>/rightStick" };
 
-        // ゲームパッドに空いているボタンが無く割り当てていないので、キーボードの行だけを出すアクション。_slots より先に初期化する。
-        private static readonly string[] _keyboardOnlyActions = { "Melee", "Prone", "Ability1", "Ability2", "SquadCommand", "NetStats", "SwitchAmmoType", "CycleMagnification", "HoldBreath", "SwitchGrenade", "SwitchStreak", "Inventory", "Previous", "LeanLeft", "LeanRight", "Chat", "TeamChat", "PushToTalk", "Holster" };
+        // 文字入力・通話・開発用の表示と、覗き込みの左右は、ゲームパッドの割り当てを持たせずキーボードの行だけを出す。_slots より先に初期化する。
+        // ほかのアクションはボタンが空いていなくても空のゲームパッドの割り当てを持ち、プレイヤーや GamepadLayout がボタンを入れられる。
+        private static readonly string[] _keyboardOnlyActions = { "NetStats", "LeanLeft", "LeanRight", "Chat", "TeamChat", "PushToTalk" };
 
         private static readonly RebindSlot[] _slots = BuildSlots();
 
@@ -240,6 +241,121 @@ namespace Shooter.Runtime
         {
             CancelRebind();
             _map.RemoveAllBindingOverrides();
+        }
+
+        // Move / Look のスティックも含め、ゲームパッドの割り当てを持つすべてのアクションへ書く。返すのは変えた割り当ての数。
+        public int ApplyGamepadLayout(GamepadLayout layout, GamepadSwap swap)
+        {
+            if (layout == null)
+            {
+                throw new ArgumentNullException(nameof(layout));
+            }
+
+            if (swap == null)
+            {
+                throw new ArgumentNullException(nameof(swap));
+            }
+
+            CancelRebind();
+            foreach (var placed in layout.Bindings)
+            {
+                var named = _map.FindAction(placed.Action);
+                if (named == null || GamepadIndexOf(named) < 0)
+                {
+                    Debug.LogWarning(GamepadLayoutLog.UnknownAction(layout.Id, placed.Action));
+                }
+            }
+
+            var changed = 0;
+            foreach (var action in _map.actions)
+            {
+                var index = GamepadIndexOf(action);
+                if (index < 0)
+                {
+                    continue;
+                }
+
+                var binding = action.bindings[index];
+                var target = GamepadLayoutSpec.PathFor(layout, swap, action.name, binding.path);
+                if (string.Equals(binding.effectivePath ?? string.Empty, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // ApplyBindingOverride は interaction と processor の上書きもまとめて置き換えるので、スティックの遊びの上書きなどを写して残す。
+                action.ApplyBindingOverride(index, new InputBinding
+                {
+                    overridePath = string.Equals(binding.path ?? string.Empty, target, StringComparison.OrdinalIgnoreCase) ? null : target,
+                    overrideInteractions = binding.overrideInteractions,
+                    overrideProcessors = binding.overrideProcessors,
+                });
+                changed++;
+            }
+
+            Debug.Log(GamepadLayoutLog.Applied(layout.Id, swap.Id, changed));
+            return changed;
+        }
+
+        public bool UsesGamepadLayout(GamepadLayout layout, GamepadSwap swap)
+        {
+            if (layout == null)
+            {
+                throw new ArgumentNullException(nameof(layout));
+            }
+
+            if (swap == null)
+            {
+                throw new ArgumentNullException(nameof(swap));
+            }
+
+            foreach (var action in _map.actions)
+            {
+                var index = GamepadIndexOf(action);
+                if (index < 0)
+                {
+                    continue;
+                }
+
+                var binding = action.bindings[index];
+                var target = GamepadLayoutSpec.PathFor(layout, swap, action.name, binding.path);
+                if (!string.Equals(binding.effectivePath ?? string.Empty, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // どれにも当たらない (プレイヤーが 1 つずつ変えた) ときは false を返し、layout と swap は null にする。
+        public bool TryFindGamepadLayout(GamepadLayoutSpec spec, out GamepadLayout layout, out GamepadSwap swap)
+        {
+            if (spec == null)
+            {
+                throw new ArgumentNullException(nameof(spec));
+            }
+
+            foreach (var candidate in spec.Layouts)
+            {
+                foreach (var candidateSwap in spec.Swaps)
+                {
+                    if (UsesGamepadLayout(candidate, candidateSwap))
+                    {
+                        layout = candidate;
+                        swap = candidateSwap;
+                        return true;
+                    }
+                }
+            }
+
+            layout = null;
+            swap = null;
+            return false;
+        }
+
+        private static int GamepadIndexOf(InputAction action)
+        {
+            return BindingIndexOf(action, new RebindSlot(action.name, InputDeviceKind.Gamepad));
         }
 
         // 有効なアクションは割り当てを変えられないので、待つ間だけ無効にし、終わったら有効に戻す。

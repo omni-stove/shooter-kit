@@ -105,6 +105,7 @@ namespace Shooter.Editor
             new TuningSlot("PalettesTuning", KitTuning.PalettesResourcePath, c => c.PalettesTuning, (c, v) => c.PalettesTuning = v),
             new TuningSlot("LoadoutPresetsTuning", KitTuning.LoadoutPresetsResourcePath, c => c.LoadoutPresetsTuning, (c, v) => c.LoadoutPresetsTuning = v),
             new TuningSlot("GraphicsTuning", KitTuning.GraphicsResourcePath, c => c.GraphicsTuning, (c, v) => c.GraphicsTuning = v),
+            new TuningSlot("GamepadLayoutsTuning", KitTuning.GamepadLayoutsResourcePath, c => c.GamepadLayoutsTuning, (c, v) => c.GamepadLayoutsTuning = v),
             new TuningSlot("HolsterTuning", KitTuning.HolsterResourcePath, c => c.HolsterTuning, (c, v) => c.HolsterTuning = v),
         };
 
