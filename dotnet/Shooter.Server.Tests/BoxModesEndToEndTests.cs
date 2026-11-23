@@ -142,7 +142,26 @@ namespace Shooter.Server.Tests
                 Copy(file, Path.Combine(target, ServerMapData.MapsDirectoryName));
             }
 
+            if (rulesName == "Extraction")
+            {
+                ArmExtraction(Path.Combine(target, ServerRulesData.TuningDirectoryName));
+            }
+
             return root;
+        }
+
+        // キットの stash.json・loot.json は空 (持ち込む武器も箱の中身も無い) なので、Bot が撃ち合って箱を開けられるよう、
+        // 持ち物庫の最初の物に武器と弾を入れ、箱の表には Demo の抽出モードの表を使う。checkout の server-data は書き換えない
+        private static void ArmExtraction(string tuning)
+        {
+            const string carbine = "39cb64db-b31c-478c-9784-9ecf8006a0f1";
+            const string ammo556 = "212170da-0998-4fa9-9457-761c75a2a797";
+            File.WriteAllText(
+                Path.Combine(tuning, ServerRulesData.StashTuningFileName),
+                "{\"capacity\": 60, \"startingItems\": [{\"itemId\": \"" + carbine + "\", \"count\": 1}, {\"itemId\": \"" + ammo556 + "\", \"count\": 60}]}");
+            var loot = Path.Combine(RepositoryRoot(), "Assets", "game", "Samples~", "Demo", "Modes", "ExtractionLoot.json");
+            Assert.That(File.Exists(loot), Is.True, loot);
+            File.Copy(loot, Path.Combine(tuning, "loot.json"), true);
         }
 
         // 返すのはエリアの段階の待ちと縮みの合計 (秒)
