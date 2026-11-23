@@ -20,7 +20,8 @@ namespace Shooter.Runtime
         // 下の空いた物の隙間から見える足にも当たるよう、足元へも線を引く。床に沿って床のコライダーに当たらないよう少し上げる。
         private const float BottomProbeLift = 0.1f;
 
-        public static GrenadeExplosion Detonate(Vector3 center, ExplosionSpec explosion, GameObject shooter, string weaponId)
+        // playEffects を外せるのは、ドアの爆薬のように自分の見た目と音を差し替えられる側が、全体の爆発の音と重ねて鳴らさないため。
+        public static GrenadeExplosion Detonate(Vector3 center, ExplosionSpec explosion, GameObject shooter, string weaponId, bool playEffects = true)
         {
             if (explosion == null)
             {
@@ -51,7 +52,11 @@ namespace Shooter.Runtime
             var result = new GrenadeExplosion(center, damaged, killed, structures);
             Debug.Log(FormatLog(result));
 
-            PlayEffects(center);
+            if (playEffects)
+            {
+                PlayEffects(center);
+            }
+
             ExplosionRangeDebug.Report(center, damage.Radius, damage.FullDamageRadius);
             CombatEvents.RaiseExploded(center, weaponId);
             return result;
@@ -110,7 +115,8 @@ namespace Shooter.Runtime
             return Vector3.Distance(center, closest);
         }
 
-        public static void PlayEffects(Vector3 center)
+        // sound が null なら PresentationCatalog の爆発の音を鳴らす。
+        public static void PlayEffects(Vector3 center, AudioClip sound = null)
         {
             // Edit Mode では時間差で消せず、専用サーバーには見る人がいない。
             if (!Application.isPlaying || NetStartup.ShouldDisablePresentation(NetStartup.IsDedicatedServerBuild))
@@ -119,20 +125,16 @@ namespace Shooter.Runtime
             }
 
             var catalog = PresentationCatalog.Load();
-            if (catalog == null)
-            {
-                return;
-            }
-
-            if (catalog.Explosion != null)
+            if (catalog != null && catalog.Explosion != null)
             {
                 var effect = UnityEngine.Object.Instantiate(catalog.Explosion, center, Quaternion.identity);
                 UnityEngine.Object.Destroy(effect, EffectLifetimeSeconds);
             }
 
-            if (catalog.ExplosionSound != null)
+            var clip = sound != null ? sound : catalog != null ? catalog.ExplosionSound : null;
+            if (clip != null)
             {
-                AudioSource.PlayClipAtPoint(catalog.ExplosionSound, center);
+                AudioSource.PlayClipAtPoint(clip, center);
                 SubtitleFeed.Raise(SoundCueKind.Explosion, center, AudibleDistance);
             }
         }
