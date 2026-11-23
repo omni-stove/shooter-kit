@@ -11,6 +11,7 @@ namespace Shooter.Core
         private AwarenessPosture _posture;
         private float _light = 1f;
         private float _speed;
+        private bool _armed = true;
         private AwarenessStage _offStage;
         private AwarenessStage _published;
 
@@ -50,7 +51,7 @@ namespace Shooter.Core
         public bool RaisedByAlarm { get; private set; }
 
         // 視線と距離は知覚から求めるので、ここでは知覚に無い材料だけを受け取る。
-        public void Observe(Vector3 forward, AwarenessPosture posture, float lightFactor, float targetSpeed)
+        public void Observe(Vector3 forward, AwarenessPosture posture, float lightFactor, float targetSpeed, bool targetArmed = true)
         {
             if (!Enum.IsDefined(typeof(AwarenessPosture), posture))
             {
@@ -77,6 +78,7 @@ namespace Shooter.Core
             _posture = posture;
             _light = lightFactor;
             _speed = targetSpeed;
+            _armed = targetArmed;
         }
 
         public bool Alarm(Vector3 position)
@@ -197,7 +199,7 @@ namespace Shooter.Core
                 angle = (float)(Math.Acos(Math.Max(-1f, Math.Min(1f, cos))) * 180.0 / Math.PI);
             }
 
-            return new AwarenessSighting(perception.HasLineOfSight, distance, angle, _posture, _light, _speed);
+            return new AwarenessSighting(perception.HasLineOfSight, distance, angle, _posture, _light, _speed, _armed);
         }
 
         public EnemyPerception Contribute(EnemyBrain brain, float deltaSeconds, EnemyPerception perception)

@@ -165,6 +165,45 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void SightingCarriesWhetherTheTargetIsArmed()
+        {
+            var awareness = new StealthAwareness(AwarenessSpec.Default);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsArmed, Is.True, "armed until told otherwise");
+
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, false);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsArmed, Is.False);
+
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsArmed, Is.True);
+        }
+
+        [Test]
+        public void AnArmedTargetIsEngagedSoonerOnlyByTheArmedFactor()
+        {
+            var spec = new AwarenessSpec(armedGainFactor: 2f);
+            var armedTicks = TicksToEngage(spec, true);
+            var unarmedTicks = TicksToEngage(spec, false);
+
+            Assert.That(armedTicks, Is.LessThan(unarmedTicks));
+            Assert.That(armedTicks * 2, Is.EqualTo(unarmedTicks).Within(2), "twice the gain, half the time");
+            Assert.That(TicksToEngage(AwarenessSpec.Default, true), Is.EqualTo(TicksToEngage(AwarenessSpec.Default, false)), "the default factor changes nothing");
+        }
+
+        private static int TicksToEngage(AwarenessSpec spec, bool armed)
+        {
+            var (brain, awareness, _, _) = Create(Stealth.On, spec);
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, armed);
+            var ticks = 0;
+            while (awareness.Stage != AwarenessStage.Engaged && ticks < 10000)
+            {
+                brain.Tick(0.01f, Sees(_ahead));
+                ticks++;
+            }
+
+            return ticks;
+        }
+
+        [Test]
         public void BeingShotEngagesAtOnceTowardsTheShooter()
         {
             var (brain, awareness, stages, _) = Create(Stealth.On);

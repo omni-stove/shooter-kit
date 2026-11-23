@@ -14,8 +14,9 @@ namespace Shooter.Core.Tests
             float angle = 0f,
             AwarenessPosture posture = AwarenessPosture.Standing,
             float light = 1f,
-            float speed = 0f) =>
-            new AwarenessSighting(true, distance, angle, posture, light, speed);
+            float speed = 0f,
+            bool armed = true) =>
+            new AwarenessSighting(true, distance, angle, posture, light, speed, armed);
 
         private static float Gain(AwarenessSighting sighting) => AwarenessMeter.GainPerSecond(AwarenessSpec.Default, _sightRange, sighting);
 
@@ -212,6 +213,71 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(engagedHoldThreshold: 1.1f));
             Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(alarmRadius: float.PositiveInfinity));
             Assert.That(AwarenessSpec.Default.PostureFactor(AwarenessPosture.Standing), Is.EqualTo(1f));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(armedGainFactor: -0.1f)).ParamName,
+                Is.EqualTo("armedGainFactor"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(armedGainFactor: float.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(armedGainFactor: float.PositiveInfinity));
+            Assert.Throws<ArgumentOutOfRangeException>(() => AwarenessSpec.Default.WithArmedGainFactor(-1f));
+        }
+
+        [Test]
+        public void TheArmedFactorDefaultsToOneSoArmedAndUnarmedFillAlike()
+        {
+            Assert.That(AwarenessSpec.DefaultArmedGainFactor, Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.ArmedGainFactor, Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.ArmedFactor(true), Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.ArmedFactor(false), Is.EqualTo(1f));
+            Assert.That(Gain(Seen(armed: true)), Is.EqualTo(Gain(Seen(armed: false))));
+            Assert.That(new AwarenessSighting(true, 1f, 0f, AwarenessPosture.Standing, 1f, 0f).IsArmed, Is.True, "targets that cannot holster count as armed");
+        }
+
+        [Test]
+        public void TheArmedFactorScalesOnlyTheArmedGain()
+        {
+            var spec = new AwarenessSpec(armedGainFactor: 2f);
+            var armed = AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: true));
+            var unarmed = AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: false));
+
+            Assert.That(spec.ArmedFactor(true), Is.EqualTo(2f));
+            Assert.That(spec.ArmedFactor(false), Is.EqualTo(1f));
+            Assert.That(unarmed, Is.EqualTo(Gain(Seen(armed: false))).Within(1e-6f), "holstered fills as before");
+            Assert.That(armed, Is.EqualTo(unarmed * 2f).Within(1e-6f));
+            Assert.That(SecondsToNotice(spec, Seen(armed: true)), Is.LessThan(SecondsToNotice(spec, Seen(armed: false))));
+            Assert.That(
+                AwarenessMeter.GainPerSecond(new AwarenessSpec(armedGainFactor: 0.5f), _sightRange, Seen(armed: true)),
+                Is.EqualTo(unarmed * 0.5f).Within(1e-6f),
+                "a game may also make armed targets harder to notice");
+        }
+
+        [Test]
+        public void WithArmedGainFactorKeepsTheOtherValues()
+        {
+            var spec = new AwarenessSpec(fieldOfViewDegrees: 90f, gainPerSecond: 2f, alarmRadius: 8f, investigateLevel: 0.7f);
+
+            var armed = spec.WithArmedGainFactor(3f);
+
+            Assert.That(armed, Is.Not.SameAs(spec));
+            Assert.That(armed.ArmedGainFactor, Is.EqualTo(3f));
+            Assert.That(spec.ArmedGainFactor, Is.EqualTo(AwarenessSpec.DefaultArmedGainFactor));
+            Assert.That(armed.FieldOfViewDegrees, Is.EqualTo(90f));
+            Assert.That(armed.GainPerSecond, Is.EqualTo(2f));
+            Assert.That(armed.AlarmRadius, Is.EqualTo(8f));
+            Assert.That(armed.InvestigateLevel, Is.EqualTo(0.7f));
+            Assert.That(armed.FootstepGain, Is.EqualTo(spec.FootstepGain));
+        }
+
+        private static float SecondsToNotice(AwarenessSpec spec, AwarenessSighting sighting)
+        {
+            var meter = new AwarenessMeter(spec);
+            var seconds = 0f;
+            while (meter.Stage == AwarenessStage.Unaware && seconds < 100f)
+            {
+                meter.Tick(0.01f, _sightRange, sighting);
+                seconds += 0.01f;
+            }
+
+            return seconds;
         }
 
         private static float SecondsToNotice(AwarenessSighting sighting)

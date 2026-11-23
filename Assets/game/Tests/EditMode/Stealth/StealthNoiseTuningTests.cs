@@ -60,6 +60,10 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(StealthActionInstaller.Noise, Is.Not.SameAs(StealthNoiseSpec.Default), "read from Resources");
             Assert.That(StealthActionInstaller.Noise.FootstepNoiseRadius, Is.EqualTo(12f));
+
+            var tuning = StealthNoiseJson.ParseTuning(asset.text, "Resources/Tuning/stealth.json");
+            Assert.That(tuning.ArmedGainFactor, Is.EqualTo(AwarenessSpec.DefaultArmedGainFactor), "the shipped file keeps armed and holstered alike");
+            Assert.That(StealthActionInstaller.Tuning.ArmedGainFactor, Is.EqualTo(1f));
         }
 
         [Test]

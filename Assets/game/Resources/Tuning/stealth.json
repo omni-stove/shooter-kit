@@ -8,5 +8,6 @@
   "crouchVolume": 0.2,
   "minLandingFallSpeed": 2.5,
   "hardLandingFallSpeed": 12,
-  "minLandingVolume": 0.35
+  "minLandingVolume": 0.35,
+  "armedGainFactor": 1
 }

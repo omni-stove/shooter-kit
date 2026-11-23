@@ -111,7 +111,7 @@ namespace Shooter.Runtime
             AwarenessSpec spec;
             try
             {
-                spec = CreateSpec();
+                spec = StealthActionInstaller.Tuning.ApplyTo(CreateSpec());
             }
             catch (ArgumentException e)
             {
@@ -343,7 +343,11 @@ namespace Shooter.Runtime
             {
                 _awareness.Rule = _observedStealth.Rule;
                 _awareness.Observe(
-                    transform.forward.ToNumerics(), _observedStealth.Posture, Mathf.Clamp01(_observedStealth.LightFactor), _observedStealth.Speed);
+                    transform.forward.ToNumerics(),
+                    _observedStealth.Posture,
+                    Mathf.Clamp01(_observedStealth.LightFactor),
+                    _observedStealth.Speed,
+                    _observedStealth.IsArmed);
             }
             // 目標が無いあいだはルールを持ち越す。ResetTo で目標が外れると、次の tick で目標を拾ったその判断が Off のまま走ってすぐ交戦するため。
             else if (target != null)
