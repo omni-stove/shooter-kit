@@ -73,7 +73,8 @@ namespace Shooter.Tests.EditMode
                 .ToArray();
             var untried = GameRulesDebugDraft.Fields.Where(GameRulesDebugDraft.IsToggle).Except(tried).ToArray();
 
-            Assert.That(untried, Is.EquivalentTo(new[] { GameRulesDebugField.Downed, GameRulesDebugField.AimToFire }));
+            // 弾詰まり (Jam) はまだ詰まる処理が無く、入れても試せるものが無いので、どのシーンにも入れていない。
+            Assert.That(untried, Is.EquivalentTo(new[] { GameRulesDebugField.Downed, GameRulesDebugField.AimToFire, GameRulesDebugField.Jam }));
         }
 
         [Test]

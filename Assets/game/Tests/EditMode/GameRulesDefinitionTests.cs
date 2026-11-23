@@ -93,6 +93,7 @@ namespace Shooter.Tests.EditMode
             definition.Stamina = Stamina.On;
             definition.ReloadInterruptedBy = new[] { ReloadInterrupt.Grenade, ReloadInterrupt.Aim };
             definition.AimWhileReloading = AimWhileReloading.Off;
+            definition.Jam = WeaponJam.On;
             definition.RespawnAnchors = new[] { RespawnAnchor.Beacon, RespawnAnchor.Base };
 
             var rules = definition.ToRules();
@@ -151,6 +152,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(rules.Actions.Stamina, Is.EqualTo(Stamina.On));
             Assert.That(rules.Actions.ReloadInterruptedBy, Is.EqualTo(new[] { ReloadInterrupt.Grenade, ReloadInterrupt.Aim }));
             Assert.That(rules.Actions.AimWhileReloading, Is.EqualTo(AimWhileReloading.Off));
+            Assert.That(rules.Actions.Jam, Is.EqualTo(WeaponJam.On));
             Assert.That(rules.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Beacon, RespawnAnchor.Base }));
             Assert.That(definition.ToRules(), Is.Not.SameAs(rules));
         }
@@ -165,6 +167,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(definition.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Base }));
             Assert.That(definition.ReloadInterruptedBy, Is.EqualTo(new[] { ReloadInterrupt.Melee, ReloadInterrupt.Grenade }));
             Assert.That(definition.AimWhileReloading, Is.EqualTo(AimWhileReloading.On));
+            Assert.That(definition.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(definition.ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off));
         }
 
         [Test]
@@ -275,7 +279,8 @@ namespace Shooter.Tests.EditMode
                     Jump.Off,
                     emote: Emote.On,
                     stamina: Stamina.On,
-                    reloadInterruptedBy: new[] { ReloadInterrupt.Grenade }),
+                    reloadInterruptedBy: new[] { ReloadInterrupt.Grenade },
+                    jam: WeaponJam.On),
                 2f,
                 FallDamage.On,
                 HudDensity.Hardcore,
@@ -448,6 +453,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(actual.Actions.Emote, Is.EqualTo(expected.Actions.Emote));
             Assert.That(actual.Actions.Stamina, Is.EqualTo(expected.Actions.Stamina));
             Assert.That(actual.Actions.ReloadInterruptedBy, Is.EqualTo(expected.Actions.ReloadInterruptedBy));
+            Assert.That(actual.Actions.Jam, Is.EqualTo(expected.Actions.Jam));
             Assert.That(actual.RespawnAnchors, Is.EqualTo(expected.RespawnAnchors));
         }
 

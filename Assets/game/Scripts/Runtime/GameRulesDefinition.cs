@@ -135,6 +135,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("リロード中に構えられるか。Off ならリロードが終わるまで構えない (reloadInterruptedBy に Aim があればそちらを優先し、構えでリロードを取り消す)")]
         private AimWhileReloading _aimWhileReloading = AimWhileReloading.On;
 
+        [SerializeField, Tooltip("撃つと武器が詰まることがあるか。On でも、武器のデータに詰まりの設定が無い武器は詰まらない")]
+        private WeaponJam _jam = WeaponJam.Off;
+
         [Header("体力とダメージ")]
         [SerializeField, Min(1), Tooltip("プレイヤーの最大体力")]
         private int _playerMaxHealth = GameRules.DefaultPlayerMaxHealth;
@@ -447,6 +450,12 @@ namespace Shooter.Runtime
             set => _aimWhileReloading = value;
         }
 
+        public WeaponJam Jam
+        {
+            get => _jam;
+            set => _jam = value;
+        }
+
         // 写しを渡し受けするのは、呼んだ側が配列を書き換えてもアセットの値が黙って変わらないようにするため。
         public RespawnAnchor[] RespawnAnchors
         {
@@ -608,7 +617,8 @@ namespace Shooter.Runtime
                         _emote,
                         _stamina,
                         _reloadInterruptedBy ?? Array.Empty<ReloadInterrupt>(),
-                        _aimWhileReloading),
+                        _aimWhileReloading,
+                        _jam),
                     _spawnProtectionSeconds,
                     _fallDamage,
                     _hudDensity,
@@ -733,6 +743,7 @@ namespace Shooter.Runtime
             }
 
             _aimWhileReloading = actions.AimWhileReloading;
+            _jam = actions.Jam;
         }
 
         private string SourceName => string.IsNullOrEmpty(name) ? "(unnamed game rules)" : name;

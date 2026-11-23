@@ -9,6 +9,7 @@
   "debug.rules.field.Cover": "Cover",
   "debug.rules.field.BlindFire": "Blind fire",
   "debug.rules.field.ActiveReload": "Active reload",
+  "debug.rules.field.Jam": "Weapon jams",
   "debug.rules.field.Dodge": "Dodge",
   "debug.rules.field.Vault": "Vault",
   "debug.rules.field.Grenade": "Grenades",
