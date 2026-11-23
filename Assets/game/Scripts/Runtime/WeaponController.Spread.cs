@@ -82,7 +82,15 @@ namespace Shooter.Runtime
 
             var ads = AdsProgressSource != null ? AdsProgressSource() : 0f;
             var move = MoveFractionSource != null ? MoveFractionSource() : 0f;
-            var cone = SpreadPattern.ConeDegrees(spec, ads, move) * SpreadScale * ModifierSpreadMultiplier();
+            var akimbo = AkimboSpreadMultiplier(spec);
+            var cone = SpreadPattern.ConeDegrees(spec, ads, move) * SpreadScale * ModifierSpreadMultiplier() * akimbo;
+
+            // 二丁持ちのときだけ抑えるのは、1 丁の武器の広がりを今までの値から変えないため。
+            if (akimbo != 1f)
+            {
+                cone = Mathf.Min(cone, SpreadPattern.MaxDegrees);
+            }
+
             if (_modifiers.Count == 0)
             {
                 return cone;

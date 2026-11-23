@@ -123,6 +123,7 @@ namespace Shooter.Editor
             definition.Description = spec.Description;
             definition.Shield.Set(spec.Shield);
             definition.Melee.Set(spec.Melee);
+            definition.Akimbo.Set(spec.Akimbo);
 
             var trigger = spec.Trigger;
             definition.Burst.Set(trigger.Burst);
