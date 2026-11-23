@@ -74,7 +74,7 @@ namespace Shooter.Server
         }
 
         // 撃った向きの pitch は人の体 (Mover) に覚える。抜けると体ごと消えるので、番号を使い回す次の人へ残らない
-        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, float shotTick)
+        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, double shotTick)
         {
             if (BotRoster.IsBotId(shooterId) || !_byPlayer.TryGetValue(shooterId, out var mover))
             {

@@ -53,7 +53,7 @@ namespace Shooter.Server
         }
 
         partial void CastMany(
-            Vector3 origin, Vector3 direction, float range, int maxHits, float tick, int shooterId, Func<int, bool> hittable,
+            Vector3 origin, Vector3 direction, float range, int maxHits, double tick, int shooterId, Func<int, bool> hittable,
             List<ShotHit> hits, ref bool handled)
         {
             ArgumentNullException.ThrowIfNull(hittable);
@@ -122,7 +122,7 @@ namespace Shooter.Server
         }
 
         // 当たった人を全員足し、巻き戻した tick 数を返す
-        private float AddTargetHits(Vector3 origin, Vector3 unit, float range, float tick, int shooterId, Func<int, bool> hittable)
+        private float AddTargetHits(Vector3 origin, Vector3 unit, float range, double tick, int shooterId, Func<int, bool> hittable)
         {
             if (!HasHistory)
             {
@@ -148,7 +148,7 @@ namespace Shooter.Server
             }
 
             AddHeldShieldHits(origin, unit, range, clamped, _rewound, _many);
-            return LastRecordedTick - clamped;
+            return (float)(LastRecordedTick - clamped);
         }
     }
 }

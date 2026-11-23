@@ -86,7 +86,7 @@ namespace Shooter.Server
             return null;
         }
 
-        private string LocatePlayer(int shooterId, int targetId, float tick, out Vector3 point)
+        private string LocatePlayer(int shooterId, int targetId, double tick, out Vector3 point)
         {
             point = default;
             if (targetId == shooterId)
@@ -102,7 +102,7 @@ namespace Shooter.Server
             return Combat.Hitboxes.TryRewindCenter(targetId, tick, out point) ? null : ReasonUnknown;
         }
 
-        private string LocateVehicle(int shooterId, int vehicle, float tick, out Vector3 point)
+        private string LocateVehicle(int shooterId, int vehicle, double tick, out Vector3 point)
         {
             point = default;
             var vehicles = Combat.Vehicles;

@@ -8,7 +8,7 @@ namespace Shooter.Server
     {
         // 太い弾も 1 発で止まる。貫通の複数の当たり (CastMany) は細い線だけが拾う。
         partial void CastSphere(
-            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, float tick, int shooterId, Func<int, bool> hittable,
+            Vector3 origin, Vector3 direction, float radius, float range, int maxHits, double tick, int shooterId, Func<int, bool> hittable,
             List<ShotHit> hits, ref bool handled)
         {
             Validate(origin, direction, range, hittable);

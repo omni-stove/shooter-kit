@@ -133,7 +133,7 @@ namespace Shooter.Server
             _sights.Clear();
         }
 
-        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, float shotTick)
+        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, double shotTick)
         {
             if (!TryWatch(shooterId, out var player))
             {

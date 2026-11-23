@@ -265,7 +265,7 @@ namespace Shooter.NetV2
             }
         }
 
-        public bool TryShowGrenade(int grenadeId, float renderTick, GrenadeCarrier carrier, out Vector3 position, out Quaternion rotation)
+        public bool TryShowGrenade(int grenadeId, double renderTick, GrenadeCarrier carrier, out Vector3 position, out Quaternion rotation)
         {
             if (!_grenades.TryGetValue(grenadeId, out var track))
             {
@@ -337,7 +337,7 @@ namespace Shooter.NetV2
                 _count++;
             }
 
-            public void Sample(float tick, out Vector3 position, out Quaternion rotation)
+            public void Sample(double tick, out Vector3 position, out Quaternion rotation)
             {
                 var newer = 0;
                 while (newer < _count && _ticks[At(newer)] < tick)
@@ -355,7 +355,7 @@ namespace Shooter.NetV2
 
                 var a = At(newer - 1);
                 var b = At(newer);
-                var t = (tick - _ticks[a]) / (_ticks[b] - _ticks[a]);
+                var t = (float)((tick - _ticks[a]) / ((double)_ticks[b] - _ticks[a]));
                 position = Vector3.Lerp(_positions[a], _positions[b], t);
                 rotation = Quaternion.Slerp(_rotations[a], _rotations[b], t);
             }

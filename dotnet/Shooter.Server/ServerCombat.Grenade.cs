@@ -361,7 +361,7 @@ namespace Shooter.Server
             var length = offset.Length();
             return length >= 1e-4f
                 && (_context.World.Raycast(from, offset / length, length, ServerHitboxes.RaycastLayers, out _)
-                    || (_vehicles != null && _vehicles.BlocksLine(from, to, float.MaxValue, PlayerIds.None))
+                    || (_vehicles != null && _vehicles.BlocksLine(from, to, double.MaxValue, PlayerIds.None))
                     || (_deployables != null && _deployables.BlocksLine(from, to, null)));
         }
 
