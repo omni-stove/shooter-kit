@@ -240,7 +240,7 @@ namespace Shooter.Core.Tests
         public void FiresReactionSecondsAfterFirstSeenEvenIfItEntersAttackFromChase()
         {
             var brain = PatrollingBrain(out _);
-            var far = new Vector3(0f, 0f, 25f);
+            var far = new Vector3(0f, 0f, 15f);
             var near = new Vector3(0f, 0f, 5f);
             brain.Tick(1f, Sees(Vector3.Zero, far));
 
