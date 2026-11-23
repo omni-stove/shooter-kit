@@ -13,5 +13,6 @@
   "crowdRadius": 12,
   "maxSpeakersInCrowd": 2,
   "hearingDistance": 30,
-  "grenadeWarningRadius": 8
+  "grenadeWarningRadius": 8,
+  "speakSeconds": 2
 }
