@@ -35,6 +35,7 @@ namespace Shooter.Runtime
         private readonly string[] _startupSlots;
         private readonly Func<long> _clock;
         private CloudSaveStamps _stamps;
+        private readonly List<string> _clearedBySwitch = new List<string>();
         private readonly List<string> _queue = new List<string>();
         private readonly HashSet<string> _tooLong = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _unreadable = new HashSet<string>(StringComparer.Ordinal);
@@ -281,6 +282,15 @@ namespace Shooter.Runtime
                         }
                     }
 
+                    foreach (var slot in _clearedBySwitch)
+                    {
+                        if (!changed.Contains(slot))
+                        {
+                            changed.Add(slot);
+                        }
+                    }
+
+                    _clearedBySwitch.Clear();
                     Debug.Log(CloudSaveLog.AccountChanged(setAside.Count, restored.Count));
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
@@ -356,6 +366,11 @@ namespace Shooter.Runtime
             foreach (var slot in present)
             {
                 _local.Delete(slot);
+                // 入れ替えが失敗してやり直しになっても、ここで消した分は読み込み済みの側へ知らせる必要がある。
+                if (!_clearedBySwitch.Contains(slot))
+                {
+                    _clearedBySwitch.Add(slot);
+                }
             }
 
             return present;

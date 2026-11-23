@@ -855,6 +855,36 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ASlotClearedByAFailedSwapIsStillReportedPulledWhenTheRetrySucceeds()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            Drain(sync);
+            backend.Files.Clear();
+            backend.Calls.Clear();
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            local.FailWriteSlot = CloudSaveSync.StampsSlot;
+            backend.SignedInAccount = OtherAccount;
+            LogAssert.Expect(LogType.Error, CloudSaveLog.AccountChangeFailed(MemorySaveStorage.FailureMessage, CloudSaveSync.DefaultRetrySeconds));
+            sync.Tick(_time);
+            sync.Tick(_time + 1d);
+
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(pulled, Is.Empty);
+
+            local.FailWriteSlot = null;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(sync.IsSignedIn, Is.True);
+            Assert.That(pulled, Does.Contain(ProfileSlot));
+        }
+
+        [Test]
         public void IfTheOwnerOfUnownedStampsCannotBeWrittenItStaysUnownedUntilItCan()
         {
             var local = new MemorySaveStorage();
