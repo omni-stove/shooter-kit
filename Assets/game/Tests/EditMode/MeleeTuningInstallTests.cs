@@ -19,7 +19,7 @@ namespace Shooter.Tests.EditMode
 
         private static GameRules Rules()
         {
-            return GameRules.Default.WithActions(ActionRules.Default.WithMelee(Melee.On));
+            return GameRules.Default.WithActions(ActionRules.Default.WithMelee(Melee.On).WithTakedown(Takedown.On));
         }
 
         [SetUp]

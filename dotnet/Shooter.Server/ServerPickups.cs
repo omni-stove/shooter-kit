@@ -39,7 +39,7 @@ namespace Shooter.Server
         private readonly List<Crate> _crates = new List<Crate>();
         private readonly List<Nearest> _nearest = new List<Nearest>();
         private readonly List<Spot> _scan = new List<Spot>();
-        private readonly Dictionary<int, float> _nextRefusalLogTimes = new Dictionary<int, float>();
+        private readonly Dictionary<int, double> _nextRefusalLogTimes = new Dictionary<int, double>();
         private readonly HashSet<long> _touching = new HashSet<long>();
         private readonly HashSet<long> _stillTouching = new HashSet<long>();
         private ServerContext _context;
@@ -48,7 +48,13 @@ namespace Shooter.Server
         private PickupDropSpec _drops = PickupDropSpec.Default;
         private ItemCatalog _items = ItemCatalog.Empty;
         private int _nextItemId = FirstItemId;
-        private float _now;
+        private double _now;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         // 持ち物の無いサーバー (inventories が null) では、アイテムの拾い物は NoInventory で断り、武器は持ち物と揃えずに持たせる
         public ServerPickups(MatchRulesModule rules, ServerCombat combat, ServerInventories inventories = null)
@@ -387,7 +393,7 @@ namespace Shooter.Server
                 float radius,
                 bool touch,
                 PickupRespawn respawn,
-                float? expiresAt,
+                double? expiresAt,
                 int? ownerId,
                 ServerHeldWeapon carried,
                 WeaponSpec weapon)
@@ -425,7 +431,7 @@ namespace Shooter.Server
             // マップの出現点だけが持つ。落とし物は拾われたら消える
             public PickupRespawn Respawn { get; }
 
-            public float? ExpiresAt { get; }
+            public double? ExpiresAt { get; }
 
             // 落とした人。マップの物は null
             public int? OwnerId { get; }
@@ -457,7 +463,7 @@ namespace Shooter.Server
 
             public float CooldownSeconds { get; }
 
-            public float ReadyAt { get; set; }
+            public double ReadyAt { get; set; }
         }
 
         private readonly struct Nearest

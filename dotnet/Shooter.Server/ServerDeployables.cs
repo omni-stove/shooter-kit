@@ -44,8 +44,14 @@ namespace Shooter.Server
         private ServerBodies _bodies;
         private ServerRulesData _data;
         private int _nextId = 1;
-        private float _now;
-        private float _nextRejectWarningTime = float.NegativeInfinity;
+        private double _now;
+        private double _nextRejectWarningTime = double.NegativeInfinity;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         public ServerDeployables(
             MatchRulesModule rules, ServerCombat combat, DeployCatalog catalog = null, string catalogPath = null, GrappleType grapple = null)

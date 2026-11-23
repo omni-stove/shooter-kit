@@ -11,9 +11,10 @@ namespace Shooter.Core
         public const float DefaultSearchSeconds = 6f;
         public const float DefaultReactionSeconds = 0.6f;
 
+        // 攻撃距離にそろえると、見つけてから Attack になるまで撃たずに寄るだけになるので、オフラインの敵と同じ距離から撃たせる
+        public const float DefaultFireRange = EnemySpec.DefaultFireRange;
+
         // 以下は bots.json で敵の判断を変えられるようにする前の bot と同じ値で、省いたデータの bot の挙動を変えない。
-        // 撃ち始める距離を攻撃距離にそろえ、Attack になるまで撃たない
-        public const float DefaultFireRange = DefaultAttackRange;
 
         // 狙いの合い方は BotDriver が照準の許し (BotInputSpec.FireToleranceDegrees) で見るので、体の向きでは止めない
         public const float DefaultFacingToleranceDegrees = EnemySpec.MaxFireToleranceDegrees;
@@ -50,7 +51,7 @@ namespace Shooter.Core
                 EnemySpec.DefaultCoverPeekSeconds,
                 EnemySpec.DefaultCoverHealthFraction,
                 EnemyArchetype.Rifleman,
-                fireRange: 0f,
+                fireRange: DefaultFireRange,
                 fireToleranceDegrees: DefaultFacingToleranceDegrees,
                 rangeSpreadDegrees: DefaultRangeSpreadDegrees,
                 coverOnHitMaxDistance: EnemySpec.DefaultCoverOnHitMaxDistance,

@@ -32,6 +32,9 @@ namespace Shooter.NetV2
 
         public Func<NetV2LocalPlayer> LocalPlayer { get; set; }
 
+        // 今のマップの当たり (予測と同じもの)。マップに入る前と出た後は null を返す。null ならマップの当たりを使う部品はマップに入らない
+        public Func<ClientWorld> World { get; set; }
+
         public IVoiceSession Voice { get; set; }
 
         public string VoiceLobbyId { get; set; }
@@ -104,6 +107,7 @@ namespace Shooter.NetV2
                 NetV2DronePart.Create,
                 NetV2VisionPart.Create,
                 NetV2HordePart.Create,
+                NetV2HolsterPart.Create,
             };
 
         public static List<INetV2ClientPart> Create(NetV2ClientPartsContext context)

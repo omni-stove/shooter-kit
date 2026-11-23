@@ -42,8 +42,14 @@ namespace Shooter.Server
         private float _zoneElapsed;
         private float _damageTimer;
         private int _nextCrateNumber = 1;
-        private float _now;
+        private double _now;
         private bool _started;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         // 種を渡さなければ起動の時刻から決める。エリアの中心の種は battle-royale.json の zone.seed があればそれを使う
         public BattleRoyaleRules(IMatchObjectiveHost host, BattleRoyaleSpec spec, IBattleRoyaleWorld world, int? seed = null)
@@ -513,7 +519,7 @@ namespace Shooter.Server
         // オフラインの ShrinkingZone と同じく、間隔ごとにその段階の毎秒のダメージを間隔の分だけ与え、1 に満たない端数は人ごとに持ち越す
         private void DamageOutside(float deltaSeconds)
         {
-            var interval = _spec.Zone.DamageIntervalSeconds;
+            var interval = Math.Max(_spec.Zone.DamageIntervalSeconds, ZoneSpec.MinDamageIntervalSeconds);
             _damageTimer += deltaSeconds;
             while (_damageTimer >= interval && _battleRoyale.IsLive)
             {
@@ -922,7 +928,7 @@ namespace Shooter.Server
 
         private sealed class BotPlan
         {
-            public BotPlan(BotErrandKind kind, Vector3? goal, float nextPlanAt)
+            public BotPlan(BotErrandKind kind, Vector3? goal, double nextPlanAt)
             {
                 Kind = kind;
                 Goal = goal;
@@ -933,7 +939,7 @@ namespace Shooter.Server
 
             public Vector3? Goal { get; }
 
-            public float NextPlanAt { get; }
+            public double NextPlanAt { get; }
         }
     }
 }

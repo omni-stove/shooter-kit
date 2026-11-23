@@ -114,6 +114,8 @@ namespace Shooter.Runtime
 
         public static GameSignal<HolsterStatus?> Holster { get; } = new GameSignal<HolsterStatus?>(nameof(Holster));
 
+        public static GameSignal<WeaponLightStatus?> WeaponLight { get; } = new GameSignal<WeaponLightStatus?>(nameof(WeaponLight));
+
         public static GameSignal<WeaponFreeZoneStatus?> WeaponFreeZone { get; } = new GameSignal<WeaponFreeZoneStatus?>(nameof(WeaponFreeZone));
 
         public static GameSignal<VoteKickStatus?> VoteKick { get; } = new GameSignal<VoteKickStatus?>(nameof(VoteKick));
@@ -128,6 +130,8 @@ namespace Shooter.Runtime
 
         public static GameSignal<DroneStatus?> Drone { get; } = new GameSignal<DroneStatus?>(nameof(Drone));
 
+        // 隠密は本体の外のアセンブリだが、UI (Shooter.Runtime.UI) が隠密を参照しないので本体に置く。
+        public static GameSignal<SecurityAlarmStatus?> StealthAlarm { get; } = new GameSignal<SecurityAlarmStatus?>(nameof(StealthAlarm));
         // 爆薬を仕掛けている間と爆発を待つ間だけ出し、どちらでもなければ空に戻す。
         public static GameSignal<BreachStatus?> Breach { get; } = new GameSignal<BreachStatus?>(nameof(Breach));
 
@@ -199,6 +203,7 @@ namespace Shooter.Runtime
             LockOnWarning.Reset();
             Emotes.Reset();
             Holster.Reset();
+            WeaponLight.Reset();
             WeaponFreeZone.Reset();
             VoteKick.Reset();
             VoteKickSender.Reset();
@@ -206,6 +211,7 @@ namespace Shooter.Runtime
             BuySender.Reset();
             Vision.Reset();
             Drone.Reset();
+            StealthAlarm.Reset();
             Breach.Reset();
             NetStats.Reset();
             Nameplates.Reset();

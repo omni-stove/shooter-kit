@@ -58,7 +58,7 @@ usage = '''
 arg "[platform]" help="macos, windows or webgl" default="macos"
 flag "--version <version>" help="build version such as v0.2.0 (default: git describe --tags --always --dirty)"
 '''
-run = 'unity -batchmode -quit -projectPath . -executeMethod Shooter.Editor.ClientBuilder.Build -clientPlatform "${usage_platform:-macos}" ${usage_version:+-buildVersion "$usage_version"}'
+run = 'unity --non-interactive run . -- -executeMethod Shooter.Editor.ClientBuilder.Build -clientPlatform "${usage_platform:-macos}" ${usage_version:+-buildVersion "$usage_version"}'
 
 [server-dotnet]
 description = "Build the Unity-independent .NET server (dotnet/Shooter.Server) and run it with -mode server on 0.0.0.0:7777 (SHOOTER_SERVER_ADDRESS / SHOOTER_SERVER_PORT change it). It needs server-data/maps/<map>.fpsmap and .fpsnav (make export-server-data), and server-data/rules/<rules>.json and server-data/maps/<map>.points.json (make export-server-rules); -rules <name> picks the rules (default TeamDeathmatch), or -playlist <id> rotates the mode and map each match by server-data/playlists/*.json. Ctrl+C or SIGTERM drains; a second one stops at once. Type players, kick, ban, unban or help on stdin; --ban-file <path> keeps the bans (docs/dedicated-server.md). The version is git describe --tags --always --dirty"
@@ -70,7 +70,7 @@ run = [
 ]
 
 [export-server-data]
-description = "Write the collision, the NavMesh with its links, the destructible structures, the ladders, the water, the vehicles and the ziplines of every map selectable with -map to server-data/maps/<map>.fpsmap, <map>.fpsnav, <map>.structures.json, <map>.ladders.json, <map>.water.json, <map>.vehicles.json and <map>.ziplines.json with the Unity editor in batch mode via Shooter.Editor.MapCollisionExporter.Export, removing those files of maps no longer listed (close the Editor first). Commit the result"
+description = "Write the collision, the NavMesh with its links, the destructible structures, the ladders, the water, the vehicles, the ziplines and the breachable doors of every map selectable with -map to server-data/maps/<map>.fpsmap, <map>.fpsnav, <map>.structures.json, <map>.ladders.json, <map>.water.json, <map>.vehicles.json, <map>.ziplines.json and <map>.doors.json with the Unity editor in batch mode via Shooter.Editor.MapCollisionExporter.Export, removing those files of maps no longer listed (close the Editor first). Commit the result"
 run = "unity --non-interactive run . -- -executeMethod Shooter.Editor.MapCollisionExporter.Export"
 
 [export-server-rules]
@@ -92,11 +92,21 @@ description = "Run the Unity EditMode tests headlessly in batch mode (close the 
 run = "unity test --mode EditMode"
 
 [smoke]
-description = "Run every SmokeRun in one batch-mode editor via Shooter.Editor.SmokeSuite.RunAll; exits 1 if any fails (close the Editor first). --root <dir> sets the output root (-shooterKitRoot)"
+description = "Run every SmokeRun in one batch-mode editor via Shooter.Editor.SmokeSuite.RunAll; exits non-zero if any fails or the suite did not run (close the Editor first). The Editor log goes to Logs/smoke.log and its [SmokeSuite] lines are printed. --root <dir> sets the output root (-shooterKitRoot)"
 usage = '''
 flag "--root <dir>" help="output root under Assets/ (default: the imported sample's folder)"
 '''
-run = 'unity -batchmode -projectPath . -executeMethod Shooter.Editor.SmokeSuite.RunAll ${usage_root:+-shooterKitRoot "$usage_root"} -logFile -'
+# unity run は Editor に -quit を付け、Play Mode に入る SmokeRun が走る前に Editor が閉じるので、-quit を付けない unity open --batchmode --wait で起動する。
+# unity open はプロジェクトが既に開かれていると何も起動せず 0 で終わるので、スイートが passed と書いたログが無ければ失敗にする
+run = '''
+mkdir -p Logs
+rm -f Logs/smoke.log
+status=0
+unity --non-interactive open . --batchmode --wait --args "-executeMethod Shooter.Editor.SmokeSuite.RunAll ${usage_root:+-shooterKitRoot \"$usage_root\"} -logFile \"$PWD/Logs/smoke.log\"" || status=$?
+grep -a -E '\[SmokeSuite\]|^  (passed|FAILED|NOT RUN) ' Logs/smoke.log || true
+[ "$status" -eq 0 ] || exit "$status"
+grep -a -q '\[SmokeSuite\] passed:' Logs/smoke.log || { echo "smoke: Logs/smoke.log has no [SmokeSuite] passed line; the suite did not run (is the project open in an Editor?)" >&2; exit 1; }
+'''
 
 [import-weapons]
 description = "Import weapon JSON (one file, or every *.json directly in a folder) into WeaponDefinition assets via Shooter.Editor.WeaponJsonImporter.Import; saves nothing and exits 1 if any file is invalid (close the Editor first)"
@@ -106,7 +116,7 @@ flag "--out <dir>" help="asset folder under Assets/ (default: <output root>/Weap
 flag "--catalog <asset>" help="existing WeaponCatalogAsset to add the weapons to by Id"
 flag "--root <dir>" help="output root under Assets/ (-shooterKitRoot)"
 '''
-run = 'unity run . -- -quit -executeMethod Shooter.Editor.WeaponJsonImporter.Import -weaponJson "$usage_json" ${usage_out:+-weaponOut "$usage_out"} ${usage_catalog:+-weaponCatalog "$usage_catalog"} ${usage_root:+-shooterKitRoot "$usage_root"}'
+run = 'unity --non-interactive run . -- -executeMethod Shooter.Editor.WeaponJsonImporter.Import -weaponJson "$usage_json" ${usage_out:+-weaponOut "$usage_out"} ${usage_catalog:+-weaponCatalog "$usage_catalog"} ${usage_root:+-shooterKitRoot "$usage_root"}'
 
 [import-rules]
 description = "Import game rules JSON (one file, or every *.json directly in a folder) into GameRulesDefinition assets via Shooter.Editor.GameRulesJsonImporter.Import; saves nothing and exits 1 if any file is invalid (close the Editor first)"
@@ -115,7 +125,7 @@ arg "<json>" help="a JSON file or a folder of them"
 flag "--out <dir>" help="asset folder under Assets/ (default: <output root>/Rules)"
 flag "--root <dir>" help="output root under Assets/ (-shooterKitRoot)"
 '''
-run = 'unity run . -- -quit -executeMethod Shooter.Editor.GameRulesJsonImporter.Import -rulesJson "$usage_json" ${usage_out:+-rulesOut "$usage_out"} ${usage_root:+-shooterKitRoot "$usage_root"}'
+run = 'unity --non-interactive run . -- -executeMethod Shooter.Editor.GameRulesJsonImporter.Import -rulesJson "$usage_json" ${usage_out:+-rulesOut "$usage_out"} ${usage_root:+-shooterKitRoot "$usage_root"}'
 
 [game-content]
 description = "Create the GameContent entry asset (or fill its empty fields) via Shooter.Editor.GameContentAssets.Create (close the Editor first)"
@@ -123,11 +133,11 @@ usage = '''
 flag "--path <asset>" help="asset path such as Assets/MyGame/Resources/ShooterKit/GameContent.asset (default: <output root>/Resources/ShooterKit/GameContent.asset)"
 flag "--root <dir>" help="output root under Assets/ (-shooterKitRoot)"
 '''
-run = 'unity run . -- -quit -executeMethod Shooter.Editor.GameContentAssets.Create ${usage_path:+-gameContent "$usage_path"} ${usage_root:+-shooterKitRoot "$usage_root"}'
+run = 'unity --non-interactive run . -- -executeMethod Shooter.Editor.GameContentAssets.Create ${usage_path:+-gameContent "$usage_path"} ${usage_root:+-shooterKitRoot "$usage_root"}'
 
 [audit-replacements]
 description = "List what a game left unreplaced (catalog entries per weapon Id, keys missing in a language, empty [RequiredReference] references) via Shooter.Editor.ReplacementAudit.Run; exits 0 when none, 1 when some, 2 when the audit throws (close the Editor first)"
-run = "unity run . -- -quit -executeMethod Shooter.Editor.ReplacementAudit.Run"
+run = "unity --non-interactive run . -- -executeMethod Shooter.Editor.ReplacementAudit.Run"
 
 [nightly-local]
 description = "Run the nightly workflow's steps locally: EditMode tests, the smoke suite, the map-data template's check (re-export and compare with server-data/maps), and on Sundays (JST) the macOS client build (close the Editor first). Options: --client to always build the client, --no-client to never"
@@ -165,6 +175,10 @@ run = "sh scripts/gitattributes-test.sh"
 [setup-test]
 description = "Run the tests of the setup task, which checks that it makes every asset the demo runs on in the order they depend on"
 run = "sh scripts/setup-test.sh"
+
+[tasks-test]
+description = "Run the tests of how the tasks call the Unity CLI (never as the Editor binary, no flag unity run manages itself, smoke without -quit)"
+run = "sh scripts/tasks-test.sh"
 
 [server-tuning-test]
 description = "Run the tests of scripts/server-tuning.sh, which checks that each server-data/tuning JSON equals the Assets/game/Resources/Tuning file of the same name, and that a file on one side only, or one the server keeps its own copy of, is listed in scripts/server-tuning.txt"

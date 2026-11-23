@@ -56,6 +56,24 @@ namespace Shooter.Tests.EditMode
         private bool IsShown => _view.Element.style.display.value != DisplayStyle.None;
 
         [Test]
+        public void ThePlayersNameIsNotReadAsRichText()
+        {
+            GameSignals.Scoreboard.Publish(
+                new[]
+                {
+                    new ScoreboardEntry(1, ScoreboardName.Literal("<size=900>A"), Team.Alpha, 1, 0, 0, ScoreboardConnection.Connected, false),
+                });
+
+            _view.SetOpen(true);
+
+            var row = PlayerRows().Single();
+            var name = row.Q<Label>(className: ScoreboardView.NameCellClass);
+            Assert.That(name.text, Is.EqualTo("<size=900>A"));
+            Assert.That(name.enableRichText, Is.False);
+            Assert.That(row.Query<Label>().ToList().All(label => !label.enableRichText), Is.True);
+        }
+
+        [Test]
         public void StartsClosedAndHidden()
         {
             Assert.That(_view.IsOpen, Is.False);

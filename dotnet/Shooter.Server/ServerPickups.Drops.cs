@@ -95,7 +95,7 @@ namespace Shooter.Server
 
         private int AddDrop(PickupSpec spec, Vector3 position, bool touch, int ownerId, ServerHeldWeapon carried)
         {
-            var expiresAt = _drops.LifetimeSeconds > 0f ? _now + _drops.LifetimeSeconds : (float?)null;
+            var expiresAt = _drops.LifetimeSeconds > 0f ? _now + _drops.LifetimeSeconds : (double?)null;
             var spot = new Spot(NextItemId(), spec, position, _drops.Reach, touch, null, expiresAt, ownerId, carried, null);
             _spots.Add(spot);
             _log.WriteLine(ServerPickupsLog.Dropped(spot.ItemId, ownerId, spec, position));

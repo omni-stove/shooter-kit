@@ -75,8 +75,13 @@ namespace Shooter.NetV2
         private ClientStash _stash;
         private StashStatus? _publishedStash;
         private bool _stashSkipLogged;
+        private readonly ClientWeaponJam _jam = new ClientWeaponJam();
+        private int _tickRate = TickClock.DefaultTickRate;
 
         public HudModel Model => _model;
+
+        // 詰まった・解除し終えたを CombatEvents に流すときの持ち主。この端末の人の体を作る側が入れる。null なら持ち主無しで流す
+        public GameObject JamHolder { get; set; }
 
         // 箱を開ける・補給を開ける案内に添えるキーの表示。開ける入力を持つ部品が入れる。null ならキーを添えない
         public string InteractKeyLabel { get; set; }
@@ -136,6 +141,7 @@ namespace Shooter.NetV2
             netHud._names = names ?? new ClientPlayerNames();
             netHud._maxHealth = Math.Max(1, maxHealth);
             netHud._findWeapon = findWeapon;
+            netHud._tickRate = Math.Max(1, tickRate);
             netHud._roster = new Roster(netHud);
             netHud._captureTheFlag = new ClientCaptureTheFlagStatus(localPlayerId);
             netHud._searchAndDestroy = new ClientSearchAndDestroyStatus(localPlayerId);
@@ -229,7 +235,8 @@ namespace Shooter.NetV2
                 model.SetTime(Math.Max(0, _remainingSeconds));
             }
 
-            var weaponSpec = snapshot.HasOwner ? _findWeapon(ClientFire.CurrentWeaponId(snapshot.Owner)) : null;
+            var weaponId = snapshot.HasOwner ? ClientFire.CurrentWeaponId(snapshot.Owner) : null;
+            var weaponSpec = snapshot.HasOwner ? _findWeapon(weaponId) : null;
             if (snapshot.HasOwner && (!_shown || !snapshot.Owner.Weapon.SameAs(_weapon) || weaponSpec != _weaponSpec))
             {
                 _weapon = snapshot.Owner.Weapon;
@@ -245,6 +252,8 @@ namespace Shooter.NetV2
                 }
             }
 
+            ShowJam(snapshot, weaponId, weaponSpec);
+
             if (match.State == GameModeState.Ended)
             {
                 model.SetResult(match.HasWinner ? match.Winner : (Team?)null);
@@ -258,6 +267,29 @@ namespace Shooter.NetV2
             ShowModeStatus(snapshot);
             ShowNotice(own >= 0 ? snapshot.Players[own] : default, own >= 0);
             ShowScoreboard(snapshot);
+        }
+
+        // 持ち主の武器の値が無いスナップショット (観戦など) では、前の武器の詰まりを残さない。
+        private void ShowJam(SnapshotMessage snapshot, string weaponId, WeaponSpec weaponSpec)
+        {
+            if (!snapshot.HasOwner)
+            {
+                _jam.Reset();
+                _model.ClearJam();
+                return;
+            }
+
+            var weapon = snapshot.Owner.Weapon;
+            ClientWeaponGauges.ShowJam(_model, weapon, weaponSpec, ClientWeaponGauges.ServerSeconds(snapshot.Tick, _tickRate));
+            switch (_jam.Observe(weapon, weaponId))
+            {
+                case ClientJamChange.Jammed:
+                    CombatEvents.RaiseWeaponJammed(JamHolder, weaponId);
+                    break;
+                case ClientJamChange.Cleared:
+                    CombatEvents.RaiseWeaponJamCleared(JamHolder, weaponId);
+                    break;
+            }
         }
 
         public void ShowIdleWarning(float remainingSeconds)
@@ -871,6 +903,7 @@ namespace Shooter.NetV2
             _stash?.Clear();
             PublishStash(null);
             _stashSkipLogged = false;
+            _jam.Reset();
 
             if (_publishedScoreboard != null)
             {

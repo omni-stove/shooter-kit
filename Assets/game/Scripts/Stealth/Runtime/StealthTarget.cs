@@ -26,6 +26,7 @@ namespace Shooter.Runtime
         private PlayerController _player;
         private ICharacterMotionSource _motion;
         private IHolsterStatusSource _holster;
+        private IWeaponLightStatusSource _weaponLight;
         private Vector3 _lastPosition;
         private bool _hasLastPosition;
         private float _speed;
@@ -120,6 +121,20 @@ namespace Shooter.Runtime
                 }
 
                 return _holster == null || _holster.HolsterStatus.IsArmed;
+            }
+        }
+
+        // ライトの部品の無いプレイヤーは光を出せないので消灯と数える。しまう部品と同じく後から付くことがあるので、無いうちは毎回探し直す。
+        public bool IsLit
+        {
+            get
+            {
+                if (_weaponLight == null || (_weaponLight is UnityEngine.Object destroyed && destroyed == null))
+                {
+                    _weaponLight = GetComponent<IWeaponLightStatusSource>();
+                }
+
+                return _weaponLight != null && _weaponLight.WeaponLightStatus.IsOn;
             }
         }
 

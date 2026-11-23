@@ -8,6 +8,9 @@ namespace Shooter.NetV2.Tests
 {
     public sealed class ClientVehiclesTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private const int _playerId = 3;
         private const int _driverSeat = 0;
         private const float _tickSeconds = 1f / TickClock.DefaultTickRate;
@@ -253,6 +256,17 @@ namespace Shooter.NetV2.Tests
             vehicle.Stage = stage;
             vehicle.Parts = parts;
             return snapshot;
+        }
+
+        [Test]
+        public void AVehicleDrivenByOthersIsInterpolatedPastTheFloatRange()
+        {
+            var vehicles = new ClientVehicles(_playerId);
+            vehicles.Apply(Snapshot(_lateTick, new Vector3(0f, 0f, 0f)));
+            vehicles.Apply(Snapshot(_lateTick + 1, new Vector3(0f, 0f, 4f)));
+
+            Assert.That(vehicles.TrySample(0, _lateTick + 0.25d, out var position, out _), Is.True);
+            Assert.That(position.Z, Is.EqualTo(1f).Within(1e-5f));
         }
     }
 }

@@ -7,6 +7,6 @@ namespace Shooter.Server
     internal interface IServerRespawnBeacons
     {
         // 使えるビーコンがあれば 1 回分を使い、そのビーコンの前の足元の位置と向きを返す。使い切ったビーコンはここで消える
-        bool TryUseBeacon(int playerId, out Vector3 position, out float yaw);
+        bool TryUseBeacon(int playerId, out Vector3 position, out float yawRadians);
     }
 }

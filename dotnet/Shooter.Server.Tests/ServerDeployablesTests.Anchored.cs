@@ -42,7 +42,7 @@ namespace Shooter.Server.Tests
 
             // 右へ向いて歩いた Bravo の左 (+Z) の脇に付いていく
             var walked = new Vector3(0.5f, 1.6f, 4f);
-            BodyOf(2).SetPose(walked, 90f, PlayerStance.Standing);
+            BodyOf(2).SetPose(walked, MathF.PI / 2f, PlayerStance.Standing);
             Step(_tickSeconds);
 
             var expected = new Vector3(walked.X, height, walked.Z + radius);
@@ -61,6 +61,58 @@ namespace Shooter.Server.Tests
             Assert.That(kills, Has.Count.EqualTo(1));
             Assert.That(kills[0].VictimId, Is.EqualTo(2));
             Assert.That(kills[0].WeaponId, Is.EqualTo(_chargeId));
+        }
+
+        [Test]
+        public void ARemoteChargeOnAnEnemyWhoTurnsRoundEndsUpOnTheirOtherSide()
+        {
+            Start(Explosives());
+            Join(1);
+            Join(2);
+            Step(0.2f);
+            Teleport(2, _enemyInFront);
+            var radius = _context.Bodies.Geometry.Radius;
+            var height = BodyOf(1).Center.Y;
+            Assert.That(
+                _deployables.Place(1, _chargeId, new Vector3(_enemyInFront.X - radius, height, 0f), 90f),
+                Is.EqualTo(ServerDeployRefusal.None),
+                _log.ToString());
+
+            // 体の yaw はラジアン。その場で半回転 (π) すると、-X の面に貼った物は +X の側へ回り、向きも 90 度から 270 度になる
+            BodyOf(2).SetPose(_enemyInFront, MathF.PI, PlayerStance.Standing);
+            Step(_tickSeconds);
+
+            var expected = new Vector3(_enemyInFront.X + radius, height, 0f);
+            var row = Rows(1)[0];
+            Assert.That(Vector3.Distance(row.Position, expected), Is.LessThan(1e-3f), "half a turn of the body carries the charge to its far side");
+            Assert.That(row.Yaw, Is.EqualTo(270f).Within(1e-3f));
+        }
+
+        [Test]
+        public void ARemoteChargeStuckOnAnEnemyWhoAlreadyFacesAwayKeepsItsPlaceAsTheyTurn()
+        {
+            Start(Explosives());
+            Join(1);
+            Join(2);
+            Step(0.2f);
+            _context.Bodies.Teleport(2, _enemyInFront, MathF.PI / 2f, _host.TickCount);
+            var radius = _context.Bodies.Geometry.Radius;
+            var height = BodyOf(1).Center.Y;
+            Assert.That(
+                _deployables.Place(1, _chargeId, new Vector3(_enemyInFront.X - radius, height, 0f), 90f),
+                Is.EqualTo(ServerDeployRefusal.None),
+                _log.ToString());
+            Step(_tickSeconds);
+            Assert.That(Rows(1)[0].Position.X, Is.EqualTo(_enemyInFront.X - radius).Within(1e-3f), "a body that has not turned leaves the charge where it stuck");
+
+            // 貼ったときの yaw (π/2) から π まで、さらに 1/4 回転。-X の面は +Z の側へ回る
+            BodyOf(2).SetPose(_enemyInFront, MathF.PI, PlayerStance.Standing);
+            Step(_tickSeconds);
+
+            var expected = new Vector3(_enemyInFront.X, height, radius);
+            var row = Rows(1)[0];
+            Assert.That(Vector3.Distance(row.Position, expected), Is.LessThan(1e-3f), "only the turn since it was stuck moves the charge");
+            Assert.That(row.Yaw, Is.EqualTo(180f).Within(1e-3f));
         }
 
         [Test]

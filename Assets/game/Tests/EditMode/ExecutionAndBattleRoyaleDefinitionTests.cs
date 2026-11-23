@@ -176,6 +176,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(definition.BotPlanIntervalSeconds, Is.EqualTo(0.5f));
             Assert.That(definition.BotSearchRadius, Is.EqualTo(25f));
             Assert.That(definition.DropHeight, Is.EqualTo(60f));
+            Assert.That(definition.ZoneTuning, Is.Null);
+            Assert.That(definition.ReadZone(), Is.Null, "an empty slot leaves the scene's ShrinkingZone values in use");
         }
 
         [Test]

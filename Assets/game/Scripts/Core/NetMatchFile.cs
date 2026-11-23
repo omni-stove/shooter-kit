@@ -159,6 +159,9 @@ namespace Shooter.Core
         public const string CoverPeekSlideSecondsItem = "coverPeekSlideSeconds";
         public const string CoverEnterSpeedItem = "coverEnterSpeed";
         public const string CoverMinWallHeightItem = "coverMinWallHeight";
+        public const string CoverProbeHeightItem = "coverProbeHeight";
+        public const string CoverUpperProbeHeightItem = "coverUpperProbeHeight";
+        public const string CoverTopProbeHeightItem = "coverTopProbeHeight";
         public const string LadderTopEntryDepthItem = "ladderTopEntryDepth";
         public const string LadderMinApproachDotItem = "ladderMinApproachDot";
         public const string LadderMinApproachSpeedItem = "ladderMinApproachSpeed";
@@ -250,7 +253,7 @@ namespace Shooter.Core
             DodgeCooldownSecondsItem, VaultSpeedItem, VaultReachItem, VaultMaxAngleDegreesItem, VaultMinHeightItem, VaultMaxDepthItem,
             CoverMaxEnterDistanceItem, CoverMaxEnterAngleDegreesItem, CoverLowWallHeightItem, CoverPeekSideDistanceItem,
             CoverEnterSecondsItem, CoverBackHoldSecondsItem, CoverPeekSlideSecondsItem, CoverEnterSpeedItem,
-            CoverMinWallHeightItem,
+            CoverMinWallHeightItem, CoverProbeHeightItem, CoverUpperProbeHeightItem, CoverTopProbeHeightItem,
             LadderTopEntryDepthItem, LadderMinApproachDotItem, LadderMinApproachSpeedItem,
             WalkForwardScaleItem, WalkBackwardScaleItem, WalkSideScaleItem, SprintForwardScaleItem, SprintBackwardScaleItem, SprintSideScaleItem,
             CarryWeightSourceItem, CarryMultiplierSourceItem, CarryFreeWeightItem, CarrySpeedLossPerKgItem, CarryMinWeightMultiplierItem,
@@ -713,6 +716,9 @@ namespace Shooter.Core
             writer.Float(CoverPeekSlideSecondsItem, motor.CoverPeekSlideSeconds);
             writer.Float(CoverEnterSpeedItem, motor.CoverEnterSpeed);
             writer.Float(CoverMinWallHeightItem, motor.CoverMinWallHeight);
+            writer.Float(CoverProbeHeightItem, motor.CoverProbeHeight);
+            writer.Float(CoverUpperProbeHeightItem, motor.CoverUpperProbeHeight);
+            writer.Float(CoverTopProbeHeightItem, motor.CoverTopProbeHeight);
             writer.Float(LadderTopEntryDepthItem, motor.LadderTopEntryDepth);
             writer.Float(LadderMinApproachDotItem, motor.LadderMinApproachDot);
             writer.Float(LadderMinApproachSpeedItem, motor.LadderMinApproachSpeed);
@@ -1378,7 +1384,10 @@ namespace Shooter.Core
                         fields.ReadFloat(AirJumpSpeedItem, dm.AirJumpSpeed),
                         fields.ReadFloat(JumpGraceSecondsItem, dm.JumpGraceSeconds),
                         fields.ReadFloat(CoverEnterSpeedItem, dm.CoverEnterSpeed),
-                        fields.ReadFloat(CoverMinWallHeightItem, dm.CoverMinWallHeight)),
+                        fields.ReadFloat(CoverMinWallHeightItem, dm.CoverMinWallHeight),
+                        fields.ReadFloat(CoverProbeHeightItem, dm.CoverProbeHeight),
+                        fields.ReadFloat(CoverUpperProbeHeightItem, dm.CoverUpperProbeHeight),
+                        fields.ReadFloat(CoverTopProbeHeightItem, dm.CoverTopProbeHeight)),
                     new StanceGeometry(
                         fields.ReadFloat(StandingHeightItem, ds.Standing.Height),
                         fields.ReadFloat(StandingCenterYItem, ds.Standing.CenterY),

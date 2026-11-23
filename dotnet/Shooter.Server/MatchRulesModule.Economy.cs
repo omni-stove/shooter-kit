@@ -16,7 +16,7 @@ namespace Shooter.Server
         private readonly BuyAnswerMessage _buyAnswer = new BuyAnswerMessage();
         private Economy _economy;
         private IEconomyRounds _economyRounds;
-        private float _nextEconomyRefusalLogTime;
+        private double _nextEconomyRefusalLogTime;
 
         // 経済の無い試合なら null。試合ごとに作り直す
         internal Economy Economy => _economy;

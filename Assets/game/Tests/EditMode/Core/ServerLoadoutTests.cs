@@ -142,7 +142,7 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void RebuildsTheBudgetWithTheIntervalOfTheNewWeaponAfterASwitch()
+        public void LimitsTheNewWeaponByItsOwnIntervalAfterASwitch()
         {
             var loadout = Loadout();
             var rifle = loadout.Weapons[0];
@@ -158,6 +158,85 @@ namespace Shooter.Core.Tests
             Assert.That(budget.MinShotSpacingSeconds, Is.EqualTo(2f));
             Assert.That(loadout.TryFire(1, handgun, _handgun, 1.5d), Is.EqualTo(ShotRejection.FireRateExceeded));
             Assert.That(loadout.TryFire(1, handgun, _handgun, 2.5d), Is.EqualTo(ShotRejection.None));
+        }
+
+        [Test]
+        public void SwitchingAwayAndBackDoesNotRefillTheBudgetOfTheFirstWeapon()
+        {
+            var loadout = Loadout(3);
+            var rifle = loadout.Weapons[0];
+            var handgun = loadout.Weapons[1];
+
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.FireRateExceeded));
+
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0.25d), Is.EqualTo(ShotRejection.None));
+
+            // rifle の間隔は 1 秒なので、0.5 秒では 1 発ぶんも回復していない
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0.5d), Is.EqualTo(ShotRejection.FireRateExceeded));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 1d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 1d), Is.EqualTo(ShotRejection.FireRateExceeded));
+            Assert.That(loadout.PlayerCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheBudgetOfAWeaponKeepsRecoveringWhileAnotherIsHeld()
+        {
+            var loadout = Loadout(3);
+            var rifle = loadout.Weapons[0];
+            var handgun = loadout.Weapons[1];
+
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0.5d), Is.EqualTo(ShotRejection.None));
+
+            // 2 秒で rifle は 2 発ぶん回復しているので、持ち替えて戻した初弾と次の弾は通り、3 発目は通らない
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 2d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 2d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 2d), Is.EqualTo(ShotRejection.FireRateExceeded));
+        }
+
+        [Test]
+        public void TryGetBudgetReturnsTheBudgetOfTheWeaponFiredLast()
+        {
+            var loadout = Loadout();
+            var rifle = loadout.Weapons[0];
+            var handgun = loadout.Weapons[1];
+
+            Assert.That(loadout.TryGetBudget(1, out var none), Is.False);
+            Assert.That(none, Is.Null);
+
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryGetBudget(1, out var first), Is.True);
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0.5d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryGetBudget(1, out var second), Is.True);
+            Assert.That(second.MinShotSpacingSeconds, Is.EqualTo(2f));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 1d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryGetBudget(1, out var third), Is.True);
+            Assert.That(third, Is.SameAs(first));
+        }
+
+        [Test]
+        public void RemoveAndResetBudgetsForgetTheBudgetsOfEveryWeapon()
+        {
+            var loadout = Loadout();
+            var rifle = loadout.Weapons[0];
+            var handgun = loadout.Weapons[1];
+
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.Remove(1), Is.True);
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d), Is.EqualTo(ShotRejection.None));
+
+            loadout.ResetBudgets();
+
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, handgun, _handgun, 0d), Is.EqualTo(ShotRejection.None));
+            Assert.That(loadout.TryFire(1, rifle, _rifle, 0d), Is.EqualTo(ShotRejection.FireRateExceeded));
         }
 
         [Test]

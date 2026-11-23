@@ -52,8 +52,9 @@ namespace Shooter.Runtime
         private string _lastCheckpointId = string.Empty;
 
         // シーンを読み直すと CheckpointTrigger は未通過に戻るので、通ったチェックポイントの Id は読み直しをまたいで覚えておく。
-        private static readonly System.Collections.Generic.HashSet<string> _passedCheckpointIds =
-            new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+        // ミッションごとに分けるのは、チェックポイントの Id がシーン内でしか一意でなく、別のミッションと同じ Id を持てるため。
+        private static readonly Dictionary<string, HashSet<string>> _passedCheckpointIdsByMission =
+            new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
 
         private bool _reloadPending;
         private float _reloadRemaining;
@@ -189,6 +190,12 @@ namespace Shooter.Runtime
         public bool IsReloadPending => _reloadPending;
 
         public bool IsWaitingForBootstrap => _awaitedBootstrap != null;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void ForgetPassedCheckpoints()
+        {
+            _passedCheckpointIdsByMission.Clear();
+        }
 
         private void Start()
         {
@@ -519,11 +526,11 @@ namespace Shooter.Runtime
             if (CampaignLaunchSelection.IgnoresSaves)
             {
                 Debug.Log($"{LogTag} not launched from the menu; ignoring the save and starting mission={_missionId} from the beginning", this);
-                _passedCheckpointIds.Clear();
+                _passedCheckpointIdsByMission.Remove(_missionId);
             }
             else if (!TryRestore())
             {
-                _passedCheckpointIds.Clear();
+                _passedCheckpointIdsByMission.Remove(_missionId);
             }
         }
 
@@ -573,7 +580,7 @@ namespace Shooter.Runtime
             }
 
             _lastCheckpointId = checkpointId;
-            _passedCheckpointIds.Add(checkpointId);
+            PassedCheckpointIds().Add(checkpointId);
             CampaignLaunchSelection.MarkSaved();
 
             // セーブにグレネードの数を持たせないのは、チェックポイントで満タンに戻すので、再開したときの数 (満タン) と食い違わないため。
@@ -793,6 +800,17 @@ namespace Shooter.Runtime
             return string.Join(",", parts);
         }
 
+        private HashSet<string> PassedCheckpointIds()
+        {
+            if (!_passedCheckpointIdsByMission.TryGetValue(_missionId, out var ids))
+            {
+                ids = new HashSet<string>(StringComparer.Ordinal);
+                _passedCheckpointIdsByMission.Add(_missionId, ids);
+            }
+
+            return ids;
+        }
+
         private void MovePlayerTo(string checkpointId)
         {
             if (string.IsNullOrEmpty(checkpointId))
@@ -808,8 +826,9 @@ namespace Shooter.Runtime
             }
 
             checkpoint.MarkReached();
-            _passedCheckpointIds.Add(checkpointId);
-            foreach (var passedId in _passedCheckpointIds)
+            var passedIds = PassedCheckpointIds();
+            passedIds.Add(checkpointId);
+            foreach (var passedId in passedIds)
             {
                 CheckpointTrigger.Find(passedId)?.MarkReached();
             }
@@ -908,7 +927,7 @@ namespace Shooter.Runtime
 
         private void DeleteSave()
         {
-            _passedCheckpointIds.Clear();
+            _passedCheckpointIdsByMission.Remove(_missionId);
             if (TryDeleteSlot(_saveSlot))
             {
                 Debug.Log($"{LogTag} deleted save slot={_saveSlot}", this);
