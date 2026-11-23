@@ -706,6 +706,7 @@ namespace Shooter.Server
         private List<ItemCount> ChooseBroughtIn(Raider raider)
         {
             raider.Allowed.Clear();
+            raider.Unstocked.Clear();
             var broughtIn = new List<ItemCount>();
             var chosen = _rules.Loadout?.WeaponsFor(raider.PlayerId) ?? _noWeapons;
             foreach (var spec in chosen)
@@ -732,6 +733,7 @@ namespace Shooter.Server
                     if (raider.IsBot && _spec.BotsBringLoadout)
                     {
                         raider.Allowed.Add(spec.Id);
+                        raider.Unstocked.Add(spec.Id);
                         _host.Log.WriteLine(ExtractionRulesLog.BotBringsLoadout(raider.PlayerId, spec.Id));
                         continue;
                     }
@@ -789,7 +791,8 @@ namespace Shooter.Server
             // KeepCarriedOnDeath のときは Die() が持っている物を持ち物庫へ入れるので、箱にも残すと物が倍になる
             if (_loot.IsRunning && !_spec.KeepCarriedOnDeath)
             {
-                _loot.SpawnDeathBox(raider.PlayerId);
+                // 持ち物庫を通さずに Bot へ持たせた武器を箱に入れると、どこにも無かった武器が場に出るので外す
+                _loot.SpawnDeathBox(raider.PlayerId, raider.Unstocked);
             }
         }
 
@@ -976,6 +979,9 @@ namespace Shooter.Server
 
             // 持ち込んだ武器の Id。出現で配る武器をこれに絞る
             public HashSet<string> Allowed { get; } = new HashSet<string>(StringComparer.Ordinal);
+
+            // 持ち物庫を通さずに持たせた武器の Id (Allowed の一部)
+            public HashSet<string> Unstocked { get; } = new HashSet<string>(StringComparer.Ordinal);
 
             public bool Picked { get; set; }
 
