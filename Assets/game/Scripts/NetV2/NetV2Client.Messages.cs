@@ -22,7 +22,12 @@ namespace Shooter.NetV2
                 return;
             }
 
-            _hud?.Apply(snapshot);
+            if (_hud != null)
+            {
+                _hud.JamHolder = _local != null ? _local.gameObject : null;
+                _hud.Apply(snapshot);
+            }
+
             var grenades = snapshot.HasOwner ? snapshot.Owner.Grenades : null;
             _hud?.ShowGrenades(grenades, _grenadeChoice.Current(grenades));
             _weaponHooks.Apply(snapshot);
