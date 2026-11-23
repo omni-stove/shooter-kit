@@ -19,15 +19,15 @@ namespace Shooter.Tests.EditMode
         private static readonly ExpectedActions[] _expectedActions =
         {
             new ExpectedActions(
-                Downed.Revive, Cover.Off, BlindFire.Off, ActiveReload.On, grenade: Grenade.On, grenadeCount: GameRulesAssetBuilder.TeamDeathmatchGrenadeCount, melee: Melee.On),
-            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On),
-            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On),
-            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On),
-            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On),
+                Downed.Revive, Cover.Off, BlindFire.Off, ActiveReload.On, grenade: Grenade.On, grenadeCount: GameRulesAssetBuilder.TeamDeathmatchGrenadeCount, melee: Melee.On, takedown: Takedown.On),
+            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On, takedown: Takedown.On),
+            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On, takedown: Takedown.On),
+            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On, takedown: Takedown.On),
+            new ExpectedActions(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On, melee: Melee.On, takedown: Takedown.On),
             new ExpectedActions(
-                Downed.Off, Cover.On, BlindFire.On, ActiveReload.On, Dodge.On, Vault.On, Grenade.On, GameRulesAssetBuilder.TpsRangeGrenadeCount, Melee.Off),
+                Downed.Off, Cover.On, BlindFire.On, ActiveReload.On, Dodge.On, Vault.On, Grenade.On, GameRulesAssetBuilder.TpsRangeGrenadeCount, Melee.Off, Takedown.On),
             new ExpectedActions(
-                Downed.Revive, Cover.Off, BlindFire.Off, ActiveReload.On, grenade: Grenade.On, grenadeCount: GameRulesAssetBuilder.TeamDeathmatchGrenadeCount, melee: Melee.On),
+                Downed.Revive, Cover.Off, BlindFire.Off, ActiveReload.On, grenade: Grenade.On, grenadeCount: GameRulesAssetBuilder.TeamDeathmatchGrenadeCount, melee: Melee.On, takedown: Takedown.On),
         };
 
         private string _folder;
@@ -459,6 +459,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(actual.Grenade, Is.EqualTo(expected.Grenade), message);
             Assert.That(actual.GrenadeCount, Is.EqualTo(expected.GrenadeCount), message);
             Assert.That(actual.Melee, Is.EqualTo(expected.Melee), message);
+            Assert.That(actual.Takedown, Is.EqualTo(expected.Takedown), message);
         }
 
         private readonly struct ExpectedActions
@@ -472,6 +473,7 @@ namespace Shooter.Tests.EditMode
             public readonly Grenade Grenade;
             public readonly int GrenadeCount;
             public readonly Melee Melee;
+            public readonly Takedown Takedown;
 
             public ExpectedActions(
                 Downed downed,
@@ -482,7 +484,8 @@ namespace Shooter.Tests.EditMode
                 Vault vault = Vault.Off,
                 Grenade grenade = Grenade.Off,
                 int grenadeCount = 0,
-                Melee melee = Melee.Off)
+                Melee melee = Melee.Off,
+                Takedown takedown = Takedown.Off)
             {
                 Downed = downed;
                 Cover = cover;
@@ -493,6 +496,7 @@ namespace Shooter.Tests.EditMode
                 Grenade = grenade;
                 GrenadeCount = grenadeCount;
                 Melee = melee;
+                Takedown = takedown;
             }
         }
 
@@ -826,6 +830,28 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void EveryDemoRulesWithMeleeAndTheTpsRangeAllowTakedowns()
+        {
+            Assert.That(GameRulesAssetBuilder.TeamDeathmatchRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.DominationRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.CampaignEasyRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.CampaignNormalRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.CampaignHardRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.RangeRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.PlaygroundRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(GameRulesAssetBuilder.HighDropRules().Actions.Takedown, Is.EqualTo(Takedown.On));
+            foreach (var name in GameRulesAssetBuilder.ModeNames)
+            {
+                Assert.That(GameRulesAssetBuilder.ModeRules(name).Actions.Takedown, Is.EqualTo(Takedown.On), name);
+            }
+
+            var tpsRange = GameRulesAssetBuilder.TpsRangeRules().Actions;
+            Assert.That(tpsRange.Takedown, Is.EqualTo(Takedown.On), "takedowns stay on while the melee is off");
+            Assert.That(tpsRange.Melee, Is.EqualTo(Melee.Off));
+            Assert.That(GameRulesAssetBuilder.FeatureBaseRules().Actions.Takedown, Is.EqualTo(Takedown.Off), "the feature scenes turn it on through their toggles");
+        }
+
+        [Test]
         public void HordeAndBattleRoyaleCarryMoreReserveAmmoAndGunGameNeverRunsOut()
         {
             Assert.That(GameRulesAssetBuilder.HordeRules().ReserveAmmoMultiplier, Is.GreaterThan(1f));
@@ -1053,7 +1079,7 @@ namespace Shooter.Tests.EditMode
                 Assert.That(GameRulesDebugDraft.Read(rules, field), Is.EqualTo(expected), field.ToString());
             }
 
-            Assert.That(GameRulesAssetBuilder.PlaygroundToggles.Count(), Is.EqualTo(21));
+            Assert.That(GameRulesAssetBuilder.PlaygroundToggles.Count(), Is.EqualTo(22));
             Assert.That(GameRulesAssetBuilder.PlaygroundToggles, Has.No.Member(GameRulesDebugField.AimToFire), "aiming to fire would tie up the other moves");
             Assert.That(GameRulesAssetBuilder.PlaygroundToggles, Has.No.Member(GameRulesDebugField.Downed), "a solo match never downs the player");
             Assert.That(rules.ViewMode, Is.EqualTo(ViewMode.ThirdPerson), "cover is shown in third person");
@@ -1074,9 +1100,11 @@ namespace Shooter.Tests.EditMode
                 GameRulesDebugField.Ladder,
                 GameRulesDebugField.Jump,
                 GameRulesDebugField.Melee,
+                GameRulesDebugField.Takedown,
             }));
             Assert.That(rules.FallDamage, Is.EqualTo(FallDamage.On));
             Assert.That(rules.Actions.Melee, Is.EqualTo(Melee.On));
+            Assert.That(rules.Actions.Takedown, Is.EqualTo(Takedown.On));
             Assert.That(GameRulesDebugDraft.Read(rules, GameRulesDebugField.Parachute), Is.EqualTo(1));
             Assert.That(GameRulesDebugDraft.Read(rules, GameRulesDebugField.Ladder), Is.EqualTo(1));
             Assert.That(GameRulesDebugDraft.Read(rules, GameRulesDebugField.Cover), Is.EqualTo(0));

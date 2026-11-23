@@ -109,6 +109,7 @@ namespace Shooter.Editor
             new TuningSlot("GraphicsTuning", KitTuning.GraphicsResourcePath, c => c.GraphicsTuning, (c, v) => c.GraphicsTuning = v),
             new TuningSlot("GamepadLayoutsTuning", KitTuning.GamepadLayoutsResourcePath, c => c.GamepadLayoutsTuning, (c, v) => c.GamepadLayoutsTuning = v),
             new TuningSlot("HolsterTuning", KitTuning.HolsterResourcePath, c => c.HolsterTuning, (c, v) => c.HolsterTuning = v),
+            new TuningSlot("BreachTuning", KitTuning.BreachResourcePath, c => c.BreachTuning, (c, v) => c.BreachTuning = v),
         };
 
         public static string DefaultPath => ShooterKitRoot.OutputPath("Resources/" + GameContent.ResourceFolder + "/" + FileName);

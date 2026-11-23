@@ -474,6 +474,32 @@ namespace Shooter.Tests.EditMode
             Assert.That(changes[1].IsHolstered, Is.False);
         }
 
+        [Test]
+        public void DoorBreachedPassesTheDoorTheMethodAndTheBreacherAndIsDroppedByClearSubscribers()
+        {
+            var door = new GameObject("Door");
+            var breacher = new GameObject("Breacher");
+            _created.Add(door);
+            _created.Add(breacher);
+            var breaches = new List<DoorBreach>();
+            CombatEvents.DoorBreached += breaches.Add;
+
+            CombatEvents.RaiseDoorBreached(door, BreachMethod.Kick, breacher);
+            CombatEvents.RaiseDoorBreached(door, BreachMethod.Charge, null);
+            CombatEvents.ClearSubscribers();
+            CombatEvents.RaiseDoorBreached(door, BreachMethod.Kick, breacher);
+
+            Assert.That(breaches, Has.Count.EqualTo(2));
+            Assert.That(breaches[0].Door, Is.SameAs(door));
+            Assert.That(breaches[0].Method, Is.EqualTo(BreachMethod.Kick));
+            Assert.That(breaches[0].Breacher, Is.SameAs(breacher));
+            Assert.That(breaches[0].Phase, Is.EqualTo(BreachDoorPhase.Opened));
+            Assert.That(breaches[1].Method, Is.EqualTo(BreachMethod.Charge));
+            Assert.That(breaches[1].Breacher, Is.Null, "a breacher who is not on this machine is still a breach");
+            Assert.That(breaches[1].Phase, Is.EqualTo(BreachDoorPhase.Destroyed));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new DoorBreach(door, (BreachMethod)99, null));
+        }
+
         [TestCase(HolsterPhase.Holstering)]
         [TestCase(HolsterPhase.Drawing)]
         [TestCase((HolsterPhase)99)]

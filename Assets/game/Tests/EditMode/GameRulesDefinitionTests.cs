@@ -61,6 +61,7 @@ namespace Shooter.Tests.EditMode
             definition.Grenade = Grenade.On;
             definition.GrenadeCount = 2;
             definition.Melee = Melee.On;
+            definition.Takedown = Takedown.On;
             definition.Stagger = Stagger.On;
             definition.Slide = Slide.On;
             definition.Mantle = Mantle.On;
@@ -119,6 +120,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(rules.Actions.Grenade, Is.EqualTo(Grenade.On));
             Assert.That(rules.Actions.GrenadeCount, Is.EqualTo(2));
             Assert.That(rules.Actions.Melee, Is.EqualTo(Melee.On));
+            Assert.That(rules.Actions.Takedown, Is.EqualTo(Takedown.On));
             Assert.That(rules.Actions.Stagger, Is.EqualTo(Stagger.On));
             Assert.That(rules.Actions.Slide, Is.EqualTo(Slide.On));
             Assert.That(rules.Actions.Mantle, Is.EqualTo(Mantle.On));
@@ -165,6 +167,28 @@ namespace Shooter.Tests.EditMode
             Assert.That(definition.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Base }));
             Assert.That(definition.ReloadInterruptedBy, Is.EqualTo(new[] { ReloadInterrupt.Melee, ReloadInterrupt.Grenade }));
             Assert.That(definition.AimWhileReloading, Is.EqualTo(AimWhileReloading.On));
+        }
+
+        [Test]
+        public void ANewDefinitionLeavesTakedownsOff()
+        {
+            var definition = NewDefinition("FreshTakedown");
+
+            Assert.That(definition.Takedown, Is.EqualTo(Takedown.Off));
+            Assert.That(definition.ToRules().Actions.Takedown, Is.EqualTo(Takedown.Off));
+        }
+
+        [Test]
+        public void TheTakedownFieldHasATooltipForTheInspector()
+        {
+            var field = typeof(GameRulesDefinition).GetField("_takedown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.That(field, Is.Not.Null);
+            Assert.That(field.FieldType, Is.EqualTo(typeof(Takedown)));
+            Assert.That(field.GetCustomAttributes(typeof(SerializeField), false), Is.Not.Empty);
+            var tooltip = (TooltipAttribute[])field.GetCustomAttributes(typeof(TooltipAttribute), false);
+            Assert.That(tooltip, Has.Length.EqualTo(1));
+            Assert.That(tooltip[0].tooltip, Is.Not.Empty);
         }
 
         [Test]
@@ -275,7 +299,8 @@ namespace Shooter.Tests.EditMode
                     Jump.Off,
                     emote: Emote.On,
                     stamina: Stamina.On,
-                    reloadInterruptedBy: new[] { ReloadInterrupt.Grenade }),
+                    reloadInterruptedBy: new[] { ReloadInterrupt.Grenade },
+                    takedown: Takedown.On),
                 2f,
                 FallDamage.On,
                 HudDensity.Hardcore,
@@ -321,6 +346,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("Grenade")]
         [TestCase("GrenadeCount")]
         [TestCase("Melee")]
+        [TestCase("Takedown")]
         [TestCase("Stagger")]
         [TestCase("Slide")]
         [TestCase("Mantle")]
@@ -417,6 +443,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(actual.Actions.Grenade, Is.EqualTo(expected.Actions.Grenade));
             Assert.That(actual.Actions.GrenadeCount, Is.EqualTo(expected.Actions.GrenadeCount));
             Assert.That(actual.Actions.Melee, Is.EqualTo(expected.Actions.Melee));
+            Assert.That(actual.Actions.Takedown, Is.EqualTo(expected.Actions.Takedown));
             Assert.That(actual.Actions.Stagger, Is.EqualTo(expected.Actions.Stagger));
             Assert.That(actual.Actions.Slide, Is.EqualTo(expected.Actions.Slide));
             Assert.That(actual.Actions.Mantle, Is.EqualTo(expected.Actions.Mantle));
@@ -523,6 +550,9 @@ namespace Shooter.Tests.EditMode
                     break;
                 case "Melee":
                     definition.Melee = (Melee)99;
+                    break;
+                case "Takedown":
+                    definition.Takedown = (Takedown)99;
                     break;
                 case "Stagger":
                     definition.Stagger = (Stagger)99;
