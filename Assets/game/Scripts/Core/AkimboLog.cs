@@ -7,16 +7,17 @@ namespace Shooter.Core
 
         public static string Fire(AkimboHand hand, int ammoInMagazine)
         {
-            return $"{LogTag} akimbo fire hand={Name(hand)} ammo={ammoInMagazine}";
+            return $"{LogTag} akimbo fire hand={HandName(hand)} ammo={ammoInMagazine}";
         }
 
         public static string Reload(AkimboHand hand)
         {
-            return $"{LogTag} akimbo reload hand={Name(hand)}";
+            return $"{LogTag} akimbo reload hand={HandName(hand)}";
         }
 
         // enum の ToString() を使わないのは、知らない値が来ても数で残し、ログを読むツールの綴りを列挙の名前の変更に縛らないため。
-        private static string Name(AkimboHand hand)
+        // サーバーの行 (ServerCombatLog) も同じ綴りで手を書くよう公開する。
+        public static string HandName(AkimboHand hand)
         {
             switch (hand)
             {
