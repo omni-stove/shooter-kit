@@ -387,8 +387,7 @@ namespace Shooter.Runtime
             _stuck.Recovered += OnUnstuck;
             _brain = new EnemyBrain(spec);
             _brain.StateChanged += OnStateChanged;
-            _weapon = new Weapon(weaponSpec, _weaponRules);
-            _weapon.Reloaded += OnReloaded;
+            UseWeapon(CreateWeapon(weaponSpec, _weaponRules, null));
             _self.Died += OnDied;
             _self.Damaged += OnDamaged;
             NotifyInitialized();
@@ -658,10 +657,7 @@ namespace Shooter.Runtime
                 _stuck.Recovered -= OnUnstuck;
             }
 
-            if (_weapon != null)
-            {
-                _weapon.Reloaded -= OnReloaded;
-            }
+            UseWeapon(null);
 
             if (_self != null)
             {
@@ -685,10 +681,7 @@ namespace Shooter.Runtime
             }
 
             var deltaSeconds = Time.deltaTime;
-            _weapon.Tick(deltaSeconds);
-            _trigger.Bind(_weapon.Trigger);
-            _trigger.Advance(deltaSeconds);
-            _recoil.Tick(deltaSeconds);
+            TickWeapon(deltaSeconds);
 
             var member = GetComponent<SideMember>();
             StandDownIfTargetFell();
@@ -920,9 +913,7 @@ namespace Shooter.Runtime
             ClearLinkTraversal();
             SetCrouching(false);
 
-            _weapon.Reloaded -= OnReloaded;
-            _weapon = new Weapon(_weapon.Spec, _weaponRules);
-            _weapon.Reloaded += OnReloaded;
+            UseWeapon(CreateWeapon(_weapon.Spec, _weaponRules, null));
             _recoil.Reset();
             _sprinting = false;
             _aiming = false;

@@ -17,7 +17,12 @@ namespace Shooter.Core
 
         public static Loadout<Weapon> Create(IReadOnlyList<WeaponSpec> specs, GameRules rules, float switchSeconds)
         {
-            return Restore(specs, Array.Empty<WeaponAmmo>(), null, rules, switchSeconds, out _);
+            return Create(specs, rules, switchSeconds, null);
+        }
+
+        public static Loadout<Weapon> Create(IReadOnlyList<WeaponSpec> specs, GameRules rules, float switchSeconds, Func<WeaponSpec, IJamRoll> jamRollFor)
+        {
+            return Restore(specs, Array.Empty<WeaponAmmo>(), null, rules, switchSeconds, jamRollFor, out _);
         }
 
         public static Loadout<Weapon> Restore(
@@ -46,6 +51,19 @@ namespace Shooter.Core
             string equippedWeaponId,
             GameRules rules,
             float switchSeconds,
+            out IReadOnlyList<string> unknownWeaponIds)
+        {
+            return Restore(specs, ammo, equippedWeaponId, rules, switchSeconds, null, out unknownWeaponIds);
+        }
+
+        // jamRollFor が null か null を返す武器は、Weapon が武器の Id から決めた種の乱数で詰まりを決める。
+        public static Loadout<Weapon> Restore(
+            IReadOnlyList<WeaponSpec> specs,
+            IEnumerable<WeaponAmmo> ammo,
+            string equippedWeaponId,
+            GameRules rules,
+            float switchSeconds,
+            Func<WeaponSpec, IJamRoll> jamRollFor,
             out IReadOnlyList<string> unknownWeaponIds)
         {
             if (specs == null)
@@ -103,9 +121,10 @@ namespace Shooter.Core
             for (var i = 0; i < specs.Count; i++)
             {
                 var spec = specs[i];
+                var jamRoll = jamRollFor?.Invoke(spec);
                 weapons[i] = saved.TryGetValue(spec.Id, out var entry)
-                    ? new Weapon(spec, Math.Min(entry.AmmoInMagazine, spec.MagazineSize), entry.ReserveAmmo, rules)
-                    : new Weapon(spec, rules);
+                    ? new Weapon(spec, Math.Min(entry.AmmoInMagazine, spec.MagazineSize), entry.ReserveAmmo, rules, jamRoll)
+                    : new Weapon(spec, rules, jamRoll);
             }
 
             var loadout = new Loadout<Weapon>(weapons, switchSeconds, Holster, w => w.Spec.DrawSeconds, w => w.Spec.HolsterSeconds);

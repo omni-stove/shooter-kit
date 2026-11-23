@@ -116,6 +116,9 @@ namespace Shooter.Runtime
 
         public static GameSignal<WeaponLightStatus?> WeaponLight { get; } = new GameSignal<WeaponLightStatus?>(nameof(WeaponLight));
 
+        // オフラインの WeaponController が今の武器の詰まりを出す。持たなくなったら空に戻す。
+        public static GameSignal<WeaponJamStatus?> WeaponJam { get; } = new GameSignal<WeaponJamStatus?>(nameof(WeaponJam));
+
         public static GameSignal<WeaponFreeZoneStatus?> WeaponFreeZone { get; } = new GameSignal<WeaponFreeZoneStatus?>(nameof(WeaponFreeZone));
 
         public static GameSignal<VoteKickStatus?> VoteKick { get; } = new GameSignal<VoteKickStatus?>(nameof(VoteKick));
@@ -204,6 +207,7 @@ namespace Shooter.Runtime
             Emotes.Reset();
             Holster.Reset();
             WeaponLight.Reset();
+            WeaponJam.Reset();
             WeaponFreeZone.Reset();
             VoteKick.Reset();
             VoteKickSender.Reset();
