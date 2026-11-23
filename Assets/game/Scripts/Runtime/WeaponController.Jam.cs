@@ -11,7 +11,6 @@ namespace Shooter.Runtime
         private bool _jamPending;
         private WeaponJamStatus? _publishedJam;
 
-        // 武器ごとの詰まりの乱数。null か null を返せば Weapon が武器の Id から種を決める。並びを作り直すときに読むので Initialize より前に入れる。
         public Func<WeaponSpec, IJamRoll> JamRolls { get; set; }
 
         public WeaponJamStatus JamStatus => WeaponJamStatus.Of(Weapon);
@@ -29,7 +28,6 @@ namespace Shooter.Runtime
             return true;
         }
 
-        // 解除の途中で手を離した武器は、詰まったまま最初から解除し直す。
         public bool CancelClearJam()
         {
             EnsureInitialized();

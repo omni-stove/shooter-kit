@@ -8,7 +8,6 @@ namespace Shooter.Runtime
     {
         private bool _jamPending;
 
-        // 武器ごとの詰まりの乱数。null か null を返せば、武器の Id とこの敵のばらつきの種から決める。武器を持たせる前に入れる。
         public Func<WeaponSpec, IJamRoll> JamRolls { get; set; }
 
         // 種に敵のばらつきの種を混ぜるのは、Weapon の既定 (武器の Id だけの種) では同じ武器の敵が皆同じ発数で詰まるため。

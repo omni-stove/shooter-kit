@@ -56,7 +56,6 @@ namespace Shooter.Core
             return Restore(specs, ammo, equippedWeaponId, rules, switchSeconds, null, out unknownWeaponIds);
         }
 
-        // jamRollFor が null か null を返す武器は、Weapon が武器の Id から決めた種の乱数で詰まりを決める。
         public static Loadout<Weapon> Restore(
             IReadOnlyList<WeaponSpec> specs,
             IEnumerable<WeaponAmmo> ammo,
