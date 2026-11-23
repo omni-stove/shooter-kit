@@ -12,6 +12,14 @@ namespace Shooter.Tests.EditMode
     public sealed class CloudSaveSyncTests
     {
         private const string Account = "account-1";
+        private const string OtherAccount = "account-2";
+
+        // SHA-256("account-1") の先頭 16 バイト。
+        private const string AccountKey = "07e998012c1137decdf3efbbb1c3ee6d";
+        private const string OtherAccountKey = "703039e88185964b380ef6ed7def548a";
+        private const string Mission = "campaign-Mission01";
+        private const string MissionFile = "campaign-Mission01.json";
+        private const string MissionSave = "{\"checkpoint\":\"a\"}";
 
         // 本体はプロフィールの型を知らないので、進行と同じ名前のスロットと、その中身を読めるかの判定をテストで登録して使う。
         private const string ProfileSlot = "profile";
@@ -511,6 +519,310 @@ namespace Shooter.Tests.EditMode
             Drain(sync);
 
             Assert.That(backend.Calls, Is.EqualTo(new[] { "list", "read profile.json", "read campaign.json" }));
+        }
+
+        [Test]
+        public void AnotherAccountSigningInNeitherOverwritesNorDeletesItsCloudWithThePreviousAccountsSaves()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+            _clock = 5000;
+            sync.Write(ProfileSlot, NewProfile);
+            sync.Write(LegacySlot, MissionSave);
+            sync.Write(Mission, MissionSave);
+            Drain(sync);
+            _clock = 6000;
+            sync.Delete(Mission);
+            Drain(sync);
+            Assert.That(backend.Files[MissionFile], Is.EqualTo(CloudSaveEnvelope.Removed(Mission, 6000).ToJson()));
+
+            // 2 つ目のアカウントのクラウドは、1 つ目の手元より古い時刻のセーブを持つ。時刻だけで比べると手元の方が勝つ並び。
+            var otherProfile = CloudSaveEnvelope.Saved(ProfileSlot, 500, OldProfile).ToJson();
+            var otherMission = CloudSaveEnvelope.Saved(Mission, 500, "{\"checkpoint\":\"b\"}").ToJson();
+            backend.Files.Clear();
+            backend.Files[ProfileFile] = otherProfile;
+            backend.Files[MissionFile] = otherMission;
+            backend.Calls.Clear();
+            pulled.Clear();
+            backend.SignedInAccount = OtherAccount;
+            LogAssert.Expect(LogType.Log, CloudSaveLog.AccountChanged(2, 0));
+            Drain(sync);
+
+            Assert.That(
+                backend.Calls,
+                Is.EqualTo(new[] { "list", "read profile.json", "read campaign.json", "read campaign-Mission01.json" }),
+                "nothing is written to the second account's cloud");
+            Assert.That(backend.Files.Count, Is.EqualTo(2), "the first account's 'campaign' save is not uploaded to a cloud that lacks it");
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(otherProfile));
+            Assert.That(backend.Files[MissionFile], Is.EqualTo(otherMission));
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(OldProfile));
+            Assert.That(local.Text(Mission), Is.EqualTo("{\"checkpoint\":\"b\"}"));
+            Assert.That(local.Has(LegacySlot), Is.False);
+            Assert.That(local.Has(CloudSaveSync.ReplacedPrefix + ProfileSlot), Is.False);
+            Assert.That(sync.TryGetStamp(ProfileSlot, out var profileStamp), Is.True);
+            Assert.That(profileStamp, Is.EqualTo(new CloudSaveStamp(500, false)));
+            Assert.That(sync.TryGetStamp(Mission, out var missionStamp), Is.True);
+            Assert.That(missionStamp, Is.EqualTo(new CloudSaveStamp(500, false)));
+            Assert.That(sync.TryGetStamp(LegacySlot, out _), Is.False);
+            Assert.That(
+                local.Text(CloudSaveSync.StampsSlot),
+                Is.EqualTo("{\"version\":1,\"account\":\"" + OtherAccountKey + "\",\"slots\":{"
+                    + "\"campaign-Mission01\":{\"savedAt\":500,\"deleted\":false},"
+                    + "\"profile\":{\"savedAt\":500,\"deleted\":false}}}"));
+
+            // 1 つ目のアカウントの手元と記録は、そのアカウントの名前で取り置かれている。
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.EqualTo(NewProfile));
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, LegacySlot)), Is.EqualTo(MissionSave));
+            Assert.That(
+                local.Text(CloudSaveSync.AccountStampsSlot(AccountKey)),
+                Is.EqualTo("{\"version\":1,\"account\":\"" + AccountKey + "\",\"slots\":{"
+                    + "\"campaign\":{\"savedAt\":5000,\"deleted\":false},"
+                    + "\"campaign-Mission01\":{\"savedAt\":6000,\"deleted\":true},"
+                    + "\"profile\":{\"savedAt\":5000,\"deleted\":false}}}"));
+
+            // 読み込み済みの側は、取り置きで手元から消えたときと、クラウドから採ったときに読み直す。
+            Assert.That(pulled, Is.EqualTo(new[] { LegacySlot, ProfileSlot, ProfileSlot, Mission }));
+        }
+
+        [Test]
+        public void AnotherAccountWithAnEmptyCloudStartsEmptyAndUploadsOnlyWhatItSaves()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            Drain(sync);
+
+            backend.Files.Clear();
+            backend.Calls.Clear();
+            backend.SignedInAccount = OtherAccount;
+            Drain(sync);
+
+            Assert.That(backend.Calls, Is.EqualTo(new[] { "list", "read profile.json", "read campaign.json" }));
+            Assert.That(backend.Files, Is.Empty);
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(sync.TryGetStamp(ProfileSlot, out _), Is.False);
+
+            _clock = 2000;
+            sync.Write(ProfileSlot, NewProfile);
+            Drain(sync);
+
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 2000, NewProfile).ToJson()));
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.EqualTo(OldProfile));
+        }
+
+        [Test]
+        public void ComingBackToTheFirstAccountRestoresItsLocalSavesAndSendsWhatItHadNotSent()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            sync.Write(Mission, MissionSave);
+            Drain(sync);
+            backend.SignedInAccount = null;
+            sync.Tick(_time);
+            _clock = 2000;
+            sync.Write(ProfileSlot, NewProfile);
+            sync.Delete(Mission);
+            var firstCloud = new Dictionary<string, string>(backend.Files, StringComparer.Ordinal);
+
+            backend.Files.Clear();
+            backend.SignedInAccount = OtherAccount;
+            Drain(sync);
+            Assert.That(backend.Files, Is.Empty, "what the first account saved while signed out does not reach the second account's cloud");
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            _clock = 3000;
+            sync.Write(ProfileSlot, "{\"xp\":1}");
+            Drain(sync);
+            var secondCloud = new Dictionary<string, string>(backend.Files, StringComparer.Ordinal);
+
+            backend.Files.Clear();
+            foreach (var pair in firstCloud)
+            {
+                backend.Files[pair.Key] = pair.Value;
+            }
+
+            backend.Calls.Clear();
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+            backend.SignedInAccount = Account;
+            LogAssert.Expect(LogType.Log, CloudSaveLog.AccountChanged(1, 1));
+            Drain(sync);
+
+            Assert.That(
+                backend.Calls,
+                Is.EqualTo(new[]
+                {
+                    "list", "read profile.json", "write profile.json", "read campaign.json",
+                    "read campaign-Mission01.json", "write campaign-Mission01.json",
+                }));
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(local.Has(Mission), Is.False);
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 2000, NewProfile).ToJson()));
+            Assert.That(backend.Files[MissionFile], Is.EqualTo(CloudSaveEnvelope.Removed(Mission, 2000).ToJson()));
+            Assert.That(pulled, Is.EqualTo(new[] { ProfileSlot }));
+            Assert.That(secondCloud[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 3000, "{\"xp\":1}").ToJson()));
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(OtherAccountKey, ProfileSlot)), Is.EqualTo("{\"xp\":1}"));
+        }
+
+        [Test]
+        public void TheSameAccountSigningInAgainSendsWhatWasSavedAndDeletedWhileSignedOut()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            sync.Write(Mission, MissionSave);
+            Drain(sync);
+            backend.SignedInAccount = null;
+            sync.Tick(_time);
+            _clock = 2000;
+            sync.Write(ProfileSlot, NewProfile);
+            sync.Delete(Mission);
+            backend.Calls.Clear();
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            backend.SignedInAccount = Account;
+            Drain(sync);
+
+            Assert.That(
+                backend.Calls,
+                Is.EqualTo(new[]
+                {
+                    "list", "read profile.json", "write profile.json", "read campaign-Mission01.json",
+                    "write campaign-Mission01.json", "read campaign.json",
+                }));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 2000, NewProfile).ToJson()));
+            Assert.That(backend.Files[MissionFile], Is.EqualTo(CloudSaveEnvelope.Removed(Mission, 2000).ToJson()));
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(pulled, Is.Empty);
+            Assert.That(local.Has(CloudSaveSync.AccountStampsSlot(AccountKey)), Is.False, "nothing is set aside for the same account");
+        }
+
+        [Test]
+        public void StampsWithoutAnOwnerGoToTheFirstAccountThatSignsInAndItsSavesAreSyncedAsBefore()
+        {
+            var local = new MemorySaveStorage();
+            local.Write(ProfileSlot, NewProfile);
+            local.Write(Mission, MissionSave);
+            local.Write(
+                CloudSaveSync.StampsSlot,
+                "{\"version\":1,\"slots\":{\"campaign-Mission01\":{\"savedAt\":700,\"deleted\":false},\"profile\":{\"savedAt\":800,\"deleted\":false}}}");
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            backend.Files[ProfileFile] = CloudSaveEnvelope.Saved(ProfileSlot, 600, OldProfile).ToJson();
+            var sync = Create(local, backend);
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            Drain(sync);
+
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(local.Text(Mission), Is.EqualTo(MissionSave));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 800, NewProfile).ToJson()));
+            Assert.That(backend.Files[MissionFile], Is.EqualTo(CloudSaveEnvelope.Saved(Mission, 700, MissionSave).ToJson()));
+            Assert.That(pulled, Is.Empty);
+            Assert.That(
+                local.Text(CloudSaveSync.StampsSlot),
+                Is.EqualTo("{\"version\":1,\"account\":\"" + AccountKey + "\",\"slots\":{"
+                    + "\"campaign-Mission01\":{\"savedAt\":700,\"deleted\":false},\"profile\":{\"savedAt\":800,\"deleted\":false}}}"));
+            Assert.That(local.Has(CloudSaveSync.AccountStampsSlot(AccountKey)), Is.False);
+        }
+
+        [Test]
+        public void SavesMadeBeforeAnySignInGoToTheFirstAccountThatSignsIn()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend();
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Is.EqualTo("{\"version\":1,\"slots\":{\"profile\":{\"savedAt\":1000,\"deleted\":false}}}"));
+
+            backend.SignedInAccount = Account;
+            Drain(sync);
+
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 1000, OldProfile).ToJson()));
+            Assert.That(
+                local.Text(CloudSaveSync.StampsSlot),
+                Is.EqualTo("{\"version\":1,\"account\":\"" + AccountKey + "\",\"slots\":{\"profile\":{\"savedAt\":1000,\"deleted\":false}}}"));
+        }
+
+        [Test]
+        public void TheOwnerOfTheStampsOutlivesTheSyncSoARestartAsAnotherAccountSendsNothing()
+        {
+            var local = new MemorySaveStorage();
+            var first = Create(local, new FakeCloudSaveBackend { SignedInAccount = Account });
+            first.Write(ProfileSlot, OldProfile);
+            Drain(first);
+            first.Delete(ProfileSlot);
+            Drain(first);
+            first.Write(LegacySlot, MissionSave);
+            Drain(first);
+
+            var backend = new FakeCloudSaveBackend { SignedInAccount = OtherAccount };
+            var otherProfile = CloudSaveEnvelope.Saved(ProfileSlot, 500, NewProfile).ToJson();
+            backend.Files[ProfileFile] = otherProfile;
+            var restarted = Create(local, backend);
+            Drain(restarted);
+
+            Assert.That(backend.Calls, Is.EqualTo(new[] { "list", "read profile.json", "read campaign.json" }));
+            Assert.That(backend.Files.Count, Is.EqualTo(1));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(otherProfile));
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(local.Has(LegacySlot), Is.False);
+        }
+
+        [Test]
+        public void IfThePreviousAccountsSavesCannotBeSetAsideNothingIsSyncedUntilTheyCan()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            Drain(sync);
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+            backend.Files.Clear();
+            backend.Calls.Clear();
+
+            local.FailWrites = true;
+            backend.SignedInAccount = OtherAccount;
+            LogAssert.Expect(LogType.Error, CloudSaveLog.AccountChangeFailed(MemorySaveStorage.FailureMessage, CloudSaveSync.DefaultRetrySeconds));
+            sync.Tick(_time);
+            sync.Tick(_time + 1d);
+
+            Assert.That(sync.IsSignedIn, Is.False);
+            Assert.That(backend.Calls, Is.Empty);
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(OldProfile));
+            Assert.That(pulled, Is.Empty);
+
+            local.FailWrites = false;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(sync.IsSignedIn, Is.True);
+            Assert.That(backend.Files, Is.Empty);
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.EqualTo(OldProfile));
+            Assert.That(pulled, Is.EqualTo(new[] { ProfileSlot }));
+        }
+
+        [Test]
+        public void TheAccountKeyHidesTheAccountIdAndIsStable()
+        {
+            Assert.That(CloudSaveSync.AccountKey(Account), Is.EqualTo(AccountKey));
+            Assert.That(CloudSaveSync.AccountKey(OtherAccount), Is.EqualTo(OtherAccountKey));
+            Assert.That(CloudSaveSync.AccountStampsSlot(AccountKey), Is.EqualTo("cloud-account-" + AccountKey));
+            Assert.That(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot), Is.EqualTo("cloud-account-" + AccountKey + "-profile"));
+            Assert.That(CloudSaveBootstrap.Syncs(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.False);
+            Assert.Throws<ArgumentException>(() => CloudSaveSync.AccountKey(null));
+            Assert.Throws<ArgumentException>(() => CloudSaveSync.AccountKey(""));
+            Assert.Throws<ArgumentException>(() => CloudSaveSync.AccountStampsSlot(""));
+            Assert.Throws<ArgumentException>(() => CloudSaveSync.AccountSaveSlot(AccountKey, ""));
         }
 
         [Test]
