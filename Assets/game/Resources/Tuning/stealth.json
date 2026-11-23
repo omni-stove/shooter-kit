@@ -10,6 +10,7 @@
   "hardLandingFallSpeed": 12,
   "minLandingVolume": 0.35,
   "armedGainFactor": 1,
+  "litGainFactor": 1,
   "securityCamera": {
     "sweepDegrees": 90,
     "sweepDegreesPerSecond": 20,
@@ -34,7 +35,8 @@
       "gunshotGain": 0.4,
       "footstepGain": 0.1,
       "investigateLevel": 0.75,
-      "armedGainFactor": 1
+      "armedGainFactor": 1,
+      "litGainFactor": 1
     },
     "disableHoldSeconds": 1.5,
     "disabledSeconds": 30
