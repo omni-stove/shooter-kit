@@ -523,7 +523,7 @@ namespace Shooter.Server
         {
             if (!_mounts.TryGetValue((vehicle, weapon), out var mount))
             {
-                mount = new ServerPlayerWeapons(PlayerIds.None, _log, () => _now);
+                mount = new ServerPlayerWeapons(PlayerIds.None, _log, () => _now, MatchSeed);
                 mount.Equip(new[] { _vehicles.MapOf(vehicle).Weapons[weapon] }, _data.File.SwitchSeconds, _data.Rules);
                 _mounts.Add((vehicle, weapon), mount);
             }
@@ -543,6 +543,9 @@ namespace Shooter.Server
             }
         }
 
+        // 地図の投票と同じ種 (試合の Id から作る) を使い、ログの試合の Id から弾詰まりの列を追えるようにする
+        private int MatchSeed() => MatchRulesModule.SeedOf(_match.MatchId);
+
         internal ServerPlayerWeapons WeaponsOf(int playerId)
         {
             return GetOrAdd(playerId).Weapons;
@@ -553,7 +556,7 @@ namespace Shooter.Server
             if (!_fighters.TryGetValue(playerId, out var fighter))
             {
                 fighter = new Fighter(
-                    new ServerPlayerWeapons(playerId, _log, () => _now),
+                    new ServerPlayerWeapons(playerId, _log, () => _now, MatchSeed),
                     new ServerGrenadeSupply(_data.Grenades, GrenadeThrowJitterSeconds),
                     playerId);
                 _fighters.Add(playerId, fighter);
