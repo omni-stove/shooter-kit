@@ -376,6 +376,8 @@ namespace Shooter.Tests.EditMode
                 (() => content.WeatherTuning, v => content.WeatherTuning = v),
                 (() => content.TelemetryTuning, v => content.TelemetryTuning = v),
                 (() => content.InfectedTuning, v => content.InfectedTuning = v),
+                (() => content.JuggernautTuning, v => content.JuggernautTuning = v),
+                (() => content.VipTuning, v => content.VipTuning = v),
                 (() => content.LootTuning, v => content.LootTuning = v),
                 (() => content.StashTuning, v => content.StashTuning = v),
                 (() => content.ExtractionTuning, v => content.ExtractionTuning = v),
@@ -646,7 +648,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("graphics"));
             Assert.That(asked, Does.Contain("gamepad-layouts"));
             Assert.That(asked, Does.Contain("holster"));
-            Assert.That(asked, Has.Count.EqualTo(42));
+            Assert.That(asked, Does.Contain("juggernaut").And.Contain("vip"));
+            Assert.That(asked, Has.Count.EqualTo(44));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]

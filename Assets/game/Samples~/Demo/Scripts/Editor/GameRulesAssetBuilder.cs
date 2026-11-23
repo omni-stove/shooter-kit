@@ -37,6 +37,8 @@ namespace Shooter.Editor
         public const string InfectedName = "Infected";
         public const string ExtractionName = "Extraction";
         public const string PayloadName = "Payload";
+        public const string JuggernautName = "Juggernaut";
+        public const string VipName = "Vip";
 
         public static string FreeForAllPath => Folder + "/" + FreeForAllName + ".asset";
         public static string KillConfirmedPath => Folder + "/" + KillConfirmedName + ".asset";
@@ -51,6 +53,8 @@ namespace Shooter.Editor
         public static string InfectedPath => Folder + "/" + InfectedName + ".asset";
         public static string ExtractionPath => Folder + "/" + ExtractionName + ".asset";
         public static string PayloadPath => Folder + "/" + PayloadName + ".asset";
+        public static string JuggernautPath => Folder + "/" + JuggernautName + ".asset";
+        public static string VipPath => Folder + "/" + VipName + ".asset";
 
         public const float HordeWaveIntervalSeconds = 30f;
 
@@ -75,6 +79,8 @@ namespace Shooter.Editor
             InfectedName,
             ExtractionName,
             PayloadName,
+            JuggernautName,
+            VipName,
         };
 
         public const int TpsRangeGrenadeCount = 3;
@@ -383,6 +389,24 @@ namespace Shooter.Editor
                 .WithActions(ExtractionActions());
         }
 
+        // 全員の撃ち合いの上で 1 人だけが強くなるので、並びと戻り方は FreeForAll のまま、目的だけをサーバーのルール (server-data/rules/Juggernaut.json) と同じ Juggernaut にする。
+        // 体力の上限・速さ・点・時間は JuggernautSpec (juggernaut.json) から読むので、ルールには持たせない。
+        public static GameRules JuggernautRules()
+        {
+            return FreeForAllRules().WithObjective(MatchObjective.Juggernaut);
+        }
+
+        // VIP が倒れたらそのラウンドは決まるので、ラウンド中は戻さず (RespawnMode.None)、出現直後の無敵も無くし、起こしてもらうダウンも使わない。
+        // ラウンドの秒・勝ち数・攻守の入れ替えは VipSpec (vip.json) から読む。
+        public static GameRules VipRules()
+        {
+            return TeamDeathmatchRules()
+                .WithObjective(MatchObjective.Vip)
+                .WithRespawnMode(RespawnMode.None)
+                .WithSpawnProtectionSeconds(0f)
+                .WithActions(VipActions());
+        }
+
         public static GameRules ModeRules(string name)
         {
             switch (name)
@@ -413,6 +437,10 @@ namespace Shooter.Editor
                     return ExtractionRules();
                 case PayloadName:
                     return PayloadRules();
+                case JuggernautName:
+                    return JuggernautRules();
+                case VipName:
+                    return VipRules();
                 default:
                     throw new ArgumentException($"'{name}' is not one of the mode names ({string.Join(", ", ModeNames)})", nameof(name));
             }
@@ -447,6 +475,11 @@ namespace Shooter.Editor
         }
 
         public static ActionRules ExtractionActions()
+        {
+            return TeamDeathmatchActions().WithDowned(Downed.Off);
+        }
+
+        public static ActionRules VipActions()
         {
             return TeamDeathmatchActions().WithDowned(Downed.Off);
         }
