@@ -35,7 +35,7 @@ namespace Shooter.Tests.EditMode
                 Assert.That(type.Namespace, Is.EqualTo("Shooter.Core"), type.Name);
             }
 
-            Assert.That(typeof(MapVehicle).Assembly.GetName().Name, Is.EqualTo("Shooter.Core"));
+            Assert.That(typeof(MapVehicle).Assembly.GetName().Name, Is.EqualTo("Shooter.Core.Vehicle"));
         }
 
         [Test]
@@ -49,14 +49,14 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void WorldAssembly_SharesItsInternalsOnlyWithCore()
+        public void WorldAssembly_SharesItsInternalsOnlyWithVehicle()
         {
             var friends = typeof(IWorldCollision).Assembly
                 .GetCustomAttributes<System.Runtime.CompilerServices.InternalsVisibleToAttribute>()
                 .Select(a => a.AssemblyName)
                 .ToArray();
 
-            Assert.That(friends, Is.EquivalentTo(new[] { "Shooter.Core" }));
+            Assert.That(friends, Is.EquivalentTo(new[] { "Shooter.Core.Vehicle" }));
         }
 
         [Test]
