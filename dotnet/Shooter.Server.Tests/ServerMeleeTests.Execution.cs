@@ -346,9 +346,10 @@ namespace Shooter.Server.Tests
             return (ExecutionRules)_rules.Objective;
         }
 
-        private void StartExecutionWithFour(int roundWinsToWin = 3, float roundTimeLimitSeconds = 120f)
+        private void StartExecutionWithFour(
+            int roundWinsToWin = 3, float roundTimeLimitSeconds = 120f, Melee melee = Melee.On, Takedown takedown = Takedown.On)
         {
-            var rules = MeleeRules();
+            var rules = RulesWith(melee, takedown);
             var settings = new NetMatchSettings(
                 roundWinsToWin: roundWinsToWin,
                 roundPreparationSeconds: _preparationSeconds,

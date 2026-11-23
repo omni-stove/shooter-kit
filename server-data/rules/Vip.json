@@ -44,7 +44,7 @@
       "reloadInterruptedBy": ["Melee", "Grenade"],
       "aimWhileReloading": "On",
       "jam": "Off",
-      "takedown": "Off"
+      "takedown": "On"
     },
     "spawnProtectionSeconds": 0,
     "fallDamage": "Off",
