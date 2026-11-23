@@ -372,8 +372,8 @@ namespace Shooter.Protocol.Tests
         {
             // 武器の部分は弾倉・予備弾 (4 + 4)・リロード中 (1)・持っている番号と数 (1 + 1)・持ち替え中 (1)・リロードの始まり (8)・
             // リロードの秒数と窓の始まりと終わり (4 × 3)・熱 (4)・過熱 (1)・溜め (4)・弾の種類 (1)・回し (4)・
-            // 左の手の弾倉 (4)・リロード中 (1)・リロードの始まり (8)
-            const int weaponBytes = 4 + 4 + 1 + 1 + 1 + 1 + 8 + (4 * 3) + 4 + 1 + 4 + 1 + 4 + 4 + 1 + 8;
+            // 左の手の弾倉 (4)・リロード中 (1)・リロードの始まり (8)・詰まり (1)・解除の終わり (8)
+            const int weaponBytes = 4 + 4 + 1 + 1 + 1 + 1 + 8 + (4 * 3) + 4 + 1 + 4 + 1 + 4 + 4 + 1 + 8 + 1 + 8;
             var baseline = Build(100, 0f);
             var unchanged = Build(101, 0f);
             var current = Build(101, 0f);
@@ -399,6 +399,61 @@ namespace Shooter.Protocol.Tests
             Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 7 }), Is.False);
             Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8, IsOffhandReloading = true }), Is.False);
             Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8, OffhandReloadStartedAt = 1.0 }), Is.False);
+        }
+
+        [Test]
+        public void TheJamAndItsClearEndRoundTrip()
+        {
+            var sent = Build(100, 0f);
+            var weapon = sent.Owner.Weapon;
+            weapon.IsJammed = true;
+            weapon.JamClearEndsAt = 14.75;
+            sent.Owner.Weapon = weapon;
+
+            var got = Send(sent, null).Owner.Weapon;
+
+            Assert.That(got.IsJammed, Is.True);
+            Assert.That(got.JamClearEndsAt, Is.EqualTo(14.75));
+            Assert.That(got.OffhandReloadStartedAt, Is.EqualTo(13.25), "the field before the jam still reads");
+        }
+
+        [Test]
+        public void AWeaponThatIsNotJammedSendsNoClearEnd()
+        {
+            var weapon = Send(Build(100, 0f), null).Owner.Weapon;
+
+            Assert.That(weapon.IsJammed, Is.False);
+            Assert.That(weapon.JamClearEndsAt, Is.Zero);
+        }
+
+        [Test]
+        public void AJamStartedAgainstTheBaselineIsSentAndResolves()
+        {
+            var baseline = Build(100, 0f);
+            var current = Build(101, 0f);
+            var weapon = current.Owner.Weapon;
+            weapon.IsJammed = true;
+            weapon.JamClearEndsAt = 15.5;
+            current.Owner.Weapon = weapon;
+            var received = Send(baseline, null);
+
+            var got = Send(current, baseline);
+
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Owner.Weapon.IsJammed, Is.True);
+            Assert.That(got.Owner.Weapon.JamClearEndsAt, Is.EqualTo(15.5));
+            Assert.That(got.Owner.Weapon.AmmoInMagazine, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void TheWeaponSyncComparesTheJam()
+        {
+            var a = new WeaponSync { AmmoInMagazine = 8, IsJammed = true, JamClearEndsAt = 2.5 };
+
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, IsJammed = true, JamClearEndsAt = 2.5 }), Is.True);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, JamClearEndsAt = 2.5 }), Is.False);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, IsJammed = true }), Is.False);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, IsJammed = true, JamClearEndsAt = 3.0 }), Is.False);
         }
 
         [Test]

@@ -139,6 +139,12 @@ namespace Shooter.Server
                 return;
             }
 
+            if (state.IsJammed)
+            {
+                ClearJam(playerId, state);
+                return;
+            }
+
             if (state.AmmoInMagazine <= 0)
             {
                 _combat.BotReload(playerId);
