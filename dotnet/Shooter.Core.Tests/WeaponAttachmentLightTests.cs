@@ -16,13 +16,16 @@ namespace Shooter.Core.Tests
         // 射程 30 m・広がり 60 度・明るさ 2 の、light の取り付け口に付くライト。取り付け口は小銃にだけある
         private static readonly WeaponLightSpec _light = new WeaponLightSpec(30f, 60f, 2f);
 
+        private static readonly string[] _rifleSlots = { "muzzle", "light" };
+        private static readonly string[] _pistolSlots = { "muzzle" };
+
         private static ItemCatalog Catalog()
         {
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: new[] { "muzzle", "light" }),
-                    new ItemSpec(_pistolItemId, "weapon.handgun", weaponId: _pistolId, attachmentSlots: new[] { "muzzle" }),
+                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: _rifleSlots),
+                    new ItemSpec(_pistolItemId, "weapon.handgun", weaponId: _pistolId, attachmentSlots: _pistolSlots),
                     new ItemSpec(_lightId, "item.weaponLight", attachment: new AttachmentSpec("light", light: _light)),
                     new ItemSpec(_suppressorId, "item.suppressor", attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
                 },

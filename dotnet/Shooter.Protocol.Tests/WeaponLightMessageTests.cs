@@ -9,7 +9,7 @@ namespace Shooter.Protocol.Tests
         [Test]
         public void TheWeaponLightRequestHasItsIdAndVersion()
         {
-            Assert.That(MessageIds.WeaponLightRequest, Is.EqualTo(42));
+            Assert.That(MessageIds.WeaponLightRequest, Is.EqualTo(43));
             Assert.That(new WeaponLightRequestMessage().Id, Is.EqualTo(MessageIds.WeaponLightRequest));
             Assert.That(WeaponLightRequestMessage.CurrentVersion, Is.EqualTo(1));
         }

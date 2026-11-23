@@ -503,9 +503,9 @@ namespace Shooter.Protocol.Tests
         }
 
         [Test]
-        public void TheWeaponLightRequestFollowsTheHolsterRequestAndIsReadAsItsType()
+        public void TheWeaponLightRequestFollowsTheBreachRequestAndIsReadAsItsType()
         {
-            Assert.That(MessageIds.WeaponLightRequest, Is.EqualTo(MessageIds.HolsterRequest + 1));
+            Assert.That(MessageIds.WeaponLightRequest, Is.EqualTo(MessageIds.BreachRequest + 1));
             Assert.That(MatchMessages.CreateServerTable().TryGet(MessageIds.WeaponLightRequest, out var light), Is.True);
             Assert.That(light, Is.InstanceOf<WeaponLightRequestMessage>());
             Assert.That(MessageTable.IsReserved(MessageIds.WeaponLightRequest), Is.False);

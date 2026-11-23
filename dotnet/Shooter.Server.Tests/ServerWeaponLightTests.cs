@@ -17,6 +17,8 @@ namespace Shooter.Server.Tests
         private const string _handgunItemId = "4a9b2d3e-5f6c-4b7d-8e8f-9a0b1c2d3e4f";
         private const string _lightItemId = "5b0c3e4f-6a7d-4c8e-9f9a-0b1c2d3e4f5a";
 
+        private static readonly string[] _lightSlots = { "light" };
+
         private static readonly DateTime _time = new DateTime(2026, 11, 23, 9, 0, 0, DateTimeKind.Utc);
         private static readonly Vector3 _alphaSpawn = new Vector3(-5f, 1.6f, 0f);
         private static readonly Vector3 _bravoSpawn = new Vector3(5f, 1.6f, 0f);
@@ -354,7 +356,7 @@ namespace Shooter.Server.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: new[] { "light" }),
+                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _lightSlots),
                     new ItemSpec(_handgunItemId, "weapon.handgun", weaponId: TestRules.HandgunId),
                     new ItemSpec(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 30f))),
                 },
