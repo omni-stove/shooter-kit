@@ -436,6 +436,54 @@ namespace Shooter.Server.Tests
             Assert.That(File.Exists(_store.PathOf(account)), Is.True, _log.ToString());
         }
 
+        // 持ち物庫には小銃しか無いので、拳銃は持ち物庫から取らずに持たせ、持ち込んだ物には数えない
+        [Test]
+        public void ABotCarriesTheLoadoutWeaponsItsStashLacks()
+        {
+            Start();
+            Join(1);
+            var bot = BotRoster.FirstBotPlayerId;
+            _match.JoinBot(bot);
+
+            Assert.That(_extraction.RaidOf(bot).BroughtIn, Is.EqualTo(new[] { new ItemCount(_rifleItemId, 1) }));
+            Assert.That(_combat.WeaponsOf(bot).Specs.Select(s => s.Id), Is.EqualTo(new[] { TestRules.RifleId, TestRules.HandgunId }));
+            Assert.That(_extraction.StashOf(bot).CountOf(_handgunItemId), Is.Zero);
+            var log = _log.ToString();
+            Assert.That(
+                log,
+                Does.Contain("[Extraction] player=" + bot.ToString(CultureInfo.InvariantCulture) + " weapon=" + TestRules.HandgunId
+                    + " is not in the bot's stash; carried without taking it from the stash"));
+            Assert.That(log, Does.Not.Contain("[Extraction] player=" + bot.ToString(CultureInfo.InvariantCulture) + " weapon=" + TestRules.HandgunId + " is not in the stash; left behind"));
+        }
+
+        [Test]
+        public void ABotThatFallsLeavesOnlyTheWeaponsFromItsStashInTheDeathBox()
+        {
+            Start();
+            Join(1);
+            var bot = BotRoster.FirstBotPlayerId;
+            _match.JoinBot(bot);
+
+            _rules.ApplyDamage(1, bot, 1000);
+
+            Assert.That(_loot.TryGetContents(ServerLoot.FirstItemId + 2, out var weapons, out _), Is.True, _log.ToString());
+            Assert.That(weapons.Select(w => w.Id), Is.EqualTo(new[] { TestRules.RifleId }));
+            Assert.That(weapons.Select(w => w.Id), Does.Not.Contain(TestRules.HandgunId));
+        }
+
+        [Test]
+        public void ABotLeavesBehindWhatItsStashLacksWhenBotsDoNotBringTheLoadout()
+        {
+            Start(new ExtractionSpec(raidSeconds: 120f, extractHoldSeconds: _holdSeconds, openPoints: 1, openAfterSeconds: 0f, keepCarriedOnDeath: false, botsBringLoadout: false));
+            Join(1);
+            var bot = BotRoster.FirstBotPlayerId;
+            _match.JoinBot(bot);
+
+            Assert.That(_extraction.RaidOf(bot).BroughtIn, Is.EqualTo(new[] { new ItemCount(_rifleItemId, 1) }));
+            Assert.That(_combat.WeaponsOf(bot).Specs.Select(s => s.Id), Is.EqualTo(new[] { TestRules.RifleId }));
+            Assert.That(_log.ToString(), Does.Contain("[Extraction] player=" + bot.ToString(CultureInfo.InvariantCulture) + " weapon=" + TestRules.HandgunId + " is not in the stash; left behind"));
+        }
+
         [Test]
         public void APlayerWithoutAKeyPlaysWithAStashThatIsNotSaved()
         {

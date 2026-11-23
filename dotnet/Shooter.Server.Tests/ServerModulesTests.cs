@@ -255,7 +255,39 @@ namespace Shooter.Server.Tests
             Assert.That(tuning.Deployables.Count, Is.Zero);
             Assert.That(tuning.AntiCheat, Is.SameAs(AntiCheatTuning.Default));
             Assert.That(tuning.AntiCheatPath, Is.Null);
-            Assert.That(tuning.LogLine, Is.EqualTo("[Server] combat tuning melee=default streaks=default deployables=none anticheat=default"));
+            Assert.That(tuning.Holster, Is.SameAs(HolsterSpec.Default));
+            Assert.That(tuning.HolsterPath, Is.Null);
+            Assert.That(tuning.LogLine, Is.EqualTo("[Server] combat tuning melee=default streaks=default deployables=none holster=default anticheat=default"));
+        }
+
+        [Test]
+        public void TheHolsterTuningIsReadFromServerDataAndNamedInTheLogLine()
+        {
+            var tuningDirectory = Path.Combine(_roots.Path, ServerMapData.DataDirectoryName, ServerRulesData.TuningDirectoryName);
+            Directory.CreateDirectory(tuningDirectory);
+            var path = Path.GetFullPath(Path.Combine(tuningDirectory, ServerCombatTuning.HolsterFileName));
+            File.WriteAllText(path, "{\"armedPhases\": [\"Drawn\"]}");
+
+            Assert.That(ServerCombatTuning.TryLoad(new[] { _roots.Path }, out var tuning, out var error), Is.True, error);
+
+            Assert.That(tuning.Holster.IsArmedPhase(HolsterPhase.Drawn), Is.True);
+            Assert.That(tuning.Holster.IsArmedPhase(HolsterPhase.Drawing), Is.False, "Resources/Tuning/holster.json counts Drawing as armed");
+            Assert.That(tuning.HolsterPath, Is.EqualTo(path));
+            Assert.That(tuning.LogLine, Does.Contain(" holster=" + path + " "));
+        }
+
+        [Test]
+        public void AnUnreadableHolsterTuningFileStopsTheStart()
+        {
+            var tuningDirectory = Path.Combine(_roots.Path, ServerMapData.DataDirectoryName, ServerRulesData.TuningDirectoryName);
+            Directory.CreateDirectory(tuningDirectory);
+            File.WriteAllText(Path.Combine(tuningDirectory, ServerCombatTuning.HolsterFileName), "{\"armedPhases\": [\"Raised\"]}");
+
+            Assert.That(ServerCombatTuning.TryLoad(new[] { _roots.Path }, out var tuning, out var error), Is.False);
+
+            Assert.That(tuning, Is.Null);
+            Assert.That(error, Does.StartWith("cannot read holster tuning: "));
+            Assert.That(error, Does.Contain("armedPhases"));
         }
 
         [Test]

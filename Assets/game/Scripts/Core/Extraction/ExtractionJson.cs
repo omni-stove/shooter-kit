@@ -11,6 +11,7 @@ namespace Shooter.Core
         public const string OpenPointsItem = "openPoints";
         public const string OpenAfterSecondsItem = "openAfterSeconds";
         public const string KeepCarriedOnDeathItem = "keepCarriedOnDeath";
+        public const string BotsBringLoadoutItem = "botsBringLoadout";
 
         private const string _kind = "extraction JSON";
 
@@ -21,6 +22,7 @@ namespace Shooter.Core
             OpenPointsItem,
             OpenAfterSecondsItem,
             KeepCarriedOnDeathItem,
+            BotsBringLoadoutItem,
         };
 
         public static ExtractionSpec Parse(string text, string sourceName)
@@ -32,10 +34,11 @@ namespace Shooter.Core
                 var openPoints = fields.ReadInt(OpenPointsItem, ExtractionSpec.DefaultOpenPoints);
                 var openAfterSeconds = fields.ReadFloat(OpenAfterSecondsItem, ExtractionSpec.DefaultOpenAfterSeconds);
                 var keepCarriedOnDeath = fields.ReadBool(KeepCarriedOnDeathItem, ExtractionSpec.DefaultKeepCarriedOnDeath);
+                var botsBringLoadout = fields.ReadBool(BotsBringLoadoutItem, ExtractionSpec.DefaultBotsBringLoadout);
                 return SpecJsonReader.Build(
                     fields,
                     ItemNames,
-                    () => new ExtractionSpec(raidSeconds, extractHoldSeconds, openPoints, openAfterSeconds, keepCarriedOnDeath));
+                    () => new ExtractionSpec(raidSeconds, extractHoldSeconds, openPoints, openAfterSeconds, keepCarriedOnDeath, botsBringLoadout));
             });
         }
     }

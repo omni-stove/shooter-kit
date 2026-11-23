@@ -97,7 +97,12 @@ namespace Shooter.Editor
                     spec.Sniper,
                     spec.Charger,
                     spec.Bomber,
-                    spec.StaggerResistance));
+                    spec.StaggerResistance,
+                    coverOnHitMaxDistance: spec.CoverOnHitMaxDistance,
+                    coverMoveSpreadDegrees: spec.CoverMoveSpreadDegrees,
+                    coverMaxPeeks: spec.CoverMaxPeeks,
+                    coverPeekReactionSeconds: spec.CoverPeekReactionSeconds,
+                    coverCooldownSeconds: spec.CoverCooldownSeconds));
 
                 var damageable = enemy.GetComponent<Damageable>();
                 var head = AddPart(enemy.transform, HeadName, HitZone.Head, damageable);

@@ -96,6 +96,7 @@ namespace Shooter.Server.Tests
         {
             var root = CopyServerData("Extraction");
             var stashes = Path.Combine(_directory.Path, "stashes");
+            DisableFriendlyFire(root, "Extraction");
 
             Start(root, "Extraction", "-bots", _bots, ServerLaunch.StashDirectoryFlag, stashes);
             JoinWatcher();
@@ -143,6 +144,15 @@ namespace Shooter.Server.Tests
             }
 
             return root;
+        }
+
+        // 例のルールは友軍誤射 On で、Bot だけの試合では撃ち合って誰も脱出しないことがあるので、写した方だけ Off にする
+        private static void DisableFriendlyFire(string root, string rulesName)
+        {
+            var path = Path.Combine(root, ServerMapData.DataDirectoryName, ServerRulesData.RulesDirectoryName, rulesName + NetMatchFile.Extension);
+            var file = JsonNode.Parse(File.ReadAllText(path)).AsObject();
+            file["rules"]["friendlyFire"] = "Off";
+            File.WriteAllText(path, file.ToJsonString());
         }
 
         // 返すのはエリアの段階の待ちと縮みの合計 (秒)

@@ -84,6 +84,21 @@ namespace Shooter.Runtime
         [SerializeField, Range(0f, 1f), Tooltip("体力の割合がこれを下回ったら、撃たれていなくても遮蔽点へ移る。0 なら体力では移らない")]
         private float _coverHealthFraction = EnemySpec.DefaultCoverHealthFraction;
 
+        [SerializeField, Min(0f), Tooltip("撃たれたとき、この距離 (m) 以内に遮蔽点があるときだけ移る")]
+        private float _coverOnHitMaxDistance = EnemySpec.DefaultCoverOnHitMaxDistance;
+
+        [SerializeField, Range(0f, EnemySpec.MaxSpreadDegrees), Tooltip("遮蔽点へ移りながら撃つときに散らばりへ足す半角 (度)")]
+        private float _coverMoveSpreadDegrees = EnemySpec.DefaultCoverMoveSpreadDegrees;
+
+        [SerializeField, Min(1), Tooltip("1 つの遮蔽点から覗く回数の上限")]
+        private int _coverMaxPeeks = EnemySpec.DefaultCoverMaxPeeks;
+
+        [SerializeField, Min(0f), Tooltip("遮蔽点から覗いてから撃つまでの秒数")]
+        private float _coverPeekReactionSeconds = EnemySpec.DefaultCoverPeekReactionSeconds;
+
+        [SerializeField, Min(0f), Tooltip("遮蔽点を離れてから、また遮蔽点へ移れるようになるまでの秒数")]
+        private float _coverCooldownSeconds = EnemySpec.DefaultCoverCooldownSeconds;
+
         [Header("怯み")]
         [SerializeField, Min(ArchetypeStaggerResistance), Tooltip("怯みにくさ。0 で既定、1 で怯むのに 2 倍のダメージが要り、怯む長さは半分になる。負なら種類ごとの既定値")]
         private float _staggerResistance = ArchetypeStaggerResistance;
@@ -195,6 +210,36 @@ namespace Shooter.Runtime
             set => _coverHealthFraction = value;
         }
 
+        public float CoverOnHitMaxDistance
+        {
+            get => _coverOnHitMaxDistance;
+            set => _coverOnHitMaxDistance = value;
+        }
+
+        public float CoverMoveSpreadDegrees
+        {
+            get => _coverMoveSpreadDegrees;
+            set => _coverMoveSpreadDegrees = value;
+        }
+
+        public int CoverMaxPeeks
+        {
+            get => _coverMaxPeeks;
+            set => _coverMaxPeeks = value;
+        }
+
+        public float CoverPeekReactionSeconds
+        {
+            get => _coverPeekReactionSeconds;
+            set => _coverPeekReactionSeconds = value;
+        }
+
+        public float CoverCooldownSeconds
+        {
+            get => _coverCooldownSeconds;
+            set => _coverCooldownSeconds = value;
+        }
+
         public float StaggerResistance
         {
             get => _staggerResistance;
@@ -280,7 +325,12 @@ namespace Shooter.Runtime
                     _arrivalDistance,
                     _sprintRatio,
                     _crouchRatio,
-                    _recoilControl);
+                    _recoilControl,
+                    _coverOnHitMaxDistance,
+                    _coverMoveSpreadDegrees,
+                    _coverMaxPeeks,
+                    _coverPeekReactionSeconds,
+                    _coverCooldownSeconds);
             }
             catch (ArgumentException e)
             {
@@ -329,6 +379,11 @@ namespace Shooter.Runtime
             _coverHideSeconds = spec.CoverHideSeconds;
             _coverPeekSeconds = spec.CoverPeekSeconds;
             _coverHealthFraction = spec.CoverHealthFraction;
+            _coverOnHitMaxDistance = spec.CoverOnHitMaxDistance;
+            _coverMoveSpreadDegrees = spec.CoverMoveSpreadDegrees;
+            _coverMaxPeeks = spec.CoverMaxPeeks;
+            _coverPeekReactionSeconds = spec.CoverPeekReactionSeconds;
+            _coverCooldownSeconds = spec.CoverCooldownSeconds;
             _staggerResistance = spec.StaggerResistance;
             _arrivalDistance = spec.ArrivalDistance;
             _sprintRatio = spec.SprintRatio;
