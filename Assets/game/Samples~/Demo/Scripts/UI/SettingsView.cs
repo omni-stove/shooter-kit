@@ -40,6 +40,12 @@ namespace Shooter.Runtime
         public const string RebindUndoButtonName = "settings-rebind-undo";
         public const string RebindKeepButtonName = "settings-rebind-keep";
 
+        public const string GamepadLayoutButtonName = "settings-gamepad-layout";
+        public const string GamepadSwapButtonName = "settings-gamepad-swap";
+
+        public const string UnboundTextKey = "settings.bindings.unbound";
+        public const string CustomLayoutTextKey = "settings.bindings.custom";
+
         public const string PaletteButtonName = "settings-palette";
 
         public const string PaletteFriendlySampleName = "settings-palette-friendly";
@@ -169,6 +175,13 @@ namespace Shooter.Runtime
         private Button _graphicsVSyncButton;
         private Button _graphicsFrameRateButton;
         private Button _languageButton;
+        private Button _gamepadLayoutButton;
+        private Button _gamepadSwapButton;
+        private readonly GamepadLayoutSpec _gamepadLayoutsGiven;
+
+        // 1 つずつ変えてどのテンプレートにも当たらなくなった後も、もう片方を選び直したときに使う組を覚えておく。
+        private GamepadLayout _lastGamepadLayout;
+        private GamepadSwap _lastGamepadSwap;
         private IReadOnlyList<GameLanguage> _languages = Array.Empty<GameLanguage>();
         private readonly Dictionary<GameLanguage, string> _languageNames = new Dictionary<GameLanguage, string>();
 
@@ -185,7 +198,8 @@ namespace Shooter.Runtime
             IGraphicsSettingsSink graphicsSink = null,
             IReadOnlyList<ScreenResolution> resolutions = null,
             IReadOnlyList<string> qualityLevelNames = null,
-            IReadOnlyList<int> frameRateChoices = null)
+            IReadOnlyList<int> frameRateChoices = null,
+            GamepadLayoutSpec gamepadLayouts = null)
         {
             List<string> offered = null;
             if (regions != null)
@@ -215,6 +229,7 @@ namespace Shooter.Runtime
             _resolutionsGiven = resolutions != null ? CheckedResolutions(resolutions) : null;
             _qualityNamesGiven = qualityLevelNames != null ? new List<string>(qualityLevelNames).AsReadOnly() : null;
             _frameRateChoicesGiven = frameRateChoices != null ? new GraphicsSpec(frameRateChoices: frameRateChoices).FrameRateChoices : null;
+            _gamepadLayoutsGiven = gamepadLayouts;
         }
 
         public event Action BackRequested;
@@ -248,6 +263,8 @@ namespace Shooter.Runtime
         public InputBindingOverridesStore BindingStore => _bindingStore;
 
         public PlayerBindings Bindings => _bindings;
+
+        public GamepadLayoutSpec GamepadLayouts => _gamepadLayoutsGiven ?? KitTuning.GamepadLayouts;
 
         public IReadOnlyList<GameLanguage> Languages => _languages;
 
@@ -644,6 +661,8 @@ namespace Shooter.Runtime
             _bindings = null;
             _bindingsDirty = false;
             _pendingConflict = null;
+            _lastGamepadLayout = null;
+            _lastGamepadSwap = null;
         }
 
         private void DetachElements()
@@ -690,6 +709,8 @@ namespace Shooter.Runtime
             _graphicsVSyncButton = null;
             _graphicsFrameRateButton = null;
             _languageButton = null;
+            _gamepadLayoutButton = null;
+            _gamepadSwapButton = null;
             _languages = Array.Empty<GameLanguage>();
             _languageNames.Clear();
         }
@@ -1039,6 +1060,117 @@ namespace Shooter.Runtime
             RefreshBindings();
         }
 
+        // 今のゲームパッドの割り当てがどのテンプレートにも当たらない (1 つずつ変えた) ときは false。
+        public bool TryGetGamepadLayout(out GamepadLayout layout, out GamepadSwap swap)
+        {
+            if (_bindings == null)
+            {
+                layout = null;
+                swap = null;
+                return false;
+            }
+
+            return _bindings.TryFindGamepadLayout(GamepadLayouts, out layout, out swap);
+        }
+
+        public bool SetGamepadLayout(GamepadLayout layout, GamepadSwap swap)
+        {
+            if (layout == null)
+            {
+                throw new ArgumentNullException(nameof(layout));
+            }
+
+            if (swap == null)
+            {
+                throw new ArgumentNullException(nameof(swap));
+            }
+
+            var bindings = EnsureBindings();
+            var changed = bindings.ApplyGamepadLayout(layout, swap);
+            _lastGamepadLayout = layout;
+            _lastGamepadSwap = swap;
+            _pendingConflict = null;
+            if (changed > 0)
+            {
+                _bindingsDirty = true;
+            }
+
+            RefreshBindings();
+            return changed > 0;
+        }
+
+        public bool NextGamepadLayout()
+        {
+            var spec = GamepadLayouts;
+            var found = TryGetGamepadLayout(out var layout, out var swap);
+            var next = found ? NextOf(spec.Layouts, layout) : spec.Layouts[0];
+            return SetGamepadLayout(next, found ? swap : LastSwap(spec));
+        }
+
+        public bool NextGamepadSwap()
+        {
+            var spec = GamepadLayouts;
+            var found = TryGetGamepadLayout(out var layout, out var swap);
+            var next = found ? NextOf(spec.Swaps, swap) : spec.Swaps[0];
+            return SetGamepadLayout(found ? layout : LastLayout(spec), next);
+        }
+
+        public static string BindingText(PlayerBindings bindings, RebindSlot slot)
+        {
+            if (bindings == null)
+            {
+                throw new ArgumentNullException(nameof(bindings));
+            }
+
+            var display = bindings.DisplayOf(slot);
+            return string.IsNullOrEmpty(display) ? Localizer.Get(UnboundTextKey) : display;
+        }
+
+        private GamepadLayout LastLayout(GamepadLayoutSpec spec)
+        {
+            return _lastGamepadLayout != null && spec.FindLayout(_lastGamepadLayout.Id) != null ? _lastGamepadLayout : spec.Layouts[0];
+        }
+
+        private GamepadSwap LastSwap(GamepadLayoutSpec spec)
+        {
+            return _lastGamepadSwap != null && spec.FindSwap(_lastGamepadSwap.Id) != null ? _lastGamepadSwap : spec.Swaps[0];
+        }
+
+        private static T NextOf<T>(IReadOnlyList<T> items, T current)
+            where T : class
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                if (ReferenceEquals(items[i], current))
+                {
+                    return items[(i + 1) % items.Count];
+                }
+            }
+
+            return items[0];
+        }
+
+        private void RefreshGamepadLayout()
+        {
+            if (_gamepadLayoutButton == null || _gamepadSwapButton == null)
+            {
+                return;
+            }
+
+            if (TryGetGamepadLayout(out var layout, out var swap))
+            {
+                _lastGamepadLayout = layout;
+                _lastGamepadSwap = swap;
+                _gamepadLayoutButton.text = Localizer.Get(layout.NameKey);
+                _gamepadSwapButton.text = Localizer.Get(swap.NameKey);
+                return;
+            }
+
+            var custom = _bindings != null ? Localizer.Get(CustomLayoutTextKey) : string.Empty;
+            _gamepadLayoutButton.text = custom;
+            _gamepadSwapButton.text = custom;
+        }
+
         private void HandleRebindFinished(RebindResult result)
         {
             if (_root == null)
@@ -1202,6 +1334,10 @@ namespace Shooter.Runtime
 
             BindButton(root, ResetButtonName, ResetToDefaults);
             BindButton(root, BindingsResetButtonName, ResetBindingsToDefaults).SetEnabled(_bindings != null);
+            _gamepadLayoutButton = BindButton(root, GamepadLayoutButtonName, () => NextGamepadLayout());
+            _gamepadLayoutButton.SetEnabled(_bindings != null);
+            _gamepadSwapButton = BindButton(root, GamepadSwapButtonName, () => NextGamepadSwap());
+            _gamepadSwapButton.SetEnabled(_bindings != null);
             BindButton(root, BackButtonName, RequestBack);
 
             var bindingsList = Require<VisualElement>(root, BindingsName);
@@ -1553,6 +1689,7 @@ namespace Shooter.Runtime
 
         private void RefreshBindings()
         {
+            RefreshGamepadLayout();
             if (_root == null || _bindings == null)
             {
                 SetDisplayed(_rebindNoticeRow, false);
@@ -1563,7 +1700,7 @@ namespace Shooter.Runtime
             foreach (var pair in _rebindButtons)
             {
                 var isWaiting = waiting.HasValue && waiting.Value.Equals(pair.Key);
-                pair.Value.text = isWaiting ? WaitingText : _bindings.DisplayOf(pair.Key);
+                pair.Value.text = isWaiting ? WaitingText : BindingText(_bindings, pair.Key);
                 pair.Value.EnableInClassList("settings__bind--waiting", isWaiting);
                 pair.Value.EnableInClassList("settings__bind--overridden", _bindings.IsOverridden(pair.Key));
                 pair.Value.EnableInClassList(

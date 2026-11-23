@@ -3,6 +3,7 @@
     { "actions": ["Melee", "Interact"], "prefer": "Interact" },
     { "actions": ["Reload", "Interact"], "prefer": "Interact" },
     { "actions": ["Cover", "Countermeasure"] },
-    { "actions": ["Ping", "Emote"], "prefer": "Emote" }
+    { "actions": ["Ping", "Emote"], "prefer": "Emote" },
+    { "actions": ["HoldBreath", "Countermeasure"] }
   ]
 }

@@ -152,6 +152,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("グラフィック設定の初期値 (画質・VSync・fps 上限) と選べる fps 上限の JSON。空なら Resources/Tuning/graphics")]
         private TextAsset _graphicsTuning;
 
+        [SerializeField, Tooltip("設定画面で選べるゲームパッドの配置とスティック・トリガーの入れ替えの JSON。空なら Resources/Tuning/gamepad-layouts")]
+        private TextAsset _gamepadLayoutsTuning;
+
         [Header("武器・キャンペーン")]
         [SerializeField, Tooltip("使える武器の一覧")]
         private WeaponCatalogAsset _weaponCatalog;
@@ -547,6 +550,12 @@ namespace Shooter.Runtime
         {
             get => _graphicsTuning;
             set => _graphicsTuning = value;
+        }
+
+        public TextAsset GamepadLayoutsTuning
+        {
+            get => _gamepadLayoutsTuning;
+            set => _gamepadLayoutsTuning = value;
         }
 
         public WeaponCatalogAsset WeaponCatalog

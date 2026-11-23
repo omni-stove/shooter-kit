@@ -168,7 +168,7 @@ Editor のスクリプトが作るアセットとシーンの置き場 (出力�
 | 体 | 根に Animator の Prefab | `GameContent` の **Character Rig** |
 | 文言 | `Resources/Localization/<言語>/*.json` | 画面 (Demo では `GameText`・`LocalizedTexts`) |
 | 戦闘の調整値 | `grenade.json`・`melee.json`・`knockback.json`・`stagger.json`・`suppression.json`・`aim-assist.json`・`streaks.json`・`assist.json` | `GameContent` の同じ名前の欄 |
-| 持ち物・移動の調整値 | `inventory.json`・`traversal.json`・`stealth.json`・`squad.json`・`ping.json`・`key-sharing.json`・`rumble.json` | 同上 |
+| 持ち物・移動の調整値 | `inventory.json`・`traversal.json`・`stealth.json`・`squad.json`・`ping.json`・`key-sharing.json`・`gamepad-layouts.json`・`rumble.json` | 同上 |
 | Bot | `bots.json` | 同上 |
 | 成長・記録 | `progression.json`・`skill.json`・`achievements.json`・`leaderboards.json`・`cosmetics.json`・`replay.json`・`telemetry.json` | 同上 |
 | 画面に出す量と色 | `minimap.json`・`nameplates.json`・`palettes.json`・`chat-words.json`・`weather.json`・`graphics.json` | 同上 |

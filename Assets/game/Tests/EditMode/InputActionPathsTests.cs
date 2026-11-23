@@ -116,27 +116,41 @@ namespace Shooter.Tests.EditMode
             }
         }
 
-        [TestCase(InputActionPaths.Melee, "<Keyboard>/v")]
-        [TestCase(InputActionPaths.Prone, "<Keyboard>/z")]
-        [TestCase(InputActionPaths.Ability1, "<Keyboard>/t")]
-        [TestCase(InputActionPaths.Ability2, "<Keyboard>/y")]
-        [TestCase(InputActionPaths.SquadCommand, "<Keyboard>/b")]
-        [TestCase(InputActionPaths.SwitchAmmoType, "<Keyboard>/n")]
-        [TestCase(InputActionPaths.CycleMagnification, "<Keyboard>/h")]
-        [TestCase(InputActionPaths.HoldBreath, "<Keyboard>/leftCtrl")]
-        [TestCase(InputActionPaths.LeanLeft, "<Mouse>/backButton")]
-        [TestCase(InputActionPaths.LeanRight, "<Mouse>/forwardButton")]
-        [TestCase(InputActionPaths.Chat, "<Keyboard>/enter")]
-        [TestCase(InputActionPaths.TeamChat, "<Keyboard>/u")]
-        [TestCase(InputActionPaths.PushToTalk, "<Keyboard>/capsLock")]
-        [TestCase(InputActionPaths.SwitchStreak, "<Keyboard>/3")]
-        public void KeyboardOnlyButtonsAreBoundToOneKeyUsedByNoOtherPlayerAction(string path, string key)
+        [TestCase(InputActionPaths.Melee, "<Keyboard>/v", true)]
+        [TestCase(InputActionPaths.Prone, "<Keyboard>/z", true)]
+        [TestCase(InputActionPaths.Ability1, "<Keyboard>/t", true)]
+        [TestCase(InputActionPaths.Ability2, "<Keyboard>/y", true)]
+        [TestCase(InputActionPaths.SquadCommand, "<Keyboard>/b", true)]
+        [TestCase(InputActionPaths.SwitchAmmoType, "<Keyboard>/n", true)]
+        [TestCase(InputActionPaths.CycleMagnification, "<Keyboard>/h", true)]
+        [TestCase(InputActionPaths.HoldBreath, "<Keyboard>/leftCtrl", true)]
+        [TestCase(InputActionPaths.SwitchStreak, "<Keyboard>/3", true)]
+        [TestCase(InputActionPaths.LeanLeft, "<Mouse>/backButton", false)]
+        [TestCase(InputActionPaths.LeanRight, "<Mouse>/forwardButton", false)]
+        [TestCase(InputActionPaths.Chat, "<Keyboard>/enter", false)]
+        [TestCase(InputActionPaths.TeamChat, "<Keyboard>/u", false)]
+        [TestCase(InputActionPaths.PushToTalk, "<Keyboard>/capsLock", false)]
+        public void ButtonsWithoutAGamepadButtonAreBoundToOneKeyUsedByNoOtherPlayerAction(string path, string key, bool hasEmptyGamepadSlot)
         {
             var action = Find(path);
 
             Assert.That(action.type, Is.EqualTo(InputActionType.Button));
             Assert.That(action.bindings, Has.Exactly(1).Matches<InputBinding>(b => b.path == key && b.groups == "Keyboard&Mouse"));
-            Assert.That(action.bindings, Has.None.Matches<InputBinding>(b => b.groups != null && b.groups.Contains("Gamepad")), "no gamepad button is free");
+            if (hasEmptyGamepadSlot)
+            {
+                Assert.That(
+                    action.bindings,
+                    Has.Exactly(1).Matches<InputBinding>(b => b.groups == "Gamepad" && string.IsNullOrEmpty(b.path)),
+                    "an empty gamepad binding lets a player or a gamepad layout give it a button");
+                Assert.That(
+                    action.bindings,
+                    Has.None.Matches<InputBinding>(b => b.groups != null && b.groups.Contains("Gamepad") && !string.IsNullOrEmpty(b.path)),
+                    "no gamepad button is free by default");
+            }
+            else
+            {
+                Assert.That(action.bindings, Has.None.Matches<InputBinding>(b => b.groups != null && b.groups.Contains("Gamepad")), "no gamepad button is free");
+            }
 
             foreach (var other in action.actionMap.actions)
             {
@@ -218,7 +232,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(next.bindings, Has.None.Matches<InputBinding>(b => b.path == "<Gamepad>/dpad/right"));
             Assert.That(previous.bindings, Has.Some.Matches<InputBinding>(b => b.path == "<Mouse>/scroll/down"));
             Assert.That(previous.bindings, Has.Some.Matches<InputBinding>(b => b.path == "<Keyboard>/1"));
-            Assert.That(previous.bindings, Has.None.Matches<InputBinding>(b => b.groups != null && b.groups.Contains("Gamepad")));
+            Assert.That(previous.bindings, Has.None.Matches<InputBinding>(b => b.groups != null && b.groups.Contains("Gamepad") && !string.IsNullOrEmpty(b.path)));
+            Assert.That(previous.bindings, Has.Exactly(1).Matches<InputBinding>(b => b.groups == "Gamepad" && string.IsNullOrEmpty(b.path)), "Previous starts without a gamepad button");
         }
     }
 }

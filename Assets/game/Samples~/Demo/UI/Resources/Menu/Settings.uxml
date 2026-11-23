@@ -203,6 +203,15 @@
             <ui:Label text="#settings.section.bindings" class="settings__section" />
             <!-- Input Actions が無くて割り当てを変えられないときだけ、SettingsView が下の一覧の代わりに出す。 -->
             <ui:Label name="settings-bindings-unavailable" text="#settings.bindings.unavailable" class="settings__note" style="display: none;" />
+            <!-- ゲームパッドの配置とスティック・トリガーの入れ替えのテンプレート (Resources/Tuning/gamepad-layouts)。押すたびに次のテンプレートを当てる。 -->
+            <ui:VisualElement class="settings__row">
+                <ui:Label text="#settings.bindings.gamepadLayout" class="settings__caption" />
+                <ui:Button name="settings-gamepad-layout" text="" class="settings__button" />
+            </ui:VisualElement>
+            <ui:VisualElement class="settings__row">
+                <ui:Label text="#settings.bindings.gamepadSwap" class="settings__caption" />
+                <ui:Button name="settings-gamepad-swap" text="" class="settings__button" />
+            </ui:VisualElement>
             <!-- 割り当ての一覧。行は Input Actions の割り当て (PlayerBindings.Slots) から SettingsView が見出しの後ろに足す。 -->
             <ui:VisualElement name="settings-bindings">
                 <ui:VisualElement class="settings__row">
