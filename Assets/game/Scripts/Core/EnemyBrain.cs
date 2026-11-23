@@ -25,6 +25,8 @@ namespace Shooter.Core
         private int _coverIndex = -1;
         private float _coverElapsed;
         private Vector3 _coverThreat;
+        private int _coverPeeks;
+        private float _coverCooldown;
 
         // 着けなかった点。また選んで同じ点で詰まり続けないよう、巡回や待機に戻るか遮蔽点の一覧が変わるまで選ばない。
         private readonly HashSet<int> _unreachableCover = new HashSet<int>();
@@ -39,6 +41,8 @@ namespace Shooter.Core
         public EnemyCoverPhase CoverPhase { get; private set; }
 
         public int CoverPointIndex => _coverIndex;
+
+        public float CoverCooldownRemaining => _coverCooldown;
 
         public CoverPoint? CurrentCoverPoint => _cover != null && _coverIndex >= 0 ? _cover.Points[_coverIndex] : (CoverPoint?)null;
 
@@ -57,7 +61,7 @@ namespace Shooter.Core
 
         public bool IsAiming => EnemyGait.IsAiming(State, CoverPhase) || (State == EnemyState.Chase && _engaging);
 
-        public float AimRemainingSeconds => IsAiming ? Math.Max(0f, _spec.ReactionSeconds - _reactionElapsed) : 0f;
+        public float AimRemainingSeconds => IsAiming ? Math.Max(0f, AimReactionSeconds() - _reactionElapsed) : 0f;
 
         public int PatrolIndex => _routeIndex;
 
@@ -179,6 +183,8 @@ namespace Shooter.Core
                     _searchElapsed = 0f;
                     _coverElapsed = 0f;
                     _coverThreat = default;
+                    _coverPeeks = 0;
+                    _coverCooldown = 0f;
                     _unreachableCover.Clear();
                     SetState(_route.Length > 0 ? EnemyState.Patrol : EnemyState.Idle);
                     return true;
@@ -302,6 +308,8 @@ namespace Shooter.Core
             var seen = p.HasLineOfSight && p.Awareness >= EnemyPerception.FullAwareness && p.Target.HasValue
                 && Vector3.Distance(p.Self, p.Target.Value) <= _spec.SightRange;
 
+            _coverCooldown = Math.Max(0f, _coverCooldown - deltaSeconds);
+
             if ((State == EnemyState.TakeCover || ShouldTakeCover(p))
                 && TryCover(deltaSeconds, p, seen, out var cover))
             {
@@ -363,6 +371,8 @@ namespace Shooter.Core
             _searchElapsed = 0f;
             _coverElapsed = 0f;
             _coverThreat = default;
+            _coverPeeks = 0;
+            _coverCooldown = 0f;
             _coverIndex = -1;
             _unreachableCover.Clear();
             CoverPhase = EnemyCoverPhase.None;
@@ -385,6 +395,7 @@ namespace Shooter.Core
         private EnemyDecision Routine(Vector3 self)
         {
             _unreachableCover.Clear();
+            _coverCooldown = 0f;
             if (_route.Length == 0)
             {
                 SetState(EnemyState.Idle);

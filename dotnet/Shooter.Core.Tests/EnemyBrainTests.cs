@@ -596,7 +596,7 @@ namespace Shooter.Core.Tests
         private static readonly CoverPoint _coverB = new CoverPoint(new Vector3(-3f, 0f, 0f), new Vector3(1f, 0f, 0f), CoverHeight.High);
         private static readonly CoverPoint _coverC = new CoverPoint(new Vector3(-2f, 0f, 3f), new Vector3(0f, 0f, 1f), CoverHeight.Low);
 
-        // 反応 0.5 秒、隠れて 1 秒、覗いて 1 秒。
+        // 反応 0.5 秒、隠れて 1 秒、覗いて 1 秒、覗いてから撃つまで 0.3 秒 (既定)。
         private static EnemySpec CoverSpec() => new EnemySpec(20f, 10f, 1f, 2f, 0.5f, coverHideSeconds: 1f, coverPeekSeconds: 1f);
 
         private static EnemyPerception Watches(Vector3 self, Vector3 target, bool lineOfSight) =>
@@ -701,7 +701,7 @@ namespace Shooter.Core.Tests
             Assert.That(brain.ShotsInAttack, Is.Zero);
 
             Assert.That(brain.Tick(0.25f, Watches(at, _player, true)).Fire, Is.False, "0.25 秒後");
-            Assert.That(brain.Tick(0.25f, Watches(at, _player, true)).Fire, Is.True, "ReactionSeconds 後");
+            Assert.That(brain.Tick(0.25f, Watches(at, _player, true)).Fire, Is.True, "CoverPeekReactionSeconds (0.3 秒) 後");
             Assert.That(brain.Tick(0.25f, Watches(at, _player, false)).Fire, Is.False, "見えていなければ撃たない");
 
             var again = brain.Tick(0.25f, Watches(at, _player, true));
