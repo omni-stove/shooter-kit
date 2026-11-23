@@ -246,6 +246,23 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void RepublishesWhenAnotherZoneOverwroteAndThenClearedTheSignal()
+        {
+            _zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.WarnOnly, 0.5f));
+            _zone.HandleEnter(_bodyCollider);
+            _zone.Tick(0f);
+            var own = GameSignals.WeaponFreeZone.Value;
+            var other = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.BlockDraw, false, 0f);
+            GameSignals.WeaponFreeZone.Publish(other);
+            GameSignals.WeaponFreeZone.ClearIfCurrent(other);
+
+            _zone.Tick(0f);
+
+            Assert.That(own, Is.Not.Null);
+            Assert.That(GameSignals.WeaponFreeZone.Value, Is.EqualTo(own));
+        }
+
+        [Test]
         public void WarnOnlyKeepsWarningButNeverTurnsHostile()
         {
             _zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.WarnOnly, 0.5f));
