@@ -17,6 +17,7 @@ namespace Shooter.NetV2.Tests
         private const float _wallZ = 5f;
         private const string _flamerId = "a3d4f6e2-7b1c-4c8e-9f20-5e6d7c8b9a01";
         private const string _rifleId = "3a7f5e4d-6b8c-4d9e-9f0a-2b3c4d5e6f70";
+        private const string _ammoTypeId = "7e1d9c8b-0f2a-4b3c-9d4e-6f708192a3b4";
 
         private static readonly Vector3 _eye = new Vector3(0f, 1.6f, 0f);
 
@@ -118,6 +119,28 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void AnAmmoTypeThatTurnsTheRoundIntoASprayDrawsTheFlameUnderItsNumber()
+        {
+            _spray.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ, ammoTypeIndex: 1), SprayAmmoRifle());
+
+            Assert.That(_spray.IsLocalFiring, Is.True);
+            Assert.That(_drawn.Single().ShooterId, Is.EqualTo(_me));
+            Assert.That(_drawn.Single().WeaponId, Is.EqualTo(_rifleId));
+            Assert.That(_drawn.Single().TickSeconds, Is.EqualTo(_tickSeconds));
+            Assert.That(_drawn.Single().ConeDegrees, Is.EqualTo(_coneDegrees));
+        }
+
+        [TestCase(0)]
+        [TestCase(2)]
+        public void TheWeaponsOwnRoundAndANumberPastTheLastAmmoTypeDrawNoFlame(int ammoTypeIndex)
+        {
+            _spray.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ, (byte)ammoTypeIndex), SprayAmmoRifle());
+
+            Assert.That(_spray.IsLocalFiring, Is.False);
+            Assert.That(_drawn, Is.Empty);
+        }
+
+        [Test]
         public void AWeaponThatIsNotASprayDrawsNoFlame()
         {
             _spray.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ), Rifle());
@@ -184,9 +207,25 @@ namespace Shooter.NetV2.Tests
             return new WeaponSpec(_rifleId, "weapon.rifle", WeaponCategory.AssaultRifle);
         }
 
-        private static FireRequestMessage Request(TriggerEdge edge, Vector3 direction)
+        private static WeaponSpec SprayAmmoRifle()
         {
-            return new FireRequestMessage { WeaponId = _flamerId, Origin = _eye, Direction = direction, Trigger = edge };
+            return new WeaponSpec(
+                _rifleId,
+                "weapon.rifle",
+                WeaponCategory.AssaultRifle,
+                ammoTypes: new[] { new AmmoTypeSpec(_ammoTypeId, "items.ammo.special", new RoundSpec(RoundDelivery.Spray, _range, spray: new SpraySpec(_tickSeconds, _coneDegrees))) });
+        }
+
+        private static FireRequestMessage Request(TriggerEdge edge, Vector3 direction, byte ammoTypeIndex = 0)
+        {
+            return new FireRequestMessage
+            {
+                WeaponId = _flamerId,
+                Origin = _eye,
+                Direction = direction,
+                Trigger = edge,
+                AmmoTypeIndex = ammoTypeIndex,
+            };
         }
 
         private static BeamStateMessage State(int shooterId, string weaponId, Vector3 start, Vector3 end, bool active)
