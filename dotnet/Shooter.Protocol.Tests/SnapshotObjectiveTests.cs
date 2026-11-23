@@ -20,11 +20,12 @@ namespace Shooter.Protocol.Tests
         // 27 で乗り物に撒いたフレア (VehicleSnapshot.Flares) と、持ち主に Horde の補強の案内 (OwnerSnapshot.HordeOffer) が増え、
         // 28 でダウン (DownedSync) にとどめを刺している人と進み具合が増え、
         // 29 で移動の部分 (PlayerFields.Traversal) にパルクールの動き (PlayerSnapshot.ParkourMove) が増え、
-        // 30 で武器の部分 (PlayerFields.Weapon) にしまう・構える (PlayerSnapshot.HolsterPhase・HolsterLowering) が増えた
+        // 30 で武器の部分 (PlayerFields.Weapon) にしまう・構える (PlayerSnapshot.HolsterPhase・HolsterLowering) が増え、
+        // 31 で持ち主の武器 (WeaponSync) に二丁持ちの左の手 (OffhandAmmoInMagazine・IsOffhandReloading・OffhandReloadStartedAt) が増えた
         [Test]
-        public void TheVersionIs30()
+        public void TheVersionIs31()
         {
-            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(30));
+            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(31));
         }
 
         [Test]

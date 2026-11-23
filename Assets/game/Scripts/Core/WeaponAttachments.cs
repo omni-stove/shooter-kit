@@ -110,7 +110,8 @@ namespace Shooter.Core
                 spec.DrawSeconds,
                 spec.HolsterSeconds,
                 spec.Shield,
-                spec.Melee);
+                spec.Melee,
+                spec.Akimbo);
         }
 
         public static IReadOnlyList<string> Keep(ItemCatalog catalog, string weaponId, IEnumerable<string> attachmentItemIds)

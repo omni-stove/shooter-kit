@@ -342,6 +342,79 @@ namespace Shooter.Protocol.Tests
         }
 
         [Test]
+        public void TheOffhandMagazineAndReloadRoundTrip()
+        {
+            var sent = Build(100, 0f);
+
+            var got = Send(sent, null).Owner.Weapon;
+
+            Assert.That(got.AmmoInMagazine, Is.EqualTo(30));
+            Assert.That(got.OffhandAmmoInMagazine, Is.EqualTo(4));
+            Assert.That(got.IsOffhandReloading, Is.True);
+            Assert.That(got.OffhandReloadStartedAt, Is.EqualTo(13.25));
+        }
+
+        [Test]
+        public void ASingleWeaponSendsAnEmptyOffhand()
+        {
+            var single = Build(100, 0f);
+            single.Owner.Weapon = new WeaponSync { AmmoInMagazine = 12, ReserveAmmo = 36, WeaponCount = 1 };
+
+            var weapon = Send(single, null).Owner.Weapon;
+
+            Assert.That(weapon.OffhandAmmoInMagazine, Is.Zero);
+            Assert.That(weapon.IsOffhandReloading, Is.False);
+            Assert.That(weapon.OffhandReloadStartedAt, Is.Zero);
+        }
+
+        [Test]
+        public void AChangedOffhandSendsTheWeaponPartAndResolves()
+        {
+            // 武器の部分は弾倉・予備弾 (4 + 4)・リロード中 (1)・持っている番号と数 (1 + 1)・持ち替え中 (1)・リロードの始まり (8)・
+            // リロードの秒数と窓の始まりと終わり (4 × 3)・熱 (4)・過熱 (1)・溜め (4)・弾の種類 (1)・回し (4)・
+            // 左の手の弾倉 (4)・リロード中 (1)・リロードの始まり (8)
+            const int weaponBytes = 4 + 4 + 1 + 1 + 1 + 1 + 8 + (4 * 3) + 4 + 1 + 4 + 1 + 4 + 4 + 1 + 8;
+            var baseline = Build(100, 0f);
+            var unchanged = Build(101, 0f);
+            var current = Build(101, 0f);
+            var weapon = current.Owner.Weapon;
+            weapon.OffhandAmmoInMagazine = 3;
+            current.Owner.Weapon = weapon;
+            var received = Send(baseline, null);
+
+            var got = Send(current, baseline);
+
+            Assert.That(Size(current, baseline) - Size(unchanged, baseline), Is.EqualTo(weaponBytes));
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Owner.Weapon.OffhandAmmoInMagazine, Is.EqualTo(3));
+            Assert.That(got.Owner.Weapon.AmmoInMagazine, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void TheWeaponSyncComparesTheOffhand()
+        {
+            var a = new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8 };
+
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8 }), Is.True);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 7 }), Is.False);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8, IsOffhandReloading = true }), Is.False);
+            Assert.That(a.SameAs(new WeaponSync { AmmoInMagazine = 8, OffhandAmmoInMagazine = 8, OffhandReloadStartedAt = 1.0 }), Is.False);
+        }
+
+        [Test]
+        public void ANegativeOffhandMagazineIsUnreadable()
+        {
+            var current = Build(100, 0f);
+            var weapon = current.Owner.Weapon;
+            weapon.OffhandAmmoInMagazine = -1;
+            current.Owner.Weapon = weapon;
+            var writer = new MessageWriter();
+            writer.WriteMessage(current);
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(writer.AsSegment()));
+        }
+
+        [Test]
         public void AProjectileThatLeavesIsGoneFromTheResolvedSnapshot()
         {
             var baseline = Build(100, 0f);
@@ -1081,6 +1154,9 @@ namespace Shooter.Protocol.Tests
                 ChargeFraction = 0.5f,
                 AmmoTypeIndex = 2,
                 SpinUpFraction = 0.25f,
+                OffhandAmmoInMagazine = 4,
+                IsOffhandReloading = true,
+                OffhandReloadStartedAt = 13.25,
             };
             snapshot.Owner.Grenades.Enabled = true;
             snapshot.Owner.Grenades.Add("frag", 2);

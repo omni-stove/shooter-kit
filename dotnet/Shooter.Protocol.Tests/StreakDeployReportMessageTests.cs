@@ -16,12 +16,13 @@ namespace Shooter.Protocol.Tests
         // 35 で Horde の補強の要求 (HordeFortifyRequestMessage) が増え、
         // 36 でスナップショットにパルクールの動き (PlayerSnapshot.ParkourMove) と、承認にその調整値 (NetMotorSettings.Parkour) が増え、
         // 37 で承認の壁登りの調整値に、ふちで上に乗るか (WallClimbTuning.MantleAtLedge) が増え、
-        // 38 でしまう・構えるの要求 (HolsterRequestMessage) と、スナップショットの武器の部分にその状態が増えた。
+        // 38 でしまう・構えるの要求 (HolsterRequestMessage) と、スナップショットの武器の部分にその状態が増え、
+        // 39 で持ち主の武器 (WeaponSync) に二丁持ちの左の手の弾倉とリロードが増えた。
         // 前の版のクライアントはそれを読めないので、つなぐときに断る
         [Test]
-        public void TheProtocolVersionIs38()
+        public void TheProtocolVersionIs39()
         {
-            Assert.That(MatchProtocol.Version, Is.EqualTo(38));
+            Assert.That(MatchProtocol.Version, Is.EqualTo(39));
         }
 
         [Test]
