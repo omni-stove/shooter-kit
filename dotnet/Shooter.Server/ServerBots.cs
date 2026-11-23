@@ -774,6 +774,12 @@ namespace Shooter.Server
                 return;
             }
 
+            if (state.IsJammed)
+            {
+                ClearJam(playerId, state);
+                return;
+            }
+
             if (state.AmmoInMagazine <= 0)
             {
                 _combat.BotReload(playerId);
@@ -795,6 +801,16 @@ namespace Shooter.Server
                 {
                     _log.WriteLine(ServerBotLog.SniperFired(playerId, agent.ShotDamageMultiplier));
                 }
+            }
+        }
+
+        // 詰まった武器を撃たせないのは、人の射撃と同じ検査を通るので、引くたびに断られた警告が増えるため。
+        // 解除中 (終わる時刻がある) に要求し直しても解除は進まないので、解除していないときだけリロードを要求する
+        private void ClearJam(int playerId, in WeaponSync state)
+        {
+            if (state.JamClearEndsAt == 0d)
+            {
+                _combat.BotReload(playerId);
             }
         }
 
