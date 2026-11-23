@@ -289,6 +289,20 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void AimedPeekKeepsFiringWhileMovingToAnotherPoint()
+        {
+            var brain = Hiding(Spec(), out _, out _);
+            brain.Tick(1f, Watches(_player, false));
+            Assert.That(brain.Tick(0.5f, Watches(_player, true)).Fire, Is.True, "覗いて構え終えている");
+
+            var decision = brain.Tick(0.1f, Watches(new Vector3(8f, 0f, 0f), true));
+
+            Assert.That(brain.CoverPhase, Is.EqualTo(EnemyCoverPhase.Moving));
+            Assert.That(brain.CoverPointIndex, Is.EqualTo(1));
+            Assert.That(decision.Fire, Is.True, "移るときに構え直さない");
+        }
+
+        [Test]
         public void StaysInCoverPastTheMaxPeeksWhileSuppressed()
         {
             var brain = Hiding(Spec(), out _, out _);

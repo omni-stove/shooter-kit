@@ -58,6 +58,7 @@ namespace Shooter.Core
             if (_coverIndex < 0)
             {
                 var keepAim = KeepsAimIntoCover();
+                var peekAimed = State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Peeking && seen && _reactionElapsed >= _spec.CoverPeekReactionSeconds;
                 var next = _cover.Select(p.Self, _coverThreat, this, _unreachableCover, CoverSearchDistance(p));
                 if (next < 0 || !_cover.TryClaim(next, this))
                 {
@@ -67,6 +68,12 @@ namespace Shooter.Core
 
                 _coverIndex = next;
                 CoverPhase = EnemyCoverPhase.Moving;
+                if (peekAimed)
+                {
+                    // 移動中に撃つかは交戦の構え時間 (ReactionSeconds) で決まるので、覗いて構え終えた銃口は済んだことにして撃ち続けさせる。
+                    _reactionElapsed = Math.Max(_reactionElapsed, _spec.ReactionSeconds);
+                }
+
                 if (!keepAim)
                 {
                     _reactionElapsed = 0f;
