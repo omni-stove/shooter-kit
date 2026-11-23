@@ -38,7 +38,7 @@ namespace Shooter.Server
         private readonly int _seed;
         private readonly float _dropReach;
         private readonly List<Box> _boxes = new List<Box>();
-        private readonly Dictionary<int, float> _nextRefusalLogTimes = new Dictionary<int, float>();
+        private readonly Dictionary<int, double> _nextRefusalLogTimes = new Dictionary<int, double>();
         private readonly List<Box> _nearest = new List<Box>();
         private ServerContext _context;
         private TextWriter _log;
@@ -47,7 +47,13 @@ namespace Shooter.Server
         private ItemCatalog _items = ItemCatalog.Empty;
         private Random _random;
         private int _nextItemId = FirstItemId;
-        private float _now;
+        private double _now;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         // 種を渡さなければ起動の時刻から決め、ログに出す。出た種を渡せば同じ中身で試合をやり直せる
         public ServerLoot(MatchRulesModule rules, ServerCombat combat, ServerInventories inventories, int? seed = null, float dropReach = DefaultDropReach)

@@ -29,7 +29,7 @@ namespace Shooter.Server
             history.Record(tick, body.Yaw, raised);
         }
 
-        public bool TryGetHeldShield(int playerId, float tick, out Vector3 center, out Vector3 forward, out RiotShieldSpec spec)
+        public bool TryGetHeldShield(int playerId, double tick, out Vector3 center, out Vector3 forward, out RiotShieldSpec spec)
         {
             center = default;
             forward = default;
@@ -43,7 +43,7 @@ namespace Shooter.Server
             return _lag.Rewind(clamped).TryGetValue(playerId, out var position) && TryPlate(playerId, position, clamped, out center, out forward, out spec);
         }
 
-        private bool TryPlate(int playerId, Vector3 position, float tick, out Vector3 center, out Vector3 forward, out RiotShieldSpec spec)
+        private bool TryPlate(int playerId, Vector3 position, double tick, out Vector3 center, out Vector3 forward, out RiotShieldSpec spec)
         {
             center = default;
             forward = default;
@@ -59,7 +59,7 @@ namespace Shooter.Server
         }
 
         private bool NearerHeldShield(
-            Vector3 origin, Vector3 unit, float radius, float limit, float tick, List<(int Id, RewoundBody Body)> bodies, ref ShotHit hit)
+            Vector3 origin, Vector3 unit, float radius, float limit, double tick, List<(int Id, RewoundBody Body)> bodies, ref ShotHit hit)
         {
             if (_shields.Count == 0 || !(limit > 0f))
             {
@@ -82,7 +82,7 @@ namespace Shooter.Server
 
         // 盾は弾を止めるので、貫通する弾の当たりの並びに足すだけで、その先の物は並びの順で弾が止まって拾われない
         private void AddHeldShieldHits(
-            Vector3 origin, Vector3 unit, float range, float tick, List<(int Id, RewoundBody Body)> bodies, List<ShotHit> hits)
+            Vector3 origin, Vector3 unit, float range, double tick, List<(int Id, RewoundBody Body)> bodies, List<ShotHit> hits)
         {
             if (_shields.Count == 0)
             {
@@ -100,7 +100,7 @@ namespace Shooter.Server
 
         // 扇の外から撃たれた弾は板を素通りさせ、後ろの持ち主の体に当てる。オフラインでは板に当たると持ち主の胴に当たったことになるが、
         // 扇の外から板に届く線は体の側面か背中を先に通るので、体の当たりに任せても止まり方は変わらない
-        private bool TryHitPlate(Vector3 origin, Vector3 unit, float radius, float limit, float tick, int holderId, Vector3 position, out ShotHit hit)
+        private bool TryHitPlate(Vector3 origin, Vector3 unit, float radius, float limit, double tick, int holderId, Vector3 position, out ShotHit hit)
         {
             hit = default;
             if (!TryPlate(holderId, position, tick, out var center, out var forward, out var spec)
@@ -223,11 +223,11 @@ namespace Shooter.Server
                 _specs[index] = spec;
             }
 
-            public bool TrySample(float tick, out float yaw, out RiotShieldSpec spec)
+            public bool TrySample(double tick, out float yaw, out RiotShieldSpec spec)
             {
                 yaw = 0f;
                 spec = null;
-                if (_count == 0 || float.IsNaN(tick) || tick < _ticks[IndexOf(0)])
+                if (_count == 0 || double.IsNaN(tick) || tick < _ticks[IndexOf(0)])
                 {
                     return false;
                 }

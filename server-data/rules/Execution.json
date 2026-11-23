@@ -43,6 +43,7 @@
       "stamina": "Off",
       "reloadInterruptedBy": ["Melee", "Grenade"],
       "aimWhileReloading": "On",
+      "jam": "Off",
       "takedown": "On"
     },
     "spawnProtectionSeconds": 2,
@@ -199,6 +200,9 @@
     "coverPeekSlideSeconds": 0.15,
     "coverEnterSpeed": 8,
     "coverMinWallHeight": 0,
+    "coverProbeHeight": 0.5,
+    "coverUpperProbeHeight": 0.9,
+    "coverTopProbeHeight": 3,
     "ladderTopEntryDepth": 0.3,
     "ladderMinApproachDot": 0.5,
     "ladderMinApproachSpeed": 0.5,

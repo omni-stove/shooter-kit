@@ -77,6 +77,8 @@ namespace Shooter.Runtime
 
         public const string LockOnLabelName = "hud-lock-on";
 
+        public const string JamLabelName = "hud-jam";
+
         public const string ChargeKey = "hud.charge";
 
         public const string HeatKey = "hud.heat";
@@ -86,6 +88,10 @@ namespace Shooter.Runtime
         public const string LockOnKey = "hud.lockOn";
 
         public const string LockedOnKey = "hud.lockedOn";
+
+        public const string JammedKey = "hud.jammed";
+
+        public const string ClearingJamKey = "hud.clearingJam";
 
         public const string LockedOnClass = "hud__lock-on--locked";
 
@@ -128,6 +134,7 @@ namespace Shooter.Runtime
         public Label AmmoTypeLabel { get; }
         public Label MagnificationLabel { get; }
         public Label LockOnLabel { get; }
+        public Label JamLabel { get; }
 
         public HudView(VisualElement root, HudModel model)
             : this(root, model, HudVisibility.Full)
@@ -173,6 +180,8 @@ namespace Shooter.Runtime
             AmmoTypeLabel = Require<Label>(root, AmmoTypeLabelName);
             MagnificationLabel = Require<Label>(root, MagnificationLabelName);
             LockOnLabel = Require<Label>(root, LockOnLabelName);
+            // 後から足した欄なので、ゲームが差し替えた古いレイアウトに無くても HUD を出せるようにする。
+            JamLabel = root.Q<Label>(JamLabelName);
 
             ShowHealth();
             ShowAmmo();
@@ -323,6 +332,9 @@ namespace Shooter.Runtime
                 case HudField.LockOn:
                     ShowLockOn();
                     break;
+                case HudField.Jam:
+                    ShowJam();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(field), field, "field is not a valid HudField");
             }
@@ -419,6 +431,7 @@ namespace Shooter.Runtime
             ShowAmmoType();
             ShowMagnification();
             ShowLockOn();
+            ShowJam();
         }
 
         private void ShowCharge()
@@ -451,6 +464,26 @@ namespace Shooter.Runtime
             var text = _model.IsLockedOn ? GameText.Get(LockedOnKey) : Percent(LockOnKey, _model.LockOnProgress);
             LockOnLabel.EnableInClassList(LockedOnClass, _model.IsLockedOn);
             ShowOrHide(LockOnLabel, text, ShowsAim);
+        }
+
+        private void ShowJam()
+        {
+            if (JamLabel == null)
+            {
+                return;
+            }
+
+            string text;
+            if (_model.IsClearingJam)
+            {
+                text = Percent(ClearingJamKey, _model.JamClearRemaining);
+            }
+            else
+            {
+                text = _model.IsJammed ? GameText.Get(JammedKey) : string.Empty;
+            }
+
+            ShowOrHide(JamLabel, text, _visibility.Ammo);
         }
 
         private static string Percent(string key, float? fraction)

@@ -42,8 +42,14 @@ namespace Shooter.Server
         private float _zoneElapsed;
         private float _damageTimer;
         private int _nextCrateNumber = 1;
-        private float _now;
+        private double _now;
         private bool _started;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         // 種を渡さなければ起動の時刻から決める。エリアの中心の種は battle-royale.json の zone.seed があればそれを使う
         public BattleRoyaleRules(IMatchObjectiveHost host, BattleRoyaleSpec spec, IBattleRoyaleWorld world, int? seed = null)
@@ -922,7 +928,7 @@ namespace Shooter.Server
 
         private sealed class BotPlan
         {
-            public BotPlan(BotErrandKind kind, Vector3? goal, float nextPlanAt)
+            public BotPlan(BotErrandKind kind, Vector3? goal, double nextPlanAt)
             {
                 Kind = kind;
                 Goal = goal;
@@ -933,7 +939,7 @@ namespace Shooter.Server
 
             public Vector3? Goal { get; }
 
-            public float NextPlanAt { get; }
+            public double NextPlanAt { get; }
         }
     }
 }

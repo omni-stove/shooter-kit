@@ -15,9 +15,9 @@ namespace Shooter.Protocol.Tests
         // パラシュートの後ろに並ぶパルクールの値。壁蹴り (入切 1 バイト + 2 個)・受け身 (1 + 4 個)・壁登り (1 + 5 個)・ぶら下がり (1 + 4 個)・勢い 2 個
         private const int _parkourBytes = (1 + (2 * 4)) + (1 + (4 * 4)) + (1 + (5 * 4) + 1) + (1 + (4 * 4)) + (2 * 4);
 
-        // 伏せの値の後ろに並ぶリーン 3 個・空中で跳べる回数 (4 バイト)・二段目の速さ・ジャンプの猶予・カバーへ走る速さ・カバーできる壁の高さの下限・水泳 3 個・
-        // 壁走りの入切 (1 バイト)・壁走り 4 個・パラシュート 4 個・パルクールの値
-        private const int _traversalBytes = (3 * 4) + 4 + 4 + 4 + 4 + 4 + (3 * 4) + 1 + (4 * 4) + (4 * 4) + _parkourBytes;
+        // 伏せの値の後ろに並ぶリーン 3 個・空中で跳べる回数 (4 バイト)・二段目の速さ・ジャンプの猶予・カバーへ走る速さ・カバーできる壁の高さの下限・
+        // カバーの壁を探す Ray の高さ 3 個・水泳 3 個・壁走りの入切 (1 バイト)・壁走り 4 個・パラシュート 4 個・パルクールの値
+        private const int _traversalBytes = (3 * 4) + 4 + 4 + 4 + 4 + 4 + (3 * 4) + (3 * 4) + 1 + (4 * 4) + (4 * 4) + _parkourBytes;
 
         private readonly MessageTable _server = MatchMessages.CreateServerTable();
         private readonly MessageTable _client = MatchMessages.CreateClientTable();
@@ -348,9 +348,9 @@ namespace Shooter.Protocol.Tests
             writer.WriteMessage(new ConnectAcceptedMessage { PlayerId = 1, ServerVersion = "1", TickRate = 60, Map = "NetTest", MaxHealth = 100, Motor = motor });
             var bytes = writer.AsSegment().ToArray();
 
-            // ジャンプの猶予はカバーへ走る速さ・カバーできる壁の高さの下限・水泳 3 個の前で、後ろに壁走りの入切 (1 バイト) と 4 個、パラシュート 4 個、
-            // パルクールの値、落ちる高さ、吹き飛ばしの値が続く
-            var jumpGrace = bytes.Length - _knockbackBytes - 4 - _parkourBytes - (4 * 4) - (4 * 4) - 1 - (3 * 4) - 4 - 4 - 4;
+            // ジャンプの猶予はカバーへ走る速さ・カバーできる壁の高さの下限・カバーの壁を探す Ray の高さ 3 個・水泳 3 個の前で、後ろに壁走りの入切 (1 バイト) と 4 個、
+            // パラシュート 4 個、パルクールの値、落ちる高さ、吹き飛ばしの値が続く
+            var jumpGrace = bytes.Length - _knockbackBytes - 4 - _parkourBytes - (4 * 4) - (4 * 4) - 1 - (3 * 4) - (3 * 4) - 4 - 4 - 4;
             Assert.That(System.BitConverter.ToSingle(bytes, jumpGrace), Is.EqualTo(0.12f), "the offset points at the jump grace");
             System.BitConverter.TryWriteBytes(new System.Span<byte>(bytes, jumpGrace, 4), -0.1f);
 
@@ -1030,6 +1030,74 @@ namespace Shooter.Protocol.Tests
         public void FireRequestRejectsANegativeLockTarget()
         {
             var request = new FireRequestMessage { HasLockTarget = true, LockTargetId = -1 };
+
+            Assert.Throws<System.InvalidOperationException>(() => new MessageWriter().WriteMessage(request));
+        }
+
+        [Test]
+        public void FireRequestDefaultsToTheRightHand()
+        {
+            Assert.That(new FireRequestMessage().Hand, Is.EqualTo(AkimboHand.Right));
+            Assert.That(ToServer<FireRequestMessage>(new FireRequestMessage { WeaponId = "pistol" }).Hand, Is.EqualTo(AkimboHand.Right));
+        }
+
+        [Test]
+        public void FireRequestCarriesTheLeftHand()
+        {
+            var got = ToServer<FireRequestMessage>(new FireRequestMessage
+            {
+                WeaponId = "pistol",
+                Direction = new Vector3(0f, 0f, 1f),
+                ShotIndex = 3,
+                Hand = AkimboHand.Left,
+            });
+
+            Assert.That(FireRequestMessage.CurrentVersion, Is.EqualTo(4));
+            Assert.That(got.Hand, Is.EqualTo(AkimboHand.Left));
+            Assert.That(got.ShotIndex, Is.EqualTo(3));
+        }
+
+        // 3 の版は撃った手の 1 バイトを持たないので、最後の 1 バイトを落として版を 3 に書き換えた要求を読ませる
+        [Test]
+        public void AVersionThreeFireRequestIsReadAsTheRightHand()
+        {
+            var writer = new MessageWriter();
+            writer.WriteMessage(new FireRequestMessage
+            {
+                WeaponId = "pistol",
+                Direction = new Vector3(0f, 0f, 1f),
+                HasLockTarget = true,
+                LockTargetId = 4,
+                LockTargetKind = LockTargetKind.Vehicle,
+                Hand = AkimboHand.Left,
+            });
+            var bytes = writer.ToArray();
+            var older = new byte[bytes.Length - 1];
+            System.Array.Copy(bytes, older, older.Length);
+            older[2] = 3;
+
+            var got = (FireRequestMessage)_server.Read(new System.ArraySegment<byte>(older));
+
+            Assert.That(got.Hand, Is.EqualTo(AkimboHand.Right));
+            Assert.That(got.LockTargetKind, Is.EqualTo(LockTargetKind.Vehicle));
+            Assert.That(got.LockTargetId, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void FireRequestWithAnUnknownHandIsUnreadable()
+        {
+            var writer = new MessageWriter();
+            writer.WriteMessage(new FireRequestMessage { WeaponId = "pistol" });
+            var bytes = writer.ToArray();
+            bytes[bytes.Length - 1] = 2;
+
+            Assert.Throws<MessageReadException>(() => _server.Read(new System.ArraySegment<byte>(bytes)));
+        }
+
+        [Test]
+        public void FireRequestRejectsAnUnknownHand()
+        {
+            var request = new FireRequestMessage { WeaponId = "pistol", Hand = (AkimboHand)2 };
 
             Assert.Throws<System.InvalidOperationException>(() => new MessageWriter().WriteMessage(request));
         }

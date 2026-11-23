@@ -115,6 +115,15 @@ namespace Shooter.Runtime
         [SerializeField, Min(0f), Tooltip("上端 (足元から、m) がこれ未満の壁にはカバーに入れない。0 なら足元の検査に当たる壁すべてに入れる")]
         private float _coverMinWallHeight = MotorSpec.DefaultCoverMinWallHeight;
 
+        [SerializeField, Min(0f), Tooltip("カバーの壁を探す Ray の、足元からの高さ (m)")]
+        private float _coverProbeHeight = MotorSpec.DefaultCoverProbeHeight;
+
+        [SerializeField, Min(0f), Tooltip("足元の Ray が下を抜けたときにカバーの壁を探し直す Ray の、足元からの高さ (m)")]
+        private float _coverUpperProbeHeight = MotorSpec.DefaultCoverUpperProbeHeight;
+
+        [SerializeField, Min(0.01f), Tooltip("カバーの壁の上端を探す Ray の始点の、足元からの高さ (m)。壁を探す 2 本の Ray の高さ以上にする。これより高い壁の上端はこの高さとして扱う")]
+        private float _coverTopProbeHeight = MotorSpec.DefaultCoverTopProbeHeight;
+
         [SerializeField, Min(0f), Tooltip("はしごの上の端からつかまったときの足元の、上の足場からの深さ (m)。前からつかまれるのもこの深さより下まで")]
         private float _ladderTopEntryDepth = MotorSpec.DefaultLadderTopEntryDepth;
 
@@ -349,6 +358,24 @@ namespace Shooter.Runtime
             set => _coverMinWallHeight = value;
         }
 
+        public float CoverProbeHeight
+        {
+            get => _coverProbeHeight;
+            set => _coverProbeHeight = value;
+        }
+
+        public float CoverUpperProbeHeight
+        {
+            get => _coverUpperProbeHeight;
+            set => _coverUpperProbeHeight = value;
+        }
+
+        public float CoverTopProbeHeight
+        {
+            get => _coverTopProbeHeight;
+            set => _coverTopProbeHeight = value;
+        }
+
         public float LadderTopEntryDepth
         {
             get => _ladderTopEntryDepth;
@@ -547,7 +574,10 @@ namespace Shooter.Runtime
                 _airJumpSpeed,
                 _jumpGraceSeconds,
                 _coverEnterSpeed,
-                _coverMinWallHeight);
+                _coverMinWallHeight,
+                _coverProbeHeight,
+                _coverUpperProbeHeight,
+                _coverTopProbeHeight);
         }
 
         public ProneSpec CreateProneSpec()
@@ -586,6 +616,9 @@ namespace Shooter.Runtime
             _coverBackHoldSeconds = MotorSpec.DefaultCoverBackHoldSeconds;
             _coverPeekSlideSeconds = MotorSpec.DefaultCoverPeekSlideSeconds;
             _coverMinWallHeight = MotorSpec.DefaultCoverMinWallHeight;
+            _coverProbeHeight = MotorSpec.DefaultCoverProbeHeight;
+            _coverUpperProbeHeight = MotorSpec.DefaultCoverUpperProbeHeight;
+            _coverTopProbeHeight = MotorSpec.DefaultCoverTopProbeHeight;
             _ladderTopEntryDepth = MotorSpec.DefaultLadderTopEntryDepth;
             _ladderMinApproachDot = MotorSpec.DefaultLadderMinApproachDot;
             _ladderMinApproachSpeed = MotorSpec.DefaultLadderMinApproachSpeed;

@@ -26,7 +26,7 @@ namespace Shooter.Editor
         private static readonly string[] _builtInExtensions =
         {
             FileExtension, NavMeshFile.Extension, NetMapStructures.Extension, NetMapLadders.Extension, NetMapWater.Extension, NetMapVehicles.Extension,
-            NetMapPickups.Extension,
+            NetMapPickups.Extension, NetMapDoors.Extension,
         };
 
         private static readonly Dictionary<string, Func<IReadOnlyList<GameObject>, string>> _sceneData =
@@ -204,6 +204,12 @@ namespace Shooter.Editor
                     written.Add(laddersPath);
                     Debug.Log(LogTag + " wrote " + laddersPath + " from " + scenePath + " (" + ladders.Ladders.Count + " ladders)");
 
+                    var doors = CollectDoors(scene.GetRootGameObjects());
+                    var doorsPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapDoors.Extension);
+                    WriteText(doorsPath, NetMapDoors.Write(doors));
+                    written.Add(doorsPath);
+                    Debug.Log(LogTag + " wrote " + doorsPath + " from " + scenePath + " (" + doors.Doors.Count + " doors)");
+
                     var water = CollectWater(scene.GetRootGameObjects());
                     var waterPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapWater.Extension);
                     WriteText(waterPath, NetMapWater.Write(water));
@@ -318,6 +324,140 @@ namespace Shooter.Editor
             }
 
             return new NetMapLadders(ladders);
+        }
+
+        // 番号は Collect が板の当たりに付ける組 (MapColliderGroups.Door) と同じく、有効で動いているドアだけをシーンの並び順で数える。
+        // 無効なドアはプレイ中に破れないので、板はただの壁として動かない物の当たりに入る。
+        public static NetMapDoors CollectDoors(IReadOnlyList<GameObject> roots)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            var sources = ExportedDoors(roots);
+            if (sources.Count > MapColliderGroups.MaxDoors)
+            {
+                throw new InvalidOperationException(LogTag + " the scene has " + sources.Count + " doors; at most " + MapColliderGroups.MaxDoors + " can be exported");
+            }
+
+            var doors = new List<MapDoor>(sources.Count);
+            var invalid = new List<string>();
+            var owners = new Dictionary<Transform, Component>();
+            var allPanels = new HashSet<Transform>();
+            foreach (var candidate in sources)
+            {
+                if (candidate.Panel != null)
+                {
+                    allPanels.Add(candidate.Panel);
+                }
+            }
+
+            for (var i = 0; i < sources.Count; i++)
+            {
+                var source = sources[i];
+                var component = (Component)source;
+                var panel = source.Panel;
+                if (panel == null)
+                {
+                    invalid.Add(PathOf(component.transform) + " (has no panel)");
+                    continue;
+                }
+
+                if (owners.TryGetValue(panel, out var owner))
+                {
+                    invalid.Add(PathOf(component.transform) + " (shares its panel " + PathOf(panel) + " with " + PathOf(owner.transform) + ")");
+                    continue;
+                }
+
+                owners.Add(panel, component);
+
+                // 当たりの無い板はサーバーで道を塞がず、破っても外す物が無い
+                // GroupOf は入れ子の板の当たりを近い方のドアの組に入れるので、ここも近い板がこのドアの当たりだけ数える
+                if (!Array.Exists(panel.GetComponentsInChildren<Collider>(true), c => IsExported(c) && ToWorldCollider(c, 0, 0) != null && NearestPanel(c, allPanels) == panel))
+                {
+                    invalid.Add(PathOf(component.transform) + " (its panel " + PathOf(panel) + " has no enabled, non-trigger collider)");
+                    continue;
+                }
+
+                try
+                {
+                    doors.Add(new MapDoor(ToNumerics(source.PanelCenter), ToNumerics(source.PanelFacing), ToNumerics(source.PanelSize), MapColliderGroups.Door(i)));
+                }
+                catch (ArgumentException e)
+                {
+                    invalid.Add(PathOf(component.transform) + " (" + e.Message + ")");
+                }
+            }
+
+            // 書き出さないと、オフラインでだけ破れて、サーバーでは通れないままのドアになる
+            if (invalid.Count > 0)
+            {
+                throw new InvalidOperationException(LogTag + " these doors have invalid settings: " + string.Join(", ", invalid));
+            }
+
+            return new NetMapDoors(doors);
+        }
+
+        private static Transform NearestPanel(Collider collider, HashSet<Transform> panels)
+        {
+            for (var parent = collider.transform; parent != null; parent = parent.parent)
+            {
+                if (panels.Contains(parent))
+                {
+                    return parent;
+                }
+            }
+
+            return null;
+        }
+
+        private static List<IBreachDoorSource> ExportedDoors(IReadOnlyList<GameObject> roots)
+        {
+            var doors = new List<IBreachDoorSource>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var door in root.GetComponentsInChildren<IBreachDoorSource>(true))
+                {
+                    var component = door as Component;
+                    if (component == null || !component.gameObject.activeInHierarchy || (component is Behaviour behaviour && !behaviour.enabled))
+                    {
+                        continue;
+                    }
+
+                    doors.Add(door);
+                }
+            }
+
+            return doors;
+        }
+
+        private static Dictionary<Transform, int> DoorPanels(IReadOnlyList<GameObject> roots)
+        {
+            var panels = new Dictionary<Transform, int>();
+            var doors = ExportedDoors(roots);
+            for (var i = 0; i < doors.Count && i < MapColliderGroups.MaxDoors; i++)
+            {
+                var panel = doors[i].Panel;
+                if (panel != null && !panels.ContainsKey(panel))
+                {
+                    panels.Add(panel, i);
+                }
+            }
+
+            return panels;
+        }
+
+        private static bool IsExported(Collider collider)
+        {
+            // 乗り物は動くので、サーバーは .fpsmap の形ではなく乗り物の書き出し (MapVehicleExporter) の車体で当てる
+            return collider.enabled && collider.gameObject.activeInHierarchy && !collider.isTrigger
+                && !(collider is CharacterController) && !(collider is WheelCollider) && collider.GetComponentInParent<Vehicle>(true) == null;
         }
 
         // 無効な水はプレイ中に泳げない (Water.Enabled に載らない) ので書き出さない。
@@ -459,19 +599,18 @@ namespace Shooter.Editor
                 colliders.AddRange(root.GetComponentsInChildren<Collider>(true));
             }
 
+            var doorPanels = DoorPanels(roots);
             var shapes = new List<WorldCollider>();
             var unsupported = new List<string>();
             foreach (var collider in colliders)
             {
-                // 乗り物は動くので、サーバーは .fpsmap の形ではなく乗り物の書き出し (MapVehicleExporter) の車体で当てる
-                if (!collider.enabled || !collider.gameObject.activeInHierarchy || collider.isTrigger
-                    || collider is CharacterController || collider is WheelCollider || collider.GetComponentInParent<Vehicle>(true) != null)
+                if (!IsExported(collider))
                 {
                     continue;
                 }
 
                 var id = shapes.Count;
-                var shape = ToWorldCollider(collider, id, GroupOf(collider, structures, bodies));
+                var shape = ToWorldCollider(collider, id, GroupOf(collider, doorPanels, structures, bodies));
                 if (shape == null)
                 {
                     if (!(collider is MeshCollider) && !(collider is BoxCollider) && !(collider is SphereCollider) && !(collider is CapsuleCollider))
@@ -530,8 +669,19 @@ namespace Shooter.Editor
             return new NetMapStructures(layouts, fortifications);
         }
 
-        private static int GroupOf(Collider collider, Dictionary<DestructibleStructure, int> structures, Dictionary<Rigidbody, int> bodies)
+        // ドアの板は破ったときにサーバーが外すので、板が剛体や壊せる建物の部品の下にあってもドアの組を先にする。
+        // 板の中に入れ子の板があれば、近い方のドアの組にする
+        private static int GroupOf(
+            Collider collider, Dictionary<Transform, int> doorPanels, Dictionary<DestructibleStructure, int> structures, Dictionary<Rigidbody, int> bodies)
         {
+            for (var parent = collider.transform; parent != null && doorPanels.Count > 0; parent = parent.parent)
+            {
+                if (doorPanels.TryGetValue(parent, out var doorIndex))
+                {
+                    return MapColliderGroups.Door(doorIndex);
+                }
+            }
+
             var piece = collider.GetComponentInParent<DestructiblePiece>(true);
             if (piece != null)
             {
@@ -644,11 +794,16 @@ namespace Shooter.Editor
             var statics = 0;
             var pieces = 0;
             var bodies = 0;
+            var doors = 0;
             foreach (var collider in map.Colliders)
             {
                 if (MapColliderGroups.IsPiece(collider.Group))
                 {
                     pieces++;
+                }
+                else if (MapColliderGroups.IsDoor(collider.Group))
+                {
+                    doors++;
                 }
                 else if (MapColliderGroups.IsBody(collider.Group))
                 {
@@ -660,7 +815,7 @@ namespace Shooter.Editor
                 }
             }
 
-            return map.Colliders.Count + " colliders: " + statics + " static, " + pieces + " destructible pieces, " + bodies + " on rigidbodies";
+            return map.Colliders.Count + " colliders: " + statics + " static, " + pieces + " destructible pieces, " + bodies + " on rigidbodies, " + doors + " on door panels";
         }
 
         private static string PathOf(Transform transform)

@@ -67,6 +67,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.LockOnWarning.Value, Is.Null);
             Assert.That(GameSignals.Emotes.Value, Is.Null);
             Assert.That(GameSignals.Holster.Value, Is.Null);
+            Assert.That(GameSignals.WeaponLight.Value, Is.Null);
             Assert.That(GameSignals.WeaponFreeZone.Value, Is.Null);
             Assert.That(GameSignals.VoteKick.Value, Is.Null);
             Assert.That(GameSignals.VoteKickSender.Value, Is.Null);
@@ -74,6 +75,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.BuySender.Value, Is.Null);
             Assert.That(GameSignals.Vision.Value, Is.Null);
             Assert.That(GameSignals.Drone.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
             Assert.That(GameSignals.Breach.Value, Is.Null);
             Assert.That(GameSignals.NetStats.Value, Is.Null);
         }
@@ -203,6 +206,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.LockOnWarning.Publish(new LockOnWarningStatus(LockOnWarningStage.Locked, 90f));
             GameSignals.Emotes.Publish(new FakeEmoteControl());
             GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstered, 1f, false));
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
             GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnThenHostile, true, 3f));
             GameSignals.VoteKick.Publish(new VoteKickStatus(3, 1, 1, 4, 30f));
             GameSignals.VoteKickSender.Publish(new FakeVoteKickSender());
@@ -210,6 +214,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.BuySender.Publish(new FakeBuySender());
             GameSignals.Vision.Publish(new VisionStatus(VisionMode.Night, VisionSource.Goggles));
             GameSignals.Drone.Publish(new DroneStatus(1f, 1f, 0, true));
+            GameSignals.StealthAlarm.Publish(new SecurityAlarmStatus(true, 10f, new System.Numerics.Vector3(1f, 0f, 2f), "cam-a"));
             GameSignals.Breach.Publish(new BreachStatus(BreachDoorPhase.Planting, 0.5f, 1.25f));
             GameSignals.NetStats.Publish(new NetStatsSignal(40, 2, 900));
             heard = 0;
@@ -309,6 +314,31 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheWeaponLightSignalHoldsWhatWasPublishedUntilResetAll()
+        {
+            var heard = new List<WeaponLightStatus?>();
+            GameSignals.WeaponLight.Changed += heard.Add;
+
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
+
+            Assert.That(GameSignals.WeaponLight.Value, Is.EqualTo((WeaponLightStatus?)new WeaponLightStatus(true, true)));
+            Assert.That(GameSignals.WeaponLight.Value.Value.HasLight, Is.True);
+            Assert.That(GameSignals.WeaponLight.Value.Value.IsOn, Is.True);
+            Assert.That(heard, Has.Count.EqualTo(1));
+
+            GameSignals.WeaponLight.Publish(WeaponLightStatus.None);
+            Assert.That(GameSignals.WeaponLight.HasValue, Is.True, "a weapon without a light is still something to show");
+            Assert.That(GameSignals.WeaponLight.Value.Value.HasLight, Is.False);
+            Assert.That(heard, Has.Count.EqualTo(2));
+
+            GameSignals.ResetAll();
+            Assert.That(GameSignals.WeaponLight.Value, Is.Null);
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, false));
+
+            Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
+        }
+
+        [Test]
         public void TheStaminaLockOnAndEmoteSignalsHoldWhatWasPublished()
         {
             var emotes = new FakeEmoteControl();
@@ -386,6 +416,30 @@ namespace Shooter.Tests.EditMode
             GameSignals.Drone.Publish(new DroneStatus(0.5f, 0.5f, 0, true));
 
             Assert.That(heard, Is.Zero);
+        }
+
+        [Test]
+        public void TheStealthAlarmSignalHoldsWhatWasPublishedUntilResetAll()
+        {
+            var heard = new List<SecurityAlarmStatus?>();
+            GameSignals.StealthAlarm.Changed += heard.Add;
+            var ringing = new SecurityAlarmStatus(true, 12f, new System.Numerics.Vector3(3f, 0f, -4f), "cam-lobby");
+
+            GameSignals.StealthAlarm.Publish(ringing);
+            GameSignals.StealthAlarm.Publish(SecurityAlarmStatus.Silent);
+
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.True, "a silent alarm is still something to show");
+            Assert.That(GameSignals.StealthAlarm.Value, Is.EqualTo((SecurityAlarmStatus?)SecurityAlarmStatus.Silent));
+            Assert.That(heard, Is.EqualTo(new SecurityAlarmStatus?[] { ringing, SecurityAlarmStatus.Silent }));
+            Assert.That(heard[0].Value.CameraId, Is.EqualTo("cam-lobby"));
+            Assert.That(heard[0].Value.SecondsLeft, Is.EqualTo(12f));
+
+            GameSignals.ResetAll();
+
+            Assert.That(GameSignals.StealthAlarm.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
+            GameSignals.StealthAlarm.Publish(ringing);
+            Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
         }
 
         [Test]

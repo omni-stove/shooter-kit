@@ -93,6 +93,7 @@ namespace Shooter.Core
             MoveSpeedMultiplierItem,
             ZoomLevelsItem,
             SightSpecJson.SightItem,
+            WeaponLightSpecJson.LightItem,
         };
 
         public static IReadOnlyList<string> StartingItemNames { get; } = new[] { IdItem, CountItem };
@@ -216,6 +217,8 @@ namespace Shooter.Core
 
             var sightFields = fields.Object(SightSpecJson.SightItem, SightSpecJson.ItemNames);
             var sight = sightFields == null ? null : SightSpecJson.Read(sightFields);
+            var lightFields = fields.Object(WeaponLightSpecJson.LightItem, WeaponLightSpecJson.ItemNames);
+            var light = lightFields == null ? null : WeaponLightSpecJson.Read(lightFields);
 
             try
             {
@@ -232,7 +235,8 @@ namespace Shooter.Core
                     fields.ReadFloat(ShotNoiseRadiusMultiplierItem, AttachmentSpec.DefaultMultiplier),
                     fields.ReadFloat(MoveSpeedMultiplierItem, AttachmentSpec.DefaultMultiplier),
                     zoomLevels,
-                    sight);
+                    sight,
+                    light);
             }
             catch (ArgumentException e)
             {

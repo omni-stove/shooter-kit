@@ -6,6 +6,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class LagCompensatorTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         [Test]
         public void DefaultsTo64TicksOfHistoryAnd12TicksOfRewind()
         {
@@ -184,6 +187,32 @@ namespace Shooter.Core.Tests
 
             Assert.That(compensator.Remove(1), Is.True);
             Assert.That(compensator.RewindLean(10f), Is.Empty);
+        }
+
+        [Test]
+        public void RewindInterpolatesBetweenTicksPastTheFloatRange()
+        {
+            var compensator = new LagCompensator();
+            compensator.Record(_lateTick, 1, Vector3.Zero, false, Vector3.Zero);
+            compensator.Record(_lateTick + 1, 1, new Vector3(4f, 0f, 0f), true, new Vector3(0.4f, 0f, 0f));
+
+            var clamped = compensator.ClampTick(_lateTick + 0.25d, _lateTick + 1);
+
+            Assert.That(clamped, Is.EqualTo(16777217.25d));
+            Assert.That(compensator.Rewind(clamped)[1], Is.EqualTo(new Vector3(1f, 0f, 0f)));
+            Assert.That(compensator.Rewind(_lateTick + 0.25d, _lateTick + 1)[1], Is.EqualTo(new Vector3(1f, 0f, 0f)));
+            Assert.That(compensator.RewindLean(clamped)[1], Is.EqualTo(new Vector3(0.1f, 0f, 0f)));
+            Assert.That(compensator.RewindCrouched(clamped)[1], Is.False, "the stance of the tick before holds until the next tick");
+        }
+
+        [Test]
+        public void ClampTickKeepsOddTicksPastTheFloatRange()
+        {
+            var compensator = new LagCompensator(maxRewindTicks: 4);
+
+            Assert.That(compensator.ClampTick(0d, _lateTick + 4), Is.EqualTo(16777217d));
+            Assert.That(compensator.ClampTick(_lateTick + 2.5d, _lateTick + 4), Is.EqualTo(16777219.5d));
+            Assert.That(compensator.ClampTick(_lateTick + 9d, _lateTick + 4), Is.EqualTo(16777221d));
         }
     }
 }

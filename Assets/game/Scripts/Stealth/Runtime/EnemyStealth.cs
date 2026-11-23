@@ -64,6 +64,30 @@ namespace Shooter.Runtime
 
         public string Id => _agent != null ? _agent.Id : name;
 
+        public Vector3 GroundPosition
+        {
+            get
+            {
+                var agent = _agent != null ? _agent : GetComponent<EnemyAgent>();
+                return agent != null ? agent.GroundPosition : transform.position;
+            }
+        }
+
+        // 判断と体力の両方を見るのは、倒れた瞬間に判断が Dead へ移るのは EnemyAgent の受け持ちで、その前に問われることがあるため。
+        public bool IsDead
+        {
+            get
+            {
+                if (_agent != null && _agent.Brain != null && _agent.Brain.IsDead)
+                {
+                    return true;
+                }
+
+                var self = _self != null ? _self : GetComponent<Damageable>();
+                return self != null && self.IsDead;
+            }
+        }
+
         public bool IsUnaware => Stage == AwarenessStage.Unaware;
 
         public string StageName => Stage.ToString();
@@ -149,6 +173,34 @@ namespace Shooter.Runtime
             _agent.Alert(position);
             Debug.Log(FormatAlarmLog(Id, from != null ? from.Id : "unknown", position), this);
             return true;
+        }
+
+        // 仲間からの呼び声 (ReceiveAlarm) と違い交戦にはしない。警報は見つけた場所を知らせるだけで、伝わった敵が相手を見たわけではないため。
+        // Off の敵も物音と同じく調べに行かせる (Hear)。ゲージの無い今までの敵にも、警報の仕掛けが効くように。
+        public HearingOutcome ReceiveSecurityAlarm(Vector3 spottedAt, string cameraId)
+        {
+            if (_awareness == null || _agent == null || _agent.Brain == null || IsDead)
+            {
+                return HearingOutcome.NotHeard;
+            }
+
+            HearingOutcome outcome;
+            if (StealthAwareness.IsFighting(_agent.Brain.State) || _awareness.Stage == AwarenessStage.Engaged)
+            {
+                outcome = HearingOutcome.Engaged;
+            }
+            else if (_awareness.Rule == Stealth.On)
+            {
+                outcome = _awareness.Investigate(spottedAt.ToNumerics()) ? HearingOutcome.Investigating : HearingOutcome.Engaged;
+            }
+            else
+            {
+                _agent.Alert(spottedAt);
+                outcome = HearingOutcome.Investigating;
+            }
+
+            Debug.Log(SecurityAlarmLog.Received(Id, cameraId, spottedAt.ToNumerics(), outcome, _awareness.Rule), this);
+            return outcome;
         }
 
         // Off でも物音には調べに行かせる。ゲージの無い今までの敵にも、注意をそらす能力が効くように。
@@ -347,7 +399,8 @@ namespace Shooter.Runtime
                     _observedStealth.Posture,
                     Mathf.Clamp01(_observedStealth.LightFactor),
                     _observedStealth.Speed,
-                    _observedStealth.IsArmed);
+                    _observedStealth.IsArmed,
+                    _observedStealth.IsLit);
             }
             // 目標が無いあいだはルールを持ち越す。ResetTo で目標が外れると、次の tick で目標を拾ったその判断が Off のまま走ってすぐ交戦するため。
             else if (target != null)

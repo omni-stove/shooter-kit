@@ -58,6 +58,26 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheNamesAServerListsAreNotReadAsRichTextInTheFilters()
+        {
+            GameSignals.ServerBrowserControl.Publish(_control);
+            Open();
+            Publish(ServerBrowserStage.Ready, new ServerListing("one", "203.0.113.1:7777", "<size=900>A", "<b>m</b>", "<alpha=#00>x", 3, 8, 80));
+
+            _panel.CycleRegion();
+            _panel.CycleMode();
+            _panel.CycleMap();
+
+            Assert.That(_panel.RegionFilterButton.text, Is.EqualTo(Text(ServerBrowserText.RegionFilter("<size=900>A"))));
+            Assert.That(_panel.RegionFilterButton.text, Does.Contain("<size=900>A"));
+            Assert.That(_panel.ModeFilterButton.text, Does.Contain("<b>m</b>"));
+            Assert.That(_panel.MapFilterButton.text, Does.Contain("<alpha=#00>x"));
+            Assert.That(_panel.RegionFilterButton.enableRichText, Is.False);
+            Assert.That(_panel.ModeFilterButton.enableRichText, Is.False);
+            Assert.That(_panel.MapFilterButton.enableRichText, Is.False);
+        }
+
+        [Test]
         public void OpeningAsksForTheListAndShowsItByLowestPing()
         {
             GameSignals.ServerBrowserControl.Publish(_control);

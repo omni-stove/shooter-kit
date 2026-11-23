@@ -55,7 +55,7 @@ namespace Shooter.Core
             var motion = Lerp(spec.StillGainFactor, 1f, Clamp01(sighting.Speed / spec.FullMotionSpeed));
 
             return spec.GainPerSecond * distance * angle * spec.PostureFactor(sighting.Posture) * spec.ArmedFactor(sighting.IsArmed)
-                * sighting.LightFactor * motion;
+                * spec.LitFactor(sighting.IsLit) * sighting.LightFactor * motion;
         }
 
         // 交戦は量が EngagedHoldThreshold を下回るまで残す。満ちた量から少し減っただけで外すと、見失った直後にまた見えても交戦に戻るまでたまり直しになる。

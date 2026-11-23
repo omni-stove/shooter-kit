@@ -35,8 +35,14 @@ namespace Shooter.Server
         private ServerMatch _match;
         private ServerBodies _bodies;
         private long _tick;
-        private float _now;
-        private float _nextWarning = float.NegativeInfinity;
+        private double _now;
+        private double _nextWarning = double.NegativeInfinity;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         public ServerVehicles(MatchRulesModule rules, ServerMovement movement)
         {

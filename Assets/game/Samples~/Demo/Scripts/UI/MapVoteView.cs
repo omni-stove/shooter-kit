@@ -208,7 +208,7 @@ namespace Shooter.Runtime
                 _panel.styleSheets.Add(styleSheet);
             }
 
-            _title = new Label(string.Empty) { pickingMode = PickingMode.Ignore };
+            _title = new Label(string.Empty) { pickingMode = PickingMode.Ignore, enableRichText = false };
             _title.AddToClassList(TitleClass);
             _panel.Add(_title);
 
@@ -288,7 +288,7 @@ namespace Shooter.Runtime
                 var button = new Button(() => Choose(index)) { text = string.Empty };
                 button.AddToClassList(CandidateClass);
 
-                var name = new Label(string.Empty) { pickingMode = PickingMode.Ignore };
+                var name = new Label(string.Empty) { pickingMode = PickingMode.Ignore, enableRichText = false };
                 name.AddToClassList(NameClass);
                 button.Add(name);
 

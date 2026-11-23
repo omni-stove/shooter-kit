@@ -6,6 +6,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class HitboxHistoryTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         [TestCase(0)]
         [TestCase(-1)]
         public void RejectsNonPositiveCapacity(int capacity)
@@ -207,6 +210,24 @@ namespace Shooter.Core.Tests
 
             Assert.Throws<ArgumentOutOfRangeException>(() => history.Record(4, Vector3.One));
             Assert.That(history.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void InterpolatesBetweenRecordsPastTheFloatRange()
+        {
+            var history = new HitboxHistory();
+            history.Record(_lateTick, Vector3.Zero, Vector3.Zero);
+            history.Record(_lateTick + 1, new Vector3(8f, -4f, 2f), new Vector3(0.4f, 0f, 0f));
+
+            Assert.That(history.TrySample(_lateTick + 0.25d, out var position, out var lean), Is.True);
+            Assert.That(position, Is.EqualTo(new Vector3(2f, -1f, 0.5f)));
+            Assert.That(lean, Is.EqualTo(new Vector3(0.1f, 0f, 0f)));
+            Assert.That(history.TrySample(_lateTick + 0.75d, out position), Is.True);
+            Assert.That(position, Is.EqualTo(new Vector3(6f, -3f, 1.5f)));
+            Assert.That(history.TrySample(_lateTick, out position), Is.True);
+            Assert.That(position, Is.EqualTo(Vector3.Zero));
+            Assert.That(history.TrySample(_lateTick - 0.5d, out _), Is.False);
+            Assert.That(history.TrySample(_lateTick + 1.5d, out _), Is.False);
         }
     }
 }

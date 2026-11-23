@@ -36,7 +36,8 @@ namespace Shooter.Server.Tests
             Assert.That(data.World.Raycast(new Vector3(0f, 5f, 0f), -Vector3.UnitY, 10f, ~0, out var hit), Is.True);
             Assert.That(hit.Point.Y, Is.EqualTo(0.5f).Within(1e-4f));
             Assert.That(data.Navigation.SamplePosition(new Vector3(0.2f, 0.5f, 0.2f), 1f, ~0, out _), Is.True);
-            Assert.That(data.LogLine, Does.StartWith("[Server] map NetArena01 colliders=1 navTriangles=1 navLinks=0 spawnPoints=none controlPoints=none structures=none ladders=0 vehicles=0 water=0 ziplines=0 weaponFreeZones=0 from="));
+            Assert.That(data.LogLine, Does.StartWith("[Server] map NetArena01 colliders=1 navTriangles=1 navLinks=0 spawnPoints=none controlPoints=none structures=none ladders=0 vehicles=0 water=0 ziplines=0 weaponFreeZones=0 doors=0 from="));
+            Assert.That(data.Doors.Doors, Is.Empty, "a map exported before doors has none");
             Assert.That(data.Ziplines.Ziplines, Is.Empty, "a map exported before ziplines has none");
             Assert.That(data.WeaponFreeZones.Zones, Is.Empty, "a map exported before weapon free zones has none");
             Assert.That(data.Water.SurfaceAt(new Vector3(0f, 1f, 0f)), Is.Null, "a map exported before water has none");
@@ -119,6 +120,62 @@ namespace Shooter.Server.Tests
 
             Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out _, out var error), Is.False);
             Assert.That(error, Does.Contain("NetArena01.ladders.json"));
+        }
+
+        [Test]
+        public void LoadsTheDoorsBesideTheCollisionWithTheirPanelColliders()
+        {
+            TestMaps.Write(_second.Path, "NetArena01", doors: TestMaps.OneDoor());
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out var data, out var error), Is.True, error);
+
+            Assert.That(data.Doors.Doors, Has.Count.EqualTo(1));
+            var door = data.Doors.Doors[0];
+            Assert.That(door.Position, Is.EqualTo(new Vector3(0f, 1.5f, 4f)));
+            Assert.That(door.Facing, Is.EqualTo(Vector3.UnitZ));
+            Assert.That(door.PanelSize, Is.EqualTo(new Vector3(1.2f, 2f, 0.1f)));
+            Assert.That(door.ColliderGroup, Is.EqualTo(MapColliderGroups.Door(0)));
+            Assert.That(data.LogLine, Does.Contain(" doors=1 "));
+
+            Assert.That(data.World.Raycast(new Vector3(0f, 1.5f, 0f), Vector3.UnitZ, 10f, ~0, out var hit), Is.True, "the closed panel blocks the doorway");
+            Assert.That(hit.Point.Z, Is.EqualTo(3.95f).Within(1e-4f));
+            Assert.That(data.Collision.SetGroupEnabled(door.ColliderGroup, false), Is.True);
+            Assert.That(data.World.Raycast(new Vector3(0f, 1.5f, 0f), Vector3.UnitZ, 10f, ~0, out _), Is.False, "a breached panel lets shots through");
+        }
+
+        [Test]
+        public void AnEmptyDoorListLoadsAsNoDoors()
+        {
+            var directory = TestMaps.Write(_second.Path, "NetArena01");
+            File.WriteAllText(Path.Combine(directory, "NetArena01" + NetMapDoors.Extension), NetMapDoors.Write(NetMapDoors.None));
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out var data, out var error), Is.True, error);
+            Assert.That(data.Doors.Doors, Is.Empty);
+            Assert.That(data.LogLine, Does.Contain(" doors=0 "));
+        }
+
+        [Test]
+        public void BrokenDoorsAreAnError()
+        {
+            var directory = TestMaps.Write(_second.Path, "NetArena01");
+            File.WriteAllText(
+                Path.Combine(directory, "NetArena01" + NetMapDoors.Extension),
+                "{ \"doors\": [ { \"position\": [0, 1, 0], \"facing\": [0, 0, 1], \"panelSize\": [1, 2, 0.1], \"colliderGroup\": 3 } ] }");
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out _, out var error), Is.False);
+            Assert.That(error, Does.Contain("NetArena01.doors.json"));
+            Assert.That(error, Does.Contain("doors[0].colliderGroup"));
+        }
+
+        [Test]
+        public void DoorsWhosePanelIsNotInTheCollisionAreAnError()
+        {
+            var directory = TestMaps.Write(_second.Path, "NetArena01");
+            File.WriteAllText(Path.Combine(directory, "NetArena01" + NetMapDoors.Extension), NetMapDoors.Write(TestMaps.OneDoor()));
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out _, out var error), Is.False);
+            Assert.That(error, Does.Contain("cannot build map NetArena01"));
+            Assert.That(error, Does.Contain("door 0 uses collider group -1"));
         }
 
         [Test]

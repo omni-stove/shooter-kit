@@ -37,6 +37,7 @@ namespace Shooter.Runtime
             SubtitleFeed.CuePlayed += Show;
             SubtitleFeed.Spoken += Show;
             SubtitleFeed.SquadReplied += Show;
+            BarkEvents.Spoken += Show;
             AppliedControlSettings.Changed += HandleSettingsChanged;
             _subscribed = true;
         }
@@ -48,6 +49,7 @@ namespace Shooter.Runtime
                 SubtitleFeed.CuePlayed -= Show;
                 SubtitleFeed.Spoken -= Show;
                 SubtitleFeed.SquadReplied -= Show;
+                BarkEvents.Spoken -= Show;
                 AppliedControlSettings.Changed -= HandleSettingsChanged;
                 _subscribed = false;
             }
@@ -96,6 +98,16 @@ namespace Shooter.Runtime
             }
 
             Show(new SubtitleSpeech(reply.Speaker, SquadOrderText.Reply(reply)));
+        }
+
+        // 掛け声も話した内容なので、SubtitleSpeech と同じく音の字幕の設定が Off でも出す。
+        public void Show(BarkCue cue)
+        {
+            var viewer = ResolveViewer();
+            if (BarkText.TrySpeech(cue, viewer != null ? viewer.position : default(Vector3?), out var speech))
+            {
+                Show(speech);
+            }
         }
 
         public void Tick(float deltaSeconds)

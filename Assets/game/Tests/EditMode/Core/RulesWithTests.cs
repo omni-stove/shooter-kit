@@ -143,6 +143,7 @@ namespace Shooter.Core.Tests
                 (nameof(ActionRules.Stamina), a => a.WithStamina(Stamina.Off), Stamina.Off),
                 (nameof(ActionRules.ReloadInterruptedBy), a => a.WithReloadInterruptedBy(new[] { ReloadInterrupt.Grenade }), new[] { ReloadInterrupt.Grenade }),
                 (nameof(ActionRules.AimWhileReloading), a => a.WithAimWhileReloading(AimWhileReloading.Off), AimWhileReloading.Off),
+                (nameof(ActionRules.Jam), a => a.WithJam(WeaponJam.On), WeaponJam.On),
                 (nameof(ActionRules.Takedown), a => a.WithTakedown(Takedown.Off), Takedown.Off),
             };
 
@@ -247,6 +248,7 @@ namespace Shooter.Core.Tests
             AssertRejected(() => _actions.WithEmote((Emote)99), "emote");
             AssertRejected(() => _actions.WithStamina((Stamina)99), "stamina");
             AssertRejected(() => _actions.WithAimWhileReloading((AimWhileReloading)99), "aimWhileReloading");
+            AssertRejected(() => _actions.WithJam((WeaponJam)99), "jam");
             AssertRejected(() => _actions.WithTakedown((Takedown)99), "takedown");
         }
 
@@ -271,6 +273,7 @@ namespace Shooter.Core.Tests
             Assert.That(actions.AimToFire, Is.EqualTo(AimToFire.Off));
             Assert.That(actions.Emote, Is.EqualTo(Emote.Off));
             Assert.That(actions.Stamina, Is.EqualTo(Stamina.Off));
+            Assert.That(actions.Jam, Is.EqualTo(WeaponJam.Off));
             Assert.That(actions.Takedown, Is.EqualTo(Takedown.Off));
         }
 
