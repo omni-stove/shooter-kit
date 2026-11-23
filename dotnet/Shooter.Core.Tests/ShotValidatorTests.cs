@@ -60,6 +60,57 @@ namespace Shooter.Core.Tests
             Assert.That(ShotValidator.Check(Vector3.Zero, new Vector3(0, 0, 0.01f), _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.None));
         }
 
+        [TestCase(1e20f, 0f, 0f)]
+        [TestCase(0f, -1e20f, 0f)]
+        [TestCase(1.5e19f, 1.5e19f, 1.5e19f)]
+        [TestCase(float.MaxValue, float.MaxValue, float.MaxValue)]
+        public void RejectsDirectionWhoseSquaredLengthOverflows(float x, float y, float z)
+        {
+            var direction = new Vector3(x, y, z);
+
+            Assert.That(float.IsPositiveInfinity(direction.LengthSquared()), Is.True, "the case must overflow to be a regression test");
+            Assert.That(ShotValidator.Check(Vector3.Zero, direction, _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.InvalidDirection));
+            Assert.That(ShotValidator.TryNormalizeDirection(direction, 1e-12f, out var unit), Is.False);
+            Assert.That(unit, Is.EqualTo(Vector3.Zero));
+        }
+
+        [Test]
+        public void AcceptsTheLongestDirectionWhoseSquaredLengthIsFinite()
+        {
+            var direction = new Vector3(0f, 0f, 1e19f);
+
+            Assert.That(ShotValidator.Check(Vector3.Zero, direction, _valid, Vector3.Zero, 3f), Is.EqualTo(ShotRejection.None));
+            Assert.That(ShotValidator.TryNormalizeDirection(direction, 1e-12f, out var unit), Is.True);
+            Assert.That(unit.X, Is.EqualTo(0f));
+            Assert.That(unit.Y, Is.EqualTo(0f));
+            Assert.That(unit.Z, Is.EqualTo(1f).Within(1e-6f));
+        }
+
+        [Test]
+        public void NormalizesAnAcceptedDirectionToAFiniteUnitVector()
+        {
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(3f, 0f, 4f), 1e-12f, out var unit), Is.True);
+            Assert.That(unit.X, Is.EqualTo(0.6f).Within(1e-6f));
+            Assert.That(unit.Y, Is.EqualTo(0f));
+            Assert.That(unit.Z, Is.EqualTo(0.8f).Within(1e-6f));
+
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, -2e-6f, 0f), 1e-12f, out var tiny), Is.True);
+            Assert.That(tiny.Y, Is.EqualTo(-1f).Within(1e-6f));
+            Assert.That(tiny.Length(), Is.EqualTo(1f).Within(1e-6f));
+        }
+
+        [Test]
+        public void TryNormalizeDirectionRejectsZeroShortAndNonFiniteInput()
+        {
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.Zero, 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, 0f, 1e-5f), 1e-8f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, 0f, 1e-3f), 1e-8f, out _), Is.True);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(float.NaN, 0f, 1f), 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(new Vector3(0f, float.PositiveInfinity, 0f), 1e-12f, out _), Is.False);
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.Zero, 0f, out _), Is.False, "a zero limit must not let the zero vector through");
+            Assert.That(ShotValidator.TryNormalizeDirection(Vector3.UnitZ, float.NaN, out _), Is.False);
+        }
+
         [Test]
         public void RejectsInvalidTime()
         {

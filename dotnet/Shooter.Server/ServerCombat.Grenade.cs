@@ -87,8 +87,7 @@ namespace Shooter.Server
                 return;
             }
 
-            if (!float.IsFinite(direction.X) || !float.IsFinite(direction.Y) || !float.IsFinite(direction.Z)
-                || direction.LengthSquared() < _minThrowDirectionSqrMagnitude)
+            if (!ShotValidator.TryNormalizeDirection(direction, _minThrowDirectionSqrMagnitude, out direction))
             {
                 WarnGrenadeRejected(playerId, GrenadeThrowRejection.InvalidDirection);
                 return;
@@ -107,7 +106,6 @@ namespace Shooter.Server
                 return;
             }
 
-            direction = Vector3.Normalize(direction);
             thrower.Grenades.Take(_now, typeId, out var spec);
             var position = ReleasePoint(body.EyePosition, direction, spec);
             var velocity = (direction * spec.ThrowSpeed) + new Vector3(0f, spec.ThrowLiftSpeed, 0f);

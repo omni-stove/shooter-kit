@@ -717,6 +717,35 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void AGrenadeThrownInADirectionTooLongToNormalizeIsRejected()
+        {
+            Start(Rules());
+            Join(1);
+            Join(2);
+            Step(0.2f);
+
+            _host.OnMessage(new ConnectionId(1), new ThrowGrenadeRequestMessage { Direction = new Vector3(1e20f, 0f, 0f) });
+
+            Assert.That(_combat.LiveGrenadeCount, Is.EqualTo(0));
+            Assert.That(_log.ToString(), Does.Contain("[Grenade] net rejected player=1 reason=InvalidDirection"));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Grenade] net thrown"));
+        }
+
+        [Test]
+        public void AShotInADirectionTooLongToNormalizeIsRejectedWithoutThrowing()
+        {
+            Start(Rules());
+            Join(1);
+            Join(2);
+            Step(0.2f);
+
+            Assert.DoesNotThrow(() => Fire(1, Body(1).EyePosition, new Vector3(1e20f, 0f, 0f), (int)_host.TickCount));
+
+            Assert.That(_log.ToString(), Does.Contain("[Net] rejected shot attacker=1 reason=InvalidDirection"));
+            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth));
+        }
+
+        [Test]
         public void AStickyGrenadeSticksToThePersonItHitsAndGoesOffOnThem()
         {
             Start(Rules(), grenades: new GrenadeCatalog(new[] { _sticky }));
