@@ -125,7 +125,7 @@ namespace Shooter.Runtime
         private bool PullShieldTrigger(Weapon weapon, bool wasPressedThisFrame)
         {
             _trigger.Drop();
-            if (wasPressedThisFrame && !IsShieldBashBlocked)
+            if (wasPressedThisFrame && !IsShieldBashBlocked && !IsFireBlockedByModifier)
             {
                 ShieldBashRequested?.Invoke(weapon.Spec.Shield);
             }

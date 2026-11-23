@@ -405,6 +405,37 @@ namespace Shooter.Tests.EditMode
             Assert.That(_weapon.IsMeleeWeaponBlocked, Is.False);
         }
 
+        // 盾の殴りは近接の振りとは別の経路 (PullShieldTrigger) なので、構え直しの押下で殴らないことをここでも確かめる。
+        [Test]
+        public void ShieldBashesAreNotRequestedWhileHolsteredOrByThePressThatDrew()
+        {
+            var rifle = TestWeapons.RifleSpec();
+            var shield = new WeaponSpec(
+                rifle.Id, rifle.NameKey, rifle.Category, rifle.Trigger, rifle.Ammo, rifle.Round, rifle.Impact, rifle.Aim,
+                rifle.AmmoTypes, rifle.ShotNoiseRadius, rifle.Weight, rifle.MoveSpeedMultiplier, rifle.Description,
+                RifleDrawSeconds, RifleHolsterSeconds, shield: RiotShieldSpec.Default);
+            Object.DestroyImmediate(_holster);
+            _weapon.Initialize(_weapon.transform, _attack, _reload, null, null, new[] { Definition("Shield", shield) });
+            _holster = _body.AddComponent<HolsterController>();
+            _holster.Spec = HolsterSpec.Default;
+            _holster.Initialize(_weapon, _damageable);
+            var bashes = 0;
+            _weapon.ShieldBashRequested += _ => bashes++;
+
+            HolsterFully();
+            _holster.Tick(0f, false, true, true);
+            _weapon.PullTrigger(true, true);
+            Assert.That(bashes, Is.EqualTo(0), "the press that started drawing");
+
+            HoldAttack(RifleDrawSeconds);
+            _weapon.PullTrigger(true, true);
+            Assert.That(bashes, Is.EqualTo(0), "the press that finished drawing");
+
+            _holster.Tick(0f, false, false, false);
+            _weapon.PullTrigger(true, true);
+            Assert.That(bashes, Is.EqualTo(1));
+        }
+
         private void HolsterFully()
         {
             Press();
