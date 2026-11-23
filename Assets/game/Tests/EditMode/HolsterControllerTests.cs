@@ -380,6 +380,31 @@ namespace Shooter.Tests.EditMode
             Assert.That(_holster.Phase, Is.EqualTo(HolsterPhase.Drawing));
         }
 
+        // 近接武器の振りは FireBlocker と IsHolstered しか見ないので、modifier で止めた分も IsMeleeWeaponBlocked に出ることを確かめる。
+        [Test]
+        public void MeleeSwingsAreBlockedWhileHolsteringHolsteredDrawingAndUntilTheAttackIsReleased()
+        {
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.False);
+
+            Press();
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "holstering");
+
+            Advance(RifleHolsterSeconds);
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "holstered");
+
+            _holster.Tick(0f, false, true, true);
+            Assert.That(_holster.Phase, Is.EqualTo(HolsterPhase.Drawing));
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "drawing");
+
+            Advance(RifleDrawSeconds);
+            Assert.That(_holster.Phase, Is.EqualTo(HolsterPhase.Drawn));
+            _holster.Tick(0f, false, false, true);
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "the press that drew must not swing");
+
+            _holster.Tick(0f, false, false, false);
+            Assert.That(_weapon.IsMeleeWeaponBlocked, Is.False);
+        }
+
         private void HolsterFully()
         {
             Press();
