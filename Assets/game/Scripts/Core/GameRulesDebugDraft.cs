@@ -69,6 +69,7 @@ namespace Shooter.Core
                 case GameRulesDebugField.Vault: return (int)actions.Vault;
                 case GameRulesDebugField.Grenade: return (int)actions.Grenade;
                 case GameRulesDebugField.Melee: return (int)actions.Melee;
+                case GameRulesDebugField.Takedown: return (int)actions.Takedown;
                 case GameRulesDebugField.Stagger: return (int)actions.Stagger;
                 case GameRulesDebugField.Slide: return (int)actions.Slide;
                 case GameRulesDebugField.Mantle: return (int)actions.Mantle;
@@ -132,6 +133,7 @@ namespace Shooter.Core
                 .WithVault((Vault)Get(GameRulesDebugField.Vault))
                 .WithGrenade(grenade)
                 .WithMelee((Melee)Get(GameRulesDebugField.Melee))
+                .WithTakedown((Takedown)Get(GameRulesDebugField.Takedown))
                 .WithStagger((Stagger)Get(GameRulesDebugField.Stagger))
                 .WithSlide((Slide)Get(GameRulesDebugField.Slide))
                 .WithMantle((Mantle)Get(GameRulesDebugField.Mantle))
@@ -238,6 +240,7 @@ namespace Shooter.Core
                 case GameRulesDebugField.Vault: return typeof(Vault);
                 case GameRulesDebugField.Grenade: return typeof(Grenade);
                 case GameRulesDebugField.Melee: return typeof(Melee);
+                case GameRulesDebugField.Takedown: return typeof(Takedown);
                 case GameRulesDebugField.Stagger: return typeof(Stagger);
                 case GameRulesDebugField.Slide: return typeof(Slide);
                 case GameRulesDebugField.Mantle: return typeof(Mantle);

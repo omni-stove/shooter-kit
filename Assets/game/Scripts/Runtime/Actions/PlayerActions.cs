@@ -100,7 +100,7 @@ namespace Shooter.Runtime
 
             return $"{LogTag} cover={actions.Cover} blindFire={actions.BlindFire} activeReload={actions.ActiveReload} downed={actions.Downed}"
                 + $" dodge={actions.Dodge} vault={actions.Vault}"
-                + $" melee={actions.Melee} stagger={actions.Stagger} slide={actions.Slide} mantle={actions.Mantle} prone={actions.Prone}"
+                + $" melee={actions.Melee} takedown={actions.Takedown} stagger={actions.Stagger} slide={actions.Slide} mantle={actions.Mantle} prone={actions.Prone}"
                 + $" ladder={actions.Ladder} zipline={actions.Zipline} parachute={actions.Parachute} stealth={actions.Stealth}"
                 + $" suppression={actions.Suppression} ping={actions.Ping} abilities={actions.Abilities} slowMotion={actions.SlowMotion}"
                 + $" aimToFire={actions.AimToFire} jump={actions.Jump}";
