@@ -42,9 +42,11 @@ namespace Shooter.Core
                 ReleaseCoverPoint();
             }
 
+            var freshAim = false;
             if (_coverIndex < 0)
             {
-                var next = _cover.Select(p.Self, _coverThreat, this, _unreachableCover);
+                var keepAim = KeepsAimIntoCover();
+                var next = _cover.Select(p.Self, _coverThreat, this, _unreachableCover, CoverSearchDistance(p));
                 if (next < 0 || !_cover.TryClaim(next, this))
                 {
                     LeaveCover();
@@ -53,6 +55,12 @@ namespace Shooter.Core
 
                 _coverIndex = next;
                 CoverPhase = EnemyCoverPhase.Moving;
+                if (!keepAim)
+                {
+                    _reactionElapsed = 0f;
+                    _shotsInAttack = 0;
+                    freshAim = true;
+                }
             }
 
             if (State != EnemyState.TakeCover)
@@ -60,14 +68,31 @@ namespace Shooter.Core
                 _lostElapsed = 0f;
             }
 
-            decision = CoverStep(deltaSeconds, p.Self, seen);
+            decision = CoverStep(deltaSeconds, p.Self, seen, freshAim);
 
             // 決定を作った後に移す。StateChanged の購読者が Kill() して点を放しても、ここでは点を読まない。
             SetState(EnemyState.TakeCover);
             return true;
         }
 
-        private EnemyDecision CoverStep(float deltaSeconds, Vector3 self, bool seen)
+        // 体力が残っていて撃たれただけなら、近くの点にだけ移る。遠くの点へ走る間は撃ち返せず、撃ち合いを捨てて背を向けたように見えるので。
+        private float? CoverSearchDistance(EnemyPerception p)
+        {
+            if (State == EnemyState.TakeCover || p.HealthFraction < _spec.CoverHealthFraction)
+            {
+                return null;
+            }
+
+            return _spec.CoverOnHitMaxDistance;
+        }
+
+        // 撃ち合いの最中や覗いている最中に点へ移り始めたなら、構え直さずにそのまま撃たせる。
+        private bool KeepsAimIntoCover()
+        {
+            return IsAiming || (State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Moving);
+        }
+
+        private EnemyDecision CoverStep(float deltaSeconds, Vector3 self, bool seen, bool freshAim)
         {
             var point = _cover.Points[_coverIndex].Position;
             switch (CoverPhase)
@@ -75,7 +100,7 @@ namespace Shooter.Core
                 case EnemyCoverPhase.Moving:
                     if (Vector3.Distance(self, point) > _spec.ArrivalDistance)
                     {
-                        return new EnemyDecision(point, _coverThreat, false, false);
+                        return MoveDecision(deltaSeconds, self, point, seen, freshAim);
                     }
 
                     StartHiding();
@@ -116,6 +141,23 @@ namespace Shooter.Core
             return new EnemyDecision(null, _coverThreat, false, true);
         }
 
+        // 見失ったら構え直させる。交戦 (Engage) と同じく、見え直した瞬間には撃たない。
+        private EnemyDecision MoveDecision(float deltaSeconds, Vector3 self, Vector3 point, bool seen, bool freshAim)
+        {
+            if (!seen)
+            {
+                _reactionElapsed = 0f;
+                _shotsInAttack = 0;
+            }
+            else if (!freshAim)
+            {
+                _reactionElapsed += deltaSeconds;
+            }
+
+            var inRange = Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
+            return new EnemyDecision(point, _coverThreat, seen && inRange && _reactionElapsed >= _spec.ReactionSeconds, false);
+        }
+
         private EnemyDecision PeekDecision(Vector3 self, bool seen)
         {
             var inRange = Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
@@ -134,10 +176,9 @@ namespace Shooter.Core
             CoverPhase = EnemyCoverPhase.None;
         }
 
-        // 遮蔽への移動中に撃つときの散らばりを足す口。後続で CoverMoveSpreadDegrees を使うまで、撃ち方を変えないよう 0 を返す。
-        private static float CoverSpreadDegrees()
+        private float CoverSpreadDegrees()
         {
-            return 0f;
+            return State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Moving ? _spec.CoverMoveSpreadDegrees : 0f;
         }
     }
 }

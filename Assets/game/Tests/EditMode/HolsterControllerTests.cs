@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
@@ -434,6 +435,13 @@ namespace Shooter.Tests.EditMode
             _holster.Tick(0f, false, false, false);
             _weapon.PullTrigger(true, true);
             Assert.That(bashes, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TheInstallerIsRegisteredOnceWithThePlayerActions()
+        {
+            Assert.That(PlayerActions.Installers.Count(i => i is HolsterActionInstaller), Is.EqualTo(1));
+            Assert.That(PlayerActions.Installers.OfType<HolsterActionInstaller>().Single().Order, Is.EqualTo(HolsterActionInstaller.InstallOrder));
         }
 
         private void HolsterFully()
