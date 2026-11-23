@@ -3,5 +3,6 @@
   "extractHoldSeconds": 8,
   "openPoints": 2,
   "openAfterSeconds": 0,
-  "keepCarriedOnDeath": false
+  "keepCarriedOnDeath": false,
+  "botsBringLoadout": true
 }

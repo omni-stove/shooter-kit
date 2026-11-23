@@ -8,7 +8,9 @@ namespace Shooter.Server
 {
     // しまう・構えるの要求 (HolsterRequestMessage) を受け、Core の HolsterState を持っている武器の秒数で進めて、スナップショットの
     // Weapon の部分で全員へ配る。しまっている・しまう途中・構える途中の手の武器は ServerCombat が撃たせず込めさせない。
-    // 秒数はオフラインと同じく、しまうのが WeaponSpec.HolsterSeconds (0 なら構える秒数)、構えるのが Loadout.DrawSecondsOf
+    // 秒数はオフラインと同じく、しまうのが WeaponSpec.HolsterSeconds (0 なら構える秒数)、構えるのが Loadout.DrawSecondsOf。
+    // 武器を出してはいけない場所 (ServerWeaponFreeZones) は、自動でしまう反応で入った人をしまわせ、構えられない反応の中では構えるのを断り、
+    // 中にいるかと警告をスナップショットの持ち主の部分で本人へ配る。別のモジュールにしないのは、しまう状態と同じ tick の順で判定するため
     internal sealed class ServerHolster : IServerModule, ISnapshotContributor
     {
         // 断った理由のログを出す最短の間隔 (秒)。連打でログを埋めないため
@@ -16,6 +18,7 @@ namespace Shooter.Server
 
         private readonly ServerCombat _combat;
         private readonly ServerMovement _movement;
+        private readonly ServerWeaponFreeZones _zones;
         private readonly Dictionary<int, HolsterState> _holders = new Dictionary<int, HolsterState>();
         private readonly List<int> _scratch = new List<int>();
         private ServerContext _context;
@@ -23,10 +26,12 @@ namespace Shooter.Server
         private double _now;
         private double _nextRefusalLogTime = double.NegativeInfinity;
 
-        public ServerHolster(ServerCombat combat, ServerMovement movement)
+        // holster はどの状態を武装と数えるか (server-data/tuning/holster.json)。null ならオフラインの既定と同じ値にする
+        public ServerHolster(ServerCombat combat, ServerMovement movement, HolsterSpec holster = null)
         {
             _combat = combat ?? throw new ArgumentNullException(nameof(combat));
             _movement = movement ?? throw new ArgumentNullException(nameof(movement));
+            _zones = new ServerWeaponFreeZones(holster);
         }
 
         public enum Refusal
@@ -45,6 +50,9 @@ namespace Shooter.Server
             NoWeapon,
 
             Switching,
+
+            // 構えられない反応 (WeaponFreeZoneReaction.BlockDraw) のゾーンの中にいる
+            WeaponFreeZone,
         }
 
         public enum ResetReason
@@ -64,10 +72,13 @@ namespace Shooter.Server
 
         public string Name => "holster";
 
+        internal ServerWeaponFreeZones Zones => _zones;
+
         public void Start(ServerContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _log = context.Log;
+            _zones.Load(context.Map.Name, context.Map.WeaponFreeZones, _log);
             _combat.IsHolstered = IsLowered;
             context.Match.PlayerLeft += HandlePlayerLeft;
             context.Match.MapChanged += HandleMapChanged;
@@ -80,6 +91,14 @@ namespace Shooter.Server
         public void Tick(long tick, float deltaSeconds)
         {
             _now += deltaSeconds;
+            TickHolders(deltaSeconds);
+
+            // 構え終えた・しまい終えた後の状態で武装を数え、しまわせたら同じ tick のうちにスナップショットへ載せる
+            TickZones(deltaSeconds);
+        }
+
+        private void TickHolders(float deltaSeconds)
+        {
             if (_holders.Count == 0)
             {
                 return;
@@ -144,12 +163,15 @@ namespace Shooter.Server
             _combat.Rules.MatchStarted -= HandleMatchStarted;
             _combat.IsHolstered = null;
             _holders.Clear();
+            _zones.Clear();
         }
 
-        // 構えている人は一覧に持たないので、行の既定 (Drawn・0) のまま送る
+        // 構えている人は一覧に持たないので、行の既定 (Drawn・0) のまま送る。
+        // ゾーンの状態は受け手ごとに書き直す。スナップショットは受け手の間で使い回すので、前の受け手の警告を残さないため
         public void Contribute(SnapshotMessage snapshot, ServerPlayer receiver)
         {
             ArgumentNullException.ThrowIfNull(snapshot);
+            snapshot.Owner.WeaponFreeZone = receiver != null ? _zones.StatusOf(receiver.PlayerId) : WeaponFreeZoneStatus.Outside;
             if (_holders.Count == 0)
             {
                 return;
@@ -251,6 +273,12 @@ namespace Shooter.Server
                 return refusal;
             }
 
+            // 射撃のボタンで構え直す要求もここに来るので、撃つ要求はしまったままとして ServerCombat が Holstered で断る
+            if (_zones.DrawBlockedBy(playerId) != null)
+            {
+                return Refusal.WeaponFreeZone;
+            }
+
             var weapons = _combat.WeaponsOf(playerId);
             var seconds = weapons.CurrentDrawSeconds;
             if (!state.BeginDraw(seconds))
@@ -303,8 +331,71 @@ namespace Shooter.Server
                 return ResetReason.NoWeapon;
             }
 
-            // オフラインと同じく、持ち替えたら Loadout の構える時間で上げるので、しまう状態は構えた状態へ戻す
-            return weapons.IsSwitching ? ResetReason.Switched : (ResetReason?)null;
+            // オフラインと同じく、持ち替えたら Loadout の構える時間で上げるので、しまう状態は構えた状態へ戻す。
+            // 構えられないゾーンの中では戻さない。オフラインの HolsterController も持ち替えで構え直すのを BlockDraw で断るため
+            if (!weapons.IsSwitching || _zones.DrawBlockedBy(playerId) != null)
+            {
+                return null;
+            }
+
+            return ResetReason.Switched;
+        }
+
+        private void TickZones(float deltaSeconds)
+        {
+            if (_zones.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var player in _context.Match.Players)
+            {
+                // オフラインのゾーンもプレイヤーのタグの付いた体だけを見るので、Bot はしまわせず止めもしない
+                if (player.IsBot)
+                {
+                    continue;
+                }
+
+                var playerId = player.PlayerId;
+                System.Numerics.Vector3? center = null;
+                var armed = false;
+                if (IsInWorld(playerId, out var body))
+                {
+                    // 足元ではなく体の中ほどで見るのは、床に置いたゾーンの底と足の高さが誤差で入れ違って出入りを繰り返さないため
+                    center = body.Center;
+                    armed = IsArmed(playerId, body);
+                }
+
+                var holsterIn = _zones.Update(playerId, center, armed, deltaSeconds);
+                if (holsterIn != null)
+                {
+                    _log.WriteLine(ServerWeaponFreeZonesLog.AutoHolstered(holsterIn, playerId, BeginHolster(playerId)));
+                }
+            }
+        }
+
+        // ダウンしている間もゾーンの中にいると数える。オフラインのゾーンも死ぬまでは中にいると数えるため
+        private bool IsInWorld(int playerId, out ServerBody body)
+        {
+            body = null;
+            var session = _combat.Rules.Session;
+            return session != null
+                && session.HasPlayer(playerId)
+                && (session.IsAlive(playerId) || session.IsDowned(playerId))
+                && _context.Bodies.TryGet(playerId, out body)
+                && body.HasSpawned;
+        }
+
+        // オフラインの HolsterController.Status.IsArmed と同じく、はしごや乗り物がしまわせている間は holster.json の armedWhileHeldByOthers で数える
+        private bool IsArmed(int playerId, ServerBody body)
+        {
+            if (_combat.WeaponsOf(playerId).CurrentSpec == null)
+            {
+                return false;
+            }
+
+            var heldByOthers = body.IsClimbing || _movement.IsRiding(playerId);
+            return _zones.Holster.IsArmed(PhaseOf(playerId), heldByOthers);
         }
 
         private void Reset(int playerId, ResetReason reason)
@@ -354,6 +445,7 @@ namespace Shooter.Server
         private void HandlePlayerLeft(ServerPlayer player)
         {
             _holders.Remove(player.PlayerId);
+            _zones.Forget(player.PlayerId);
         }
 
         private void HandlePlayerSpawned(int playerId)
@@ -374,6 +466,7 @@ namespace Shooter.Server
         private void HandleMapChanged(ServerMapData map)
         {
             ResetAll(ResetReason.MapChanged);
+            _zones.Load(map.Name, map.WeaponFreeZones, _log);
         }
     }
 }

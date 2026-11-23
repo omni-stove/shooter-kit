@@ -55,6 +55,9 @@ namespace Shooter.Protocol
         // Horde で届く距離に直す・置く防衛物があれば、その案内。ほかの人の案内は見せないので持ち主にだけ送る
         public HordeOfferSync? HordeOffer { get; set; }
 
+        // 武器を出してはいけない場所の中か・反応・警告しているか。警告の文言は持ち主の画面にだけ出すので、人ごとの行 (PlayerSnapshot) に載せない
+        public Shooter.Core.WeaponFreeZoneStatus WeaponFreeZone { get; set; }
+
         public GrenadePouchSync Grenades => _grenades;
 
         public ContentIdList EquippedWeaponIds => _equippedWeaponIds;
@@ -84,6 +87,7 @@ namespace Shooter.Protocol
             SuppressionLevel = other.SuppressionLevel;
             Suppressed = other.Suppressed;
             HordeOffer = other.HordeOffer;
+            WeaponFreeZone = other.WeaponFreeZone;
             _grenades.CopyFrom(other._grenades);
             _equippedWeaponIds.CopyFrom(other._equippedWeaponIds);
             Present = other.Present;
@@ -157,6 +161,11 @@ namespace Shooter.Protocol
             if (HordeOffer != baseline.HordeOffer)
             {
                 fields |= OwnerFields.HordeOffer;
+            }
+
+            if (!SameZone(WeaponFreeZone, baseline.WeaponFreeZone))
+            {
+                fields |= OwnerFields.WeaponFreeZone;
             }
 
             return fields;
@@ -308,6 +317,11 @@ namespace Shooter.Protocol
                     offer.Value.Write(writer);
                 }
             }
+
+            if ((fields & OwnerFields.WeaponFreeZone) != 0)
+            {
+                WriteZone(writer, WeaponFreeZone);
+            }
         }
 
         internal void Read(MessageReader reader, OwnerFields fields)
@@ -391,6 +405,11 @@ namespace Shooter.Protocol
             {
                 HordeOffer = reader.ReadBool() ? HordeOfferSync.Read(reader) : (HordeOfferSync?)null;
             }
+
+            if ((fields & OwnerFields.WeaponFreeZone) != 0)
+            {
+                WeaponFreeZone = ReadZone(reader);
+            }
         }
 
         internal void FillFrom(OwnerSnapshot baseline)
@@ -465,6 +484,11 @@ namespace Shooter.Protocol
                 HordeOffer = baseline.HordeOffer;
             }
 
+            if ((missing & OwnerFields.WeaponFreeZone) != 0)
+            {
+                WeaponFreeZone = baseline.WeaponFreeZone;
+            }
+
             Present = OwnerFields.All;
         }
 
@@ -484,6 +508,61 @@ namespace Shooter.Protocol
             var x = a.Value;
             var y = b.Value;
             return Same.Bits(x.Current, y.Current) && Same.Bits(x.Max, y.Max) && x.Depleted == y.Depleted;
+        }
+
+        // == (float の ==) で比べないのは SameStamina と同じく、0 と -0 を同じと見て読んだ側に書いたのと違う値を残さないため
+        private static bool SameZone(Shooter.Core.WeaponFreeZoneStatus a, Shooter.Core.WeaponFreeZoneStatus b)
+        {
+            return a.Inside == b.Inside && a.Reaction == b.Reaction && a.Warning == b.Warning && Same.Bits(a.SecondsToHostile, b.SecondsToHostile);
+        }
+
+        // 外なら 0、中なら反応の番号 + 1 の 1 バイトにまとめる。外の反応は WeaponFreeZoneStatus が Outside にそろえるので送らない
+        private static void WriteZone(MessageWriter writer, Shooter.Core.WeaponFreeZoneStatus zone)
+        {
+            if ((int)zone.Reaction < 0 || (int)zone.Reaction >= EnumRange<Shooter.Core.WeaponFreeZoneReaction>.Count)
+            {
+                throw new InvalidOperationException("weapon free zone reaction " + (int)zone.Reaction + " is not defined");
+            }
+
+            if (!zone.Inside)
+            {
+                if (zone != Shooter.Core.WeaponFreeZoneStatus.Outside)
+                {
+                    throw new InvalidOperationException("a weapon free zone status outside every zone must be WeaponFreeZoneStatus.Outside");
+                }
+
+                writer.WriteByte(0);
+                return;
+            }
+
+            writer.WriteByte((byte)((int)zone.Reaction + 1));
+            writer.WriteBool(zone.Warning);
+            if (HasHostileCountdown(zone.Warning, zone.Reaction))
+            {
+                writer.WriteSingle(zone.SecondsToHostile);
+            }
+        }
+
+        private static Shooter.Core.WeaponFreeZoneStatus ReadZone(MessageReader reader)
+        {
+            var kind = reader.ReadByteBelow(EnumRange<Shooter.Core.WeaponFreeZoneReaction>.Count + 1, "weapon free zone");
+            if (kind == 0)
+            {
+                return Shooter.Core.WeaponFreeZoneStatus.Outside;
+            }
+
+            var reaction = (Shooter.Core.WeaponFreeZoneReaction)(kind - 1);
+            var warning = reader.ReadBool();
+            var seconds = HasHostileCountdown(warning, reaction)
+                ? reader.ReadFiniteSingleBetween(0f, float.MaxValue, "weapon free zone seconds to hostile")
+                : 0f;
+            return new Shooter.Core.WeaponFreeZoneStatus(true, reaction, warning, seconds);
+        }
+
+        // 残り秒数は警告して敵対する反応のときだけ意味を持つ (ほかは WeaponFreeZoneStatus が 0 にそろえる) ので、そのときだけ送る
+        private static bool HasHostileCountdown(bool warning, Shooter.Core.WeaponFreeZoneReaction reaction)
+        {
+            return warning && reaction == Shooter.Core.WeaponFreeZoneReaction.WarnThenHostile;
         }
 
         private static bool IsStaggerKind(Shooter.Core.StaggerKind kind)

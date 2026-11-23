@@ -145,7 +145,7 @@ namespace Shooter.Server
             // エモートは移動・射撃・倒れたことで止めるので、それらを進めた後に見る。
             // しまう・構えるは持ち替え・倒れた・武器を手放したことで構えに戻すので、戦闘と持ち物・拾い物がこの tick の武器を決めた後に見る
             var pickups = new ServerPickups(rules, combat, inventories);
-            var holster = new ServerHolster(combat, movement);
+            var holster = new ServerHolster(combat, movement, tuning.Holster);
             modules.Add(status);
             modules.Add(pickups);
             modules.Add(new ServerEmotes(rules, movement, signals, tuning.Emotes, tuning.EmotesPath));
