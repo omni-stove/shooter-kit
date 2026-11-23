@@ -1,0 +1,8 @@
+{
+  "mode.juggernaut.chosenIn": "ジャガーノート選出まで {0} 秒",
+  "mode.juggernaut.waiting": "ジャガーノートの選出待ち",
+  "mode.juggernaut.current": "ジャガーノート: {0}",
+  "mode.juggernaut.youAreJuggernaut": "あなたがジャガーノート: キルを重ねて点を稼ぐ",
+  "mode.juggernaut.hunt": "ジャガーノートを倒すと次のジャガーノートになる",
+  "mode.juggernaut.yourScore": "自分の点 {0}"
+}
