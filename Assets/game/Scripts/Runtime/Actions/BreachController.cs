@@ -454,6 +454,8 @@ namespace Shooter.Runtime
                 return CancelledDead;
             }
 
+            // 乗り手の部品は GameBootstrap がインストーラーの後に付けるので、Configure で見つからなければ使うたびに探し直す。
+            _rider = _rider != null ? _rider : GetComponent<PlayerVehicleRider>();
             if (_rider != null && _rider.IsRiding)
             {
                 return CancelledVehicle;

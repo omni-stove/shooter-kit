@@ -266,6 +266,42 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void BoardingAVehicleAddedAfterConfigureCancelsThePlant()
+        {
+            Plant();
+
+            var controller = _player.AddComponent<CharacterController>();
+            controller.radius = 0.5f;
+            var mover = _player.AddComponent<PlayerController>();
+            var move = new UnityEngine.InputSystem.InputAction("Move", UnityEngine.InputSystem.InputActionType.Value, expectedControlType: "Vector2");
+            var sprint = new UnityEngine.InputSystem.InputAction("Sprint", UnityEngine.InputSystem.InputActionType.Button);
+            var crouch = new UnityEngine.InputSystem.InputAction("Crouch", UnityEngine.InputSystem.InputActionType.Button);
+            var jump = new UnityEngine.InputSystem.InputAction("Jump", UnityEngine.InputSystem.InputActionType.Button);
+            mover.Initialize(controller, _player.AddComponent<FirstPersonLook>(), move, sprint, crouch, jump, new MotorSpec(5f, 8f, 1.2f, 20f, 0.1f, 2.5f));
+            var rider = _player.AddComponent<PlayerVehicleRider>();
+            rider.Bind(mover, null);
+
+            var car = Spawn("Car");
+            var seat = new GameObject("Driver Seat").AddComponent<VehicleSeat>();
+            seat.transform.SetParent(car.transform, false);
+            var vehicle = car.AddComponent<Vehicle>();
+            vehicle.Configure(new VehicleSpec("car", 500, new[] { new VehicleSeatSpec(VehicleSeatRole.Driver) }));
+            Assert.That(vehicle.TryEnter(rider, 0, requireInRange: false), Is.True);
+
+            LogAssert.Expect(LogType.Log, "[Breach] door=door-1 plant-cancelled by=player reason=vehicle");
+            _controller.Tick(false, 0.1f);
+
+            Assert.That(_controller.IsPlanting, Is.False);
+            Assert.That(_door.Phase, Is.EqualTo(BreachDoorPhase.Closed));
+            Assert.That(_weapon.IsHolstered, Is.False);
+
+            move.Dispose();
+            sprint.Dispose();
+            crouch.Dispose();
+            jump.Dispose();
+        }
+
+        [Test]
         public void ShuttingDownCancelsThePlantAndReleasesTheWeapon()
         {
             Plant();
