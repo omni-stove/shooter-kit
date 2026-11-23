@@ -1,0 +1,8 @@
+{
+  "mode.juggernaut.chosenIn": "Juggernaut chosen in {0} s",
+  "mode.juggernaut.waiting": "Waiting for a juggernaut",
+  "mode.juggernaut.current": "Juggernaut: {0}",
+  "mode.juggernaut.youAreJuggernaut": "You are the juggernaut: keep scoring kills",
+  "mode.juggernaut.hunt": "Take down the juggernaut to become it",
+  "mode.juggernaut.yourScore": "Your score {0}"
+}
