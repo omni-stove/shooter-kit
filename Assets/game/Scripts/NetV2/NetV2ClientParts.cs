@@ -50,6 +50,9 @@ namespace Shooter.NetV2
         // null ならオフラインと同じ Resources の調整値 (melee・streaks の JSON) を使う
         public MeleeSpec Melee { get; set; }
 
+        // スナップショットの武器の Id から武器を引く。近接の部品が、ルールの Melee が Off でも近接武器なら振ると決めるため。null なら近接武器を引かない
+        public Func<string, WeaponSpec> FindWeapon { get; set; }
+
         public StreakSpec Streaks { get; set; }
 
         // ロードアウトの能力の並び。つないだ直後の Ability1・Ability2 で置く種類をここから引く
@@ -152,7 +155,7 @@ namespace Shooter.NetV2
 
                 // ストリークと近接の規則はスナップショットの MatchRulesSync で届くので、最後に届いた値で決める
                 new NetV2StreakPart(client, context.Send, () => StreaksRule(client), context.Log, context.Streaks, context.LocalPlayer),
-                new NetV2MeleePart(client, context.Melee, context.LocalPlayer, context.Log),
+                new NetV2MeleePart(client, context.Melee, context.LocalPlayer, context.Log, context.FindWeapon),
                 deployables,
                 deployInput,
                 new NetV2KillCamPart(client, context.KillCamSpeed, context.LocalPlayer, context.Log, names.Names),

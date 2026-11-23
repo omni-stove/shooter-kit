@@ -22,6 +22,7 @@
     "grenade": "Off",
     "grenadeCount": 0,
     "melee": "On",
+    "takedown": "On",
     "emote": "On",
     "stamina": "On"
   },

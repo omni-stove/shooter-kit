@@ -200,6 +200,10 @@ namespace Shooter.Core
                     return "guardian";
                 case MatchObjective.Execution:
                     return "execution";
+                case MatchObjective.Juggernaut:
+                    return "juggernaut";
+                case MatchObjective.Vip:
+                    return "vip";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(objective), objective, "objective is not a defined MatchObjective");
             }

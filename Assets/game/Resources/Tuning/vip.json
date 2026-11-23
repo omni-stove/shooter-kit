@@ -1,0 +1,7 @@
+{
+  "vipMaxHealth": 200,
+  "roundSeconds": 150,
+  "winsToWin": 4,
+  "exitHoldSeconds": 3,
+  "swapEveryRounds": 1
+}

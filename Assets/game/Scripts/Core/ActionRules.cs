@@ -88,6 +88,8 @@ namespace Shooter.Core
 
         public AimWhileReloading AimWhileReloading { get; }
 
+        public Takedown Takedown { get; }
+
         // 構えでリロードを止めるなら、構えを押したときにリロードの方を取り消すので、構えは止めない。
         public bool BlocksAimWhileReloading() => AimWhileReloading == AimWhileReloading.Off && !InterruptsReload(ReloadInterrupt.Aim);
 
@@ -122,7 +124,8 @@ namespace Shooter.Core
             Emote emote = Emote.Off,
             Stamina stamina = Stamina.Off,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
-            AimWhileReloading aimWhileReloading = AimWhileReloading.On)
+            AimWhileReloading aimWhileReloading = AimWhileReloading.On,
+            Takedown takedown = Takedown.Off)
         {
             if (!Enum.IsDefined(typeof(Downed), downed))
             {
@@ -209,6 +212,7 @@ namespace Shooter.Core
             RequireDefined(emote, nameof(emote));
             RequireDefined(stamina, nameof(stamina));
             RequireDefined(aimWhileReloading, nameof(aimWhileReloading));
+            RequireDefined(takedown, nameof(takedown));
             var interrupts = reloadInterruptedBy == null ? DefaultReloadInterruptedBy : CopyInterrupts(reloadInterruptedBy);
 
             Downed = downed;
@@ -242,6 +246,7 @@ namespace Shooter.Core
             Stamina = stamina;
             ReloadInterruptedBy = interrupts;
             AimWhileReloading = aimWhileReloading;
+            Takedown = takedown;
         }
 
         public bool InterruptsReload(ReloadInterrupt action)
@@ -320,6 +325,8 @@ namespace Shooter.Core
 
         public ActionRules WithAimWhileReloading(AimWhileReloading value) => Copy(aimWhileReloading: value);
 
+        public ActionRules WithTakedown(Takedown value) => Copy(takedown: value);
+
         // 空は許すのは、どの動作でもリロードを止めないゲームもあるため。
         private static ReadOnlyCollection<ReloadInterrupt> CopyInterrupts(IReadOnlyList<ReloadInterrupt> reloadInterruptedBy)
         {
@@ -383,7 +390,8 @@ namespace Shooter.Core
             Emote? emote = null,
             Stamina? stamina = null,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
-            AimWhileReloading? aimWhileReloading = null)
+            AimWhileReloading? aimWhileReloading = null,
+            Takedown? takedown = null)
         {
             return new ActionRules(
                 downed ?? Downed,
@@ -416,7 +424,8 @@ namespace Shooter.Core
                 emote ?? Emote,
                 stamina ?? Stamina,
                 reloadInterruptedBy ?? ReloadInterruptedBy,
-                aimWhileReloading ?? AimWhileReloading);
+                aimWhileReloading ?? AimWhileReloading,
+                takedown ?? Takedown);
         }
     }
 }

@@ -34,5 +34,9 @@ namespace Shooter.Core
         Guardian,
 
         Execution,
+
+        Juggernaut,
+
+        Vip,
     }
 }
