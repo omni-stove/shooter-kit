@@ -263,6 +263,26 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void DoesNotRepublishOverAnotherZonesValueWhileInsideBoth()
+        {
+            _zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.WarnOnly, 0.5f));
+            _zone.HandleEnter(_bodyCollider);
+            _zone.Tick(0f);
+            var other = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.BlockDraw, false, 0f);
+            GameSignals.WeaponFreeZone.Publish(other);
+            var changes = 0;
+            Action<WeaponFreeZoneStatus?> count = _ => changes++;
+            GameSignals.WeaponFreeZone.Changed += count;
+
+            _zone.Tick(0f);
+            _zone.Tick(0f);
+            GameSignals.WeaponFreeZone.Changed -= count;
+
+            Assert.That(changes, Is.EqualTo(0));
+            Assert.That(GameSignals.WeaponFreeZone.Value, Is.EqualTo(other));
+        }
+
+        [Test]
         public void WarnOnlyKeepsWarningButNeverTurnsHostile()
         {
             _zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.WarnOnly, 0.5f));

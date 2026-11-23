@@ -336,8 +336,8 @@ namespace Shooter.Runtime
             }
 
             var status = State.Status;
-            // 重なった別のゾーンに上書きされたり消されたりしたら、値が同じでも出し直す。
-            if (_published.HasValue && _published.Value == status && GameSignals.WeaponFreeZone.Value == status)
+            // 消されたときだけ出し直す。別のゾーンの値に上書きされたときまで戻すと、重なったゾーンが毎 tick 出し合う。
+            if (_published.HasValue && _published.Value == status && GameSignals.WeaponFreeZone.HasValue)
             {
                 return;
             }
