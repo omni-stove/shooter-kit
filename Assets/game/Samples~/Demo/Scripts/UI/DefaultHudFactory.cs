@@ -111,6 +111,7 @@ namespace Shooter.Runtime
             AddView<LockOnWarningView>(hud);
             AddView<EmoteWheelView>(hud);
             AddView<WeaponFreeZoneView>(hud);
+            AddView<WeaponLightView>(hud);
             AddView<SecurityAlarmView>(hud);
         }
 
