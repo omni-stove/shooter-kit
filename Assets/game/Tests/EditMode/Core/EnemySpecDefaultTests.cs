@@ -35,6 +35,14 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheDefaultFireRangeReachesAsFarAsTheSightRange()
+        {
+            Assert.That(EnemySpec.DefaultFireRange, Is.EqualTo(40f));
+            Assert.That(EnemySpec.DefaultFireRange, Is.EqualTo(EnemySpec.DefaultSightRange));
+            Assert.That(EnemySpec.Default.FireRange, Is.EqualTo(40f));
+        }
+
+        [Test]
         public void TheCoverDefaultsAreTheTunedValues()
         {
             Assert.That(EnemySpec.DefaultCoverOnHitMaxDistance, Is.EqualTo(5f));
