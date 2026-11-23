@@ -165,6 +165,25 @@ namespace Shooter.NetV2
             return vehicle.FiringOf(vehicle.Seats[seat.Seat]) != VehicleSeatFiring.OwnWeapon;
         }
 
+        // サーバー (ServerCombat.ActiveWeapons) と同じく、乗り物の武器の席 (VehicleSeatFiring.VehicleWeapon) なら手の武器ではなく乗り物の武器を撃つ。
+        // シーンに無い乗り物の席は分からないので、断るかはサーバーに任せて撃つ側に倒す。
+        public bool FiresVehicleWeapon()
+        {
+            var seat = _vehicles != null ? _vehicles.LocalSeat : VehicleSeatSync.None;
+            if (!seat.IsRiding)
+            {
+                return false;
+            }
+
+            var vehicle = seat.Vehicle < _scene.Count ? _scene[seat.Vehicle].Vehicle : null;
+            if (vehicle == null || seat.Seat < 0 || seat.Seat >= vehicle.Seats.Count)
+            {
+                return true;
+            }
+
+            return vehicle.FiringOf(vehicle.Seats[seat.Seat]) == VehicleSeatFiring.VehicleWeapon;
+        }
+
         public void SendRequests(NetV2LocalPlayer local, MatchClient client, Vector3 feet)
         {
             if (_vehicles == null || local == null || client == null)

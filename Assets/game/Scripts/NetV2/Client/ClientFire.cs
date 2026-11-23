@@ -22,6 +22,12 @@ namespace Shooter.NetV2
         // spec が null でも決められるようにするのは、武器の値がまだ引けないときも弾倉の残りで今までどおり決めるため。
         public static FireDecision Decide(SnapshotMessage latest, int playerId, in CharacterMotorState predicted, WeaponSpec spec)
         {
+            return Decide(latest, playerId, predicted, spec, false);
+        }
+
+        public static FireDecision Decide(
+            SnapshotMessage latest, int playerId, in CharacterMotorState predicted, WeaponSpec spec, bool firesVehicleWeapon)
+        {
             if (latest == null || !latest.HasOwner)
             {
                 return FireDecision.Hold;
@@ -33,9 +39,10 @@ namespace Shooter.NetV2
                 return FireDecision.Hold;
             }
 
-            // しまっている・しまう途中・構える途中はサーバー (ServerHolster) が断るので、射撃もリロードも頼まない。押した射撃は NetV2HolsterPart が構える要求にする
+            // しまっている・しまう途中・構える途中はサーバー (ServerHolster) が断るので、射撃もリロードも頼まない。押した射撃は NetV2HolsterPart が構える要求にする。
+            // サーバーが断るのは手の武器だけなので、乗り物の武器の席では止めない
             var row = latest.Players[own];
-            if (row.Health <= 0 || row.Downed.IsDowned || row.HolsterPhase != HolsterPhase.Drawn
+            if (row.Health <= 0 || row.Downed.IsDowned || (row.HolsterPhase != HolsterPhase.Drawn && !firesVehicleWeapon)
                 || predicted.IsDodging || predicted.IsVaulting || predicted.IsDiving || predicted.Ladder.IsClimbing
                 || predicted.IsHangingOnLedge)
             {

@@ -253,6 +253,7 @@ namespace Shooter.Core.Tests
             Assert.That(HolsterLog.Began("p1", HolsterPhase.Holstering, 0.5f), Is.EqualTo("[Holster] holder=p1 began=Holstering seconds=0.50"));
             Assert.That(HolsterLog.Settled(null, HolsterPhase.Holstered), Is.EqualTo("[Holster] holder=- settled=Holstered"));
             Assert.That(HolsterLog.Reset("p1", "died"), Is.EqualTo("[Holster] holder=p1 reset=Drawn reason=died"));
+            Assert.That(HolsterLog.NoInput("Player/Holster"), Is.EqualTo("[Holster] input action 'Player/Holster' is missing; the holster key is not read"));
             Assert.That(
                 HolsterLog.Loaded(HolsterSpec.Default),
                 Is.EqualTo("[Holster] spec moveSpeedMultiplier=1.00 armed=Drawn,Drawing armedWhileHeldByOthers=false"));

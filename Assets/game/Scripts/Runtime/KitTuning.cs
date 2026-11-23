@@ -52,6 +52,7 @@ namespace Shooter.Runtime
         public const string LoadoutPresetsResourcePath = LoadoutPresetJson.ResourcePath;
         public const string GraphicsResourcePath = GraphicsJson.ResourcePath;
 
+        public const string GamepadLayoutsResourcePath = GamepadLayoutJson.ResourcePath;
         public const string HolsterResourcePath = HolsterJson.ResourcePath;
 
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
@@ -104,6 +105,8 @@ namespace Shooter.Runtime
         public static GraphicsSpec Graphics =>
             Load(c => c.GraphicsTuning, GraphicsResourcePath, GraphicsJson.Parse, GraphicsSpec.Default);
 
+        public static GamepadLayoutSpec GamepadLayouts =>
+            Load(c => c.GamepadLayoutsTuning, GamepadLayoutsResourcePath, GamepadLayoutJson.Parse, GamepadLayoutSpec.Default);
         public static HolsterSpec Holster =>
             Load(c => c.HolsterTuning, HolsterResourcePath, HolsterJson.Parse, HolsterSpec.Default);
 

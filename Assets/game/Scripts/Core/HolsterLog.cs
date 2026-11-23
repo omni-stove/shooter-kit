@@ -40,7 +40,7 @@ namespace Shooter.Core
 
         public static string NoInput(string actionPath)
         {
-            return $"{Tag} no input action={Name(actionPath)}";
+            return $"{Tag} input action '{Name(actionPath)}' is missing; the holster key is not read";
         }
 
         public static string Loaded(HolsterSpec spec)

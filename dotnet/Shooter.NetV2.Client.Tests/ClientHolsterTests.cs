@@ -28,6 +28,15 @@ namespace Shooter.NetV2.Tests
             Assert.That(ClientFire.Decide(Armed(phase, lowering, 0), _playerId, _standing), Is.EqualTo(FireDecision.Hold), "an empty magazine waits too");
         }
 
+        [TestCase(HolsterPhase.Holstering, 0.5f)]
+        [TestCase(HolsterPhase.Holstered, 1f)]
+        [TestCase(HolsterPhase.Drawing, 0.5f)]
+        public void AVehicleWeaponSeatFiresAndReloadsWhileTheHandWeaponIsLowered(HolsterPhase phase, float lowering)
+        {
+            Assert.That(ClientFire.Decide(Armed(phase, lowering, 30), _playerId, _standing, null, true), Is.EqualTo(FireDecision.Fire));
+            Assert.That(ClientFire.Decide(Armed(phase, lowering, 0), _playerId, _standing, null, true), Is.EqualTo(FireDecision.Reload));
+        }
+
         [Test]
         public void ARemotePoseCarriesTheLoweringAndHidesAHolsteredWeapon()
         {

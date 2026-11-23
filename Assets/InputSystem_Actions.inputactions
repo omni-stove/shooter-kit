@@ -690,6 +690,17 @@
                 },
                 {
                     "name": "",
+                    "id": "96a0f16c-b2aa-4aaf-8cf9-75c51de96e9c",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Previous",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "2923524f-5070-405f-aad4-a9ce36b18800",
                     "path": "<Mouse>/scroll/down",
                     "interactions": "",
@@ -943,6 +954,17 @@
                 },
                 {
                     "name": "",
+                    "id": "32afed74-d898-41bf-8507-656ea09bffa8",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "8a4f2c6e-1d93-4b70-a5e8-3f7b9d1c0e62",
                     "path": "<Keyboard>/v",
                     "interactions": "",
@@ -954,11 +976,33 @@
                 },
                 {
                     "name": "",
+                    "id": "3ab905ab-a1ac-4a93-8579-ce39d6c0f522",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Melee",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "c1e7b3d9-5a24-4f86-9b0c-7d2e8a6f4b13",
                     "path": "<Keyboard>/z",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "Prone",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7edda0e2-cc85-479f-b975-7188a9c336a2",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "Prone",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -998,6 +1042,17 @@
                 },
                 {
                     "name": "",
+                    "id": "654fae78-f0c6-4eaa-a90a-5b5e96c077ed",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Ability1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "f4a1b7e3-9d02-4c68-a3f5-2b6e0d8c9a41",
                     "path": "<Keyboard>/y",
                     "interactions": "",
@@ -1009,11 +1064,33 @@
                 },
                 {
                     "name": "",
+                    "id": "9b1c3698-d024-4896-bff9-9d57d3b4f7fc",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Ability2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "0e5c8d2b-6f47-4a19-8d3e-b1f9a7c4e058",
                     "path": "<Keyboard>/b",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "SquadCommand",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "035e2261-7b5e-4fd3-b640-98d77f44439c",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "SquadCommand",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -1053,11 +1130,33 @@
                 },
                 {
                     "name": "",
+                    "id": "704f1a81-2219-40c5-aaff-ab07d19c6f42",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "SwitchStreak",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "51e10be1-c583-4a87-a3fc-e1b440c2e2a2",
                     "path": "<Keyboard>/n",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "SwitchAmmoType",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f150cf05-3eb7-421b-a344-7ad55418eded",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "SwitchAmmoType",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -1075,6 +1174,17 @@
                 },
                 {
                     "name": "",
+                    "id": "3a782a09-49ad-4896-925e-495152e9b447",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "CycleMagnification",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "94b6b756-13bc-42fb-948c-ad9574f42fb8",
                     "path": "<Keyboard>/leftCtrl",
                     "interactions": "",
@@ -1086,11 +1196,33 @@
                 },
                 {
                     "name": "",
+                    "id": "4691af60-0138-4a14-8054-94766a79270b",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "HoldBreath",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "2a9e5c47-8f1d-4b36-a0e8-5c3f7d9b1e64",
                     "path": "<Keyboard>/k",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "SwitchGrenade",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d27b17ea-5b6c-49b9-82df-22caf1973e48",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "SwitchGrenade",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -1201,6 +1333,17 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "Holster",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3f7b9d21-6c4e-4a85-b0d2-e91a5c7f4b38",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "Holster",
                     "isComposite": false,
                     "isPartOfComposite": false

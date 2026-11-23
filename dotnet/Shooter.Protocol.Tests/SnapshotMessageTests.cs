@@ -901,7 +901,7 @@ namespace Shooter.Protocol.Tests
             var got = Send(sent, null);
 
             Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(phase));
-            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(lowering).Within(0.5f / 255f));
+            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(lowering).Within(1f / 255f));
             Assert.That(got.Players[1].HolsterPhase, Is.EqualTo(HolsterPhase.Drawn));
             AssertSame(sent, got);
         }

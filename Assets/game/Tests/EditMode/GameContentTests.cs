@@ -391,6 +391,7 @@ namespace Shooter.Tests.EditMode
                 (() => content.PalettesTuning, v => content.PalettesTuning = v),
                 (() => content.LoadoutPresetsTuning, v => content.LoadoutPresetsTuning = v),
                 (() => content.GraphicsTuning, v => content.GraphicsTuning = v),
+                (() => content.GamepadLayoutsTuning, v => content.GamepadLayoutsTuning = v),
                 (() => content.HolsterTuning, v => content.HolsterTuning = v),
             };
 
@@ -478,6 +479,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("_playlistsTuning", "Resources/Tuning/playlists")]
         [TestCase("_loadoutPresetsTuning", "Resources/Tuning/loadout-presets")]
         [TestCase("_graphicsTuning", "Resources/Tuning/graphics")]
+        [TestCase("_gamepadLayoutsTuning", "Resources/Tuning/gamepad-layouts")]
         [TestCase("_holsterTuning", "Resources/Tuning/holster")]
         public void TheTuningFieldsNameTheirResourceFallback(string field, string resourcePath)
         {
@@ -642,8 +644,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("redeploy").And.Contain("key-sharing").And.Contain("nameplates").And.Contain("palettes"));
             Assert.That(asked, Does.Contain("loadout-presets"));
             Assert.That(asked, Does.Contain("graphics"));
+            Assert.That(asked, Does.Contain("gamepad-layouts"));
             Assert.That(asked, Does.Contain("holster"));
-            Assert.That(asked, Has.Count.EqualTo(41));
+            Assert.That(asked, Has.Count.EqualTo(42));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]

@@ -13,7 +13,7 @@ namespace Shooter.Core.Tests
             Assert.That(HolsterLog.NetNotSent(HolsterPhase.Drawing, null), Is.EqualTo("[Holster] net not-sent=Drawing reason=-"));
             Assert.That(
                 HolsterLog.NetChanged(HolsterPhase.Holstering, HolsterPhase.Holstered), Is.EqualTo("[Holster] net phase=Holstering->Holstered"));
-            Assert.That(HolsterLog.NoInput("Player/Holster"), Is.EqualTo("[Holster] no input action=Player/Holster"));
+            Assert.That(HolsterLog.NoInput("Player/Holster"), Is.EqualTo("[Holster] input action 'Player/Holster' is missing; the holster key is not read"));
         }
     }
 }
