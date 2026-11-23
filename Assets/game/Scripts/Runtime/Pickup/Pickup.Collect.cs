@@ -86,7 +86,9 @@ namespace Shooter.Runtime
             // 入り切らなかったアイテムは、残りの数にしてこの場に置いておく
             if (spec.Kind == PickupKind.Item && outcome.Items < spec.Amount)
             {
+                var stocked = _stocked ?? _contents;
                 Contents = _contents.WithAmount(spec.Amount - outcome.Items);
+                _stocked = stocked;
                 Debug.Log(PickupLog.Collected(name, collector.Id, outcome) + " left=" + (spec.Amount - outcome.Items), this);
                 return true;
             }
