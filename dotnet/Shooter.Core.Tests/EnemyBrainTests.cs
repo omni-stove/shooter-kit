@@ -253,7 +253,7 @@ namespace Shooter.Core.Tests
         public void LeavingAttackRangeRestartsReaction()
         {
             var brain = PatrollingBrain(out _);
-            var far = new Vector3(0f, 0f, 15f);
+            var far = new Vector3(0f, 0f, 25f);
             var near = new Vector3(0f, 0f, 5f);
             brain.Tick(0.1f, Sees(Vector3.Zero, near));
             Assert.That(brain.Tick(1f, Sees(Vector3.Zero, near)).Fire, Is.True);
@@ -282,7 +282,7 @@ namespace Shooter.Core.Tests
             Assert.That(spreads, Is.EqualTo(_expectedOpeningSpreads).Within(1e-4f));
             Assert.That(brain.ShotsInAttack, Is.EqualTo(5));
 
-            brain.Tick(0.1f, Sees(Vector3.Zero, new Vector3(0f, 0f, 15f)));
+            brain.Tick(0.1f, Sees(Vector3.Zero, new Vector3(0f, 0f, 25f)));
             brain.Tick(0.1f, Sees(Vector3.Zero, near));
 
             Assert.That(brain.ShotsInAttack, Is.Zero);
