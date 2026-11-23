@@ -396,7 +396,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(_holster.Phase, Is.EqualTo(HolsterPhase.Drawing));
             Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "drawing");
 
-            Advance(RifleDrawSeconds);
+            HoldAttack(RifleDrawSeconds);
             Assert.That(_holster.Phase, Is.EqualTo(HolsterPhase.Drawn));
             _holster.Tick(0f, false, false, true);
             Assert.That(_weapon.IsMeleeWeaponBlocked, Is.True, "the press that drew must not swing");
