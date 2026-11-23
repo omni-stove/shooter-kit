@@ -812,6 +812,77 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void IfOnlyTheStampsCannotBeWrittenWhileSwappingTheNewAccountsSavesAreNotRestoredUntilTheyCan()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend { SignedInAccount = OtherAccount };
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, NewProfile);
+            Drain(sync);
+            backend.SignedInAccount = Account;
+            Drain(sync);
+            sync.Write(ProfileSlot, OldProfile);
+            Drain(sync);
+            backend.SignedInAccount = OtherAccount;
+            Drain(sync);
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            backend.Files.Clear();
+            backend.Calls.Clear();
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            local.FailWriteSlot = CloudSaveSync.StampsSlot;
+            backend.SignedInAccount = Account;
+            LogAssert.Expect(LogType.Error, CloudSaveLog.AccountChangeFailed(MemorySaveStorage.FailureMessage, CloudSaveSync.DefaultRetrySeconds));
+            sync.Tick(_time);
+            sync.Tick(_time + 1d);
+
+            Assert.That(sync.IsSignedIn, Is.False);
+            Assert.That(backend.Calls, Is.Empty);
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.EqualTo(OldProfile));
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Does.Contain("\"account\":\"" + OtherAccountKey + "\""));
+            Assert.That(pulled, Is.Empty);
+
+            local.FailWriteSlot = null;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(sync.IsSignedIn, Is.True);
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(OldProfile));
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Does.Contain("\"account\":\"" + AccountKey + "\""));
+            Assert.That(pulled, Does.Contain(ProfileSlot));
+        }
+
+        [Test]
+        public void IfTheOwnerOfUnownedStampsCannotBeWrittenItStaysUnownedUntilItCan()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend();
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            var unowned = local.Text(CloudSaveSync.StampsSlot);
+
+            local.FailWriteSlot = CloudSaveSync.StampsSlot;
+            backend.SignedInAccount = Account;
+            LogAssert.Expect(LogType.Error, CloudSaveLog.AccountChangeFailed(MemorySaveStorage.FailureMessage, CloudSaveSync.DefaultRetrySeconds));
+            sync.Tick(_time);
+            sync.Tick(_time + 1d);
+
+            Assert.That(sync.IsSignedIn, Is.False);
+            Assert.That(backend.Calls, Is.Empty);
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Is.EqualTo(unowned));
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Does.Not.Contain("account"));
+
+            local.FailWriteSlot = null;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(sync.IsSignedIn, Is.True);
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Does.Contain("\"account\":\"" + AccountKey + "\""));
+        }
+
+        [Test]
         public void TheAccountKeyHidesTheAccountIdAndIsStable()
         {
             Assert.That(CloudSaveSync.AccountKey(Account), Is.EqualTo(AccountKey));
