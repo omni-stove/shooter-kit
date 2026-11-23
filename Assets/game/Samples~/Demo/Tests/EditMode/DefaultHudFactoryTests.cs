@@ -238,6 +238,31 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheDefaultHudCarriesTheSecurityAlarmView()
+        {
+            var hud = DefaultHud;
+
+            Assert.That(hud.GetComponents<SecurityAlarmView>(), Has.Length.EqualTo(1));
+
+            DefaultHudFactory.AddActionViews(hud);
+            Assert.That(hud.GetComponents<SecurityAlarmView>(), Has.Length.EqualTo(1), "adding it again keeps one");
+
+            // Edit Mode では UIDocument が木を作らないことがあり、そのときは表示が結ばれない。
+            Assume.That(hud.View, Is.Not.Null, "the UIDocument built no visual tree in Edit Mode");
+            var view = hud.GetComponent<SecurityAlarmView>();
+            Assert.That(view.Element, Is.Not.Null);
+            Assert.That(view.Element.name, Is.EqualTo(SecurityAlarmView.UxmlName));
+            Assert.That(view.IsShown, Is.False, "no alarm is ringing yet");
+
+            GameSignals.StealthAlarm.Publish(new SecurityAlarmStatus(true, 10f, System.Numerics.Vector3.Zero, "cam-a"));
+            Assert.That(view.IsShown, Is.True);
+            Assert.That(view.Text, Is.EqualTo("警報 カメラに見つかった あと 10 秒"));
+
+            GameSignals.StealthAlarm.Publish(null);
+            Assert.That(view.IsShown, Is.False, "clearing the alarm hides it");
+        }
+
+        [Test]
         public void ThePublishedPlayerCarriesTheLockOnWarningPublisherForItself()
         {
             var publisher = _world.Player.GetComponent<LockOnWarningPublisher>();

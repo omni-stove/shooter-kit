@@ -235,6 +235,79 @@ namespace Shooter.Net.Tests
                 "vehicles are out of date with " + scenePath);
         }
 
+        // ドアを置く前の Arena なども、空の一覧を書いてサーバーがドア無しとして読めるようにする
+        [TestCaseSource(nameof(MapScenes))]
+        public void CommittedDoorsMatchTheSceneAndItsCollision(string scenePath)
+        {
+            OpenAndCollect(scenePath, out _);
+            var mapName = MapCollisionExporter.MapName(scenePath);
+
+            var doors = NetMapDoors.Parse(File.ReadAllText(MapDataFile(mapName, NetMapDoors.Extension)), mapName + NetMapDoors.Extension);
+            var collected = MapCollisionExporter.CollectDoors(_scene.GetRootGameObjects());
+
+            Assert.That(doors.Doors.Select(d => d.ColliderGroup), Is.EqualTo(collected.Doors.Select(d => d.ColliderGroup)), "doors are out of date with " + scenePath);
+            var world = new BvhWorldCollision(MapCollisionExporter.ReadFile(MapFile(scenePath)));
+            foreach (var door in doors.Doors)
+            {
+                Assert.That(world.IsGroupEnabled(door.ColliderGroup), Is.True, mapName + " has no panel collider for door group " + door.ColliderGroup);
+            }
+        }
+
+        [Test]
+        public void AMapWithADoorWritesItsPanelAsTheDoorsColliderGroup()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            var directory = Path.Combine(Path.GetTempPath(), "ServerDataMapsTests-" + System.Guid.NewGuid().ToString("N"));
+            try
+            {
+                var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                floor.name = "Floor";
+                floor.transform.localScale = new Vector3(20f, 1f, 20f);
+                floor.transform.position = new Vector3(0f, -0.5f, 0f);
+                SceneManager.MoveGameObjectToScene(floor, scene);
+
+                var doorObject = new GameObject("Door");
+                SceneManager.MoveGameObjectToScene(doorObject, scene);
+                doorObject.transform.SetPositionAndRotation(new Vector3(3f, 0f, 5f), Quaternion.Euler(0f, 180f, 0f));
+                var door = doorObject.AddComponent<Shooter.Tests.EditMode.FakeBreachDoorSource>();
+                var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                panel.name = "Panel";
+                panel.transform.SetParent(doorObject.transform, false);
+                panel.transform.localPosition = new Vector3(0f, 1.1f, 0f);
+                panel.transform.localScale = door.Size;
+                door.PanelTransform = panel.transform;
+
+                var roots = scene.GetRootGameObjects();
+                var doors = MapCollisionExporter.CollectDoors(roots);
+                var map = MapCollisionExporter.Collect(roots);
+                Directory.CreateDirectory(directory);
+                var doorsPath = Path.Combine(directory, "DoorMap" + NetMapDoors.Extension);
+                var mapPath = Path.Combine(directory, "DoorMap" + MapCollisionExporter.FileExtension);
+                MapCollisionExporter.WriteText(doorsPath, NetMapDoors.Write(doors));
+                MapCollisionExporter.WriteFile(mapPath, map);
+
+                var read = NetMapDoors.Parse(File.ReadAllText(doorsPath), doorsPath).Doors.Single();
+                Assert.That(read.Position.X, Is.EqualTo(3f).Within(1e-4f));
+                Assert.That(read.Position.Y, Is.EqualTo(1.1f).Within(1e-4f));
+                Assert.That(read.Position.Z, Is.EqualTo(5f).Within(1e-4f));
+                Assert.That(read.Facing.Z, Is.EqualTo(-1f).Within(1e-5f));
+                Assert.That(read.PanelSize, Is.EqualTo(new System.Numerics.Vector3(door.Size.x, door.Size.y, door.Size.z)));
+                Assert.That(read.ColliderGroup, Is.EqualTo(MapColliderGroups.Door(0)));
+
+                var written = MapCollisionExporter.ReadFile(mapPath);
+                Assert.That(written.Colliders.Count(c => c.Group == read.ColliderGroup), Is.EqualTo(1), "only the panel is in the door's group");
+                Assert.That(written.Colliders.Count(c => c.Group == MapColliderGroups.Static), Is.EqualTo(1), "the floor stays static");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
+            }
+        }
+
         [TestCaseSource(nameof(MapScenes))]
         public void EveryMapSceneHasItsMapFeatures(string scenePath)
         {

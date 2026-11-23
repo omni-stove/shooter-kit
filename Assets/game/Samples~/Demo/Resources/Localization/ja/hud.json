@@ -88,5 +88,7 @@
   "hud.weaponFree.autoHolster": "ここでは武器を出してはいけない 武器をしまう",
   "hud.weaponFree.blockDraw": "ここでは武器を構えられない",
   "hud.weaponLight.on": "ライト 点灯",
-  "hud.weaponLight.off": "ライト 消灯"
+  "hud.weaponLight.off": "ライト 消灯",
+  "hud.securityAlarm.ringing": "警報 カメラに見つかった あと {0} 秒",
+  "hud.securityCamera.disable": "[{0}] を {1} 秒長押しでカメラを止める"
 }

@@ -1381,6 +1381,32 @@
     -unity-text-align: middle-left;
 }
 
+/* 監視カメラの警報。武器を出してはいけない場所の警告と重ならないよう、その下の中央に赤で出す。 */
+.security-alarm {
+    position: absolute;
+    left: 50%;
+    top: 200px;
+    translate: -50% 0;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+    background-color: rgba(200, 30, 30, 0.85);
+    font-size: 22px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+.security-alarm__text {
+    padding: 0;
+    margin: 0;
+    -unity-text-align: middle-center;
+}
+
 /* エモートを選ぶ輪。画面の中央に置き、EmoteWheelView が枠を円周の left / top に置く。幅の半分は EmoteWheelView.WheelHalfSize と揃える。 */
 .emote-wheel {
     position: absolute;
