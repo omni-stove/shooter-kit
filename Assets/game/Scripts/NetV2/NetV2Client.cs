@@ -458,6 +458,7 @@ namespace Shooter.NetV2
                 LocalPlayer = () => _local,
                 Names = _names,
                 FindWeapon = _weapons.SpecFor,
+                OwnAttachments = weaponId => _inventory.Inventory?.AttachmentsOf(weaponId),
 
                 // 再生には相手がおらず、ボイスの部屋も無いので、声の部品を作らない
                 Voice = replay ? null : NetV2Eos.CreateVoiceSession(_matchLobby?.LobbyId, log),

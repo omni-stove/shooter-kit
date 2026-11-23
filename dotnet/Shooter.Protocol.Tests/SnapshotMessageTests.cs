@@ -1081,6 +1081,127 @@ namespace Shooter.Protocol.Tests
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
         }
 
+        [Test]
+        public void AFreshPlayerHasTheWeaponLightOff()
+        {
+            var got = Send(Build(100, 0f), null);
+
+            Assert.That(got.Players[0].WeaponLightOn, Is.False);
+            Assert.That(got.Players[1].WeaponLightOn, Is.False);
+        }
+
+        [TestCase(HolsterPhase.Drawn, 0f)]
+        [TestCase(HolsterPhase.Drawing, 0.5f)]
+        public void TheWeaponLightRoundTripsWithTheHolster(HolsterPhase phase, float lowering)
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].WeaponLightOn = true;
+            sent.Players[0].HolsterPhase = phase;
+            sent.Players[0].HolsterLowering = lowering;
+
+            var got = Send(sent, null);
+
+            Assert.That(got.Players[0].WeaponLightOn, Is.True);
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(phase));
+            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(lowering).Within(1f / 255f));
+            Assert.That(got.Players[1].WeaponLightOn, Is.False);
+            AssertSame(sent, got);
+        }
+
+        // 点灯はしまう状態のバイトの 1 ビットなので、点けても消しても武器の部分の大きさ (Id の文字列 2 + "rifle" 5・状態 1) は変わらない
+        [Test]
+        public void TurningTheLightOnSendsOnlyTheWeaponPartWithoutAnExtraByte()
+        {
+            const int weaponBytes = 2 + 5 + 1;
+            var baseline = Build(100, 0f);
+            var unchanged = Build(101, 0f);
+            var lit = Build(101, 0f);
+            lit.Players[0].WeaponLightOn = true;
+            var received = Send(baseline, null);
+
+            var got = Send(lit, baseline);
+
+            Assert.That(lit.Players[0].ChangedBits(baseline.Players[0]), Is.EqualTo((int)PlayerFields.Weapon));
+            Assert.That(Size(lit, baseline) - Size(unchanged, baseline), Is.EqualTo(weaponBytes));
+            Assert.That(got.Players[0].Present, Is.EqualTo(PlayerFields.Weapon));
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Players[0].WeaponLightOn, Is.True);
+            Assert.That(got.Players[0].WeaponId, Is.EqualTo("rifle"));
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(HolsterPhase.Drawn));
+        }
+
+        [Test]
+        public void AnUnchangedLightIsNotSentAgainAndTurningItOffIs()
+        {
+            var baseline = Build(100, 0f);
+            baseline.Players[0].WeaponLightOn = true;
+            var stillLit = Build(101, 0f);
+            stillLit.Players[0].WeaponLightOn = true;
+            var off = Build(101, 0f);
+            var received = Send(baseline, null);
+
+            Assert.That(stillLit.Players[0].ChangedBits(baseline.Players[0]), Is.Zero);
+            Assert.That(off.Players[0].ChangedBits(baseline.Players[0]), Is.EqualTo((int)PlayerFields.Weapon));
+
+            var keptLit = Send(stillLit, baseline);
+            Assert.That(keptLit.TryResolve(received), Is.True);
+            Assert.That(keptLit.Players[0].WeaponLightOn, Is.True, "a row without the weapon part keeps the light of the baseline");
+
+            var turnedOff = Send(off, baseline);
+            Assert.That(turnedOff.TryResolve(received), Is.True);
+            Assert.That(turnedOff.Players[0].WeaponLightOn, Is.False);
+        }
+
+        [Test]
+        public void ALitLightWithoutAWeaponIsNotWritten()
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].WeaponId = "";
+            sent.Players[0].WeaponLightOn = true;
+
+            Assert.Throws<InvalidOperationException>(() => new MessageWriter().WriteMessage(sent));
+        }
+
+        [Test]
+        public void ALitLightWithoutAWeaponIsNotRead()
+        {
+            var data = OnePlayerDelta(PlayerFields.Weapon, w =>
+            {
+                w.WriteString("");
+                w.WriteByte(0x10);
+            });
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
+        }
+
+        // 0x10 より上のビットは使っていないので、立っていれば知らない状態として断る
+        [Test]
+        public void AnUnusedBitOfTheHolsterByteIsNotRead()
+        {
+            var data = OnePlayerDelta(PlayerFields.Weapon, w =>
+            {
+                w.WriteString("rifle");
+                w.WriteByte(0x20);
+            });
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
+        }
+
+        [Test]
+        public void ALitLightIsReadFromTheHolsterByte()
+        {
+            var data = OnePlayerDelta(PlayerFields.Weapon, w =>
+            {
+                w.WriteString("rifle");
+                w.WriteByte(0x10 | (byte)HolsterPhase.Drawn);
+            });
+
+            var got = (SnapshotMessage)MatchMessages.CreateClientTable().Read(data);
+
+            Assert.That(got.Players[0].WeaponLightOn, Is.True);
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(HolsterPhase.Drawn));
+        }
+
         // Build と同じ試合の部分に、player 1 の bits の部分だけを parts で手で書き足した、持ち主も他の物も無いスナップショット
         private static ArraySegment<byte> OnePlayerDelta(PlayerFields bits, Action<MessageWriter> parts)
         {

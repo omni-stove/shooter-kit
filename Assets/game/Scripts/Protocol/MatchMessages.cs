@@ -37,6 +37,7 @@ namespace Shooter.Protocol
                 new EmoteRequestMessage(),
                 new HordeFortifyRequestMessage(),
                 new HolsterRequestMessage(),
+                new WeaponLightRequestMessage(),
             };
         }
 
