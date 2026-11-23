@@ -19,13 +19,19 @@ namespace Shooter.Server
         private readonly ServerCombat _combat;
         private readonly Dictionary<int, Inventory> _inventories = new Dictionary<int, Inventory>();
         private readonly HashSet<int> _dirty = new HashSet<int>();
-        private readonly Dictionary<int, float> _nextRefusalLogTimes = new Dictionary<int, float>();
+        private readonly Dictionary<int, double> _nextRefusalLogTimes = new Dictionary<int, double>();
         private readonly InventoryStateMessage _state = new InventoryStateMessage();
         private ServerContext _context;
         private TextWriter _log;
         private ServerMatch _match;
         private ItemCatalog _catalog;
-        private float _now;
+        private double _now;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         public ServerInventories(MatchRulesModule rules, ServerCombat combat = null)
         {

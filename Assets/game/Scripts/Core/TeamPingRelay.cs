@@ -20,7 +20,7 @@ namespace Shooter.Core
 
         public int Count => _owners.Count;
 
-        public PingRefusal CheckInterval(int pingerId, float now)
+        public PingRefusal CheckInterval(int pingerId, double now)
         {
             RequireFinite(now, nameof(now));
             return _pingers.TryGetValue(pingerId, out var pinger) && pinger.LastAttemptAt.HasValue
@@ -30,7 +30,7 @@ namespace Shooter.Core
         }
 
         public PingRefusal TryPlace(
-            int pingerId, Team team, PingHit hit, int? targetKey, float now, List<SharedPingChange> changes, out SharedPing placed)
+            int pingerId, Team team, PingHit hit, int? targetKey, double now, List<SharedPingChange> changes, out SharedPing placed)
         {
             if (changes == null)
             {
@@ -149,7 +149,7 @@ namespace Shooter.Core
             }
         }
 
-        public int Expire(float now, List<SharedPingChange> changes)
+        public int Expire(double now, List<SharedPingChange> changes)
         {
             if (changes == null)
             {
@@ -274,9 +274,9 @@ namespace Shooter.Core
                 new PingMarker(sharedId, marker.Kind, marker.TargetKey, marker.Position, marker.IsTracking, marker.PlacedAt, marker.ExpiresAt));
         }
 
-        private static void RequireFinite(float value, string name)
+        private static void RequireFinite(double value, string name)
         {
-            if (float.IsNaN(value) || float.IsInfinity(value))
+            if (double.IsNaN(value) || double.IsInfinity(value))
             {
                 throw new ArgumentOutOfRangeException(name, value, name + " must be finite");
             }
@@ -297,7 +297,7 @@ namespace Shooter.Core
 
             public Team Team { get; set; }
 
-            public float? LastAttemptAt { get; set; }
+            public double? LastAttemptAt { get; set; }
         }
 
         private readonly struct Owner

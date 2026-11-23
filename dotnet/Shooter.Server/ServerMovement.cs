@@ -22,7 +22,13 @@ namespace Shooter.Server
         private ServerContext _context;
         private TextWriter _log;
         private KnockbackSpec _knockback = KnockbackSpec.Default;
-        private float _now;
+        private double _now;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         public ServerMovement(ServerMotorSettings settings, int tickRate = TickClock.DefaultTickRate, ServerCheatSignals signals = null)
         {
@@ -115,7 +121,7 @@ namespace Shooter.Server
             {
                 State = new CharacterMotorState(spawn, Vector3.Zero, false, false),
                 InputBudget = MaxInputBudget,
-                NextWarning = float.NegativeInfinity,
+                NextWarning = double.NegativeInfinity,
                 Yaw = spawned ? shared.Yaw : 0f,
                 Downed = shared != null && shared.IsDowned,
             };
@@ -252,7 +258,7 @@ namespace Shooter.Server
 
             public float ZiplineRegrabRemaining { get; set; }
 
-            public float NextWarning { get; set; }
+            public double NextWarning { get; set; }
 
             // 押し始めの tick だけで縄を撃ち・跳んで離すよう、前の入力で押していたかを覚える
             public bool GrappleHeld { get; set; }

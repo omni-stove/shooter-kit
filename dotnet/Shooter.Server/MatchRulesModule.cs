@@ -28,8 +28,14 @@ namespace Shooter.Server
         private TeamDeathmatchSession _session;
         private ServerLoadout _loadout;
         private KillShot? _killShot;
-        private float _now;
+        private double _now;
         private long _tick;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         public event Action<int> PlayerSpawned;
 
