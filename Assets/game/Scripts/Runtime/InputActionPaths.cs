@@ -40,5 +40,6 @@ namespace Shooter.Runtime
         public const string PushToTalk = "Player/PushToTalk";
         public const string Emote = "Player/Emote";
         public const string Countermeasure = "Player/Countermeasure";
+        public const string Holster = "Player/Holster";
     }
 }

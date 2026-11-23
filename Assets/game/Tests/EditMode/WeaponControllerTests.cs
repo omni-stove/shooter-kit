@@ -228,6 +228,84 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheHolsterInletsChangeNothingByDefault()
+        {
+            var handgun = CreateHandgun();
+            try
+            {
+                _rifle.Weight = 4f;
+                _rifle.MoveSpeedMultiplier = 0.9f;
+                InitializeWithRifleAndHandgun(handgun);
+                var held = new Shooter.Core.CarryLoadSpec(
+                    Shooter.Core.CarrySource.Held, Shooter.Core.CarrySource.Held, 0f, 0.1f, 0f, Shooter.Core.CarryGaits.All);
+
+                Assert.That(_controller.HolsterLowering, Is.Zero);
+                Assert.That(_controller.HolsterMoveSpeedMultiplier, Is.EqualTo(1f));
+                Assert.That(_controller.SwitchLowering, Is.Zero);
+                Assert.That(_controller.CarrySpeedMultiplier(held), Is.EqualTo(0.6f * 0.9f).Within(1e-5f));
+                Assert.That(_controller.IsFireBlocked, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void TheLoweringIsTheLowerOfSwitchingAndHolstering()
+        {
+            var handgun = CreateHandgun();
+            try
+            {
+                _controller.SwitchSeconds = 0.5f;
+                InitializeWithRifleAndHandgun(handgun);
+
+                _controller.HolsterLowering = 0.3f;
+                Assert.That(_controller.SwitchLowering, Is.EqualTo(0.3f), "holstering alone lowers the gun");
+                Assert.That(_controller.IsSwitching, Is.False, "holstering is not a weapon switch");
+
+                Assert.That(_controller.SelectNext(), Is.True);
+                Assert.That(_controller.SwitchLowering, Is.EqualTo(1f), "the switch is lower");
+                _controller.Tick(0.4f);
+                Assert.That(_controller.SwitchLowering, Is.EqualTo(0.3f).Within(1e-5f), "the switch rose past the holster lowering");
+
+                _controller.HolsterLowering = 0f;
+                Assert.That(_controller.SwitchLowering, Is.EqualTo(0.2f).Within(1e-5f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void TheHolsterSpeedMultiplierScalesTheCarryMultiplier()
+        {
+            _rifle.Weight = 4f;
+            _rifle.MoveSpeedMultiplier = 0.9f;
+            _controller.Initialize(_camera.transform, _attack, _reload, _rifle);
+            var held = new Shooter.Core.CarryLoadSpec(
+                Shooter.Core.CarrySource.Held, Shooter.Core.CarrySource.Held, 0f, 0.1f, 0f, Shooter.Core.CarryGaits.All);
+
+            _controller.HolsterMoveSpeedMultiplier = 1.2f;
+
+            Assert.That(_controller.CarrySpeedMultiplier(held), Is.EqualTo(0.6f * 0.9f * 1.2f).Within(1e-5f));
+        }
+
+        [Test]
+        public void TheHolsterInletsRejectBadValues()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterLowering = -0.1f);
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterLowering = 1.1f);
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterLowering = float.NaN);
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterMoveSpeedMultiplier = -1f);
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterMoveSpeedMultiplier = float.NaN);
+            Assert.Throws<ArgumentOutOfRangeException>(() => _controller.HolsterMoveSpeedMultiplier = float.PositiveInfinity);
+            Assert.That(_controller.HolsterLowering, Is.Zero);
+            Assert.That(_controller.HolsterMoveSpeedMultiplier, Is.EqualTo(1f));
+        }
+
+        [Test]
         public void WhileSwitchingTheDrawnWeaponNeitherFiresNorReloads()
         {
             var handgun = CreateHandgun();

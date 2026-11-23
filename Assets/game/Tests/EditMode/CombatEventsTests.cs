@@ -455,6 +455,34 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void HolsterChangedPassesTheHolderAndTheSettledPhaseAndIsDroppedByClearSubscribers()
+        {
+            var holder = new GameObject("Holder");
+            _created.Add(holder);
+            var changes = new List<HolsterChange>();
+            CombatEvents.HolsterChanged += changes.Add;
+
+            CombatEvents.RaiseHolsterChanged(holder, HolsterPhase.Holstered);
+            CombatEvents.RaiseHolsterChanged(holder, HolsterPhase.Drawn);
+            CombatEvents.ClearSubscribers();
+            CombatEvents.RaiseHolsterChanged(holder, HolsterPhase.Holstered);
+
+            Assert.That(changes, Has.Count.EqualTo(2));
+            Assert.That(changes[0].Holder, Is.SameAs(holder));
+            Assert.That(changes[0].IsHolstered, Is.True);
+            Assert.That(changes[1].Phase, Is.EqualTo(HolsterPhase.Drawn));
+            Assert.That(changes[1].IsHolstered, Is.False);
+        }
+
+        [TestCase(HolsterPhase.Holstering)]
+        [TestCase(HolsterPhase.Drawing)]
+        [TestCase((HolsterPhase)99)]
+        public void AHolsterChangeIsOnlyASettledPhase(HolsterPhase phase)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new HolsterChange(null, phase));
+        }
+
+        [Test]
         public void APurchaseAnswerRejectsAnUnknownVerdict()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new PurchaseAnswer("rifle", (PurchaseVerdict)99));

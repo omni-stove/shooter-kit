@@ -42,6 +42,8 @@ namespace Shooter.Runtime
         private readonly PelletHits<Damageable> _pelletHits = new PelletHits<Damageable>();
         private int _shotCount;
         private bool _unarmed;
+        private float _holsterLowering;
+        private float _holsterMoveSpeedMultiplier = 1f;
 
         public RecoilState Recoil => _recoil;
 
@@ -80,7 +82,38 @@ namespace Shooter.Runtime
 
         public bool IsSwitching => _loadout != null && !_unarmed && _loadout.IsSwitching;
 
-        public float SwitchLowering => IsSwitching ? _loadout.SwitchLowering : 0f;
+        // しまう動作と持ち替えが重なったとき、下がっている方に合わせて銃が跳ね上がらないようにする。
+        public float SwitchLowering => Mathf.Max(IsSwitching ? _loadout.SwitchLowering : 0f, _holsterLowering);
+
+        // 持ち替えの Loadout に混ぜず別の口にするのは、しまう動作は武器を替えずに下げるだけで、Loadout の持ち替えの秒数と関わらないため。
+        public float HolsterLowering
+        {
+            get => _holsterLowering;
+            set
+            {
+                if (!(value >= 0f && value <= 1f))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "holster lowering must be between 0 and 1");
+                }
+
+                _holsterLowering = value;
+            }
+        }
+
+        // CarryLoadSpec に足さないのは、倍率がしまう動作の調整値 (holster.json) にあり、持つ重さの調整値と別に差し替えるため。
+        public float HolsterMoveSpeedMultiplier
+        {
+            get => _holsterMoveSpeedMultiplier;
+            set
+            {
+                if (!(value >= 0f) || float.IsInfinity(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "holster move speed multiplier must be a non-negative finite number");
+                }
+
+                _holsterMoveSpeedMultiplier = value;
+            }
+        }
 
         public GameRules Rules
         {
@@ -119,7 +152,7 @@ namespace Shooter.Runtime
             }
 
             var armed = _loadout != null && !_unarmed;
-            return carry.SpeedMultiplier(armed ? _loadout.Current.Spec : null, armed ? _specs : null, extraWeight) * ShieldMoveSpeedMultiplier;
+            return carry.SpeedMultiplier(armed ? _loadout.Current.Spec : null, armed ? _specs : null, extraWeight) * ShieldMoveSpeedMultiplier * _holsterMoveSpeedMultiplier;
         }
 
         public int CurrentIndex => _loadout != null && !_unarmed ? _loadout.CurrentIndex : -1;
