@@ -42,7 +42,9 @@
       "emote": "Off",
       "stamina": "Off",
       "reloadInterruptedBy": ["Melee", "Grenade"],
-      "aimWhileReloading": "On"
+      "aimWhileReloading": "On",
+      "jam": "Off",
+      "takedown": "On"
     },
     "spawnProtectionSeconds": 2,
     "fallDamage": "Off",

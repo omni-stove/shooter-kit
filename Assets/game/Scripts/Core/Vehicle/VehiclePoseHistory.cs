@@ -71,11 +71,11 @@ namespace Shooter.Core
         }
 
         // 範囲の外は端の値にするのは、巻き戻しの上限より古い射撃も、まだ届いていない tick の表示も、知っている一番近い姿で扱うため。
-        public bool TrySample(float tick, out Vector3 position, out Quaternion rotation)
+        public bool TrySample(double tick, out Vector3 position, out Quaternion rotation)
         {
             position = default;
             rotation = Quaternion.Identity;
-            if (Count == 0 || float.IsNaN(tick))
+            if (Count == 0 || double.IsNaN(tick))
             {
                 return false;
             }
@@ -97,7 +97,7 @@ namespace Shooter.Core
                 }
 
                 var before = Index(i - 1);
-                var t = (tick - _ticks[before]) / (_ticks[after] - _ticks[before]);
+                var t = (float)((tick - _ticks[before]) / ((double)_ticks[after] - _ticks[before]));
                 position = Vector3.Lerp(_positions[before], _positions[after], t);
                 rotation = Quaternion.Slerp(_rotations[before], _rotations[after], t);
                 return true;

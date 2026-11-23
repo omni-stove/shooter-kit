@@ -64,6 +64,87 @@ namespace Shooter.Tests.EditMode
             var tuning = StealthNoiseJson.ParseTuning(asset.text, "Resources/Tuning/stealth.json");
             Assert.That(tuning.ArmedGainFactor, Is.EqualTo(AwarenessSpec.DefaultArmedGainFactor), "the shipped file keeps armed and holstered alike");
             Assert.That(StealthActionInstaller.Tuning.ArmedGainFactor, Is.EqualTo(1f));
+            Assert.That(tuning.LitGainFactor, Is.EqualTo(AwarenessSpec.DefaultLitGainFactor), "the shipped file keeps lit and dark alike");
+            Assert.That(StealthActionInstaller.Tuning.LitGainFactor, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void TheKitShipsTheCameraAndAlarmDefaultsInResources()
+        {
+            var asset = Resources.Load<TextAsset>(StealthActionInstaller.TuningResourcePath);
+            Assert.That(asset, Is.Not.Null);
+
+            var tuning = StealthNoiseJson.ParseTuning(asset.text, "Resources/Tuning/stealth.json");
+            var camera = tuning.Camera;
+            var defaults = SecurityCameraSpec.Default;
+            Assert.That(camera, Is.Not.SameAs(defaults), "the shipped file writes the camera out");
+            Assert.That(camera.SweepDegrees, Is.EqualTo(defaults.SweepDegrees));
+            Assert.That(camera.SweepDegreesPerSecond, Is.EqualTo(defaults.SweepDegreesPerSecond));
+            Assert.That(camera.EdgePauseSeconds, Is.EqualTo(defaults.EdgePauseSeconds));
+            Assert.That(camera.ViewDistance, Is.EqualTo(defaults.ViewDistance));
+            Assert.That(camera.FieldOfViewDegrees, Is.EqualTo(defaults.FieldOfViewDegrees));
+            Assert.That(camera.DisableHoldSeconds, Is.EqualTo(defaults.DisableHoldSeconds));
+            Assert.That(camera.DisabledSeconds, Is.EqualTo(defaults.DisabledSeconds));
+
+            var awareness = camera.Awareness;
+            var awarenessDefaults = defaults.Awareness;
+            Assert.That(awareness.FieldOfViewDegrees, Is.EqualTo(awarenessDefaults.FieldOfViewDegrees));
+            Assert.That(awareness.GainPerSecond, Is.EqualTo(awarenessDefaults.GainPerSecond));
+            Assert.That(awareness.FullGainDistance, Is.EqualTo(awarenessDefaults.FullGainDistance));
+            Assert.That(awareness.FarGainFactor, Is.EqualTo(awarenessDefaults.FarGainFactor));
+            Assert.That(awareness.PeripheralGainFactor, Is.EqualTo(awarenessDefaults.PeripheralGainFactor));
+            Assert.That(awareness.CrouchGainFactor, Is.EqualTo(awarenessDefaults.CrouchGainFactor));
+            Assert.That(awareness.ProneGainFactor, Is.EqualTo(awarenessDefaults.ProneGainFactor));
+            Assert.That(awareness.StillGainFactor, Is.EqualTo(awarenessDefaults.StillGainFactor));
+            Assert.That(awareness.FullMotionSpeed, Is.EqualTo(awarenessDefaults.FullMotionSpeed));
+            Assert.That(awareness.DecayDelaySeconds, Is.EqualTo(awarenessDefaults.DecayDelaySeconds));
+            Assert.That(awareness.DecayPerSecond, Is.EqualTo(awarenessDefaults.DecayPerSecond));
+            Assert.That(awareness.NoticeThreshold, Is.EqualTo(awarenessDefaults.NoticeThreshold));
+            Assert.That(awareness.AlertThreshold, Is.EqualTo(awarenessDefaults.AlertThreshold));
+            Assert.That(awareness.AlarmRadius, Is.EqualTo(awarenessDefaults.AlarmRadius));
+            Assert.That(awareness.EngagedHoldThreshold, Is.EqualTo(awarenessDefaults.EngagedHoldThreshold));
+            Assert.That(awareness.GunshotGain, Is.EqualTo(awarenessDefaults.GunshotGain));
+            Assert.That(awareness.FootstepGain, Is.EqualTo(awarenessDefaults.FootstepGain));
+            Assert.That(awareness.InvestigateLevel, Is.EqualTo(awarenessDefaults.InvestigateLevel));
+            Assert.That(awareness.ArmedGainFactor, Is.EqualTo(awarenessDefaults.ArmedGainFactor));
+            Assert.That(awareness.LitGainFactor, Is.EqualTo(awarenessDefaults.LitGainFactor));
+
+            Assert.That(tuning.Alarm.DurationSeconds, Is.EqualTo(SecurityAlarmSpec.DefaultDurationSeconds));
+            Assert.That(tuning.Alarm.Radius, Is.EqualTo(SecurityAlarmSpec.DefaultRadius));
+            Assert.That(StealthActionInstaller.Tuning.Camera.ViewDistance, Is.EqualTo(15f));
+            Assert.That(StealthActionInstaller.Tuning.Alarm.Radius, Is.EqualTo(30f));
+        }
+
+        [Test]
+        public void TheInstallerTuningReadsTheEntryCameraAndAlarm()
+        {
+            var content = Content("Game");
+            content.StealthTuning = Text("GameStealth", "{ \"securityCamera\": { \"viewDistance\": 40 }, \"alarm\": { \"durationSeconds\": 8 } }");
+            GameContent.Use(content);
+
+            var tuning = StealthActionInstaller.Tuning;
+
+            Assert.That(tuning.Camera.ViewDistance, Is.EqualTo(40f));
+            Assert.That(tuning.Camera.SweepDegrees, Is.EqualTo(SecurityCameraSpec.DefaultSweepDegrees));
+            Assert.That(tuning.Alarm.DurationSeconds, Is.EqualTo(8f));
+            Assert.That(tuning.Alarm.Radius, Is.EqualTo(SecurityAlarmSpec.DefaultRadius));
+            Assert.That(tuning.Noise.FootstepNoiseRadius, Is.EqualTo(StealthNoiseSpec.DefaultFootstepNoiseRadius));
+        }
+
+        [Test]
+        public void ABrokenCameraEntryLogsTheItemAndTheInstallerUsesTheDefaults()
+        {
+            var content = Content("BrokenCamera");
+            content.StealthTuning = Text("BrokenCameraStealth", "{ \"footstepNoiseRadius\": 30, \"securityCamera\": { \"viewDistance\": 0 } }");
+            GameContent.Use(content);
+            LogAssert.Expect(
+                LogType.Error,
+                new Regex(@"(?s)^\[Tuning\] stealth JSON 'GameContent 'BrokenCamera' \(BrokenCameraStealth\)' item 'securityCamera\.viewDistance' is invalid: .*; using the default values instead$"));
+
+            var tuning = StealthActionInstaller.Tuning;
+
+            Assert.That(tuning, Is.SameAs(StealthTuningSpec.Default));
+            Assert.That(tuning.Camera.ViewDistance, Is.EqualTo(SecurityCameraSpec.DefaultViewDistance));
         }
 
         [Test]

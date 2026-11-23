@@ -117,7 +117,7 @@ namespace Shooter.Core
             }
             else
             {
-                horizontal = Vector2.Lerp(current, desired, Spec.AirControl);
+                horizontal = Vector2.Lerp(current, desired, AirBlend(deltaSeconds));
                 verticalStart = Velocity.Y;
             }
 
@@ -170,6 +170,21 @@ namespace Shooter.Core
         {
             SetVelocity(velocity);
             Jumped?.Invoke(GroundJumpNumber);
+        }
+
+        // AirControl は基準の tick (TickClock.DefaultTickRate) 1 回あたりの割合。毎 Step そのまま掛けると Step の回数 (フレームレート) で空中の効きが変わるので、経過時間ぶんの割合に直す。
+        private float AirBlend(float deltaSeconds)
+        {
+            // float へ切り詰めるのは、中間値を double で持つ実行環境でも 1f / 60f の Step を 1 tick ちょうどと見分けるため。
+            var ticks = (float)(deltaSeconds * TickClock.DefaultTickRate);
+
+            // 基準の tick ちょうどでは Pow を通さず値をそのまま使う。固定 tick のサーバーと予測の結果を 1 ビットも変えないため。
+            if (ticks == 1f)
+            {
+                return Spec.AirControl;
+            }
+
+            return 1f - MathF.Pow(1f - Spec.AirControl, ticks);
         }
 
         private static Vector2 TurnToInput(Vector2 horizontal, Vector2 moveInput, float yawRadians)

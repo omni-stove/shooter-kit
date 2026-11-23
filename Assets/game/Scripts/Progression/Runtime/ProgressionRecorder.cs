@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Shooter.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Shooter.Runtime
 {
@@ -12,8 +13,16 @@ namespace Shooter.Runtime
         private readonly ProfileStore _store;
         private readonly IParticipants _participants;
 
+        // 保存先にある内容。これと違うときだけ節目で書き、キルのたびにディスクへ書かずに済ませる。
+        private PlayerProfile _saved;
+
         public ProgressionRecorder(ISaveStorage storage)
-            : this(storage, LoadSpec(), new OfflineParticipants())
+            : this(storage, LoadSpec())
+        {
+        }
+
+        public ProgressionRecorder(ISaveStorage storage, ProgressionSpec spec)
+            : this(storage, spec, new CurrentParticipants())
         {
         }
 
@@ -63,7 +72,9 @@ namespace Shooter.Runtime
             Debug.Log(ProgressionLog.Loaded(loaded, Ledger.LevelOf(loaded)));
             CombatEvents.Killed += OnKilled;
             CombatEvents.MatchFinished += OnMatchFinished;
+            SceneManager.sceneLoaded += OnSceneLoaded;
             IsInstalled = true;
+            _saved = loaded;
             SetProfile(loaded);
         }
 
@@ -78,6 +89,7 @@ namespace Shooter.Runtime
 
             var loaded = _store.Load();
             Debug.Log(ProgressionLog.Loaded(loaded, Ledger.LevelOf(loaded)));
+            _saved = loaded;
             SetProfile(loaded);
         }
 
@@ -104,9 +116,18 @@ namespace Shooter.Runtime
                 return;
             }
 
+            // MatchFinished の来ない遊び方 (キャンペーン、対戦の途中抜け) で数えた分を、ゲームの終了で失わないよう外す前に書く。
+            SaveIfChanged();
             CombatEvents.Killed -= OnKilled;
             CombatEvents.MatchFinished -= OnMatchFinished;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             IsInstalled = false;
+        }
+
+        // MatchFinished を出さずに次のミッションやメニューへ移る経路があるため、シーンの読み込みを節目にして書く。
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SaveIfChanged();
         }
 
         private void OnKilled(KillFeedEntry entry)
@@ -197,7 +218,18 @@ namespace Shooter.Runtime
             }
         }
 
-        // 試合の外で書き換えたもの (着けた見た目など) は次の試合が終わるまで保存されないので、書き換えた側がすぐ呼ぶ。
+        // 保存先と同じなら書かないので、ゲーム側の節目 (ミッションの終わりなど) から何度呼んでもよい。
+        public bool SaveIfChanged()
+        {
+            if (!IsInstalled || Profile.Equals(_saved))
+            {
+                return false;
+            }
+
+            return Save();
+        }
+
+        // 試合の外で書き換えたもの (着けた見た目など) は次の節目まで保存されないので、書き換えた側がすぐ呼ぶ。
         public bool Save()
         {
             if (!IsInstalled)
@@ -209,12 +241,13 @@ namespace Shooter.Runtime
             try
             {
                 _store.Save(Profile);
+                _saved = Profile;
                 Debug.Log(ProgressionLog.Saved(Profile));
                 return true;
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                // 手元の Profile は持ち続けるので、次の試合が終わったときにまとめて書ける。
+                // 手元の Profile は持ち続けるので、次の節目でまとめて書ける。
                 Debug.LogError(ProgressionLog.SaveFailed(e.Message));
                 return false;
             }
@@ -225,6 +258,19 @@ namespace Shooter.Runtime
             if (award.LeveledUp)
             {
                 Debug.Log(ProgressionLog.LeveledUp(award));
+            }
+        }
+
+        // 名簿を作るときに決めて持たないのは、記録係が Play の間ずっと残り、対戦に入るたびに Id の意味が替わるため。
+        private sealed class CurrentParticipants : IParticipants
+        {
+            private readonly OfflineParticipants _offline = new OfflineParticipants();
+
+            public bool TryGet(int id, out Participant participant)
+            {
+                // 名簿が出ている間にオフラインの表も引くと、サーバーの Id が手元の GameObject の連番と重なったときに他人のキルを自分のものと数える。
+                var published = GameSignals.Participants.Value;
+                return published != null ? published.TryGet(id, out participant) : _offline.TryGet(id, out participant);
             }
         }
     }

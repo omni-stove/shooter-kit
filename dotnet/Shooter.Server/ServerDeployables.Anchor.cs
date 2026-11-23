@@ -17,9 +17,10 @@ namespace Shooter.Server
         }
 
         // 体は上から見た向きだけで回す。サーバーの体は傾かず、Unity の CharacterController も Y 軸まわりにしか回らないため
-        private static Quaternion YawRotation(float yawDegrees)
+        // 度に直さないのは、体の yaw (ServerBodies) がラジアンのため。置いた物の yaw (Placed.Yaw) は度なので、ここには渡さない
+        private static Quaternion YawRotation(float bodyYawRadians)
         {
-            return Quaternion.CreateFromAxisAngle(Vector3.UnitY, yawDegrees * (MathF.PI / 180f));
+            return Quaternion.CreateFromAxisAngle(Vector3.UnitY, bodyYawRadians);
         }
 
         private static Anchor AnchorOn(

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Shooter.Editor
 {
     // batchmode には入力が無いので、近接の入力の代わりに MeleeController.TryMelee を使う。
-    // 射撃場のルールは Melee を Off のまま配り、発見ゲージの手順 (StealthSmokeStep) は Stealth を Off にしたまま終えるので、この手順の間だけどちらも On にする。
+    // 発見ゲージの手順 (StealthSmokeStep) は Stealth を Off にしたまま終えるので、この手順の間だけ Stealth と Takedown を On にする。
     public sealed class TakedownSmokeStep : ITpsActionSmokeStep
     {
         public const float LingerSeconds = 1f;
@@ -170,13 +170,19 @@ namespace Shooter.Editor
                 return $"the player has no initialized MeleeController with a ContextMeleeAction and a StealthTarget; are {nameof(MeleeActionInstaller)}, {nameof(ContextMeleeActionInstaller)} and {nameof(StealthActionInstaller)} registered?";
             }
 
-            var rules = world.Rules.WithActions(world.Rules.Actions.WithMelee(Melee.On).WithStealth(Stealth.On));
+            // Melee は On にせず Off に揃える。射撃場のルールが後で Melee を On にしても、テイクダウンが Takedown だけで出ることを確かめ続けるため。
+            var rules = world.Rules.WithActions(world.Rules.Actions.WithMelee(Melee.Off).WithTakedown(Takedown.On).WithStealth(Stealth.On));
             _melee.Configure(rules);
             _context.Configure(rules);
             _target.Rule = Stealth.On;
             if (!_context.enabled || _context.Selector.Find(ContextMeleeMove.TakedownId) == null)
             {
-                return $"turning melee on did not enable the context melee with the takedown (enabled={_context.enabled} moves={_context.Selector.Moves.Count})";
+                return $"turning takedowns on did not enable the context melee with the takedown (enabled={_context.enabled} moves={_context.Selector.Moves.Count})";
+            }
+
+            if (_context.Selector.Find(ContextMeleeMove.FinisherId) != null)
+            {
+                return "the finisher was registered while the melee was off";
             }
 
             // 見張りは Awake で EnemyAgent を、次の Start で EnemyStealth を初期化する。
@@ -261,7 +267,7 @@ namespace Shooter.Editor
             _mark = _lines.Count;
             if (!_melee.TryMelee())
             {
-                return $"pressing melee behind an unaware enemy did nothing (refusal {_melee.CheckSwing()})";
+                return $"pressing melee behind an unaware enemy did nothing (refusal {_melee.CheckWeaponSwing()})";
             }
 
             var started = ContextMeleeLog.Started(world.PlayerDamageable.Id, _victimBody.Id, ContextMeleeMove.TakedownId);

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using Shooter.Core;
@@ -12,6 +13,26 @@ namespace Shooter.Server.Tests
             return new WorldMap(new[]
             {
                 WorldCollider.Box(1, 0, WorldCollider.StaticGroup, Vector3.Zero, new Vector3(10f, 0.5f, 10f), Quaternion.Identity),
+            });
+        }
+
+        public static WorldMap World(NetMapDoors doors)
+        {
+            var colliders = new List<WorldCollider>(World().Colliders);
+            foreach (var door in doors.Doors)
+            {
+                colliders.Add(WorldCollider.Box(
+                    colliders.Count + 1, 0, door.ColliderGroup, door.Position, door.PanelSize / 2f, Quaternion.Identity));
+            }
+
+            return new WorldMap(colliders);
+        }
+
+        public static NetMapDoors OneDoor()
+        {
+            return new NetMapDoors(new[]
+            {
+                new MapDoor(new Vector3(0f, 1.5f, 4f), Vector3.UnitZ, new Vector3(1.2f, 2f, 0.1f), MapColliderGroups.Door(0)),
             });
         }
 
@@ -51,7 +72,8 @@ namespace Shooter.Server.Tests
             bool navigation = true,
             NetMapPoints points = null,
             NetMapLadders ladders = null,
-            NetMapWater water = null)
+            NetMapWater water = null,
+            NetMapDoors doors = null)
         {
             var directory = Path.Combine(root, ServerMapData.DataDirectoryName, ServerMapData.MapsDirectoryName);
             Directory.CreateDirectory(directory);
@@ -59,8 +81,13 @@ namespace Shooter.Server.Tests
             {
                 using (var stream = File.Create(Path.Combine(directory, name + ServerMapData.CollisionExtension)))
                 {
-                    ShooterMapFile.Write(stream, World());
+                    ShooterMapFile.Write(stream, doors == null ? World() : World(doors));
                 }
+            }
+
+            if (doors != null)
+            {
+                File.WriteAllText(Path.Combine(directory, name + NetMapDoors.Extension), NetMapDoors.Write(doors));
             }
 
             if (navigation)

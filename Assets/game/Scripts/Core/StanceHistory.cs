@@ -58,10 +58,10 @@ namespace Shooter.Core
             _crouched[index] = crouched;
         }
 
-        public bool TrySample(float tick, out bool crouched)
+        public bool TrySample(double tick, out bool crouched)
         {
             crouched = false;
-            if (Count == 0 || float.IsNaN(tick))
+            if (Count == 0 || double.IsNaN(tick))
             {
                 return false;
             }

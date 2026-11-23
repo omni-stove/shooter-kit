@@ -11,7 +11,7 @@ namespace Shooter.Server
 
         private ChatGate _chatGate;
         private ChatWordFilter _chatWordFilter;
-        private float _nextChatRefusalLogTime;
+        private double _nextChatRefusalLogTime;
 
         // 参加していない人と試合の無いときに理由も出さずに捨てるのは、印と同じにするため。
         // 語の絞り込みをクライアントでなくここで掛けるのは、手を入れたクライアントでも素通りさせないため。

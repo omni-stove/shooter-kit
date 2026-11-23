@@ -151,6 +151,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("弾薬の種類が Heat のときの熱の溜まり方")]
         private HeatSettings _heat = new HeatSettings();
 
+        [SerializeField, Tooltip("撃つと詰まることがあるときの詰まり方。弾薬の種類が Heat の武器では使わない")]
+        private JamSettings _jam = new JamSettings();
+
         [Header("弾")]
         [SerializeField, Tooltip("弾の届け方")]
         private RoundDelivery _delivery = RoundDelivery.Hitscan;
@@ -454,6 +457,8 @@ namespace Shooter.Runtime
 
         public HeatSettings Heat => _heat ??= new HeatSettings();
 
+        public JamSettings Jam => _jam ??= new JamSettings();
+
         public RoundDelivery Delivery
         {
             get => _delivery;
@@ -566,7 +571,8 @@ namespace Shooter.Runtime
                     _reloadStyle,
                     _reloadSecondsPerRound,
                     _ammoKind,
-                    _ammoKind == AmmoKind.Heat ? Heat.ToSpec() : null);
+                    _ammoKind == AmmoKind.Heat ? Heat.ToSpec() : null,
+                    _ammoKind == AmmoKind.Heat ? null : Jam.ToSpec());
                 var round = RoundSettings.Build(
                     _delivery, _range, _pelletCount, _pelletSpreadDegrees, _roundRadius, Penetration, Ricochet, Projectile, Homing, Beam, Spray);
                 var impact = new ImpactSpec(

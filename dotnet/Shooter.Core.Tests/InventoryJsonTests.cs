@@ -200,5 +200,60 @@ namespace Shooter.Core.Tests
 
             Assert.That(unknown.Item, Is.EqualTo("items[0].attachment.sight.color"));
         }
+
+        [Test]
+        public void ReadsTheLightOfAnAttachment()
+        {
+            var catalog = InventoryJson.Parse(
+                "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\","
+                + " \"light\": { \"range\": 30, \"spotAngle\": 50, \"intensity\": 2, \"visualId\": \"weaponLight\" } } } ] }",
+                "inventory.json");
+
+            var attachment = catalog.Items[0].Attachment;
+            Assert.That(attachment.IsLight, Is.True);
+            Assert.That(attachment.IsOptic, Is.False, "a light is not a sight");
+            Assert.That(attachment.Slot, Is.EqualTo("light"));
+            Assert.That(attachment.Light.Range, Is.EqualTo(30f));
+            Assert.That(attachment.Light.SpotAngle, Is.EqualTo(50f));
+            Assert.That(attachment.Light.Intensity, Is.EqualTo(2f));
+            Assert.That(attachment.Light.VisualId, Is.EqualTo("weaponLight"));
+        }
+
+        [Test]
+        public void AnEmptyLightIsTheDefaultLight()
+        {
+            var catalog = InventoryJson.Parse(
+                "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\", \"light\": {} } } ] }", "inventory.json");
+
+            var light = catalog.Items[0].Attachment.Light;
+            Assert.That(catalog.Items[0].Attachment.IsLight, Is.True, "an empty light object still makes the attachment a light");
+            Assert.That(light.Range, Is.EqualTo(WeaponLightSpec.DefaultRange));
+            Assert.That(light.SpotAngle, Is.EqualTo(WeaponLightSpec.DefaultSpotAngle));
+            Assert.That(light.Intensity, Is.EqualTo(WeaponLightSpec.DefaultIntensity));
+            Assert.That(light.HasVisual, Is.False);
+        }
+
+        [Test]
+        public void AnAttachmentWithoutALightIsNotALight()
+        {
+            var catalog = InventoryJson.Parse(
+                "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\" } } ] }", "inventory.json");
+
+            Assert.That(catalog.Items[0].Attachment.Light, Is.Null);
+            Assert.That(catalog.Items[0].Attachment.IsLight, Is.False, "the slot name alone does not make a light");
+        }
+
+        [TestCase("{ \"spotAngle\": 200 }", "items[0].attachment.light.spotAngle")]
+        [TestCase("{ \"range\": 0 }", "items[0].attachment.light.range")]
+        [TestCase("{ \"intensity\": -1 }", "items[0].attachment.light.intensity")]
+        [TestCase("{ \"color\": 1 }", "items[0].attachment.light.color")]
+        public void ABadLightNamesTheItem(string light, string item)
+        {
+            var e = Assert.Throws<TuningJsonException>(() => InventoryJson.Parse(
+                "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\", \"light\": " + light + " } } ] }",
+                "inventory.json"));
+
+            Assert.That(e.Item, Is.EqualTo(item));
+        }
     }
 }

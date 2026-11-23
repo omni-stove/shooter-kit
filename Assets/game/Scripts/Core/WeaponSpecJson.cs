@@ -27,6 +27,7 @@ namespace Shooter.Core
         public const string AmmoTypesItem = "ammoTypes";
         public const string ShieldItem = RiotShieldSpecJson.ShieldItem;
         public const string MeleeItem = MeleeWeaponSpecJson.MeleeItem;
+        public const string AkimboItem = AkimboSpecJson.AkimboItem;
 
         public const string FireModeItem = "fireMode";
         public const string FireIntervalItem = "fireInterval";
@@ -59,11 +60,18 @@ namespace Shooter.Core
         public const string ReloadStyleItem = "reloadStyle";
         public const string ReloadSecondsPerRoundItem = "reloadSecondsPerRound";
         public const string HeatItem = "heat";
+        public const string JamItem = "jam";
 
         public const string HeatPerShotItem = "heatPerShot";
         public const string CoolPerSecondItem = "coolPerSecond";
         public const string CoolDelaySecondsItem = "coolDelaySeconds";
         public const string OverheatSecondsItem = "overheatSeconds";
+
+        public const string ChancePerShotItem = "chancePerShot";
+        public const string ChancePerSustainedShotItem = "chancePerSustainedShot";
+        public const string SustainedResetSecondsItem = "sustainedResetSeconds";
+        public const string MaxChanceItem = "maxChance";
+        public const string ClearSecondsItem = "clearSeconds";
 
         public const string DeliveryItem = "delivery";
         public const string RangeItem = "range";
@@ -162,7 +170,7 @@ namespace Shooter.Core
         public static IReadOnlyList<string> ItemNames { get; } = Concat(
             new[]
             {
-                IdItem, NameKeyItem, DescriptionItem, CategoryItem, ShotNoiseRadiusItem, WeightItem, MoveSpeedMultiplierItem, DrawSecondsItem, HolsterSecondsItem, TriggerItem, AmmoItem, RoundItem, ImpactItem, AimItem, AmmoTypesItem, ShieldItem, MeleeItem,
+                IdItem, NameKeyItem, DescriptionItem, CategoryItem, ShotNoiseRadiusItem, WeightItem, MoveSpeedMultiplierItem, DrawSecondsItem, HolsterSecondsItem, TriggerItem, AmmoItem, RoundItem, ImpactItem, AimItem, AmmoTypesItem, ShieldItem, MeleeItem, AkimboItem,
             },
             _triggerFlatItems,
             _ammoFlatItems,
@@ -175,7 +183,7 @@ namespace Shooter.Core
         public static IReadOnlyList<string> AmmoItemNames { get; } = new[]
         {
             AmmoKindItem, MagazineSizeItem, ReserveAmmoItem, ReloadSecondsItem, ActiveReloadWindowStartItem, ActiveReloadWindowLengthItem,
-            ActiveReloadFailSecondsItem, ReloadStyleItem, ReloadSecondsPerRoundItem, HeatItem,
+            ActiveReloadFailSecondsItem, ReloadStyleItem, ReloadSecondsPerRoundItem, HeatItem, JamItem,
         };
 
         public static IReadOnlyList<string> RoundItemNames { get; } = new[]
@@ -214,6 +222,10 @@ namespace Shooter.Core
         private static readonly string[] _spinUpItems = { SpinUpSecondsItem, StartIntervalMultiplierItem, SpinDownSecondsItem };
         private static readonly string[] _cycleItems = { CycleSecondsItem, LeavesAdsItem };
         private static readonly string[] _heatItems = { HeatPerShotItem, CoolPerSecondItem, CoolDelaySecondsItem, OverheatSecondsItem };
+        private static readonly string[] _jamItems =
+        {
+            ChancePerShotItem, ChancePerSustainedShotItem, SustainedResetSecondsItem, MaxChanceItem, ClearSecondsItem,
+        };
         private static readonly string[] _penetrationItems = { MaxPenetrationsItem, DamageMultiplierPerPenetrationItem, MaxThicknessItem, MaterialsItem };
         private static readonly string[] _penetrationMaterialItems = { MaterialIdItem, PenetrabilityItem };
         private static readonly string[] _ricochetItems = { MaxBouncesItem, MaxGrazingAngleDegreesItem, DamageMultiplierPerBounceItem };
@@ -264,6 +276,8 @@ namespace Shooter.Core
             var shield = shieldFields == null ? null : RiotShieldSpecJson.Read(shieldFields);
             var meleeFields = fields.Object(MeleeItem, MeleeWeaponSpecJson.ItemNames);
             var melee = meleeFields == null ? null : MeleeWeaponSpecJson.Read(meleeFields);
+            var akimboFields = fields.Object(AkimboItem, AkimboSpecJson.ItemNames);
+            var akimbo = akimboFields == null ? null : AkimboSpecJson.Read(akimboFields);
 
             // 名前を出さない武器を null で書いていた頃の JSON も、書かないのと同じに読む。
             var nameKeyNode = fields.FindRaw(NameKeyItem);
@@ -295,7 +309,8 @@ namespace Shooter.Core
                     drawSeconds,
                     fields.ReadFloat(HolsterSecondsItem, WeaponSpec.DefaultHolsterSeconds),
                     shield,
-                    melee);
+                    melee,
+                    akimbo);
             }
             catch (ArgumentException e)
             {
@@ -380,6 +395,7 @@ namespace Shooter.Core
 
             RiotShieldSpecJson.Write(writer, spec.Shield);
             MeleeWeaponSpecJson.Write(writer, spec.Melee);
+            AkimboSpecJson.Write(writer, spec.Akimbo);
         }
 
         private static TriggerSpec ReadTrigger(Part part)
@@ -451,6 +467,12 @@ namespace Shooter.Core
         {
             var heat = ReadNested(part, HeatItem, _heatItems, p => new HeatSpec(
                 p.RequireFloat(HeatPerShotItem), p.RequireFloat(CoolPerSecondItem), p.RequireFloat(CoolDelaySecondsItem), p.RequireFloat(OverheatSecondsItem)));
+            var jam = ReadNested(part, JamItem, _jamItems, p => new JamSpec(
+                p.Float(ChancePerShotItem, JamSpec.DefaultChancePerShot),
+                p.Float(ChancePerSustainedShotItem, JamSpec.DefaultChancePerSustainedShot),
+                p.Float(SustainedResetSecondsItem, JamSpec.DefaultSustainedResetSeconds),
+                p.Float(MaxChanceItem, JamSpec.DefaultMaxChance),
+                p.Float(ClearSecondsItem, JamSpec.DefaultClearSeconds)));
 
             return part.Build(() => new AmmoSpec(
                 part.Int(MagazineSizeItem, AmmoSpec.DefaultMagazineSize),
@@ -462,7 +484,8 @@ namespace Shooter.Core
                 part.Enum(ReloadStyleItem, ReloadStyle.Whole),
                 part.Float(ReloadSecondsPerRoundItem, 0f),
                 part.Enum(AmmoKindItem, AmmoKind.Magazine),
-                heat));
+                heat,
+                jam));
         }
 
         private static void WriteAmmo(JsonWriter writer, AmmoSpec ammo)
@@ -483,6 +506,17 @@ namespace Shooter.Core
                 writer.Float(CoolPerSecondItem, ammo.Heat.CoolPerSecond);
                 writer.Float(CoolDelaySecondsItem, ammo.Heat.CoolDelaySeconds);
                 writer.Float(OverheatSecondsItem, ammo.Heat.OverheatSeconds);
+                writer.EndObject();
+            }
+
+            if (ammo.Jam != null)
+            {
+                writer.BeginObject(JamItem);
+                writer.Float(ChancePerShotItem, ammo.Jam.ChancePerShot);
+                writer.Float(ChancePerSustainedShotItem, ammo.Jam.ChancePerSustainedShot);
+                writer.Float(SustainedResetSecondsItem, ammo.Jam.SustainedResetSeconds);
+                writer.Float(MaxChanceItem, ammo.Jam.MaxChance);
+                writer.Float(ClearSecondsItem, ammo.Jam.ClearSeconds);
                 writer.EndObject();
             }
         }

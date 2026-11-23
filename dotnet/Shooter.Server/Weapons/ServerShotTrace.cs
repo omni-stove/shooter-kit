@@ -15,7 +15,7 @@ namespace Shooter.Server
             _hitboxes = hitboxes ?? throw new ArgumentNullException(nameof(hitboxes));
         }
 
-        public void Trace(RoundSpec round, PlannedRound planned, float tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments)
+        public void Trace(RoundSpec round, PlannedRound planned, double tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments)
         {
             ArgumentNullException.ThrowIfNull(round);
             ArgumentNullException.ThrowIfNull(segments);
@@ -58,7 +58,7 @@ namespace Shooter.Server
         static partial void ChooseMaxHits(RoundSpec round, ref int maxHits);
 
         // 最後の区間が跳ねる面に当たったら、跳ねた先の区間を足す
-        partial void Ricochet(RoundSpec round, float tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments, int first);
+        partial void Ricochet(RoundSpec round, double tick, int shooterId, Func<int, bool> hittable, List<ShotTraceSegment> segments, int first);
     }
 
     internal readonly struct ShotTraceSegment
