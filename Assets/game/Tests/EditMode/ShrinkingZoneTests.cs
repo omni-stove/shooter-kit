@@ -173,6 +173,97 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void BeginsFromTheSpecInsteadOfTheSceneValues()
+        {
+            var outside = Target("Outside", new Vector3(30f, 0f, 0f));
+            var spec = new ZoneSpec(new[] { new ZonePhase(4f, 2f, 8f, 10f), new ZonePhase(1f, 1f, 4f, 20f) }, 0.5f);
+
+            Assert.That(_zone.Begin(spec), Is.True);
+
+            Assert.That(_zone.ActiveSpec, Is.SameAs(spec));
+            Assert.That(_zone.Schedule.PhaseCount, Is.EqualTo(2));
+            Assert.That(_zone.Schedule.Phases[0].WaitSeconds, Is.EqualTo(4f));
+            Assert.That(_zone.Schedule.Phases[0].Radius, Is.EqualTo(8f));
+            Assert.That(_zone.Schedule.Phases[1].Radius, Is.EqualTo(4f));
+            Assert.That(_zone.Schedule.Seed, Is.EqualTo(1), "a spec without a seed leaves the zone's own seed in use");
+            Assert.That(_zone.ActiveDamageIntervalSeconds, Is.EqualTo(0.5f));
+            Assert.That(_zone.PhaseSettingsList.Count, Is.EqualTo(1), "the scene values are left as they were");
+            Assert.That(_zone.PhaseSettingsList[0].Radius, Is.EqualTo(10f));
+            Assert.That(_zone.DamageIntervalSeconds, Is.EqualTo(1f));
+
+            _zone.Tick(0.5f);
+            Assert.That(outside.Health.Current, Is.EqualTo(95), "10 per second over the spec's 0.5 s interval");
+
+            _zone.Stop();
+            Assert.That(_zone.ActiveSpec, Is.Null);
+
+            Assert.That(_zone.Begin(), Is.True);
+            Assert.That(_zone.ActiveSpec, Is.Null);
+            Assert.That(_zone.Schedule.PhaseCount, Is.EqualTo(1), "without a spec the scene values are the default");
+            Assert.That(_zone.Schedule.Phases[0].Radius, Is.EqualTo(10f));
+            Assert.That(_zone.ActiveDamageIntervalSeconds, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void TheSpecSeedIsUsedBeforeTheZonesSeed()
+        {
+            var spec = new ZoneSpec(new[] { new ZonePhase(4f, 2f, 8f, 10f) }, 1f, 42);
+
+            Assert.That(_zone.Begin(spec), Is.True);
+
+            Assert.That(_zone.Schedule.Seed, Is.EqualTo(42));
+        }
+
+        [Test]
+        public void RefusesToBeginWithASpecThatDoesNotFitTheFirstCircle()
+        {
+            var spec = new ZoneSpec(new[] { new ZonePhase(1f, 1f, 50f, 1f) });
+
+            LogAssert.Expect(LogType.Error, new Regex(@"^\[Zone\] エリアを組み立てられません"));
+            Assert.That(_zone.Begin(spec), Is.False);
+            Assert.That(_zone.IsRunning, Is.False);
+            Assert.That(_zone.ActiveSpec, Is.Null);
+        }
+
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        public void RefusesToBeginWithAnUnusableSavedDamageInterval(float value)
+        {
+            var serialized = new UnityEditor.SerializedObject(_zone);
+            serialized.FindProperty("_damageIntervalSeconds").floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Target("Outside", new Vector3(30f, 0f, 0f));
+
+            LogAssert.Expect(LogType.Error, new Regex(@"^\[Zone\] エリアを組み立てられません: damageIntervalSeconds must be positive and finite"));
+            Assert.That(_zone.Begin(), Is.False);
+            Assert.That(_zone.IsRunning, Is.False);
+        }
+
+        [Test]
+        public void ADamageIntervalBelowTheFloorStillEndsTheTickAndDealsTheSameDamagePerSecond()
+        {
+            var outside = Target("Outside", new Vector3(30f, 0f, 0f));
+            _zone.DamageIntervalSeconds = 1e-9f;
+            Assert.That(_zone.ActiveDamageIntervalSeconds, Is.EqualTo(0.05f));
+            _zone.Begin();
+
+            // 1 秒ちょうどだと 0.05 を引いていく誤差で 19 回にも 20 回にもなるので、少し余らせる。
+            _zone.Tick(1.01f);
+
+            Assert.That(outside.Health.Current, Is.EqualTo(95), "5 per second in 20 steps of 0.05 s");
+
+            _zone.Stop();
+            Assert.That(_zone.Begin(new ZoneSpec(new[] { new ZonePhase(10f, 10f, 10f, 5f) }, 1e-9f)), Is.True);
+            Assert.That(_zone.ActiveDamageIntervalSeconds, Is.EqualTo(0.05f));
+
+            _zone.Tick(1.01f);
+
+            Assert.That(outside.Health.Current, Is.EqualTo(90));
+        }
+
+        [Test]
         public void StopEndsDamage()
         {
             var outside = Target("Outside", new Vector3(30f, 0f, 0f));

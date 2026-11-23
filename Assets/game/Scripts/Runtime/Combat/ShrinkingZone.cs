@@ -16,6 +16,9 @@ namespace Shooter.Runtime
 
         public const float DefaultInitialRadius = 60f;
         public const float DefaultDamageIntervalSeconds = 1f;
+
+        // これより短い間隔は、1 フレームの間にダメージの処理を回し続けてゲームを止めるので、この値に揃える。
+        public const float MinDamageIntervalSeconds = ZoneSpec.MinDamageIntervalSeconds;
         public const float DefaultBoundaryHeight = 60f;
         public const int BoundarySegments = 64;
 
@@ -65,7 +68,7 @@ namespace Shooter.Runtime
         [SerializeField, Min(0.1f), Tooltip("最初の円の半径 (m)。中心はこの GameObject の位置")]
         private float _initialRadius = DefaultInitialRadius;
 
-        [SerializeField, Tooltip("段階の並び。上から順に進む")]
+        [SerializeField, Tooltip("段階の並び。上から順に進む。調整値 (ZoneSpec) を渡されて始めたときは使わない")]
         private PhaseSettings[] _phases =
         {
             new PhaseSettings(30f, 20f, 35f, 1f),
@@ -82,7 +85,7 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("Start で自分から始めるか。モードの Runner が始めるなら外す")]
         private bool _beginOnStart = true;
 
-        [SerializeField, Min(0.05f), Tooltip("外にいる者にダメージを与える間隔 (秒)")]
+        [SerializeField, Min(MinDamageIntervalSeconds), Tooltip("外にいる者にダメージを与える間隔 (秒)。調整値 (ZoneSpec) を渡されて始めたときは使わない")]
         private float _damageIntervalSeconds = DefaultDamageIntervalSeconds;
 
         [SerializeField, Tooltip("Play 中に境界の筒を出すか")]
@@ -110,6 +113,7 @@ namespace Shooter.Runtime
         private IReadOnlyList<Damageable> _explicitTargets;
 
         private ZoneSchedule _schedule;
+        private ZoneSpec _activeSpec;
         private ZoneState _state;
         private float _elapsedSeconds;
         private float _damageTimer;
@@ -127,6 +131,13 @@ namespace Shooter.Runtime
         public ZoneSchedule Schedule => _schedule;
 
         public bool IsRunning => _schedule != null;
+
+        // 動いている間は始めたときに渡された調整値。シーンの値で始めたときと、止まっているときは null。
+        public ZoneSpec ActiveSpec => _activeSpec;
+
+        // 毎秒のダメージに間隔を掛けて与えるので、下限に揃えても与える総量は変わらない。
+        public float ActiveDamageIntervalSeconds =>
+            Mathf.Max(_activeSpec != null ? _activeSpec.DamageIntervalSeconds : _damageIntervalSeconds, MinDamageIntervalSeconds);
 
         public float ElapsedSeconds => _elapsedSeconds;
 
@@ -263,8 +274,16 @@ namespace Shooter.Runtime
 
         public bool Begin()
         {
-            var seed = _useRandomSeed ? Environment.TickCount : _seed;
-            return Begin(seed);
+            return Begin((ZoneSpec)null);
+        }
+
+        // spec が null ならシーンの値 (段階・ダメージの間隔) で始める。spec にシードが無ければ、このコンポーネントのシードの設定を使う。
+        public bool Begin(ZoneSpec spec)
+        {
+            var seed = spec != null && spec.Seed.HasValue
+                ? spec.Seed.Value
+                : _useRandomSeed ? Environment.TickCount : _seed;
+            return Begin(seed, spec);
         }
 
         public int Seed
@@ -281,13 +300,24 @@ namespace Shooter.Runtime
 
         public bool Begin(int seed)
         {
+            return Begin(seed, null);
+        }
+
+        public bool Begin(int seed, ZoneSpec spec)
+        {
             ZoneSchedule schedule;
             try
             {
+                // ZoneSpec は作るときに間隔を確かめるが、シーンに保存された値は Inspector を通らずに 0 以下にもなるので、ここで断る。
+                if (spec == null && (!(_damageIntervalSeconds > 0f) || float.IsInfinity(_damageIntervalSeconds)))
+                {
+                    throw new ArgumentException("damageIntervalSeconds must be positive and finite (was " + _damageIntervalSeconds + ")");
+                }
+
                 schedule = new ZoneSchedule(
                     new System.Numerics.Vector2(transform.position.x, transform.position.z),
                     _initialRadius,
-                    BuildPhases(),
+                    spec != null ? spec.Phases : BuildPhases(),
                     seed);
             }
             catch (ArgumentException e)
@@ -297,6 +327,7 @@ namespace Shooter.Runtime
             }
 
             _schedule = schedule;
+            _activeSpec = spec;
             _origin = transform.position;
             _elapsedSeconds = 0f;
             _damageTimer = 0f;
@@ -319,6 +350,7 @@ namespace Shooter.Runtime
             }
 
             _schedule = null;
+            _activeSpec = null;
             _owedDamage.Clear();
             _outside.Clear();
             Debug.Log(ZoneLog.Stopped(), this);
@@ -348,10 +380,17 @@ namespace Shooter.Runtime
             RefreshBoundary();
 
             _damageTimer += deltaSeconds;
-            while (_damageTimer >= _damageIntervalSeconds && _schedule != null)
+            while (_schedule != null)
             {
-                _damageTimer -= _damageIntervalSeconds;
-                ApplyDamage(_state.DamagePerSecond * _damageIntervalSeconds);
+                // コールバックが間隔を変えても次の回から効くよう、回ごとに読む。
+                var interval = ActiveDamageIntervalSeconds;
+                if (_damageTimer < interval)
+                {
+                    break;
+                }
+
+                _damageTimer -= interval;
+                ApplyDamage(_state.DamagePerSecond * interval);
             }
         }
 
