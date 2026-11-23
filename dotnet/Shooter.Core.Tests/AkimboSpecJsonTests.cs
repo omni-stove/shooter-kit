@@ -117,6 +117,45 @@ namespace Shooter.Core.Tests
             Assert.That(e.Item, Is.EqualTo("akimbo"));
         }
 
+        [Test]
+        public void AReloadMultiplierThatMakesTheReloadZeroIsRejected()
+        {
+            var e = Assert.Throws<ServerDataJsonException>(
+                () => WeaponSpecJson.Parse(
+                    "{ \"id\": \"" + _id + "\", \"category\": \"Handgun\","
+                    + " \"ammo\": { \"magazineSize\": 8, \"reserveAmmo\": 24, \"reloadSeconds\": 0.25, \"reloadStyle\": \"PerRound\", \"reloadSecondsPerRound\": 0.5 },"
+                    + " \"akimbo\": { \"reloadSecondsMultiplier\": 1e-45 } }",
+                    "pistol.json"));
+
+            Assert.That(e.Item, Is.EqualTo("akimbo"));
+        }
+
+        [Test]
+        public void AReloadMultiplierThatMakesThePerRoundSecondsZeroIsRejected()
+        {
+            var e = Assert.Throws<ArgumentException>(() => new WeaponSpec(
+                _id,
+                null,
+                WeaponCategory.Handgun,
+                ammo: new AmmoSpec(8, 24, 0f, reloadStyle: ReloadStyle.PerRound, reloadSecondsPerRound: 0.5f),
+                akimbo: new AkimboSpec(reloadSecondsMultiplier: float.Epsilon)));
+
+            Assert.That(e.ParamName, Is.EqualTo("akimbo"));
+        }
+
+        [Test]
+        public void ASmallReloadMultiplierThatKeepsTheReloadPositiveIsAccepted()
+        {
+            var spec = new WeaponSpec(
+                _id,
+                null,
+                WeaponCategory.Handgun,
+                ammo: new AmmoSpec(8, 24, 0f, reloadStyle: ReloadStyle.PerRound, reloadSecondsPerRound: 0.5f),
+                akimbo: new AkimboSpec(reloadSecondsMultiplier: 1e-30f));
+
+            Assert.That(new AkimboHands(spec).Right.Spec.Ammo.ReloadSecondsPerRound, Is.EqualTo(0.5f * 1e-30f));
+        }
+
         [TestCase(float.NaN)]
         [TestCase(float.PositiveInfinity)]
         [TestCase(-1f)]

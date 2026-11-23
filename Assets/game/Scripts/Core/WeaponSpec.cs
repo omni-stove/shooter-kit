@@ -289,7 +289,7 @@ namespace Shooter.Core
                 : new WeaponSpec(Id, NameKey, Category, Trigger, Ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, null);
         }
 
-        // 二丁持ちの手を作るとき (AkimboHands) でなくここで確かめるのは、掛けた秒数が無限になる武器を JSON を読んだときに弾くため。
+        // 二丁持ちの手を作るとき (AkimboHands) でなくここで確かめるのは、掛けた秒数が無限や 0 になる武器を JSON を読んだときに弾くため。
         private static void RequireAkimboReloadFinite(AmmoSpec ammo, AkimboSpec akimbo)
         {
             if (akimbo == null)
@@ -303,6 +303,18 @@ namespace Shooter.Core
                 throw new ArgumentException(
                     "akimbo reloadSecondsMultiplier " + multiplier.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + " makes the reload seconds infinite", nameof(akimbo));
             }
+
+            if (VanishesWhenMultiplied(ammo.ReloadSeconds, multiplier) || VanishesWhenMultiplied(ammo.ReloadSecondsPerRound, multiplier))
+            {
+                throw new ArgumentException(
+                    "akimbo reloadSecondsMultiplier " + multiplier.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + " makes the reload seconds 0", nameof(akimbo));
+            }
+        }
+
+        // float へ明示的に直すのは、掛け算を float より広い精度のまま 0 と比べる実行環境では、float に入れると 0 になる積を見落とすため。
+        private static bool VanishesWhenMultiplied(float seconds, float multiplier)
+        {
+            return seconds > 0f && (float)(seconds * multiplier) == 0f;
         }
 
         // 起爆を止まったとき・寿命が尽きたときにすると、ヒットスキャンなどの止まりも尽きもしない弾では爆発しないまま設定だけが残る。
