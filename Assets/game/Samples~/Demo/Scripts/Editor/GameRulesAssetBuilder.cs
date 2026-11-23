@@ -371,6 +371,7 @@ namespace Shooter.Editor
 
         // 倒れたら戻らず (RespawnMode.None) 持ち込んだ物を失うので、出現直後の無敵は無くし、起こす味方もいないのでダウンさせない。
         // 弾は箱から拾わせるので、バトルロイヤルと違って予備弾は増やさない。
+        // 出撃者はみな敵どうしなので、チームデスマッチから受け継がずに友軍誤射を On にする。
         // バトルロイヤルと同じく、専用サーバーが目的を選べるよう Objective を Extraction にする。
         public static GameRules ExtractionRules()
         {
