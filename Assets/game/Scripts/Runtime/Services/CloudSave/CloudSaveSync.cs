@@ -303,6 +303,16 @@ namespace Shooter.Runtime
                     return;
                 }
             }
+            else
+            {
+                // 別のアカウントへの入れ替えが手元を消した後で止まると、記録は今のアカウントのまま手元だけが取り置きへ移っている。
+                // 戻さずに同期すると、まだ送っていない進行が「手元に無い」と見られて、クラウドの古い中身に置き換わる。
+                foreach (var slot in RestoreMissing(key))
+                {
+                    changed.Add(slot);
+                    _clearedBySwitch.Remove(slot);
+                }
+            }
 
             _account = account;
             _listPending = true;
@@ -403,6 +413,55 @@ namespace Shooter.Runtime
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
                     // 戻せなかったスロットは手元に無いものとして扱われ、クラウドにあればそちらを採る。取り置きは残る。
+                    Debug.LogError(CloudSaveLog.AccountSlotNotRestored(slot, e.Message));
+                }
+            }
+
+            return restored;
+        }
+
+        // 取り置きの時刻が記録と同じものだけを戻す。違うものは、取り置いた後に手元が書き換わった古い控えなので戻さない。
+        private List<string> RestoreMissing(string key)
+        {
+            var restored = new List<string>();
+            var setAside = LoadAccountStamps(key);
+            if (setAside.Count == 0)
+            {
+                return restored;
+            }
+
+            foreach (var slot in setAside.Slots)
+            {
+                if (!setAside.TryGet(slot, out var kept) || kept.Deleted)
+                {
+                    continue;
+                }
+
+                // 記録の無いスロットは、SetAsideLocal が UnstampedSavedAt で取り置いたもの。
+                var same = _stamps.TryGet(slot, out var stamp)
+                    ? !stamp.Deleted && kept.SavedAt == stamp.SavedAt
+                    : kept.SavedAt == CloudSaveMerge.UnstampedSavedAt;
+                if (!same)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (_local.TryRead(slot, out var current) && current != null)
+                    {
+                        continue;
+                    }
+
+                    if (_local.TryRead(AccountSaveSlot(key, slot), out var text) && text != null)
+                    {
+                        _local.Write(slot, text);
+                        restored.Add(slot);
+                    }
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    // 戻せなかったスロットは手元に無いものとして扱われ、クラウドにあればそちらを採る。取り置きは残るので、次のサインインでまた戻す。
                     Debug.LogError(CloudSaveLog.AccountSlotNotRestored(slot, e.Message));
                 }
             }

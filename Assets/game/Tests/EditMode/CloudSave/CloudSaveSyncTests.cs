@@ -885,6 +885,66 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ComingBackToTheSameAccountAfterAFailedSwapRestoresTheSetAsideSaveAndSendsIt()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend();
+            var sync = SwapFailedAfterSettingAsideAnUnsentProfile(local, backend);
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            backend.SignedInAccount = Account;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 2000, NewProfile).ToJson()));
+            Assert.That(local.Text(CloudSaveSync.StampsSlot), Does.Contain("\"account\":\"" + AccountKey + "\""));
+            Assert.That(pulled, Is.EqualTo(new[] { ProfileSlot }));
+        }
+
+        [Test]
+        public void ARestartAsTheSameAccountAfterAFailedSwapRestoresTheSetAsideSaveAndSendsIt()
+        {
+            var local = new MemorySaveStorage();
+            SwapFailedAfterSettingAsideAnUnsentProfile(local, new FakeCloudSaveBackend());
+            var backend = new FakeCloudSaveBackend { SignedInAccount = Account };
+            backend.Files[ProfileFile] = CloudSaveEnvelope.Saved(ProfileSlot, 1000, OldProfile).ToJson();
+            var restarted = Create(local, backend);
+            var pulled = new List<string>();
+            restarted.SlotPulled += pulled.Add;
+
+            Drain(restarted);
+
+            Assert.That(local.Text(ProfileSlot), Is.EqualTo(NewProfile));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 2000, NewProfile).ToJson()));
+            Assert.That(local.Has(CloudSaveSync.ReplacedPrefix + ProfileSlot), Is.False);
+            Assert.That(pulled, Is.EqualTo(new[] { ProfileSlot }));
+        }
+
+        [Test]
+        public void ASetAsideSaveIsNotRestoredOverASlotDeletedSince()
+        {
+            var local = new MemorySaveStorage();
+            var backend = new FakeCloudSaveBackend();
+            var sync = SwapFailedAfterSettingAsideAnUnsentProfile(local, backend);
+            backend.SignedInAccount = null;
+            sync.Tick(_time);
+            _clock = 3000;
+            sync.Delete(ProfileSlot);
+            var pulled = new List<string>();
+            sync.SlotPulled += pulled.Add;
+
+            backend.SignedInAccount = Account;
+            _time += CloudSaveSync.DefaultRetrySeconds;
+            Drain(sync);
+
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Removed(ProfileSlot, 3000).ToJson()));
+            Assert.That(pulled, Is.Empty);
+        }
+
+        [Test]
         public void IfTheOwnerOfUnownedStampsCannotBeWrittenItStaysUnownedUntilItCan()
         {
             var local = new MemorySaveStorage();
@@ -1110,6 +1170,31 @@ namespace Shooter.Tests.EditMode
         private static bool OwnsStrict(string slot)
         {
             return slot == "strict";
+        }
+
+        // A の手元の profile (savedAt=2000) はまだ送っておらず、A のクラウドは savedAt=1000 のまま。B への入れ替えが記録の書き込みで止まり、手元の profile は取り置きへ移っている。
+        private CloudSaveSync SwapFailedAfterSettingAsideAnUnsentProfile(MemorySaveStorage local, FakeCloudSaveBackend backend)
+        {
+            backend.SignedInAccount = Account;
+            var sync = Create(local, backend);
+            sync.Write(ProfileSlot, OldProfile);
+            Drain(sync);
+            backend.SignedInAccount = null;
+            sync.Tick(_time);
+            _clock = 2000;
+            sync.Write(ProfileSlot, NewProfile);
+
+            local.FailWriteSlot = CloudSaveSync.StampsSlot;
+            backend.SignedInAccount = OtherAccount;
+            LogAssert.Expect(LogType.Error, CloudSaveLog.AccountChangeFailed(MemorySaveStorage.FailureMessage, CloudSaveSync.DefaultRetrySeconds));
+            sync.Tick(_time);
+            local.FailWriteSlot = null;
+
+            Assert.That(sync.IsSignedIn, Is.False);
+            Assert.That(local.Has(ProfileSlot), Is.False);
+            Assert.That(local.Text(CloudSaveSync.AccountSaveSlot(AccountKey, ProfileSlot)), Is.EqualTo(NewProfile));
+            Assert.That(backend.Files[ProfileFile], Is.EqualTo(CloudSaveEnvelope.Saved(ProfileSlot, 1000, OldProfile).ToJson()));
+            return sync;
         }
 
         private CloudSaveSync Create(MemorySaveStorage local, FakeCloudSaveBackend backend)
