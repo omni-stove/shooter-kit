@@ -557,6 +557,46 @@ namespace Shooter.Tests.EditMode
             return new ItemCatalog(new[] { pistolItem, magazine }, InventoryRule.Default);
         }
 
+        [Test]
+        public void AJammedRightHandIsClearedByReloadAndFiresAgain()
+        {
+            HoldJamming();
+
+            Assert.That(_controller.PullTrigger(AkimboHand.Right, true, true), Is.True);
+            Assert.That(_controller.JamStatus.IsJammed, Is.True, "the right hand jammed");
+            Assert.That(_controller.Akimbo.Right.IsJammed, Is.True);
+            Assert.That(_controller.Akimbo.Left.IsJammed, Is.False);
+
+            Assert.That(_controller.PressReload(), Is.True, "R clears the jammed hand");
+            Assert.That(_controller.Akimbo.Right.IsClearingJam, Is.True);
+            _controller.Tick(TestJam.ClearSeconds);
+
+            Assert.That(_controller.JamStatus.IsJammed, Is.False);
+            Assert.That(_controller.Akimbo.Right.IsJammed, Is.False);
+            Assert.That(_controller.PullTrigger(AkimboHand.Right, true, true), Is.True, "the cleared hand fires again");
+        }
+
+        [Test]
+        public void TheJamRollsOfTheControllerDecideTheJamOfEachHand()
+        {
+            HoldJamming();
+
+            Assert.That(_controller.PullTrigger(AkimboHand.Right, true, true), Is.True);
+            Assert.That(_controller.Akimbo.Left.IsJammed, Is.False, "firing the right hand does not jam the left");
+            Assert.That(_controller.PullTrigger(AkimboHand.Left, true, true), Is.True);
+            Assert.That(_controller.Akimbo.Right.IsJammed, Is.True, "the always-jam roll set on the controller reaches the right hand");
+            Assert.That(_controller.Akimbo.Left.IsJammed, Is.True, "and the left hand");
+        }
+
+        private void HoldJamming()
+        {
+            var definition = Definition(Pistol(AkimboSpec.Default));
+            definition.Jam.Set(TestJam.HalfChance());
+            _controller.Rules = TestJam.JamOn;
+            _controller.JamRolls = _ => new FixedJamRoll(0f);
+            _controller.Initialize(_camera.transform, _attack, _reload, definition);
+        }
+
         private void Hold(WeaponSpec spec)
         {
             _controller.Initialize(_camera.transform, _attack, _reload, Definition(spec));

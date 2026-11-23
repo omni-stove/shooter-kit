@@ -303,7 +303,8 @@ namespace Shooter.Runtime
                     left = Math.Min(kept, weapon.Spec.MagazineSize);
                 }
 
-                var hands = new AkimboHands(weapon.Spec, right, left, weapon.ReserveAmmo, rules ?? GameRules.Default);
+                var hands = new AkimboHands(weapon.Spec, right, left, weapon.ReserveAmmo, rules ?? GameRules.Default,
+                    JamRolls?.Invoke(weapon.Spec), JamRolls?.Invoke(weapon.Spec));
                 if (weapon.AmmoPool != null)
                 {
                     hands.UseAmmoPool(weapon.AmmoPool);
