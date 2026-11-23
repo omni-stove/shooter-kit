@@ -189,6 +189,30 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheDefaultHudCarriesTheWeaponFreeZoneView()
+        {
+            var hud = DefaultHud;
+
+            Assert.That(hud.GetComponents<WeaponFreeZoneView>(), Has.Length.EqualTo(1));
+
+            DefaultHudFactory.AddActionViews(hud);
+            Assert.That(hud.GetComponents<WeaponFreeZoneView>(), Has.Length.EqualTo(1), "adding it again keeps one");
+
+            // Edit Mode では UIDocument が木を作らないことがあり、そのときは表示が結ばれない。
+            Assume.That(hud.View, Is.Not.Null, "the UIDocument built no visual tree in Edit Mode");
+            var view = hud.GetComponent<WeaponFreeZoneView>();
+            Assert.That(view.Element, Is.Not.Null);
+            Assert.That(view.Element.name, Is.EqualTo(WeaponFreeZoneView.UxmlName));
+            Assert.That(view.IsShown, Is.False, "the player is in no weapon-free zone yet");
+
+            GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnOnly, true, 0f));
+            Assert.That(view.IsShown, Is.True);
+
+            GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstered, 1f, false));
+            Assert.That(view.IsShown, Is.False, "holstering the weapon clears the warning");
+        }
+
+        [Test]
         public void ThePublishedPlayerCarriesTheLockOnWarningPublisherForItself()
         {
             var publisher = _world.Player.GetComponent<LockOnWarningPublisher>();
