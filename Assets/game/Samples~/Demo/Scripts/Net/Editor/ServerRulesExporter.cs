@@ -50,6 +50,9 @@ namespace Shooter.Editor
         // サーバーの ServerEmotes.EmotesFileName と同じ名前にする
         public const string EmotesFileName = "emotes.json";
 
+        // サーバーの ServerCombatTuning.HolsterFileName と同じ名前にする
+        public const string HolsterFileName = "holster.json";
+
         public const string SupplyDropsFileName = "supply-drops.json";
         public const string RedeployFileName = "redeploy.json";
 
@@ -407,8 +410,10 @@ namespace Shooter.Editor
                 var extractionZones = new List<ExtractionZone>();
                 var shrinkingZones = new List<ShrinkingZone>();
                 var battleRoyaleRunners = new List<BattleRoyaleRunner>();
+                var weaponFreeZones = new List<WeaponFreeZone>();
                 foreach (var rootObject in scene.GetRootGameObjects())
                 {
+                    weaponFreeZones.AddRange(rootObject.GetComponentsInChildren<WeaponFreeZone>(false));
                     carts.AddRange(rootObject.GetComponentsInChildren<PayloadCart>(false));
                     lootContainers.AddRange(rootObject.GetComponentsInChildren<LootContainer>(false));
                     extractionZones.AddRange(rootObject.GetComponentsInChildren<ExtractionZone>(false));
@@ -459,9 +464,115 @@ namespace Shooter.Editor
                     ServerDataMaps.ToDropHeight(scenePath, battleRoyaleRunners));
                 File.WriteAllText(output, NetMapPoints.Write(points));
                 written.Add(output);
+
+                // ゾーンの無いシーンにも空のファイルを置くのは、前に書き出したゾーンが消したあとも残ってサーバーだけで効き続けないため
+                var zones = ToWeaponFreeZones(scenePath, weaponFreeZones);
+                var zonesOutput = Path.Combine(directory, scene.name + NetMapWeaponFreeZones.Extension);
+                File.WriteAllText(zonesOutput, NetMapWeaponFreeZones.Write(zones));
+                written.Add(zonesOutput);
+                Debug.Log(LogTag + " wrote " + zonesOutput + " from " + scenePath + " (" + zones.Zones.Count + " weapon free zones)");
             }
 
             return written;
+        }
+
+        // 無効にしたゾーンはオフラインで何もしない (WeaponFreeZone.OnTriggerEnter) ので書き出さない。
+        // サーバーは軸にそろえた箱で判定するので、回したゾーンは回した範囲を囲む箱になる
+        public static NetMapWeaponFreeZones ToWeaponFreeZones(string scenePath, IReadOnlyList<WeaponFreeZone> zones)
+        {
+            if (zones == null)
+            {
+                throw new ArgumentNullException(nameof(zones));
+            }
+
+            var written = new List<MapWeaponFreeZone>(zones.Count);
+            var owners = new Dictionary<string, WeaponFreeZone>(StringComparer.Ordinal);
+            foreach (var zone in zones)
+            {
+                if (zone == null || !zone.enabled)
+                {
+                    continue;
+                }
+
+                var id = zone.ZoneId;
+                if (owners.TryGetValue(id, out var other))
+                {
+                    throw new InvalidOperationException(
+                        LogTag + " WeaponFreeZones '" + other.name + "' and '" + zone.name + "' in " + scenePath + " share the zone id '" + id
+                        + "'; give each its own Zone Id");
+                }
+
+                owners.Add(id, zone);
+                var box = WorldBox(zone);
+                if (!IsAxisAligned(zone.transform.rotation))
+                {
+                    Debug.LogWarning(
+                        LogTag + " WeaponFreeZone '" + zone.name + "' in " + scenePath + " is rotated; the server checks the axis-aligned box around it "
+                        + box.min + " to " + box.max, zone);
+                }
+
+                try
+                {
+                    written.Add(new MapWeaponFreeZone(id, box.min.ToNumerics(), box.max.ToNumerics(), zone.Spec));
+                }
+                catch (ArgumentException e)
+                {
+                    throw new InvalidOperationException(LogTag + " WeaponFreeZone '" + zone.name + "' in " + scenePath + " cannot be written for the server: " + e.Message, e);
+                }
+            }
+
+            return new NetMapWeaponFreeZones(written);
+        }
+
+        // シーンを開いただけでは Awake が走らず、Collider の無いゾーンは範囲の箱をまだ持たないので、遊ぶときに EnsureTrigger が作る箱と同じ形で数える。
+        // 箱でない Collider は形を箱に直せないので、その Collider の囲む箱を使う
+        public static Bounds WorldBox(WeaponFreeZone zone)
+        {
+            if (zone == null)
+            {
+                throw new ArgumentNullException(nameof(zone));
+            }
+
+            var collider = zone.GetComponent<Collider>();
+            if (collider is BoxCollider box)
+            {
+                return Enclose(zone.transform, box.center, box.size);
+            }
+
+            if (collider != null)
+            {
+                return collider.bounds;
+            }
+
+            var size = zone.Size;
+            return Enclose(zone.transform, new Vector3(0f, size.y * 0.5f, 0f), size);
+        }
+
+        private static Bounds Enclose(Transform transform, Vector3 localCenter, Vector3 localSize)
+        {
+            var half = localSize * 0.5f;
+            var bounds = new Bounds(transform.TransformPoint(localCenter), Vector3.zero);
+            for (var i = 0; i < 8; i++)
+            {
+                var corner = new Vector3(
+                    (i & 1) == 0 ? -half.x : half.x,
+                    (i & 2) == 0 ? -half.y : half.y,
+                    (i & 4) == 0 ? -half.z : half.z);
+                bounds.Encapsulate(transform.TransformPoint(localCenter + corner));
+            }
+
+            return bounds;
+        }
+
+        private static bool IsAxisAligned(Quaternion rotation)
+        {
+            return IsAxis(rotation * Vector3.right) && IsAxis(rotation * Vector3.up) && IsAxis(rotation * Vector3.forward);
+        }
+
+        private static bool IsAxis(Vector3 direction)
+        {
+            const float aligned = 0.9999f;
+            return Mathf.Abs(direction.x) > aligned || Mathf.Abs(direction.y) > aligned || Mathf.Abs(direction.z) > aligned;
         }
 
         // 台車の無いシーンは null。サーバーは Payload のルールで道筋の無いマップを起動のときに断る
@@ -571,6 +682,7 @@ namespace Shooter.Editor
                 ExportTuningFile(directory, StaggerFileName, c => c.StaggerTuning, StaggerActionInstaller.TuningResourcePath, StaggerJson.Parse),
                 ExportTuningFile(directory, SuppressionFileName, c => c.SuppressionTuning, KitTuning.SuppressionResourcePath, SuppressionJson.Parse),
                 ExportTuningFile(directory, EmotesFileName, c => c.EmotesTuning, EmoteJson.ResourcePath, EmoteJson.Parse),
+                ExportTuningFile(directory, HolsterFileName, c => c.HolsterTuning, KitTuning.HolsterResourcePath, HolsterJson.Parse),
             };
         }
 

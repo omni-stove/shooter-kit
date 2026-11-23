@@ -31,6 +31,7 @@ namespace Shooter.NetV2
         private InputAction _fireAction;
         private bool _resolvedActions;
         private HolsterStatus? _published;
+        private WeaponFreeZoneStatus? _publishedZone;
         private bool _canAct;
         private bool _riding;
         private bool _switching;
@@ -63,6 +64,9 @@ namespace Shooter.NetV2
         public bool IsPending => _pendingLeft > 0f;
 
         public bool CanAct => !_disposed && _canAct;
+
+        // スナップショットの自分の部分に載った、武器を出してはいけない場所の状態
+        public WeaponFreeZoneStatus Zone { get; private set; }
 
         // NetV2ClientParts.Registered に並べる口。再生では要求を受ける相手がいないので押しを読まず、記録された自分の状態を出すだけにする
         public static INetV2ClientPart Create(NetV2ClientPartsContext context)
@@ -121,6 +125,11 @@ namespace Shooter.NetV2
             Phase = phase;
             Lowering = lowering;
             Publish(own >= 0 ? new HolsterStatus(phase, lowering, _spec.IsArmed(phase, false)) : (HolsterStatus?)null);
+
+            // オフラインの WeaponFreeZone と同じく、どこかのゾーンの中にいる間だけ値を出す。判定はサーバー (ServerWeaponFreeZones) が持つ
+            var zone = own >= 0 && snapshot.HasOwner ? snapshot.Owner.WeaponFreeZone : WeaponFreeZoneStatus.Outside;
+            Zone = zone;
+            PublishZone(zone.Inside ? zone : (WeaponFreeZoneStatus?)null);
         }
 
         public void Tick(float deltaSeconds)
@@ -161,6 +170,7 @@ namespace Shooter.NetV2
 
             _disposed = true;
             Publish(null);
+            PublishZone(null);
             _pendingLeft = 0f;
         }
 
@@ -188,6 +198,12 @@ namespace Shooter.NetV2
             if (action == HolsterAction.Holster && _switching)
             {
                 _log(HolsterLog.NetNotSent(toward, "Switching"));
+                return;
+            }
+
+            if (action == HolsterAction.Draw && Zone.Inside && Zone.Reaction == WeaponFreeZoneReaction.BlockDraw)
+            {
+                _log(HolsterLog.NetNotSent(toward, "WeaponFreeZone"));
                 return;
             }
 
@@ -220,6 +236,25 @@ namespace Shooter.NetV2
             }
 
             _published = status;
+        }
+
+        private void PublishZone(WeaponFreeZoneStatus? status)
+        {
+            if (_publishedZone == status)
+            {
+                return;
+            }
+
+            if (status.HasValue)
+            {
+                GameSignals.WeaponFreeZone.Publish(status);
+            }
+            else
+            {
+                GameSignals.WeaponFreeZone.ClearIfCurrent(_publishedZone);
+            }
+
+            _publishedZone = status;
         }
 
         private void ResolveActions()

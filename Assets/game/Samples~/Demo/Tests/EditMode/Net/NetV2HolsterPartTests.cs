@@ -26,6 +26,7 @@ namespace Shooter.Net.Tests
         public void SetUp()
         {
             GameSignals.Holster.Clear();
+            GameSignals.WeaponFreeZone.Clear();
             _logs.Clear();
             _sent.Clear();
             _holsterPressed = false;
@@ -41,6 +42,72 @@ namespace Shooter.Net.Tests
             _part.Dispose();
             _client.Dispose();
             GameSignals.Holster.Clear();
+            GameSignals.WeaponFreeZone.Clear();
+        }
+
+        [Test]
+        public void TheZoneTheServerSendsIsPublishedWhileInsideAndClearedOutside()
+        {
+            var warning = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnOnly, true, 0f);
+            var inside = Snapshot(HolsterPhase.Drawn, 0f);
+            inside.Owner.WeaponFreeZone = warning;
+
+            _part.Apply(inside);
+
+            Assert.That(GameSignals.WeaponFreeZone.Value, Is.EqualTo((WeaponFreeZoneStatus?)warning));
+            Assert.That(_part.Zone, Is.EqualTo(warning));
+
+            _part.Apply(Snapshot(HolsterPhase.Drawn, 0f));
+
+            Assert.That(GameSignals.WeaponFreeZone.HasValue, Is.False);
+            Assert.That(_part.Zone, Is.EqualTo(WeaponFreeZoneStatus.Outside));
+        }
+
+        [Test]
+        public void DisposingClearsTheZoneSignal()
+        {
+            var inside = Snapshot(HolsterPhase.Drawn, 0f);
+            inside.Owner.WeaponFreeZone = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.AutoHolster, false, 0f);
+            _part.Apply(inside);
+
+            _part.Dispose();
+
+            Assert.That(GameSignals.WeaponFreeZone.HasValue, Is.False);
+        }
+
+        [Test]
+        public void DrawingInsideABlockDrawZoneIsNotSentButHolsteringIs()
+        {
+            var holstered = Snapshot(HolsterPhase.Holstered, 1f);
+            holstered.Owner.WeaponFreeZone = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.BlockDraw, false, 0f);
+            _part.Apply(holstered);
+
+            Press();
+            _firePressed = true;
+            _part.Tick(0.016f);
+            _firePressed = false;
+
+            Assert.That(_sent, Is.Empty);
+            Assert.That(_logs, Has.Some.EqualTo("[Holster] net not-sent=Drawing reason=WeaponFreeZone"));
+
+            var drawn = Snapshot(HolsterPhase.Drawn, 0f);
+            drawn.Owner.WeaponFreeZone = holstered.Owner.WeaponFreeZone;
+            _part.Apply(drawn);
+            Press();
+
+            Assert.That(_sent, Is.EqualTo(new[] { HolsterAction.Holster }));
+        }
+
+        [Test]
+        public void DrawingInsideAnAutoHolsterZoneIsSent()
+        {
+            var holstered = Snapshot(HolsterPhase.Holstered, 1f);
+            holstered.Owner.WeaponFreeZone = new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.AutoHolster, false, 0f);
+            _part.Apply(holstered);
+
+            Press();
+
+            Assert.That(_sent, Is.EqualTo(new[] { HolsterAction.Draw }));
         }
 
         [Test]
