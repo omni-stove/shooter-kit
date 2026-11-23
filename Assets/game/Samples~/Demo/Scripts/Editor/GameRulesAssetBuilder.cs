@@ -376,6 +376,7 @@ namespace Shooter.Editor
         {
             return TeamDeathmatchRules()
                 .WithObjective(MatchObjective.Extraction)
+                .WithFriendlyFire(FriendlyFire.On)
                 .WithRespawnMode(RespawnMode.None)
                 .WithSpawnProtectionSeconds(0f)
                 .WithActions(ExtractionActions());
