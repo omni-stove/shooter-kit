@@ -4,6 +4,18 @@
     "references": [
         "Shooter.Core",
         "Shooter.Core.World",
+        "Shooter.Core.Replay",
+        "Shooter.Core.Grapple",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Playlist",
+        "Shooter.Core.Party",
+        "Shooter.Core.CoopHold",
+        "Shooter.Core.Services",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "Shooter.Core.Chat",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -2,7 +2,8 @@
     "name": "Shooter.Stealth.Core",
     "rootNamespace": "Shooter.Core",
     "references": [
-        "Shooter.Core"
+        "Shooter.Core",
+        "Shooter.Core.Presentation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

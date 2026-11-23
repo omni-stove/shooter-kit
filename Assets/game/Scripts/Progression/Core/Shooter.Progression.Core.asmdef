@@ -2,7 +2,8 @@
     "name": "Shooter.Progression.Core",
     "rootNamespace": "Shooter.Core",
     "references": [
-        "Shooter.Core"
+        "Shooter.Core",
+        "Shooter.Core.Services"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

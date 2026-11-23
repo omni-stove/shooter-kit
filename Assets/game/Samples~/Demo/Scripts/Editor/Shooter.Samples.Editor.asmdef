@@ -4,6 +4,12 @@
     "references": [
         "Shooter.Core",
         "Shooter.Core.World",
+        "Shooter.Core.Grapple",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.CoopHold",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
         "Shooter.Aircraft.Core",
         "Shooter.Aircraft",
         "Shooter.Campaign.Core",

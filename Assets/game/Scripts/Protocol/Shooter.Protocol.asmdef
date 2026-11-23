@@ -3,7 +3,12 @@
     "rootNamespace": "Shooter.Protocol",
     "references": [
         "Shooter.Core",
-        "Shooter.Core.World"
+        "Shooter.Core.World",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Vehicle",
+        "Shooter.Core.Chat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

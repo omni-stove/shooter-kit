@@ -3,6 +3,9 @@
     "rootNamespace": "Shooter.Editor",
     "references": [
         "Shooter.Core",
+        "Shooter.Core.Replay",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
         "Shooter.Editor",
         "Shooter.NetV2.Client",
         "Shooter.Protocol",

@@ -5,6 +5,13 @@
         "Shooter.Core",
         "Shooter.Core.World",
         "Shooter.Core.Navigation",
+        "Shooter.Core.Replay",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Services",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "Shooter.Core.Chat",
         "Shooter.Runtime",
         "Unity.AI.Navigation"
     ],

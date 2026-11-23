@@ -3,6 +3,7 @@
     "rootNamespace": "Shooter.NetEos",
     "references": [
         "Shooter.Core",
+        "Shooter.Core.Services",
         "Shooter.NetV2",
         "Shooter.NetV2.Client",
         "Shooter.Protocol",

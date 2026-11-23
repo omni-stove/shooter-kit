@@ -12,7 +12,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void ChatNamesTheChannelAndLengthButNotTheText()
         {
-            var line = ServerEventLog.Chat(_time, _matchId, 1, _puid, ChatChannel.Team, 12);
+            var line = ServerEventLog.Chat(_time, _matchId, 1, _puid, ChatChannel.Team.ToString(), 12);
 
             Assert.That(line, Is.EqualTo(
                 "{\"type\":\"chat\",\"time\":\"2026-11-17T09:00:00.123Z\",\"matchId\":\"" + _matchId
@@ -22,7 +22,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void ChatRefusedNamesTheReason()
         {
-            var line = ServerEventLog.ChatRefused(_time, _matchId, 1, _puid, ChatRefusal.TooSoon);
+            var line = ServerEventLog.ChatRefused(_time, _matchId, 1, _puid, ChatRefusal.TooSoon.ToString());
 
             Assert.That(line, Is.EqualTo(
                 "{\"type\":\"chat_refused\",\"time\":\"2026-11-17T09:00:00.123Z\",\"matchId\":\"" + _matchId
@@ -64,8 +64,8 @@ namespace Shooter.Core.Tests
         {
             var lines = new[]
             {
-                ServerEventLog.Chat(_time, _matchId, 1, null, ChatChannel.All, 1),
-                ServerEventLog.ChatRefused(_time, _matchId, 1, null, ChatRefusal.Empty),
+                ServerEventLog.Chat(_time, _matchId, 1, null, ChatChannel.All.ToString(), 1),
+                ServerEventLog.ChatRefused(_time, _matchId, 1, null, ChatRefusal.Empty.ToString()),
                 ServerEventLog.MapVote(_time, _matchId, 1, _puid, "NetArena01"),
                 ServerEventLog.MapChanged(_time, _matchId, "NetArena01", "NetArena01"),
                 ServerEventLog.TeamBalanced(_time, _matchId, 1, _puid, Team.Bravo, Team.Alpha),
@@ -80,10 +80,9 @@ namespace Shooter.Core.Tests
         [Test]
         public void InvalidValuesAreRefused()
         {
-            Assert.That(() => ServerEventLog.Chat(_time, _matchId, 1, null, (ChatChannel)9, 3), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => ServerEventLog.Chat(_time, _matchId, 1, null, ChatChannel.All, 0), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => ServerEventLog.ChatRefused(_time, _matchId, 1, null, ChatRefusal.None), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => ServerEventLog.ChatRefused(_time, _matchId, 1, null, (ChatRefusal)9), Throws.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(() => ServerEventLog.Chat(_time, _matchId, 1, null, "", 3), Throws.ArgumentException);
+            Assert.That(() => ServerEventLog.Chat(_time, _matchId, 1, null, "All", 0), Throws.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(() => ServerEventLog.ChatRefused(_time, _matchId, 1, null, null), Throws.ArgumentException);
             Assert.That(() => ServerEventLog.MapVote(_time, _matchId, 1, null, ""), Throws.ArgumentException);
             Assert.That(() => ServerEventLog.MapChanged(_time, _matchId, null, "NetArena02"), Throws.ArgumentException);
             Assert.That(() => ServerEventLog.TeamBalanced(_time, _matchId, 1, null, Team.Alpha, Team.Alpha), Throws.ArgumentException);
