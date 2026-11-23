@@ -145,12 +145,12 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void TheKitDefaultsAimFromFurtherThanTheyStopAndSeeFurtherStill()
+        public void TheKitDefaultsAimFromAsFarAsTheySeeAndFurtherThanTheyStop()
         {
             var spec = EnemySpec.Default;
 
             Assert.That(spec.AttackRange, Is.LessThan(spec.FireRange));
-            Assert.That(spec.FireRange, Is.LessThan(spec.SightRange));
+            Assert.That(spec.FireRange, Is.EqualTo(spec.SightRange));
             Assert.That(spec.RangeSpreadDegrees, Is.EqualTo(EnemySpec.DefaultRangeSpreadDegrees));
         }
     }
