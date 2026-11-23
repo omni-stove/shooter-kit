@@ -189,10 +189,49 @@ namespace Shooter.Core.Tests
             Assert.That(TicksToEngage(AwarenessSpec.Default, true), Is.EqualTo(TicksToEngage(AwarenessSpec.Default, false)), "the default factor changes nothing");
         }
 
-        private static int TicksToEngage(AwarenessSpec spec, bool armed)
+        [Test]
+        public void SightingCarriesWhetherTheTargetsLightIsOn()
+        {
+            var awareness = new StealthAwareness(AwarenessSpec.Default);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsLit, Is.False, "dark until told otherwise");
+
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, true, true);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsLit, Is.True);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsArmed, Is.True);
+
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, false);
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsLit, Is.False, "an omitted light turns back off");
+            Assert.That(awareness.SightingOf(Sees(_ahead)).IsArmed, Is.False);
+        }
+
+        [Test]
+        public void ALitTargetIsEngagedSoonerOnlyByTheLitFactor()
+        {
+            var spec = new AwarenessSpec(litGainFactor: 2f);
+            var litTicks = TicksToEngage(spec, true, true);
+            var darkTicks = TicksToEngage(spec, true, false);
+
+            Assert.That(litTicks, Is.LessThan(darkTicks));
+            Assert.That(litTicks * 2, Is.EqualTo(darkTicks).Within(2), "twice the gain, half the time");
+            Assert.That(TicksToEngage(AwarenessSpec.Default, true, true), Is.EqualTo(TicksToEngage(AwarenessSpec.Default, true, false)), "the default factor changes nothing");
+        }
+
+        [Test]
+        public void TheLitAndArmedFactorsMultiply()
+        {
+            var spec = new AwarenessSpec(armedGainFactor: 2f, litGainFactor: 1.5f);
+            var both = TicksToEngage(spec, true, true);
+            var neither = TicksToEngage(spec, false, false);
+
+            Assert.That(both * 3, Is.EqualTo(neither).Within(3), "2 times 1.5 is three times the gain, a third of the time");
+            Assert.That(both, Is.LessThan(TicksToEngage(spec, true, false)));
+            Assert.That(both, Is.LessThan(TicksToEngage(spec, false, true)));
+        }
+
+        private static int TicksToEngage(AwarenessSpec spec, bool armed, bool lit = false)
         {
             var (brain, awareness, _, _) = Create(Stealth.On, spec);
-            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, armed);
+            awareness.Observe(Vector3.UnitZ, AwarenessPosture.Standing, 1f, 0f, armed, lit);
             var ticks = 0;
             while (awareness.Stage != AwarenessStage.Engaged && ticks < 10000)
             {

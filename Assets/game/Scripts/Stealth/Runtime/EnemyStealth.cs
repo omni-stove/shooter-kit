@@ -347,7 +347,8 @@ namespace Shooter.Runtime
                     _observedStealth.Posture,
                     Mathf.Clamp01(_observedStealth.LightFactor),
                     _observedStealth.Speed,
-                    _observedStealth.IsArmed);
+                    _observedStealth.IsArmed,
+                    _observedStealth.IsLit);
             }
             // 目標が無いあいだはルールを持ち越す。ResetTo で目標が外れると、次の tick で目標を拾ったその判断が Off のまま走ってすぐ交戦するため。
             else if (target != null)
