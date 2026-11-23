@@ -99,6 +99,7 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HordePart),
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
+                typeof(NetV2DoorsPart),
             }));
         }
 
@@ -117,6 +118,7 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HordePart),
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
+                typeof(NetV2DoorsPart),
             }));
         }
 

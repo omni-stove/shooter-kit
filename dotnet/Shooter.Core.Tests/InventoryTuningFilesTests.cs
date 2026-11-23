@@ -11,7 +11,7 @@ namespace Shooter.Core.Tests
         private static readonly string[] _languages = { "ja", "en" };
         private static readonly string[] _shippedNameKeys =
         {
-            "item.bandage", "item.medkit", "item.armorPlate", "item.keycard", "item.toolbox", "item.ammo9mm", "item.ammo556", "item.ammo12ga",
+            "item.bandage", "item.medkit", "item.armorPlate", "item.keycard", "item.toolbox", "item.breachCharge", "item.ammo9mm", "item.ammo556", "item.ammo12ga",
             "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun",
             "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
             "item.redDot", "item.scope4x", "item.holoSight", "item.thermalScope", "item.suppressor", "item.compensator", "item.foregrip", "item.extendedMagazine",

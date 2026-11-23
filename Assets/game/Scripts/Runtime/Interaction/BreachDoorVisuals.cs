@@ -67,7 +67,14 @@ namespace Shooter.Runtime
         [SerializeField, Min(0f), Tooltip("破片の箱を飛ばす速さ (m/s)")]
         private float _debrisSpeed = DefaultDebrisSpeed;
 
+        // シーンの生成で作った板をシーンに残し、オンラインのマップの書き出しが板の当たりをドアの組にできるよう、保存する。
+        // 保存しないと、Play の Bind が 2 枚目の板を作る。
+        [SerializeField, HideInInspector]
         private Transform _panel;
+
+        [NonSerialized]
+        private bool _hasClosedRotation;
+
         private GameObject _charge;
         private GameObject _debris;
         private readonly List<Piece> _pieces = new List<Piece>();
@@ -107,6 +114,22 @@ namespace Shooter.Runtime
             set => _explosionSound = value;
         }
 
+        // 板の箱を作るときの幅・高さ・厚み (m)。作った後に変えても、今ある板は作り直さない。
+        public Vector3 PanelSize
+        {
+            get => _panelSize;
+            set => _panelSize = value;
+        }
+
+        public Vector3 WorldPanelSize
+        {
+            get
+            {
+                var scale = transform.lossyScale;
+                return Vector3.Scale(ValidPanelSize(), new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+            }
+        }
+
         public Transform Panel => _panel;
 
         public GameObject Charge => _charge;
@@ -129,23 +152,29 @@ namespace Shooter.Runtime
         // 2 度呼んでも板は 1 枚だけにする。ドアが Bind をやり直すことがあるため。
         public Transform EnsurePanel()
         {
-            if (_panel != null)
+            if (_panel == null)
             {
-                return _panel;
+                if (_panelPrefab != null)
+                {
+                    var instance = Instantiate(_panelPrefab, transform, false);
+                    instance.name = PanelObjectName;
+                    _panel = instance.transform;
+                }
+                else
+                {
+                    _panel = BuildPanel(transform, ValidPanelSize());
+                }
+
+                _hasClosedRotation = false;
             }
 
-            if (_panelPrefab != null)
+            // シーンに保存した板は閉じた向きのまま読み込まれるので、作ったときと同じく最初に見た向きを閉じた向きにする。
+            if (!_hasClosedRotation)
             {
-                var instance = Instantiate(_panelPrefab, transform, false);
-                instance.name = PanelObjectName;
-                _panel = instance.transform;
-            }
-            else
-            {
-                _panel = BuildPanel(transform, ValidPanelSize());
+                _closedRotation = _panel.localRotation;
+                _hasClosedRotation = true;
             }
 
-            _closedRotation = _panel.localRotation;
             return _panel;
         }
 

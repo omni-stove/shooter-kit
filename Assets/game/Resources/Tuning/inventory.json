@@ -58,6 +58,15 @@
       "height": 2
     },
     {
+      "id": "5e3b9c1d-7a24-4f86-b0c3-9d1e2a4f6b78",
+      "nameKey": "item.breachCharge",
+      "iconId": "breachCharge",
+      "maxStack": 3,
+      "weight": 1,
+      "width": 2,
+      "height": 1
+    },
+    {
       "id": "02e07a84-f063-4b41-8f63-17a410a3d069",
       "nameKey": "item.ammo9mm",
       "iconId": "ammo9mm",

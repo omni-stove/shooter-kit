@@ -31,8 +31,12 @@ namespace Shooter.Server
             IReadOnlyList<EmoteSpec> emotes = null,
             string emotesPath = null,
             HolsterSpec holster = null,
-            string holsterPath = null)
+            string holsterPath = null,
+            BreachSpec breach = null,
+            string breachPath = null)
         {
+            Breach = breach ?? BreachSpec.Default;
+            BreachPath = breachPath;
             Holster = holster ?? HolsterSpec.Default;
             HolsterPath = holsterPath;
             Melee = melee ?? MeleeSpec.Default;
@@ -76,6 +80,11 @@ namespace Shooter.Server
 
         public string HolsterPath { get; }
 
+        // ドアの突入 (ServerDoors) の値。オフラインの Tuning/breach と同じ形の breach.json から読む
+        public BreachSpec Breach { get; }
+
+        public string BreachPath { get; }
+
         public string LogLine => ServerProgram.LogTag + " combat tuning"
             + " melee=" + (MeleePath ?? "default")
             + " streaks=" + (StreaksPath ?? "default")
@@ -94,14 +103,15 @@ namespace Shooter.Server
                 || !TryRead(searchRoots, AntiCheatFileName, "anticheat", AntiCheatTuningJson.Parse, out var antiCheat, out var antiCheatPath, out error)
                 || !ServerPlayerStatusTuning.TryLoad(searchRoots, out var playerStatus, out error)
                 || !ServerEmotes.TryLoadEmotes(searchRoots, out var emotes, out var emotesPath, out error)
-                || !TryRead(searchRoots, HolsterFileName, "holster", HolsterJson.Parse, out var holster, out var holsterPath, out error))
+                || !TryRead(searchRoots, HolsterFileName, "holster", HolsterJson.Parse, out var holster, out var holsterPath, out error)
+                || !ServerDoors.TryLoadSpec(searchRoots, out var breach, out var breachPath, out error))
             {
                 return false;
             }
 
             tuning = new ServerCombatTuning(
                 melee, meleePath, streaks, streaksPath, deployables, deployablesPath, antiCheat, antiCheatPath, playerStatus, emotes, emotesPath,
-                holster, holsterPath);
+                holster, holsterPath, breach, breachPath);
             return true;
         }
 

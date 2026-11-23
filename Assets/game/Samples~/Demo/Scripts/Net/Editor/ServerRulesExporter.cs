@@ -53,6 +53,9 @@ namespace Shooter.Editor
         // サーバーの ServerCombatTuning.HolsterFileName と同じ名前にする
         public const string HolsterFileName = "holster.json";
 
+        // サーバーの ServerDoors.BreachFileName と同じ名前にする
+        public const string BreachFileName = "breach.json";
+
         public const string SupplyDropsFileName = "supply-drops.json";
         public const string RedeployFileName = "redeploy.json";
 
@@ -787,6 +790,7 @@ namespace Shooter.Editor
                 ExportTuningFile(directory, SuppressionFileName, c => c.SuppressionTuning, KitTuning.SuppressionResourcePath, SuppressionJson.Parse),
                 ExportTuningFile(directory, EmotesFileName, c => c.EmotesTuning, EmoteJson.ResourcePath, EmoteJson.Parse),
                 ExportTuningFile(directory, HolsterFileName, c => c.HolsterTuning, KitTuning.HolsterResourcePath, HolsterJson.Parse),
+                ExportTuningFile(directory, BreachFileName, c => c.BreachTuning, KitTuning.BreachResourcePath, BreachJson.Parse),
             };
         }
 
