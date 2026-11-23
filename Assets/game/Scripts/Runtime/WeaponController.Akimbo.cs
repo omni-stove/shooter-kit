@@ -294,7 +294,8 @@ namespace Shooter.Runtime
                 }
 
                 var right = weapon.AmmoInMagazine;
-                var left = right;
+                // 手放した弾から拾い直した組の左手は空から始める。右手と同じ数にすると、拾い直すたびに弾が増える。
+                var left = resetAmmo ? right : 0;
                 if (!resetAmmo && leftMagazines != null && leftMagazines.TryGetValue(weapon.Spec.Id, out var kept))
                 {
                     left = Math.Min(kept, weapon.Spec.MagazineSize);

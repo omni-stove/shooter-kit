@@ -131,7 +131,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            var loadout = WeaponLoadout.Restore(_specs, _loadout.SnapshotAmmo(), Weapon.Spec.Id, _loadedRules, _switchSeconds, out _);
+            var loadout = WeaponLoadout.Restore(_specs, SnapshotLoadoutAmmo(),Weapon.Spec.Id, _loadedRules, _switchSeconds, out _);
             KeepAmmoTypes(loadout, -1);
             SetLoadout(loadout, _specs, _loadedDefinitions, _loadedRules);
             Debug.Log($"{AttachmentsLogPrefix} cleared weapon={Weapon.Spec.Id}", this);
@@ -162,7 +162,7 @@ namespace Shooter.Runtime
 
             var spec = WeaponAttachments.Apply(_loadedDefinitions[index].ToSpec(), kept, catalog);
             var weapon = _loadout.Items[index];
-            var magazine = weapon.AmmoInMagazine;
+            var magazine = AmmoOf(weapon).AmmoInMagazine;
             var excess = magazine - spec.MagazineSize;
             // 弾倉が減って溢れる弾が持ち物に入らなければ、弾を失わないよう付け外しを断る
             if (excess > 0 && weapon.AmmoPool != null && weapon.AmmoPool.Room < excess)
@@ -172,14 +172,14 @@ namespace Shooter.Runtime
             }
 
             weapon.CancelReload();
-            var reserve = weapon.ReserveAmmo;
+            var reserve = AmmoOf(weapon).ReserveAmmo;
             if (excess > 0)
             {
                 magazine = spec.MagazineSize;
                 if (weapon.AmmoPool != null)
                 {
                     weapon.AmmoPool.Put(excess);
-                    reserve = weapon.ReserveAmmo;
+                    reserve = AmmoOf(weapon).ReserveAmmo;
                 }
                 else
                 {
@@ -187,7 +187,7 @@ namespace Shooter.Runtime
                 }
             }
 
-            var carried = new List<WeaponAmmo>(_loadout.SnapshotAmmo());
+            var carried = new List<WeaponAmmo>(SnapshotLoadoutAmmo());
             carried[index] = new WeaponAmmo(weaponId, magazine, reserve);
             var specs = (WeaponSpec[])_specs.Clone();
             specs[index] = spec;
