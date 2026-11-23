@@ -79,6 +79,37 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void APlayerWithoutAWeaponLightCountsAsDark()
+        {
+            var target = _player.AddComponent<StealthTarget>();
+
+            Assert.That(target.IsLit, Is.False);
+        }
+
+        [Test]
+        public void LitFollowsTheWeaponLightStatusAddedLater()
+        {
+            var target = _player.AddComponent<StealthTarget>();
+            Assert.That(target.IsLit, Is.False);
+
+            var light = _player.AddComponent<FakeWeaponLightStatusSource>();
+            light.Status = new WeaponLightStatus(true, true);
+            Assert.That(target.IsLit, Is.True, "the light is found even when added after the target");
+
+            light.Status = new WeaponLightStatus(true, false);
+            Assert.That(target.IsLit, Is.False);
+
+            light.Status = WeaponLightStatus.None;
+            Assert.That(target.IsLit, Is.False, "a weapon without a light is dark");
+
+            light.Status = new WeaponLightStatus(true, true);
+            Assert.That(target.IsLit, Is.True);
+
+            Object.DestroyImmediate(light);
+            Assert.That(target.IsLit, Is.False, "a removed light leaves the target dark");
+        }
+
+        [Test]
         public void OutOfRangeValuesAreRejected()
         {
             var target = _player.AddComponent<StealthTarget>();

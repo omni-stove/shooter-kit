@@ -9,7 +9,8 @@ namespace Shooter.Core.Tests
         private static readonly string[] _expectedTopLevelItemNames =
         {
             "footstepNoiseRadius", "walkStride", "sprintStride", "crouchStride", "walkVolume", "sprintVolume", "crouchVolume",
-            "minLandingFallSpeed", "hardLandingFallSpeed", "minLandingVolume", "armedGainFactor", "securityCamera", "alarm",
+            "minLandingFallSpeed", "hardLandingFallSpeed", "minLandingVolume", "armedGainFactor", "litGainFactor",
+            "securityCamera", "alarm",
         };
 
         private static readonly string[] _expectedCameraItemNames =
@@ -23,6 +24,7 @@ namespace Shooter.Core.Tests
             "gainPerSecond", "fullGainDistance", "farGainFactor", "peripheralGainFactor", "crouchGainFactor", "proneGainFactor",
             "stillGainFactor", "fullMotionSpeed", "decayDelaySeconds", "decayPerSecond", "noticeThreshold", "alertThreshold",
             "alarmRadius", "engagedHoldThreshold", "gunshotGain", "footstepGain", "investigateLevel", "armedGainFactor",
+            "litGainFactor",
         };
 
         private static readonly string[] _expectedAlarmItemNames = { "durationSeconds", "radius" };
@@ -87,7 +89,7 @@ namespace Shooter.Core.Tests
                 + " \"crouchGainFactor\": 0.7, \"proneGainFactor\": 0.1, \"stillGainFactor\": 0.9, \"fullMotionSpeed\": 4,"
                 + " \"decayDelaySeconds\": 1, \"decayPerSecond\": 0.2, \"noticeThreshold\": 0.3, \"alertThreshold\": 0.7,"
                 + " \"alarmRadius\": 8, \"engagedHoldThreshold\": 0.9, \"gunshotGain\": 0.5, \"footstepGain\": 0.05,"
-                + " \"investigateLevel\": 0.8, \"armedGainFactor\": 2}},"
+                + " \"investigateLevel\": 0.8, \"armedGainFactor\": 2, \"litGainFactor\": 1.5}},"
                 + " \"alarm\": {\"durationSeconds\": 45, \"radius\": 50}}",
                 "stealth.json");
 
@@ -120,6 +122,7 @@ namespace Shooter.Core.Tests
             Assert.That(awareness.FootstepGain, Is.EqualTo(0.05f));
             Assert.That(awareness.InvestigateLevel, Is.EqualTo(0.8f));
             Assert.That(awareness.ArmedGainFactor, Is.EqualTo(2f));
+            Assert.That(awareness.LitGainFactor, Is.EqualTo(1.5f));
 
             Assert.That(tuning.Alarm.DurationSeconds, Is.EqualTo(45f));
             Assert.That(tuning.Alarm.Radius, Is.EqualTo(50f));
@@ -129,9 +132,11 @@ namespace Shooter.Core.Tests
         public void TheCameraAwarenessDoesNotChangeThePlayerSideValues()
         {
             var tuning = StealthNoiseJson.ParseTuning(
-                "{\"securityCamera\": {\"awareness\": {\"armedGainFactor\": 3}}, \"alarm\": {\"radius\": 5}}", "stealth.json");
+                "{\"securityCamera\": {\"awareness\": {\"armedGainFactor\": 3, \"litGainFactor\": 2}}, \"alarm\": {\"radius\": 5}}", "stealth.json");
 
             Assert.That(tuning.ArmedGainFactor, Is.Null, "the guards keep their own armed factor");
+            Assert.That(tuning.LitGainFactor, Is.Null, "the guards keep their own lit factor");
+            Assert.That(tuning.Camera.Awareness.LitGainFactor, Is.EqualTo(2f));
             Assert.That(tuning.Noise.FootstepNoiseRadius, Is.EqualTo(StealthNoiseSpec.DefaultFootstepNoiseRadius));
             Assert.That(tuning.Camera.Awareness.ArmedGainFactor, Is.EqualTo(3f));
         }

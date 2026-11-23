@@ -31,6 +31,7 @@ namespace Shooter.Core
         public const float DefaultInvestigateLevel = 0.75f;
 
         public const float DefaultArmedGainFactor = 1f;
+        public const float DefaultLitGainFactor = 1f;
 
         public static AwarenessSpec Default { get; } = new AwarenessSpec();
 
@@ -53,7 +54,8 @@ namespace Shooter.Core
             float gunshotGain = DefaultGunshotGain,
             float footstepGain = DefaultFootstepGain,
             float investigateLevel = DefaultInvestigateLevel,
-            float armedGainFactor = DefaultArmedGainFactor)
+            float armedGainFactor = DefaultArmedGainFactor,
+            float litGainFactor = DefaultLitGainFactor)
         {
             if (!(fieldOfViewDegrees > 0f) || fieldOfViewDegrees > 360f)
             {
@@ -98,8 +100,9 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(investigateLevel), investigateLevel, "investigateLevel must be at least alertThreshold and less than 1");
             }
 
-            // 姿勢の係数と違い 1 を超えてよいのは、武器を出していると気づかれやすくするのが目的のため。
+            // 姿勢の係数と違い 1 を超えてよいのは、武器を出している・ライトを点けていると気づかれやすくするのが目的のため。
             RequireNonNegative(armedGainFactor, nameof(armedGainFactor));
+            RequireNonNegative(litGainFactor, nameof(litGainFactor));
 
             FieldOfViewDegrees = fieldOfViewDegrees;
             GainPerSecond = gainPerSecond;
@@ -120,6 +123,7 @@ namespace Shooter.Core
             FootstepGain = footstepGain;
             InvestigateLevel = investigateLevel;
             ArmedGainFactor = armedGainFactor;
+            LitGainFactor = litGainFactor;
         }
 
         public float FieldOfViewDegrees { get; }
@@ -141,6 +145,7 @@ namespace Shooter.Core
         public float FootstepGain { get; }
         public float InvestigateLevel { get; }
         public float ArmedGainFactor { get; }
+        public float LitGainFactor { get; }
 
         // 爆発やリロードの音で上げないのは、爆発は当たれば撃たれたのと同じく交戦になり、リロードは銃声の後にしか鳴らないため。
         public float HearingGain(SoundCueKind kind)
@@ -174,7 +179,22 @@ namespace Shooter.Core
             return isArmed ? ArmedGainFactor : 1f;
         }
 
+        public float LitFactor(bool isLit)
+        {
+            return isLit ? LitGainFactor : 1f;
+        }
+
         public AwarenessSpec WithArmedGainFactor(float armedGainFactor)
+        {
+            return With(armedGainFactor, LitGainFactor);
+        }
+
+        public AwarenessSpec WithLitGainFactor(float litGainFactor)
+        {
+            return With(ArmedGainFactor, litGainFactor);
+        }
+
+        private AwarenessSpec With(float armedGainFactor, float litGainFactor)
         {
             return new AwarenessSpec(
                 FieldOfViewDegrees,
@@ -195,7 +215,8 @@ namespace Shooter.Core
                 GunshotGain,
                 FootstepGain,
                 InvestigateLevel,
-                armedGainFactor);
+                armedGainFactor,
+                litGainFactor);
         }
 
         private static void RequirePositive(float value, string name)
