@@ -28,9 +28,11 @@ namespace Shooter.Server
 
             var tactics = _spec.Tactics;
             var threat = perception.Target ?? (perception.WasHit ? perception.HitSource : null);
+            // 判断が遮蔽をやめた後の冷却中に探すと、判断が使わない点のために探す間隔を使い切り、冷却が明けた時に古い点で隠れる。
             var wants = tactics.TakeCover
                 && UsesTactics
                 && threat.HasValue
+                && Brain.CoverCooldownRemaining <= 0f
                 && (perception.WasHit || perception.HealthFraction < Brain.Spec.CoverHealthFraction);
             if (!wants || Clock < _nextCoverSearch)
             {
