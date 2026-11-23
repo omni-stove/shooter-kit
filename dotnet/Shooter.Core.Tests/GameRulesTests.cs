@@ -105,7 +105,7 @@ namespace Shooter.Core.Tests
         }
 
         [TestCase(-1)]
-        [TestCase(16)]
+        [TestCase(18)]
         public void RejectsAnUndefinedObjective(int value)
         {
             var ex = Assert.Throws<ArgumentOutOfRangeException>(() => Rules(objective: (MatchObjective)value));
