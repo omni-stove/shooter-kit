@@ -74,9 +74,10 @@ namespace Shooter.Server
                 {
                     _selector.Unregister(ContextMeleeMove.TakedownId);
                     _takedownSource = null;
-                    UpdateTakedownSearch();
                 }
 
+                // Spec を差し替えた後も、登録が残る技 (とどめ) の探す扇を今の近接の値に合わせるため、毎回作り直す
+                UpdateTakedownSearch();
                 return;
             }
 
