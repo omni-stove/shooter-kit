@@ -85,7 +85,8 @@ namespace Shooter.Core
                 ammo.ReloadStyle,
                 ammo.ReloadSecondsPerRound * reload,
                 ammo.Kind,
-                ammo.Heat);
+                ammo.Heat,
+                ammo.Jam);
 
             var ammoTypes = new List<AmmoTypeSpec>(spec.AmmoTypes.Count);
             foreach (var type in spec.AmmoTypes)
@@ -110,7 +111,8 @@ namespace Shooter.Core
                 spec.DrawSeconds,
                 spec.HolsterSeconds,
                 spec.Shield,
-                spec.Melee);
+                spec.Melee,
+                spec.Akimbo);
         }
 
         public static IReadOnlyList<string> Keep(ItemCatalog catalog, string weaponId, IEnumerable<string> attachmentItemIds)

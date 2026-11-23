@@ -78,6 +78,19 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void LeftOutItemsUseTheGivenFallbackNotTheDefaults()
+        {
+            var configured = new BreachSpec(0.6f, 2.5f, 2f, 1.5f, 8f, 3f, 2f, 1.5f, 3f, 80, 4f, 40f, 25f, 0.35f, 1.5f, string.Empty);
+
+            var spec = BreachJson.Parse("{\"plantSeconds\": 1}", "door.json", configured);
+
+            Assert.That(spec.PlantSeconds, Is.EqualTo(1f));
+            Assert.That(spec.RoomDepth, Is.EqualTo(8f));
+            Assert.That(spec.ChargeDamage, Is.EqualTo(80));
+            Assert.That(spec.KickSoundRadius, Is.EqualTo(40f));
+        }
+
+        [Test]
         public void WhatIsWrittenReadsBackTheSame()
         {
             var spec = new BreachSpec(0.3f, 1.25f, 0f, 1.75f, 7f, 3f, 2f, 0f, 4f, 0, 0f, 0f, 45f, 1f, 0f, " " + _itemId + " ");
