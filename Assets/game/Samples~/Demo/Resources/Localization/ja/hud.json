@@ -86,5 +86,7 @@
   "hud.weaponFree.warn": "ここでは武器を出してはいけない 武器をしまえ",
   "hud.weaponFree.warnThenHostile": "武器をしまえ あと {0} 秒で敵対される",
   "hud.weaponFree.autoHolster": "ここでは武器を出してはいけない 武器をしまう",
-  "hud.weaponFree.blockDraw": "ここでは武器を構えられない"
+  "hud.weaponFree.blockDraw": "ここでは武器を構えられない",
+  "hud.weaponLight.on": "ライト 点灯",
+  "hud.weaponLight.off": "ライト 消灯"
 }

@@ -114,6 +114,8 @@
         <ui:VisualElement name="lock-warning" class="lock-warning" picking-mode="Ignore" style="display: none;" />
         <!-- 武器を出してはいけない場所で構えている警告。GameSignals.WeaponFreeZone の中にいて GameSignals.Holster が武装の間だけ WeaponFreeZoneView が出し、反応ごとの文字 (weapon-free-warning__text) を入れ、敵対までの秒読みは hostile の、自動でしまう・構えられないは forced の修飾クラスを付ける。 -->
         <ui:VisualElement name="weapon-free-warning" class="weapon-free-warning" picking-mode="Ignore" style="display: none;" />
+        <!-- 持っている銃のウェポンライトの点灯・消灯。GameSignals.WeaponLight が HasLight の間だけ WeaponLightView が出し、印 (weapon-light__icon) と文字 (weapon-light__text) を入れ、点灯中は on の修飾クラスを付ける。 -->
+        <ui:VisualElement name="weapon-light" class="weapon-light" picking-mode="Ignore" style="display: none;" />
         <!-- エモートを選ぶ輪。GameSignals.Emotes がある間に Emote を長押しすると EmoteWheelView が出し、エモートごとの枠 (emote-wheel__slot) を円に並べ、中央 (emote-wheel__center) に指している名前を入れる。 -->
         <ui:VisualElement name="emote-wheel" class="emote-wheel" picking-mode="Ignore" style="display: none;" />
         <!-- 画面右上のミニマップの下のキルログ。KillFeedView が行 (kill-feed__row) を入れ、行があるときだけ出す。 -->

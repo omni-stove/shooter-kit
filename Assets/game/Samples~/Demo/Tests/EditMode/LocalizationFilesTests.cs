@@ -187,6 +187,34 @@ namespace Shooter.Core.Tests
             }
         }
 
+        // ウェポンライトの印の文を足したので、片方の言語だけに足したキーが HUD にキーのまま出ないよう、hud.json のキーをそろえる。
+        [Test]
+        public void TheHudFileHasTheSameKeysInEnglishAndJapaneseIncludingTheWeaponLight()
+        {
+            var english = LayerOf(GameLanguage.English, "hud.json");
+            var japanese = LayerOf(GameLanguage.Japanese, "hud.json");
+
+            Assert.That(english.Count, Is.GreaterThan(0), "en/hud.json");
+            Assert.That(english.Keys.Except(japanese.Keys, StringComparer.Ordinal), Is.Empty, "only in en/hud.json");
+            Assert.That(japanese.Keys.Except(english.Keys, StringComparer.Ordinal), Is.Empty, "missing from en/hud.json");
+            foreach (var key in japanese.Keys)
+            {
+                Assert.That(StringTable.PlaceholdersOf(english.Get(key)), Is.EqualTo(StringTable.PlaceholdersOf(japanese.Get(key))), "hud.json " + key);
+            }
+
+            foreach (var key in WeaponLightText.Keys)
+            {
+                Assert.That(english.Contains(key), Is.True, "en/hud.json " + key);
+                Assert.That(japanese.Contains(key), Is.True, "ja/hud.json " + key);
+                Assert.That(StringTable.PlaceholdersOf(japanese.Get(key)), Is.Empty, key + " takes no arguments");
+            }
+
+            Assert.That(english.Get(WeaponLightText.OnKey), Is.EqualTo("Light ON"));
+            Assert.That(english.Get(WeaponLightText.OffKey), Is.EqualTo("Light OFF"));
+            Assert.That(japanese.Get(WeaponLightText.OnKey), Is.EqualTo("ライト 点灯"));
+            Assert.That(japanese.Get(WeaponLightText.OffKey), Is.EqualTo("ライト 消灯"));
+        }
+
         [Test]
         public void TheNetBattleRoyaleMapAndTheUnopenedBoxAreNamedInEveryLanguage()
         {

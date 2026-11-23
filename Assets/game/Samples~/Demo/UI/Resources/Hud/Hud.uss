@@ -1330,6 +1330,57 @@
     -unity-text-align: middle-center;
 }
 
+/* ウェポンライトの点灯・消灯。右下の武器の名前・グレネード・ゲージの縦の並びに割り込まないよう、弾数の欄の左に並べる。 */
+.weapon-light {
+    position: absolute;
+    right: 340px;
+    bottom: 40px;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.4);
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+}
+
+.weapon-light--on {
+    color: rgb(255, 236, 160);
+}
+
+/* 印。画像が無ければ丸を出し、消灯は縁だけ、点灯は塗る。 */
+.weapon-light__icon {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px 0 0;
+    border-width: 2px;
+    border-radius: 8px;
+    border-color: rgba(255, 255, 255, 0.6);
+    background-size: 100% 100%;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.6);
+}
+
+.weapon-light--on .weapon-light__icon {
+    border-color: rgb(255, 236, 160);
+    background-color: rgb(255, 236, 160);
+    -unity-background-image-tint-color: rgb(255, 236, 160);
+}
+
+/* 画像を入れたときは丸の縁と塗りを消し、画像を文字と同じ色に染めて点灯・消灯を分ける。 */
+.weapon-light__icon--image,
+.weapon-light--on .weapon-light__icon--image {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.weapon-light__text {
+    padding: 0;
+    margin: 0;
+    -unity-text-align: middle-left;
+}
+
 /* エモートを選ぶ輪。画面の中央に置き、EmoteWheelView が枠を円周の left / top に置く。幅の半分は EmoteWheelView.WheelHalfSize と揃える。 */
 .emote-wheel {
     position: absolute;
