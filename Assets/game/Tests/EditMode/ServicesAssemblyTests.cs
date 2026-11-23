@@ -52,13 +52,13 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void ServicesAssembly_OnlyBuildsOnCoreAndRuntime()
+        public void ServicesAssembly_OnlyBuildsOnCoreCoreServicesAndRuntime()
         {
             var references = typeof(CloudSaveBootstrap).Assembly.GetReferencedAssemblies()
                 .Select(a => a.Name)
                 .Where(n => n.StartsWith("Shooter.", StringComparison.Ordinal))
                 .OrderBy(n => n, StringComparer.Ordinal);
-            Assert.That(references, Is.EqualTo(new[] { "Shooter.Core", "Shooter.Runtime" }));
+            Assert.That(references, Is.EqualTo(new[] { "Shooter.Core", "Shooter.Core.Services", "Shooter.Runtime" }));
         }
     }
 }
