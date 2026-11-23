@@ -64,6 +64,8 @@ namespace Shooter.Tests.EditMode
             var tuning = StealthNoiseJson.ParseTuning(asset.text, "Resources/Tuning/stealth.json");
             Assert.That(tuning.ArmedGainFactor, Is.EqualTo(AwarenessSpec.DefaultArmedGainFactor), "the shipped file keeps armed and holstered alike");
             Assert.That(StealthActionInstaller.Tuning.ArmedGainFactor, Is.EqualTo(1f));
+            Assert.That(tuning.LitGainFactor, Is.EqualTo(AwarenessSpec.DefaultLitGainFactor), "the shipped file keeps lit and dark alike");
+            Assert.That(StealthActionInstaller.Tuning.LitGainFactor, Is.EqualTo(1f));
         }
 
         [Test]
@@ -105,6 +107,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(awareness.FootstepGain, Is.EqualTo(awarenessDefaults.FootstepGain));
             Assert.That(awareness.InvestigateLevel, Is.EqualTo(awarenessDefaults.InvestigateLevel));
             Assert.That(awareness.ArmedGainFactor, Is.EqualTo(awarenessDefaults.ArmedGainFactor));
+            Assert.That(awareness.LitGainFactor, Is.EqualTo(awarenessDefaults.LitGainFactor));
 
             Assert.That(tuning.Alarm.DurationSeconds, Is.EqualTo(SecurityAlarmSpec.DefaultDurationSeconds));
             Assert.That(tuning.Alarm.Radius, Is.EqualTo(SecurityAlarmSpec.DefaultRadius));
