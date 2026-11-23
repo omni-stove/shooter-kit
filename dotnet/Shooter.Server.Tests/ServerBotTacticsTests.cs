@@ -220,6 +220,33 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void ABotDoesNotLookForCoverWhileItsBrainCoolsDownAfterLeavingCover()
+        {
+            var agent = Agent(NetBotSpec.Default);
+            agent.PrepareCover(Hit(1f), Probe(1.2f));
+            agent.Brain.Tick(_tickSeconds, Hit(1f));
+            Assert.That(agent.Brain.State, Is.EqualTo(EnemyState.TakeCover));
+
+            agent.Brain.UseCover(null);
+            agent.Brain.Tick(_tickSeconds, Hit(1f));
+            Assert.That(agent.Brain.State, Is.Not.EqualTo(EnemyState.TakeCover));
+            var cooldown = agent.Brain.Spec.CoverCooldownSeconds;
+            Assert.That(cooldown, Is.GreaterThan(0f));
+            Assert.That(agent.Brain.CoverCooldownRemaining, Is.EqualTo(cooldown));
+
+            agent.Clock += 10f;
+            Assert.That(agent.PrepareCover(Hit(1f), Probe(1.2f)), Is.False, "the brain would not use it yet");
+
+            agent.Brain.Tick(cooldown, Hit(1f));
+            Assert.That(agent.Brain.State, Is.Not.EqualTo(EnemyState.TakeCover));
+            Assert.That(agent.Brain.CoverCooldownRemaining, Is.Zero);
+
+            Assert.That(agent.PrepareCover(Hit(1f), Probe(1.2f)), Is.True, "searches as soon as the cooldown ends");
+            agent.Brain.Tick(_tickSeconds, Hit(1f));
+            Assert.That(agent.Brain.State, Is.EqualTo(EnemyState.TakeCover));
+        }
+
+        [Test]
         public void ABotThatMayNotTakeCoverStandsItsGround()
         {
             var agent = Agent(TuningJson.ParseBots("{\"takeCover\": false}", "bots.json"));
