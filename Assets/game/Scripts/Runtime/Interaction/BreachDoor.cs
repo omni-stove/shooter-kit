@@ -282,7 +282,7 @@ namespace Shooter.Runtime
             foreach (var collider in colliders)
             {
                 var reaction = ReactionOf(collider);
-                if (reaction == null || !reaction.IsBound || !reaction.isActiveAndEnabled || !_seen.Add(reaction))
+                if (reaction == null || !reaction.IsBound || !reaction.enabled || !reaction.gameObject.activeInHierarchy || !_seen.Add(reaction))
                 {
                     continue;
                 }
