@@ -113,6 +113,11 @@ namespace Shooter.Core
 
         public bool IsMelee => Melee != null;
 
+        // null なら 1 丁で持つ。
+        public AkimboSpec Akimbo { get; }
+
+        public bool IsAkimbo => Akimbo != null;
+
         public WeaponSpec(
             string id,
             string nameKey,
@@ -197,7 +202,8 @@ namespace Shooter.Core
             float? drawSeconds = null,
             float holsterSeconds = DefaultHolsterSeconds,
             RiotShieldSpec shield = null,
-            MeleeWeaponSpec melee = null)
+            MeleeWeaponSpec melee = null,
+            AkimboSpec akimbo = null)
         {
             var normalizedId = SpecGuard.LowercaseUuid(id, nameof(id));
 
@@ -222,6 +228,15 @@ namespace Shooter.Core
                 throw new ArgumentException("a weapon cannot be both a shield and a melee weapon", nameof(melee));
             }
 
+            // 盾も近接武器も弾を撃たないので、左右の弾倉と撃った手を持たせても使い道が無い。
+            if (akimbo != null && (shield != null || melee != null))
+            {
+                throw new ArgumentException("a shield or a melee weapon cannot be held akimbo", nameof(akimbo));
+            }
+
+            var resolvedAmmo = ammo ?? AmmoSpec.Default;
+            RequireAkimboReloadFinite(resolvedAmmo, akimbo);
+
             var resolvedRound = round ?? RoundSpec.Default;
             var resolvedImpact = impact ?? ImpactSpec.Default;
             RequireDetonationReachable(resolvedRound, resolvedImpact, nameof(impact));
@@ -231,7 +246,7 @@ namespace Shooter.Core
             NameKey = SpecGuard.NameKey(nameKey);
             Category = category;
             Trigger = trigger ?? TriggerSpec.Default;
-            Ammo = ammo ?? AmmoSpec.Default;
+            Ammo = resolvedAmmo;
             Round = resolvedRound;
             Impact = resolvedImpact;
             Aim = aim ?? AimSpec.Default;
@@ -244,6 +259,7 @@ namespace Shooter.Core
             HolsterSeconds = holsterSeconds;
             Shield = shield;
             Melee = melee;
+            Akimbo = akimbo;
         }
 
         public WeaponSpec WithFireInterval(float fireInterval)
@@ -251,7 +267,54 @@ namespace Shooter.Core
             var trigger = Trigger.WithFireInterval(fireInterval);
             return ReferenceEquals(trigger, Trigger)
                 ? this
-                : new WeaponSpec(Id, NameKey, Category, trigger, Ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee);
+                : new WeaponSpec(Id, NameKey, Category, trigger, Ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, Akimbo);
+        }
+
+        public WeaponSpec WithAmmo(AmmoSpec ammo)
+        {
+            if (ammo == null)
+            {
+                throw new ArgumentNullException(nameof(ammo));
+            }
+
+            return ReferenceEquals(ammo, Ammo)
+                ? this
+                : new WeaponSpec(Id, NameKey, Category, Trigger, ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, Akimbo);
+        }
+
+        public WeaponSpec WithoutAkimbo()
+        {
+            return Akimbo == null
+                ? this
+                : new WeaponSpec(Id, NameKey, Category, Trigger, Ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, null);
+        }
+
+        // 二丁持ちの手を作るとき (AkimboHands) でなくここで確かめるのは、掛けた秒数が無限や 0 になる武器を JSON を読んだときに弾くため。
+        private static void RequireAkimboReloadFinite(AmmoSpec ammo, AkimboSpec akimbo)
+        {
+            if (akimbo == null)
+            {
+                return;
+            }
+
+            var multiplier = akimbo.ReloadSecondsMultiplier;
+            if (float.IsInfinity(ammo.ReloadSeconds * multiplier) || float.IsInfinity(ammo.ReloadSecondsPerRound * multiplier))
+            {
+                throw new ArgumentException(
+                    "akimbo reloadSecondsMultiplier " + multiplier.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + " makes the reload seconds infinite", nameof(akimbo));
+            }
+
+            if (VanishesWhenMultiplied(ammo.ReloadSeconds, multiplier) || VanishesWhenMultiplied(ammo.ReloadSecondsPerRound, multiplier))
+            {
+                throw new ArgumentException(
+                    "akimbo reloadSecondsMultiplier " + multiplier.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + " makes the reload seconds 0", nameof(akimbo));
+            }
+        }
+
+        // float へ明示的に直すのは、掛け算を float より広い精度のまま 0 と比べる実行環境では、float に入れると 0 になる積を見落とすため。
+        private static bool VanishesWhenMultiplied(float seconds, float multiplier)
+        {
+            return seconds > 0f && (float)(seconds * multiplier) == 0f;
         }
 
         // 起爆を止まったとき・寿命が尽きたときにすると、ヒットスキャンなどの止まりも尽きもしない弾では爆発しないまま設定だけが残る。
