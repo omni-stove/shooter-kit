@@ -11,12 +11,17 @@ namespace Shooter.Core
         public const int CurrentVersion = 1;
 
         private const string _versionKey = "version";
+        private const string _accountKey = "account";
         private const string _slotsKey = "slots";
         private const string _savedAtKey = "savedAt";
         private const string _deletedKey = "deleted";
 
         private readonly SortedDictionary<string, CloudSaveStamp> _slots =
             new SortedDictionary<string, CloudSaveStamp>(StringComparer.Ordinal);
+
+        // 記録の持ち主。null は、まだどのアカウントのものとも決まっていない記録 (持ち主を書く前の版の記録・サインインしたことのない端末)。
+        // 版を上げずに省ける項目にするのは、持ち主を書く前の版の記録をそのまま読むため。
+        public string Account { get; set; }
 
         public IEnumerable<string> Slots => _slots.Keys;
 
@@ -46,6 +51,12 @@ namespace Shooter.Core
         {
             var builder = new StringBuilder();
             builder.Append("{\"").Append(_versionKey).Append("\":").Append(CurrentVersion.ToString(CultureInfo.InvariantCulture));
+            if (Account != null)
+            {
+                builder.Append(",\"").Append(_accountKey).Append("\":");
+                SaveJson.AppendString(builder, Account);
+            }
+
             builder.Append(",\"").Append(_slotsKey).Append("\":{");
             var first = true;
             foreach (var pair in _slots)
@@ -90,6 +101,16 @@ namespace Shooter.Core
             }
 
             var stamps = new CloudSaveStamps();
+            if (root.TryGetValue(_accountKey, out var accountValue))
+            {
+                if (!(accountValue is string account) || account.Length == 0)
+                {
+                    throw new FormatException("invalid cloud save stamps: 'account' must be a non-empty string");
+                }
+
+                stamps.Account = account;
+            }
+
             foreach (var pair in slots)
             {
                 if (pair.Key.Length == 0
