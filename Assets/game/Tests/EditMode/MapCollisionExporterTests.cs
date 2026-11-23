@@ -228,6 +228,7 @@ namespace Shooter.Tests.EditMode
         [TestCase(MapCollisionExporter.FileExtension)]
         [TestCase(NetMapLadders.Extension)]
         [TestCase(NetMapVehicles.Extension)]
+        [TestCase(NetMapDoors.Extension)]
         public void SceneDataNeedsANewFileExtension(string extension)
         {
             Assert.Throws<ArgumentException>(() => MapCollisionExporter.UseSceneData(extension, roots => string.Empty));
@@ -310,6 +311,98 @@ namespace Shooter.Tests.EditMode
 
             var error = Assert.Throws<InvalidOperationException>(() => MapCollisionExporter.CollectWater(new[] { _root }));
             Assert.That(error.Message, Does.Contain("MapCollisionExporterTests/Overflow"));
+        }
+
+        [Test]
+        public void WritesEnabledDoorsWithTheirPanelsInTheirOwnColliderGroups()
+        {
+            var north = AddDoor("NorthDoor", new Vector3(0f, 1.1f, 10f), Quaternion.identity);
+            var east = AddDoor("EastDoor", new Vector3(10f, 1.1f, 0f), Quaternion.Euler(0f, 90f, 0f));
+            east.Size = new Vector3(0.9f, 2f, 0.05f);
+            var off = AddDoor("OffDoor", new Vector3(-10f, 1.1f, 0f), Quaternion.identity);
+            off.enabled = false;
+            var frame = Primitive(PrimitiveType.Cube, "Frame", new Vector3(0f, 2.5f, 10f), Quaternion.identity, new Vector3(2f, 0.4f, 0.3f));
+            frame.transform.SetParent(north.transform, true);
+            Physics.SyncTransforms();
+
+            var doors = MapCollisionExporter.CollectDoors(new[] { _root });
+            var sources = new List<Collider>();
+            var map = MapCollisionExporter.Collect(new[] { _root }, sources);
+
+            Assert.That(doors.Doors, Has.Count.EqualTo(2), "the disabled door cannot be breached, so it is not written");
+            Assert.That(doors.Doors[0].Position, Is.EqualTo(ToNumerics(north.PanelTransform.position)));
+            Assert.That(doors.Doors[0].Facing.Z, Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(doors.Doors[0].PanelSize, Is.EqualTo(new System.Numerics.Vector3(1.2f, 2.2f, 0.1f)));
+            Assert.That(doors.Doors[0].ColliderGroup, Is.EqualTo(MapColliderGroups.Door(0)));
+            Assert.That(doors.Doors[1].Facing.X, Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(doors.Doors[1].PanelSize, Is.EqualTo(new System.Numerics.Vector3(0.9f, 2f, 0.05f)));
+            Assert.That(doors.Doors[1].ColliderGroup, Is.EqualTo(MapColliderGroups.Door(1)));
+
+            Assert.That(map.Colliders[sources.IndexOf(PanelCollider(north))].Group, Is.EqualTo(MapColliderGroups.Door(0)));
+            Assert.That(map.Colliders[sources.IndexOf(PanelCollider(east))].Group, Is.EqualTo(MapColliderGroups.Door(1)));
+            Assert.That(map.Colliders[sources.IndexOf(PanelCollider(off))].Group, Is.EqualTo(MapColliderGroups.Static), "a disabled door's panel is a wall");
+            Assert.That(map.Colliders[sources.IndexOf(frame.GetComponent<Collider>())].Group, Is.EqualTo(MapColliderGroups.Static), "only the panel is removed");
+
+            var world = new BvhWorldCollision(ReadBack(map));
+            var front = ToNumerics(north.PanelTransform.position + (Vector3.back * 3f));
+            Assert.That(world.Raycast(front, System.Numerics.Vector3.UnitZ, 5f, ~0, out var hit), Is.True);
+            Assert.That(sources[hit.ColliderId], Is.EqualTo(PanelCollider(north)));
+            Assert.That(world.SetGroupEnabled(doors.Doors[0].ColliderGroup, false), Is.True);
+            Assert.That(world.Raycast(front, System.Numerics.Vector3.UnitZ, 5f, ~0, out _), Is.False, "a breached door lets the ray through");
+
+            var read = NetMapDoors.Parse(NetMapDoors.Write(doors), "test");
+            Assert.That(read.Doors.Select(d => d.ColliderGroup), Is.EqualTo(doors.Doors.Select(d => d.ColliderGroup)));
+        }
+
+        [Test]
+        public void ASceneWithoutDoorsWritesAnEmptyDoorList()
+        {
+            var doors = MapCollisionExporter.CollectDoors(new[] { _root });
+
+            Assert.That(doors.Doors, Is.Empty);
+            Assert.That(NetMapDoors.Parse(NetMapDoors.Write(doors), "test").Doors, Is.Empty);
+            Assert.That(MapCollisionExporter.Collect(new[] { _root }).Colliders.Any(c => MapColliderGroups.IsDoor(c.Group)), Is.False);
+        }
+
+        [Test]
+        public void ThrowsOnDoorsWithoutAPanelOrPanelCollider()
+        {
+            var bare = new GameObject("Bare");
+            bare.transform.SetParent(_root.transform, false);
+            bare.AddComponent<FakeBreachDoorSource>();
+
+            var error = Assert.Throws<InvalidOperationException>(() => MapCollisionExporter.CollectDoors(new[] { _root }));
+            Assert.That(error.Message, Does.Contain("MapCollisionExporterTests/Bare (has no panel)"));
+
+            Object.DestroyImmediate(bare);
+            var ghost = AddDoor("Ghost", new Vector3(0f, 1.1f, 10f), Quaternion.identity);
+            PanelCollider(ghost).isTrigger = true;
+
+            error = Assert.Throws<InvalidOperationException>(() => MapCollisionExporter.CollectDoors(new[] { _root }));
+            Assert.That(error.Message, Does.Contain("MapCollisionExporterTests/Ghost").And.Contain("has no enabled, non-trigger collider"));
+
+            PanelCollider(ghost).isTrigger = false;
+            ghost.Size = new Vector3(1f, 0f, 0.1f);
+            error = Assert.Throws<InvalidOperationException>(() => MapCollisionExporter.CollectDoors(new[] { _root }));
+            Assert.That(error.Message, Does.Contain("MapCollisionExporterTests/Ghost").And.Contain("panelSize"));
+        }
+
+        private FakeBreachDoorSource AddDoor(string name, Vector3 position, Quaternion rotation)
+        {
+            var door = new GameObject(name);
+            Place(door, position, rotation, Vector3.one);
+            var source = door.AddComponent<FakeBreachDoorSource>();
+            var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            panel.name = "Panel";
+            panel.transform.SetParent(door.transform, false);
+            panel.transform.localScale = source.Size;
+            source.PanelTransform = panel.transform;
+            return source;
+        }
+
+        private static Collider PanelCollider(FakeBreachDoorSource door)
+        {
+            return door.PanelTransform.GetComponent<Collider>();
         }
 
         private SceneWater AddWater(string name, Vector3 bottom, Vector3 size, float surfaceHeight)
