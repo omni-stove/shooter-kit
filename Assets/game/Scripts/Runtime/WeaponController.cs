@@ -213,12 +213,14 @@ namespace Shooter.Runtime
         {
             DisableActions();
             PutAwayShield();
+            UnpublishJam();
         }
 
         private void OnDestroy()
         {
             PutAwayShield();
             SetLoadout(null, null, null, null);
+            UnpublishJam();
         }
 
         private void Update()
@@ -293,10 +295,12 @@ namespace Shooter.Runtime
                 return PullMeleeTrigger(weapon, isPressed, wasPressedThisFrame);
             }
 
-            if (IsFireBlocked || !weapon.Ammo.CanFire)
+            if (IsFireBlocked || !weapon.Ammo.CanFire || weapon.IsJammed)
             {
                 driver.Drop();
-                if (wasPressedThisFrame && !IsFireBlocked && IsDryFire(weapon))
+
+                // 最後の 1 発で詰まった武器は弾倉が空でも空撃ちにしない。リロードの入力は解除に回り、空撃ちの自動リロードも詰まりで断られるため。
+                if (wasPressedThisFrame && !IsFireBlocked && !weapon.IsJammed && IsDryFire(weapon))
                 {
                     Debug.Log($"{DryFireLogPrefix} id={weapon.Spec.Id}", this);
                     DryFired?.Invoke(weapon);
@@ -457,7 +461,7 @@ namespace Shooter.Runtime
             var loaded = ToArray(definitions ?? throw new ArgumentNullException(nameof(definitions)));
             var specs = ToSpecs(loaded);
             var rules = _rules;
-            var loadout = WeaponLoadout.Create(specs, rules, _switchSeconds);
+            var loadout = WeaponLoadout.Create(specs, rules, _switchSeconds, JamRolls);
 
             ReplaceAction(ref _attackAction, ref _enabledAttackAction, attackAction);
             ReplaceAction(ref _reloadAction, ref _enabledReloadAction, reloadAction);
@@ -492,6 +496,10 @@ namespace Shooter.Runtime
                 return false;
             }
 
+            // 撃つと詰まりの確率が次の 1 発の分へ進むので、この 1 発の確率はログのために撃つ前に読む。
+            var jamSustainedShots = weapon.Jam?.SustainedShots ?? 0;
+            var jamChance = weapon.Jam?.NextShotChance ?? 0f;
+            _jamPending = false;
             var hands = hand.HasValue ? Akimbo : null;
             if (hands != null ? !hands.TryFire(hand.Value) : !weapon.TryFire())
             {
@@ -562,6 +570,7 @@ namespace Shooter.Runtime
             }
 
             _pelletHits.Clear();
+            ReportPendingJam(weapon, jamSustainedShots, jamChance);
             return true;
         }
 
@@ -634,6 +643,12 @@ namespace Shooter.Runtime
                 return false;
             }
 
+            // 詰まった武器はリロードを断るので、同じ入力を解除に回す。解除中にもう一度押しても始め直さない。
+            if (weapon.IsJammed)
+            {
+                return TryStartClearJam();
+            }
+
             // 片手が込めている間も、もう片方の手が満たんでなければ込め始める。込め始める手が無いときだけ、込めている手のアクティブリロードにする。
             if (Akimbo != null)
             {
@@ -698,6 +713,7 @@ namespace Shooter.Runtime
             RecoverSpread(deltaSeconds);
             TickMeleeCharge(deltaSeconds);
             SyncShield();
+            PublishJam();
         }
 
         public static bool TryApplyHit(

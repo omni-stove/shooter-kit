@@ -99,5 +99,7 @@
   "hud.weaponLight.on": "Light ON",
   "hud.weaponLight.off": "Light OFF",
   "hud.securityAlarm.ringing": "Alarm! Spotted by a camera: {0} s left",
-  "hud.securityCamera.disable": "Hold [{0}] for {1} s to disable the camera"
+  "hud.securityCamera.disable": "Hold [{0}] for {1} s to disable the camera",
+  "hud.securityCamera.disabling": "Disabling the camera... {0}%",
+  "hud.securityCamera.disabled": "The camera is disabled"
 }

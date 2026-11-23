@@ -141,15 +141,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            if (_weapon != null)
-            {
-                _weapon.Reloaded -= OnReloaded;
-            }
-
-            _weapon = ammo != null
-                ? new Weapon(spec, Math.Min(ammo.AmmoInMagazine, spec.MagazineSize), ammo.ReserveAmmo, weaponRules)
-                : new Weapon(spec, weaponRules);
-            _weapon.Reloaded += OnReloaded;
+            UseWeapon(CreateWeapon(spec, weaponRules, ammo));
             _recoil.Reset();
             Debug.Log($"{LogTag} id={Id} equip weapon={spec.LogName} ammo={_weapon.AmmoInMagazine} attachments={WeaponAttachments.Describe(kept)}", this);
         }
@@ -177,7 +169,19 @@ namespace Shooter.Runtime
         // プレイヤーと同じく、撃ち合いの合間 (戦っていないときと遮蔽点に隠れている間) に減った弾倉を詰め直す。
         private void TopUpMagazine()
         {
-            if (_unarmed || _weapon.IsReloading || _weapon.AmmoInMagazine >= _weapon.Spec.MagazineSize)
+            if (_unarmed)
+            {
+                return;
+            }
+
+            // 詰まったままではリロードも断られるので、合間でも先に解除する。
+            if (_weapon.IsJammed)
+            {
+                ClearJam();
+                return;
+            }
+
+            if (_weapon.IsReloading || _weapon.AmmoInMagazine >= _weapon.Spec.MagazineSize)
             {
                 return;
             }
@@ -194,11 +198,23 @@ namespace Shooter.Runtime
         // 敵も撃ち方 (Weapon.Trigger) を通して撃つ。溜める撃ち方は溜め切ってから離し、Auto は撃つ間押し続ける (TriggerDriver.PullAsBot)。
         private void Shoot()
         {
-            var target = PerceivedTarget;
+            ShootAt(PerceivedTarget);
+        }
+
+        internal void ShootAt(Damageable target)
+        {
             _trigger.Bind(_weapon.Trigger);
             if (target == null || target.IsDead)
             {
                 _trigger.Drop();
+                return;
+            }
+
+            // 解除し終えるまで引き金を離しておく。押したままにすると、解除した直後の弾が押しっぱなしの撃ち方の間隔ぶん遅れる。
+            if (_weapon.IsJammed)
+            {
+                _trigger.Drop();
+                ClearJam();
                 return;
             }
 
@@ -213,6 +229,9 @@ namespace Shooter.Runtime
             var charge = _trigger.ShotChargeFraction;
             for (var i = 0; i < shots; i++)
             {
+                var jamSustainedShots = _weapon.Jam?.SustainedShots ?? 0;
+                var jamChance = _weapon.Jam?.NextShotChance ?? 0f;
+                _jamPending = false;
                 if (!_weapon.TryFire())
                 {
                     ReloadIfEmpty();
@@ -220,7 +239,23 @@ namespace Shooter.Runtime
                 }
 
                 FireRound(target, charge);
+                if (_jamPending)
+                {
+                    _jamPending = false;
+                    ReportJammed(jamSustainedShots, jamChance);
+                    _trigger.Drop();
+                    ClearJam();
+                    return;
+                }
             }
+        }
+
+        internal void TickWeapon(float deltaSeconds)
+        {
+            _weapon.Tick(deltaSeconds);
+            _trigger.Bind(_weapon.Trigger);
+            _trigger.Advance(deltaSeconds);
+            _recoil.Tick(deltaSeconds);
         }
 
         public bool IsFacing(System.Numerics.Vector3? lookAt)
