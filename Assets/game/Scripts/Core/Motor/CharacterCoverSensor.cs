@@ -5,13 +5,6 @@ namespace Shooter.Core
 {
     public sealed class CharacterCoverSensor
     {
-        public const float ProbeHeight = 0.5f;
-
-        // 足元の Ray が車体の下の隙間を抜けたとき、車のように浮いた物にも当たる高さで探し直す。低い壁 (1.1m) より下にする。
-        public const float UpperProbeHeight = 0.9f;
-
-        public const float TopProbeHeight = 3f;
-
         // 上端を下ろす Ray で探すとき、当たった面から壁の内側へ入れる距離 (m)。CoverController と同じ値
         private const float _topProbeInset = 0.02f;
 
@@ -44,12 +37,12 @@ namespace Shooter.Core
 
             direction = new Vector3(direction.X / length, 0f, direction.Z / length);
             var feetY = _body.FeetY(position);
-            var origin = new Vector3(position.X, feetY + ProbeHeight, position.Z);
+            var origin = new Vector3(position.X, feetY + spec.CoverProbeHeight, position.Z);
             var world = _body.World;
             var mask = _body.LayerMask;
             if (!world.Raycast(origin, direction, spec.CoverMaxEnterDistance, mask, out var hit))
             {
-                origin = new Vector3(position.X, feetY + UpperProbeHeight, position.Z);
+                origin = new Vector3(position.X, feetY + spec.CoverUpperProbeHeight, position.Z);
                 if (!world.Raycast(origin, direction, spec.CoverMaxEnterDistance, mask, out hit))
                 {
                     return CoverProbeResult.None;
@@ -57,7 +50,7 @@ namespace Shooter.Core
             }
 
             var normal = hit.Normal;
-            var topHeight = MeasureTopHeight(hit, feetY);
+            var topHeight = MeasureTopHeight(hit, feetY, spec.CoverTopProbeHeight);
             var flatNormal = new Vector3(normal.X, 0f, normal.Z);
             var wallOnLeft = true;
             var wallOnRight = true;
@@ -82,15 +75,15 @@ namespace Shooter.Core
         }
 
         // 当たった壁の形だけに、上から下ろした Ray を当てて上端を測る。始点が壁の中 (それより高い壁) なら当たらないので上限の高さとする
-        private float MeasureTopHeight(WorldHit hit, float feetY)
+        private float MeasureTopHeight(WorldHit hit, float feetY, float topProbeHeight)
         {
             var flat = new Vector3(hit.Normal.X, 0f, hit.Normal.Z);
             var flatLength = MathF.Sqrt((flat.X * flat.X) + (flat.Z * flat.Z));
             var inset = flatLength * flatLength > 1e-12f ? hit.Point - (flat / flatLength * _topProbeInset) : hit.Point;
-            var start = new Vector3(inset.X, feetY + TopProbeHeight, inset.Z);
-            return _body.World.RaycastCollider(hit.ColliderId, start, _down, TopProbeHeight, out var top)
+            var start = new Vector3(inset.X, feetY + topProbeHeight, inset.Z);
+            return _body.World.RaycastCollider(hit.ColliderId, start, _down, topProbeHeight, out var top)
                 ? top.Point.Y - feetY
-                : TopProbeHeight;
+                : topProbeHeight;
         }
     }
 }
