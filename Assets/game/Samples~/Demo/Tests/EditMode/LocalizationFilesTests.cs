@@ -132,6 +132,39 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheJuggernautModeTextsAreReadFromTheModesJuggernautTableOfEveryLanguage()
+        {
+            var keysByLanguage = new List<string[]>();
+            foreach (var language in GameLanguages.All)
+            {
+                var modes = JapaneseGameTextSetUp.LoadLayers(language)
+                    .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                    .Value;
+                var code = GameLanguages.Code(language);
+
+                Assert.That(modes.Keys.All(key => key.StartsWith("mode.juggernaut.", StringComparison.Ordinal)), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.chosenIn"), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.current"), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.youAreJuggernaut"), Is.True, code);
+                keysByLanguage.Add(modes.Keys.OrderBy(key => key, StringComparer.Ordinal).ToArray());
+            }
+
+            Assert.That(keysByLanguage.Skip(1), Has.All.EqualTo(keysByLanguage[0]));
+
+            var english = JapaneseGameTextSetUp.LoadLayers(GameLanguage.English)
+                .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(english.Get("mode.juggernaut.youAreJuggernaut"), Is.EqualTo("You are the juggernaut: keep scoring kills"));
+            Assert.That(english.Get("mode.juggernaut.chosenIn"), Is.EqualTo("Juggernaut chosen in {0} s"));
+
+            var japanese = JapaneseGameTextSetUp.LoadLayers(GameLanguage.Japanese)
+                .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(japanese.Get("mode.juggernaut.youAreJuggernaut"), Is.EqualTo("あなたがジャガーノート: キルを重ねて点を稼ぐ"));
+            Assert.That(japanese.Get("mode.juggernaut.current"), Is.EqualTo("ジャガーノート: {0}"));
+        }
+
+        [Test]
         public void ThePayloadModeTextsAreReadFromTheModesPayloadTableOfEveryLanguage()
         {
             foreach (var language in GameLanguages.All)
