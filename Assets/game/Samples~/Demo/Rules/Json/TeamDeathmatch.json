@@ -21,7 +21,8 @@
     "vault": "Off",
     "grenade": "On",
     "grenadeCount": 2,
-    "melee": "On"
+    "melee": "On",
+    "takedown": "On"
   },
   "spawnProtectionSeconds": 2,
   "fallDamage": "Off",

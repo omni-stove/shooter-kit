@@ -141,6 +141,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(a.Stamina, Is.EqualTo(b.Stamina), name + " actions.stamina");
             Assert.That(a.ReloadInterruptedBy, Is.EqualTo(b.ReloadInterruptedBy), name + " actions.reloadInterruptedBy");
             Assert.That(a.AimWhileReloading, Is.EqualTo(b.AimWhileReloading), name + " actions.aimWhileReloading");
+            Assert.That(a.Takedown, Is.EqualTo(b.Takedown), name + " actions.takedown");
         }
     }
 }
