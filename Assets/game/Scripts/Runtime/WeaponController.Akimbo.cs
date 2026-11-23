@@ -310,6 +310,8 @@ namespace Shooter.Runtime
                 }
 
                 hands.Reloaded += OnHandReloaded;
+                HookJam(hands.Right);
+                HookJam(hands.Left);
                 _akimboHands[weapon] = hands;
             }
         }

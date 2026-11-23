@@ -644,7 +644,7 @@ namespace Shooter.Runtime
             }
 
             // 詰まった武器はリロードを断るので、同じ入力を解除に回す。解除中にもう一度押しても始め直さない。
-            if (weapon.IsJammed)
+            if (JamWeapon.IsJammed)
             {
                 return TryStartClearJam();
             }
