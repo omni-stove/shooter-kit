@@ -64,9 +64,22 @@ namespace Shooter.Server
             return playerId => bots.TryGetAgent(playerId, out var agent) && ContextMeleeSelector.IsUnaware(agent.Brain.State, true);
         }
 
-        // 振っている最中や技の最中に近接の値を替えても、始めた技はそのときの値のまま終える (ContextMeleeRun が技を持つ)
+        // 振っている最中や技の最中に近接の値を替えても、始めた技はそのときの値のまま終える (ContextMeleeRun が技を持つ)。
+        // ルールの Takedown が Off なら選ぶ候補から外す。選んだ後に断ると、同じ相手に合う別の技 (とどめ) まで出せなくなるため
         private void SyncTakedown()
         {
+            if (_combat.Rules.Rules?.Actions.Takedown != Shooter.Core.Takedown.On)
+            {
+                if (_takedownSource != null)
+                {
+                    _selector.Unregister(ContextMeleeMove.TakedownId);
+                    _takedownSource = null;
+                    UpdateTakedownSearch();
+                }
+
+                return;
+            }
+
             if (ReferenceEquals(_spec, _takedownSource))
             {
                 return;
@@ -77,10 +90,11 @@ namespace Shooter.Server
             UpdateTakedownSearch();
         }
 
-        // 目的のとどめの技 (Execution) は、目的がルールの替わり目で作り直されるので、技を試すたびに今の目的のものに合わせる
+        // 目的のとどめの技 (Execution) は、目的がルールの替わり目で作り直されるので、技を試すたびに今の目的のものに合わせる。
+        // 持っている銃で刺す技なので、目的が Melee を見ていなくても Melee が Off なら候補から外す
         private void SyncObjectiveMove()
         {
-            var move = _combat.Rules.Objective?.DownedFinisher;
+            var move = _combat.Rules.Rules?.Actions.Melee == Melee.On ? _combat.Rules.Objective?.DownedFinisher : null;
             if (ReferenceEquals(move, _objectiveMove))
             {
                 return;
@@ -101,21 +115,31 @@ namespace Shooter.Server
         }
 
         // 相手はふつうの近接と同じ扇で探し、届く距離だけを登録した技のいちばん遠いものにする (ContextMeleeAction.SearchSpec と同じ)
+        // 技が 1 つも無ければ届く距離が 0 になり MeleeSpec を作れないので、探さない印に null を置く
         private void UpdateTakedownSearch()
         {
-            _takedownSearch = new MeleeSpec(
-                _spec.Damage, _selector.MaxReach(), _spec.ArcDegrees, _spec.SwingSeconds, _spec.CooldownSeconds, _spec.ImpactSeconds, _spec.LungeDistance);
+            var reach = _selector.MaxReach();
+            _takedownSearch = reach > 0f
+                ? new MeleeSpec(_spec.Damage, reach, _spec.ArcDegrees, _spec.SwingSeconds, _spec.CooldownSeconds, _spec.ImpactSeconds, _spec.LungeDistance)
+                : null;
         }
 
-        // 振れない理由は、続けて試すふつうの近接の側でログに出すので、ここでは黙って false を返す (ContextMeleeAction.TryBegin と同じ)
+        // 振れない理由は、続けて試すふつうの近接の側でログに出すので、ここでは黙って false を返す (ContextMeleeAction.TryBegin と同じ)。
+        // Check だけで断ると Melee が Off のときにテイクダウンまで断るので、Takedown 用の CheckTakedown のどちらかが通れば探す。どの技を出すかはルールごとに候補へ入れて決める (SyncTakedown・SyncObjectiveMove)
         private bool TryTakedown(int attackerId)
         {
-            if (Check(attackerId) != MeleeRefusal.None || !_context.Bodies.TryGet(attackerId, out var attacker))
+            if ((Check(attackerId) != MeleeRefusal.None && CheckTakedown(attackerId) != MeleeRefusal.None)
+                || !_context.Bodies.TryGet(attackerId, out var attacker))
             {
                 return false;
             }
 
+            SyncTakedown();
             SyncObjectiveMove();
+            if (_takedownSearch == null)
+            {
+                return false;
+            }
 
             var origin = attacker.Center;
             var targetId = FindTarget(attackerId, origin, Forward(attacker.Yaw), _takedownSearch, out var point);

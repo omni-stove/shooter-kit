@@ -336,7 +336,7 @@ namespace Shooter.Runtime
             SyncHooks();
         }
 
-        // 持っている銃で殴る振り (と技) を振れるか。ルールの Melee が Off なら振れない。
+        // 持っている銃で殴る振りを振れるか。ルールの Melee が Off なら振れない。技 (ContextMeleeAction) はルールごとに技を分けるので CheckWeaponSwing を見る。
         public MeleeRefusal CheckSwing()
         {
             return _rule != Melee.On ? MeleeRefusal.Off : CheckWeaponSwing();
@@ -365,6 +365,7 @@ namespace Shooter.Runtime
             return EnsureSwing().CanStart ? MeleeRefusal.None : MeleeRefusal.Cooldown;
         }
 
+        // ルールの Melee で入口を閉じないのは、Melee が Off でも Takedown が On ならこのボタンでテイクダウンを出すため。銃の殴りは TrySwing が断る。
         public bool TryMelee()
         {
             var context = GetComponent<ContextMeleeAction>();
