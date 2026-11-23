@@ -86,6 +86,15 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void AMissingInteractActionNamesTheCameraAndTheInput()
+        {
+            Assert.That(
+                SecurityCameraLog.NoInteractAction("cam1", "Player/Interact"),
+                Is.EqualTo("[SecurityCamera] camera=cam1 input=Player/Interact is missing from the Input Actions; the camera cannot be disabled by holding it"));
+            Assert.That(SecurityCameraLog.NoInteractAction(null, null), Does.StartWith("[SecurityCamera] camera=- input=- "));
+        }
+
+        [Test]
         public void ChangedNeedsACamera()
         {
             Assert.Throws<ArgumentNullException>(() => SecurityCameraLog.Changed("cam1", null, SecurityCameraPhase.Sweeping));

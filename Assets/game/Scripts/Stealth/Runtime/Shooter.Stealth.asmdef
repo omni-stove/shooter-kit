@@ -5,7 +5,8 @@
         "Shooter.Core",
         "Shooter.Core.Presentation",
         "Shooter.Stealth.Core",
-        "Shooter.Runtime"
+        "Shooter.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -124,10 +124,16 @@ namespace Shooter.Core
             return Math.Abs(SignedDelta(bearingDegrees, yawDegrees));
         }
 
+        // Tick が 1 人の相手しか受けないので、相手が何人もいるときに呼ぶ側が今の首の向きで一番たまる相手を選べるよう公開する。
+        public float GainPerSecond(SecurityCameraTarget target)
+        {
+            return AwarenessMeter.GainPerSecond(Spec.Awareness, Spec.ViewDistance, Sighting(target));
+        }
+
         // 視野の中かどうかだけでなく、たまる量が 0 より大きいことで見えたとする。真っ暗な所に立つ相手を視野の中だけで見えたとすると、ゲージはたまらないのに首振りが止まって釘付けになる。
         private bool Sees(SecurityCameraTarget target)
         {
-            return AwarenessMeter.GainPerSecond(Spec.Awareness, Spec.ViewDistance, Sighting(target)) > 0f;
+            return GainPerSecond(target) > 0f;
         }
 
         private void Track(float deltaSeconds, SecurityCameraTarget target)
@@ -224,7 +230,8 @@ namespace Shooter.Core
                 target.Posture,
                 target.LightFactor,
                 target.Speed,
-                target.IsArmed);
+                target.IsArmed,
+                target.IsLit);
         }
 
         private void Announce(SecurityCameraPhase before)

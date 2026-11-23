@@ -37,6 +37,47 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheShortFormIsANewHoldOnACameraThatCanBeStopped()
+        {
+            var hint = new SecurityCameraHint(1.5f, "Player/Interact");
+
+            Assert.That(hint.Progress, Is.Zero);
+            Assert.That(hint.CanDisable, Is.True);
+            Assert.That(hint, Is.EqualTo(new SecurityCameraHint(1.5f, 0f, true, "Player/Interact")));
+        }
+
+        [Test]
+        public void TheProgressAndWhetherItCanBeStoppedAreCompared()
+        {
+            var half = new SecurityCameraHint(1.5f, 0.5f, true, "Player/Interact");
+
+            Assert.That(half.Progress, Is.EqualTo(0.5f));
+            Assert.That(half.CanDisable, Is.True);
+            Assert.That(half, Is.EqualTo(new SecurityCameraHint(1.5f, 0.5f, true, "Player/Interact")));
+            Assert.That(half.GetHashCode(), Is.EqualTo(new SecurityCameraHint(1.5f, 0.5f, true, "Player/Interact").GetHashCode()));
+            Assert.That(half, Is.Not.EqualTo(new SecurityCameraHint(1.5f, 0.75f, true, "Player/Interact")));
+            Assert.That(half, Is.Not.EqualTo(new SecurityCameraHint(1.5f, 0.5f, false, "Player/Interact")));
+
+            var stopped = new SecurityCameraHint(1.5f, 0f, false, "Player/Interact");
+            Assert.That(stopped.CanDisable, Is.False);
+        }
+
+        [Test]
+        public void TheProgressIsAFraction()
+        {
+            Assert.That(new SecurityCameraHint(1f, 1f, true, "Player/Interact").Progress, Is.EqualTo(1f));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraHint(1f, -0.1f, true, "Player/Interact")).ParamName,
+                Is.EqualTo("progress"));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraHint(1f, 1.1f, true, "Player/Interact")).ParamName,
+                Is.EqualTo("progress"));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraHint(1f, float.NaN, true, "Player/Interact")).ParamName,
+                Is.EqualTo("progress"));
+        }
+
+        [Test]
         public void TheDefaultHoldIsTheCameraTuningDefault()
         {
             var hint = new SecurityCameraHint(SecurityCameraSpec.Default.DisableHoldSeconds, "Player/Interact");

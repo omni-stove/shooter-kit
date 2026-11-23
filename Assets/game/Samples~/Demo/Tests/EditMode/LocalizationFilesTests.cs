@@ -247,7 +247,7 @@ namespace Shooter.Core.Tests
             Assert.That(japanese.Get(WeaponLightText.OnKey), Is.EqualTo("ライト 点灯"));
             Assert.That(japanese.Get(WeaponLightText.OffKey), Is.EqualTo("ライト 消灯"));
 
-            foreach (var key in new[] { SecurityAlarmText.RingingKey, SecurityCameraPrompt.DisableKey })
+            foreach (var key in new[] { SecurityAlarmText.RingingKey, SecurityCameraPrompt.DisableKey, SecurityCameraPrompt.DisablingKey, SecurityCameraPrompt.DisabledKey })
             {
                 Assert.That(english.Keys, Does.Contain(key), "en/hud.json " + key);
                 Assert.That(japanese.Keys, Does.Contain(key), "ja/hud.json " + key);
@@ -257,6 +257,10 @@ namespace Shooter.Core.Tests
             Assert.That(english.Get(SecurityAlarmText.RingingKey), Is.EqualTo("Alarm! Spotted by a camera: {0} s left"));
             Assert.That(japanese.Get(SecurityCameraPrompt.DisableKey), Is.EqualTo("[{0}] を {1} 秒長押しでカメラを止める"));
             Assert.That(english.Get(SecurityCameraPrompt.DisableKey), Is.EqualTo("Hold [{0}] for {1} s to disable the camera"));
+            Assert.That(japanese.Get(SecurityCameraPrompt.DisablingKey), Is.EqualTo("カメラを止めている {0}%"));
+            Assert.That(english.Get(SecurityCameraPrompt.DisablingKey), Is.EqualTo("Disabling the camera... {0}%"));
+            Assert.That(japanese.Get(SecurityCameraPrompt.DisabledKey), Is.EqualTo("カメラは止まっている"));
+            Assert.That(english.Get(SecurityCameraPrompt.DisabledKey), Is.EqualTo("The camera is disabled"));
         }
 
         [Test]

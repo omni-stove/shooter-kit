@@ -23,6 +23,10 @@ namespace Shooter.NetV2
         private Quaternion _tilt = Quaternion.identity;
         private float _drop;
         private bool _snapTilt = true;
+        private WeaponLightBeam _weaponLight;
+        private WeaponLightSpec _weaponLightSpec;
+        private WeaponLightCatalog _weaponLightCatalog;
+        private bool _weaponLightCatalogResolved;
 
         public int PlayerId { get; private set; }
 
@@ -38,6 +42,43 @@ namespace Shooter.NetV2
         public float WeaponLowering { get; private set; }
 
         public bool IsWeaponHidden { get; private set; }
+
+        public bool IsWeaponLightOn { get; private set; }
+
+        // 一度点けるまで光の部品を作らない。消している間も残すのは、点けるたびにプレハブを出し直さないため (WeaponLightController と同じ)
+        public WeaponLightBeam WeaponLight => _weaponLight != null ? _weaponLight : null;
+
+        // 相手の武器に何を付けたかはスナップショットに載らないので、相手の光はこの値で照らす。ゲームが差し替えられるよう外に開ける
+        public WeaponLightSpec WeaponLightSpec
+        {
+            get => _weaponLightSpec ?? WeaponLightSpec.Default;
+            set
+            {
+                _weaponLightSpec = value;
+                ConfigureWeaponLight();
+            }
+        }
+
+        // 決めなければオフラインと同じ Resources の WeaponLightCatalog を引く。null を決めるとコードで作るスポットライトで照らす
+        public WeaponLightCatalog WeaponLightCatalog
+        {
+            get
+            {
+                if (!_weaponLightCatalogResolved)
+                {
+                    _weaponLightCatalog = WeaponLightCatalog.Load();
+                    _weaponLightCatalogResolved = true;
+                }
+
+                return _weaponLightCatalog;
+            }
+            set
+            {
+                _weaponLightCatalog = value;
+                _weaponLightCatalogResolved = true;
+                ConfigureWeaponLight();
+            }
+        }
 
         public Transform Body => _body;
 
@@ -84,6 +125,9 @@ namespace Shooter.NetV2
             var skin = id.Length == 0 ? null : source(id);
             var previous = _body;
             SetBody(CreateBody(skin, _geometry, transform));
+
+            // 光は体の子なので、古い体と一緒に消されないよう先に新しい体へ移す
+            PlaceWeaponLight();
 
             // Destroy はフレームの終わりまで残り、新しい体と重なって見えるので先に隠す
             previous.gameObject.SetActive(false);
@@ -145,6 +189,7 @@ namespace Shooter.NetV2
             IsParachuting = pose.Parachuting;
             WeaponLowering = pose.HolsterLowering;
             IsWeaponHidden = pose.IsWeaponHidden;
+            ShowWeaponLight(pose.ShowsWeaponLight);
             var target = pose.Parachuting
                 ? Quaternion.identity
                 : PlayerMockPose.TraversalLean(pose.Lean, pose.Swimming, pose.WallRun, pose.Parkour, _leanAngleDegrees);
@@ -154,6 +199,55 @@ namespace Shooter.NetV2
             _drop = _snapTilt ? targetDrop : Mathf.Lerp(_drop, targetDrop, blend);
             _snapTilt = false;
             PlaceBody();
+        }
+
+        // 光を体の子に付けるのは、隠れている間 (SetConcealed) に体と一緒に止めるため。銃口のソケットがあればそこから照らす
+        private void ShowWeaponLight(bool on)
+        {
+            IsWeaponLightOn = on;
+            if (!on)
+            {
+                if (_weaponLight != null)
+                {
+                    _weaponLight.SetOn(false);
+                }
+
+                return;
+            }
+
+            if (_weaponLight == null)
+            {
+                _weaponLight = WeaponLightBeam.Create(Sockets(), _body, WeaponLightSpec, WeaponLightCatalog);
+            }
+            else
+            {
+                PlaceWeaponLight();
+            }
+
+            _weaponLight.SetOn(true);
+        }
+
+        private void PlaceWeaponLight()
+        {
+            if (_weaponLight != null)
+            {
+                _weaponLight.Place(Sockets(), _body);
+            }
+        }
+
+        private void ConfigureWeaponLight()
+        {
+            if (_weaponLight != null)
+            {
+                var spec = WeaponLightSpec;
+                _weaponLight.Configure(spec, spec.VisualId, WeaponLightCatalog);
+            }
+        }
+
+        private WeaponSockets Sockets()
+        {
+            var presentation = GetComponent<WeaponPresentation>();
+            return presentation != null ? presentation.Sockets : WeaponSockets.None;
         }
 
         private static Transform CreateBody(GameObject skin, StanceGeometry geometry, Transform parent)

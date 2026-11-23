@@ -168,5 +168,17 @@ namespace Shooter.Core.Tests
                 Is.EqualTo("[Combat] weaponLight item=- range=12.5 spotAngle=30 intensity=0.75 visual=-"));
             Assert.Throws<ArgumentNullException>(() => WeaponLightLog.Spec("item-1", null));
         }
+
+        [Test]
+        public void TheNetLogLinesAreCombatLines()
+        {
+            Assert.That(WeaponLightLog.NetRequested(true), Is.EqualTo("[Combat] weaponLight net requested on=true"));
+            Assert.That(WeaponLightLog.NetRequested(false), Is.EqualTo("[Combat] weaponLight net requested on=false"));
+            Assert.That(
+                WeaponLightLog.NetNotSent(true, "no-light"),
+                Is.EqualTo("[Combat] weaponLight net not-sent on=true reason=no-light"));
+            Assert.That(WeaponLightLog.NetNotSent(false, null), Is.EqualTo("[Combat] weaponLight net not-sent on=false reason=-"));
+            Assert.That(WeaponLightLog.NetChanged(false, true), Is.EqualTo("[Combat] weaponLight net on=false->true"));
+        }
     }
 }

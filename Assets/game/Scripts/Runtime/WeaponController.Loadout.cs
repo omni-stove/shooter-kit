@@ -47,7 +47,9 @@ namespace Shooter.Runtime
             }
 
             _loadout.Current.CancelReload();
+            CancelClearJam(_loadout.Current);
             _unarmed = true;
+            PublishJam();
             Debug.Log(DisarmedLog, this);
             WeaponChanged?.Invoke(null);
             return true;
@@ -81,7 +83,7 @@ namespace Shooter.Runtime
             }
 
             EnsureInitialized();
-            var loadout = WeaponLoadout.Create(_specs, rules, _switchSeconds);
+            var loadout = WeaponLoadout.Create(_specs, rules, _switchSeconds, JamRolls);
             _rules = rules;
             SetLoadout(loadout, _specs, _loadedDefinitions, rules, resetAmmo: true);
             WeaponChanged?.Invoke(Weapon);
@@ -92,7 +94,7 @@ namespace Shooter.Runtime
             EnsureInitialized();
             _unarmed = false;
 
-            var loadout = WeaponLoadout.Restore(_specs, ammo, equippedWeaponId, _loadedRules, _switchSeconds, out var unknown);
+            var loadout = WeaponLoadout.Restore(_specs, ammo, equippedWeaponId, _loadedRules, _switchSeconds, JamRolls, out var unknown);
             foreach (var id in unknown)
             {
                 Debug.LogWarning($"[WeaponController] '{name}' は武器 '{id}' を持っていないため、セーブされたその残弾を捨てます。", this);
@@ -125,7 +127,7 @@ namespace Shooter.Runtime
             if (_unarmed)
             {
                 var only = new[] { spec };
-                var armed = WeaponLoadout.Restore(only, AmmoList(ammo), spec.Id, _loadedRules, _switchSeconds, out _);
+                var armed = WeaponLoadout.Restore(only, AmmoList(ammo), spec.Id, _loadedRules, _switchSeconds, JamRolls, out _);
                 _unarmed = false;
                 _attachments.Clear();
                 RememberAttachments(spec.Id, kept);
@@ -153,7 +155,7 @@ namespace Shooter.Runtime
                 carried.Add(ammo);
             }
 
-            var loadout = WeaponLoadout.Restore(specs, carried, Weapon.Spec.Id, _loadedRules, _switchSeconds, out _);
+            var loadout = WeaponLoadout.Restore(specs, carried, Weapon.Spec.Id, _loadedRules, _switchSeconds, JamRolls, out _);
             KeepAmmoTypes(loadout, -1);
             RememberAttachments(spec.Id, kept);
             SetLoadout(loadout, specs, definitions, _loadedRules);
@@ -212,7 +214,7 @@ namespace Shooter.Runtime
                 carried.Add(ammo);
             }
 
-            var loadout = WeaponLoadout.Restore(specs, carried, spec.Id, _loadedRules, _switchSeconds, out _);
+            var loadout = WeaponLoadout.Restore(specs, carried, spec.Id, _loadedRules, _switchSeconds, JamRolls, out _);
             KeepAmmoTypes(loadout, index);
             _attachments.Remove(leavingAmmo.WeaponId);
             RememberAttachments(spec.Id, kept);
@@ -267,7 +269,7 @@ namespace Shooter.Runtime
             }
 
             var equipped = index == _loadout.CurrentIndex ? null : Weapon.Spec.Id;
-            var loadout = WeaponLoadout.Restore(specs, carried, equipped, _loadedRules, _switchSeconds, out _);
+            var loadout = WeaponLoadout.Restore(specs, carried, equipped, _loadedRules, _switchSeconds, JamRolls, out _);
             for (var i = 0; i < loadout.Count; i++)
             {
                 loadout.Items[i].AmmoTypes.TrySelect(_loadout.Items[i < index ? i : i + 1].AmmoTypes.Index);
@@ -354,6 +356,7 @@ namespace Shooter.Runtime
                 }
             }
 
+            UnhookJam();
             _loadout = loadout;
             _specs = specs;
             _loadedDefinitions = definitions;
@@ -369,6 +372,7 @@ namespace Shooter.Runtime
             foreach (var weapon in _loadout.Items)
             {
                 weapon.Reloaded += OnReloaded;
+                HookJam(weapon);
 
                 // 武器を持っていない間の並びは手放した武器なので、その予備弾を持ち物に足さない
                 if (AmmoPools == null || _unarmed)
@@ -397,12 +401,16 @@ namespace Shooter.Runtime
                     }
                 }
             }
+
+            PublishJam();
         }
 
         private void OnSwitched(int index)
         {
             var spec = _loadout.Current.Spec;
+            CancelClearJamOfHolstered();
             Debug.Log($"{SwitchedLogPrefix} index={index} id={spec.Id} name={spec.LogName}", this);
+            PublishJam();
             WeaponChanged?.Invoke(Weapon);
         }
 

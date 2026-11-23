@@ -28,6 +28,8 @@ namespace Shooter.Core
         public const string AwarenessItem = "awareness";
         public const string DisableHoldSecondsItem = "disableHoldSeconds";
         public const string DisabledSecondsItem = "disabledSeconds";
+        public const string MaxHealthItem = "maxHealth";
+        public const string DisableRadiusItem = "disableRadius";
 
         public const string DurationSecondsItem = "durationSeconds";
         public const string RadiusItem = "radius";
@@ -83,6 +85,8 @@ namespace Shooter.Core
             AwarenessItem,
             DisableHoldSecondsItem,
             DisabledSecondsItem,
+            MaxHealthItem,
+            DisableRadiusItem,
         };
 
         // 視野を入れないのは、カメラの視野 (securityCamera.fieldOfViewDegrees) をそのまま気づきの視野にするため。
@@ -188,6 +192,8 @@ namespace Shooter.Core
             var fieldOfViewDegrees = camera.ReadFloat(FieldOfViewDegreesItem, defaults.FieldOfViewDegrees);
             var disableHoldSeconds = camera.ReadFloat(DisableHoldSecondsItem, defaults.DisableHoldSeconds);
             var disabledSeconds = camera.ReadFloat(DisabledSecondsItem, defaults.DisabledSeconds);
+            var maxHealth = camera.ReadInt(MaxHealthItem, defaults.MaxHealth);
+            var disableRadius = camera.ReadFloat(DisableRadiusItem, defaults.DisableRadius);
             var awarenessFields = camera.Object(AwarenessItem, CameraAwarenessItemNames);
 
             AwarenessSpec awareness;
@@ -219,7 +225,9 @@ namespace Shooter.Core
                     fieldOfViewDegrees,
                     awareness,
                     disableHoldSeconds,
-                    disabledSeconds);
+                    disabledSeconds,
+                    maxHealth,
+                    disableRadius);
             }
             catch (ArgumentException e)
             {

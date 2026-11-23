@@ -10,6 +10,9 @@ namespace Shooter.Protocol
         private const float _leanSteps = 127f;
         private const float _loweringSteps = 255f;
 
+        // しまう状態のバイトの空いた上の方のビット。状態の値はこれより小さい
+        private const int _weaponLightFlag = 0x10;
+
         public int PlayerId { get; set; }
         public PlayerFields Present { get; set; }
 
@@ -69,6 +72,10 @@ namespace Shooter.Protocol
         public HolsterPhase HolsterPhase { get; set; }
 
         public float HolsterLowering { get; set; }
+
+        // 部分のビットに空きが無く、点けた武器を替えると消えるので、しまう・構えると同じく Weapon に載せる。
+        // バイトを足さずにしまう状態のバイトの 1 ビットで送るのは、Weapon の部分が変わるたびに 1 バイト増やさないため
+        public bool WeaponLightOn { get; set; }
 
         public int Kills { get; set; }
         public int Deaths { get; set; }
@@ -185,6 +192,7 @@ namespace Shooter.Protocol
             // 書けない下げ具合を前と同じ段に丸めて載せずに済ませると、書くときに断れないので変わったとみなす
             if (!string.Equals(WeaponId ?? "", baseline.WeaponId ?? "", System.StringComparison.Ordinal)
                 || HolsterPhase != baseline.HolsterPhase
+                || WeaponLightOn != baseline.WeaponLightOn
                 || !IsHolsterLoweringValid(HolsterPhase, HolsterLowering)
                 || LoweringStep(HolsterLowering) != LoweringStep(baseline.HolsterLowering))
             {
@@ -290,8 +298,13 @@ namespace Shooter.Protocol
 
             if ((fields & PlayerFields.Weapon) != 0)
             {
+                if (WeaponLightOn && string.IsNullOrEmpty(WeaponId))
+                {
+                    throw new System.InvalidOperationException("a player without a weapon cannot have the weapon light on");
+                }
+
                 writer.WriteString(WeaponId, MatchProtocol.MaxContentIdBytes);
-                WriteHolster(writer, HolsterPhase, HolsterLowering);
+                WriteHolster(writer, HolsterPhase, HolsterLowering, WeaponLightOn);
             }
 
             if ((fields & PlayerFields.Score) != 0)
@@ -441,7 +454,20 @@ namespace Shooter.Protocol
             if ((fields & PlayerFields.Weapon) != 0)
             {
                 WeaponId = reader.ReadString(MatchProtocol.MaxContentIdBytes, WeaponId);
-                HolsterPhase = (HolsterPhase)reader.ReadByteBelow(EnumRange<HolsterPhase>.Count, "holster phase");
+                var holster = reader.ReadByte();
+                WeaponLightOn = (holster & _weaponLightFlag) != 0;
+                var phase = holster & ~_weaponLightFlag;
+                if (phase >= EnumRange<HolsterPhase>.Count)
+                {
+                    throw new MessageReadException("holster phase " + phase.ToString(System.Globalization.CultureInfo.InvariantCulture) + " is not defined");
+                }
+
+                if (WeaponLightOn && string.IsNullOrEmpty(WeaponId))
+                {
+                    throw new MessageReadException("a player without a weapon has the weapon light on");
+                }
+
+                HolsterPhase = (HolsterPhase)phase;
                 HolsterLowering = IsHolsterMoving(HolsterPhase)
                     ? reader.ReadByte() / _loweringSteps
                     : (HolsterPhase == HolsterPhase.Holstered ? 1f : 0f);
@@ -567,6 +593,7 @@ namespace Shooter.Protocol
                 WeaponId = baseline.WeaponId;
                 HolsterPhase = baseline.HolsterPhase;
                 HolsterLowering = baseline.HolsterLowering;
+                WeaponLightOn = baseline.WeaponLightOn;
             }
 
             if ((missing & PlayerFields.Score) != 0)
@@ -660,9 +687,9 @@ namespace Shooter.Protocol
             return (int)System.Math.Round(clamped * _loweringSteps);
         }
 
-        private static void WriteHolster(MessageWriter writer, HolsterPhase phase, float lowering)
+        private static void WriteHolster(MessageWriter writer, HolsterPhase phase, float lowering, bool weaponLightOn)
         {
-            if ((int)phase < 0 || (int)phase >= EnumRange<HolsterPhase>.Count)
+            if ((int)phase < 0 || (int)phase >= EnumRange<HolsterPhase>.Count || (int)phase >= _weaponLightFlag)
             {
                 throw new System.InvalidOperationException("holster phase " + (int)phase + " is not defined");
             }
@@ -673,7 +700,7 @@ namespace Shooter.Protocol
                     "holster lowering " + lowering.ToString(System.Globalization.CultureInfo.InvariantCulture) + " does not fit the phase " + phase);
             }
 
-            writer.WriteByte((byte)phase);
+            writer.WriteByte((byte)((int)phase | (weaponLightOn ? _weaponLightFlag : 0)));
             if (IsHolsterMoving(phase))
             {
                 writer.WriteByte((byte)LoweringStep(lowering));

@@ -48,8 +48,10 @@ namespace Shooter.Runtime
         // 仕掛けの途中は GameSignals.Breach で毎フレーム読めるので、ここは破れた瞬間だけを流す。
         public static event Action<DoorBreach> DoorBreached;
 
-        // 詰まっている間・解除の途中は HudModel の Jam で毎フレーム読めるので、ここは詰まった瞬間と解除し終えた瞬間だけを流す。
+        // 詰まっている間・解除の途中は、オフラインでは GameSignals.WeaponJam、ネット対戦では HudModel の Jam で毎フレーム読めるので、ここは詰まった・解除を始めた・解除し終えた瞬間だけを流す。
         public static event Action<WeaponJamInfo> WeaponJammed;
+
+        public static event Action<WeaponJamInfo> WeaponJamClearStarted;
 
         public static event Action<WeaponJamInfo> WeaponJamCleared;
 
@@ -164,6 +166,11 @@ namespace Shooter.Runtime
             Invoke(WeaponJammed, new WeaponJamInfo(holder, weaponId));
         }
 
+        public static void RaiseWeaponJamClearStarted(GameObject holder, string weaponId)
+        {
+            Invoke(WeaponJamClearStarted, new WeaponJamInfo(holder, weaponId));
+        }
+
         public static void RaiseWeaponJamCleared(GameObject holder, string weaponId)
         {
             Invoke(WeaponJamCleared, new WeaponJamInfo(holder, weaponId));
@@ -204,6 +211,7 @@ namespace Shooter.Runtime
             HolsterChanged = null;
             DoorBreached = null;
             WeaponJammed = null;
+            WeaponJamClearStarted = null;
             WeaponJamCleared = null;
             _attribution = null;
             foreach (var clear in _clears)

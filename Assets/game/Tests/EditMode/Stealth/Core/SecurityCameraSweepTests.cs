@@ -434,6 +434,37 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheGainIsMeasuredAtTheCurrentYaw()
+        {
+            var camera = new SecurityCameraSweep(SecurityCameraSpec.Default);
+
+            Assert.That(camera.GainPerSecond(Still(0f)), Is.EqualTo(0.5f), "1 per second, halved for standing still");
+            Assert.That(camera.GainPerSecond(Still(-120f)), Is.Zero, "behind the camera");
+            Assert.That(camera.GainPerSecond(SecurityCameraTarget.None), Is.Zero);
+
+            camera.Tick(2.25f, SecurityCameraTarget.None);
+            Assert.That(camera.YawDegrees, Is.EqualTo(45f));
+            Assert.That(camera.GainPerSecond(Still(-40f)), Is.Zero, "85 deg off the turned head");
+            Assert.That(camera.GainPerSecond(Still(45f)), Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void ALitTargetFillsByTheLitFactor()
+        {
+            var spec = new SecurityCameraSpec(awareness: new AwarenessSpec(fieldOfViewDegrees: SecurityCameraSpec.DefaultFieldOfViewDegrees, litGainFactor: 2f));
+            var camera = new SecurityCameraSweep(spec);
+            var lit = new SecurityCameraTarget(true, 2f, 0f, _where, AwarenessPosture.Standing, 1f, 0f, isArmed: true, isLit: true);
+
+            Assert.That(lit.IsLit, Is.True);
+            Assert.That(Still(0f).IsLit, Is.False, "unlit unless told");
+            Assert.That(camera.GainPerSecond(lit), Is.EqualTo(1f));
+            Assert.That(camera.GainPerSecond(Still(0f)), Is.EqualTo(0.5f));
+
+            camera.Tick(1f, lit);
+            Assert.That(camera.Phase, Is.EqualTo(SecurityCameraPhase.Spotted), "spotted in 1 s instead of 2 s");
+        }
+
+        [Test]
         public void TheAngleToTheTargetWrapsAround()
         {
             Assert.That(SecurityCameraSweep.AngleBetween(0f, 0f), Is.Zero);

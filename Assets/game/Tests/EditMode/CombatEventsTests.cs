@@ -501,6 +501,70 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void AJammedPlayerWeaponRaisesJammedClearStartedAndClearedWithTheHolderAndTheWeaponId()
+        {
+            var camera = new GameObject("PlayerCamera", typeof(Camera));
+            _created.Add(camera);
+            camera.transform.position = _eye;
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            _created.Add(rifle);
+            var weapon = camera.AddComponent<WeaponController>();
+            weapon.Rules = TestJam.JamOn;
+            weapon.JamRolls = _ => new FixedJamRoll(0f);
+            weapon.Initialize(camera.transform, _attack, _reload, rifle);
+            var order = new List<string>();
+            var infos = new List<WeaponJamInfo>();
+            CombatEvents.WeaponJammed += info =>
+            {
+                order.Add("jammed");
+                infos.Add(info);
+            };
+            CombatEvents.WeaponJamClearStarted += info =>
+            {
+                order.Add("clear-started");
+                infos.Add(info);
+            };
+            CombatEvents.WeaponJamCleared += info =>
+            {
+                order.Add("cleared");
+                infos.Add(info);
+            };
+
+            Assert.That(weapon.Fire(), Is.True);
+            Assert.That(order, Is.EqualTo(new[] { "jammed" }));
+            Assert.That(weapon.PressReload(), Is.True);
+            Assert.That(weapon.PressReload(), Is.False, "pressing again while clearing raises nothing");
+            weapon.Tick(TestJam.ClearSeconds / 2f);
+            Assert.That(order, Is.EqualTo(new[] { "jammed", "clear-started" }));
+            weapon.Tick(TestJam.ClearSeconds / 2f);
+
+            Assert.That(order, Is.EqualTo(new[] { "jammed", "clear-started", "cleared" }));
+            Assert.That(infos.Select(i => i.Holder), Is.EqualTo(new[] { camera, camera, camera }));
+            Assert.That(infos.Select(i => i.WeaponId), Is.EqualTo(new[] { TestWeapons.RifleId, TestWeapons.RifleId, TestWeapons.RifleId }));
+
+            CombatEvents.ClearSubscribers();
+            Assert.That(weapon.Fire(), Is.True);
+            Assert.That(weapon.Weapon.IsJammed, Is.True);
+            Assert.That(order, Has.Count.EqualTo(3), "ClearSubscribers drops the jam handlers");
+        }
+
+        [Test]
+        public void TheJamEventsReadAMissingWeaponIdAsEmpty()
+        {
+            var infos = new List<WeaponJamInfo>();
+            CombatEvents.WeaponJammed += infos.Add;
+            CombatEvents.WeaponJamClearStarted += infos.Add;
+            CombatEvents.WeaponJamCleared += infos.Add;
+
+            CombatEvents.RaiseWeaponJammed(null, null);
+            CombatEvents.RaiseWeaponJamClearStarted(null, "a");
+            CombatEvents.RaiseWeaponJamCleared(null, "b");
+
+            Assert.That(infos.Select(i => i.WeaponId), Is.EqualTo(new[] { string.Empty, "a", "b" }));
+            Assert.That(infos.All(i => i.Holder == null), Is.True);
+        }
+
+        [Test]
         public void WeaponJammedAndJamClearedPassTheHolderAndTheWeaponAndAreDroppedByClearSubscribers()
         {
             var holder = new GameObject("Holder");

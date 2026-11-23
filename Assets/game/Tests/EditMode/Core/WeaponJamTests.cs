@@ -388,6 +388,50 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheLoadoutGivesEachWeaponTheRollItIsHandedAndKeepsTheAmmo()
+        {
+            var rolls = new Dictionary<string, FixedJamRoll>();
+            var specs = new[] { Spec(AlwaysJams()) };
+            var loadout = WeaponLoadout.Restore(
+                specs,
+                new[] { new WeaponAmmo(_rifleId, 4, 6) },
+                _rifleId,
+                _jamOn,
+                0f,
+                spec => rolls[spec.Id] = new FixedJamRoll(0.5f),
+                out _);
+
+            Assert.That(loadout.Current.TryFire(), Is.True);
+
+            Assert.That(rolls[_rifleId].Calls, Is.EqualTo(1), "the shot drew from the handed roll");
+            Assert.That(loadout.Current.IsJammed, Is.True);
+            Assert.That(loadout.Current.AmmoInMagazine, Is.EqualTo(3));
+            Assert.That(WeaponLoadout.Create(specs, _jamOn, 0f, _ => null).Current.Jam, Is.Not.Null, "a null roll falls back to the weapon's own");
+        }
+
+        [Test]
+        public void TheStatusFollowsTheJamThroughTheClear()
+        {
+            var weapon = new Weapon(Spec(AlwaysJams(1f)), _jamOn, new FixedJamRoll(0f));
+            Assert.That(WeaponJamStatus.Of(weapon), Is.EqualTo(new WeaponJamStatus(WeaponJamPhase.None, 0f, 1f)));
+
+            weapon.TryFire();
+            Assert.That(WeaponJamStatus.Of(weapon), Is.EqualTo(new WeaponJamStatus(WeaponJamPhase.Jammed, 0f, 1f)));
+
+            weapon.TryStartClearJam();
+            weapon.Tick(0.25f);
+            var clearing = WeaponJamStatus.Of(weapon);
+            Assert.That(clearing.Phase, Is.EqualTo(WeaponJamPhase.Clearing));
+            Assert.That(clearing.ClearRemainingSeconds, Is.EqualTo(0.75f));
+            Assert.That(clearing.ClearFraction, Is.EqualTo(0.25f));
+
+            weapon.Tick(0.75f);
+            Assert.That(WeaponJamStatus.Of(weapon).Phase, Is.EqualTo(WeaponJamPhase.None));
+            Assert.That(WeaponJamStatus.Of(null), Is.EqualTo(WeaponJamStatus.None));
+            Assert.That(WeaponJamStatus.Of(new Weapon(Spec(AlwaysJams()), GameRules.Default)), Is.EqualTo(WeaponJamStatus.None), "the rule is off");
+        }
+
+        [Test]
         public void ServerWeaponShowsTheNextShotsChanceBeforeItFires()
         {
             var weapon = new ServerWeapon(Spec(Rising()), _jamOn, new FixedJamRoll(0.9f));
