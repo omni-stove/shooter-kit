@@ -67,6 +67,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.LockOnWarning.Value, Is.Null);
             Assert.That(GameSignals.Emotes.Value, Is.Null);
             Assert.That(GameSignals.Holster.Value, Is.Null);
+            Assert.That(GameSignals.WeaponLight.Value, Is.Null);
             Assert.That(GameSignals.WeaponFreeZone.Value, Is.Null);
             Assert.That(GameSignals.VoteKick.Value, Is.Null);
             Assert.That(GameSignals.VoteKickSender.Value, Is.Null);
@@ -205,6 +206,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.LockOnWarning.Publish(new LockOnWarningStatus(LockOnWarningStage.Locked, 90f));
             GameSignals.Emotes.Publish(new FakeEmoteControl());
             GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstered, 1f, false));
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
             GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnThenHostile, true, 3f));
             GameSignals.VoteKick.Publish(new VoteKickStatus(3, 1, 1, 4, 30f));
             GameSignals.VoteKickSender.Publish(new FakeVoteKickSender());
@@ -309,6 +311,31 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(heardHolster, Has.Count.EqualTo(1), "subscribers from before the reset are gone");
             Assert.That(heardZone, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void TheWeaponLightSignalHoldsWhatWasPublishedUntilResetAll()
+        {
+            var heard = new List<WeaponLightStatus?>();
+            GameSignals.WeaponLight.Changed += heard.Add;
+
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
+
+            Assert.That(GameSignals.WeaponLight.Value, Is.EqualTo((WeaponLightStatus?)new WeaponLightStatus(true, true)));
+            Assert.That(GameSignals.WeaponLight.Value.Value.HasLight, Is.True);
+            Assert.That(GameSignals.WeaponLight.Value.Value.IsOn, Is.True);
+            Assert.That(heard, Has.Count.EqualTo(1));
+
+            GameSignals.WeaponLight.Publish(WeaponLightStatus.None);
+            Assert.That(GameSignals.WeaponLight.HasValue, Is.True, "a weapon without a light is still something to show");
+            Assert.That(GameSignals.WeaponLight.Value.Value.HasLight, Is.False);
+            Assert.That(heard, Has.Count.EqualTo(2));
+
+            GameSignals.ResetAll();
+            Assert.That(GameSignals.WeaponLight.Value, Is.Null);
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, false));
+
+            Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
         }
 
         [Test]

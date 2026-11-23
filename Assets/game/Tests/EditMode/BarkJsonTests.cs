@@ -27,7 +27,8 @@ namespace Shooter.Tests.EditMode
   ""crowdRadius"": 20,
   ""maxSpeakersInCrowd"": 3,
   ""hearingDistance"": 45,
-  ""grenadeWarningRadius"": 6.5
+  ""grenadeWarningRadius"": 6.5,
+  ""speakSeconds"": 2.25
 }";
 
         private readonly List<Object> _created = new List<Object>();
@@ -66,6 +67,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.MaxSpeakersInCrowd, Is.EqualTo(3));
             Assert.That(spec.HearingDistance, Is.EqualTo(45f));
             Assert.That(spec.GrenadeWarningRadius, Is.EqualTo(6.5f));
+            Assert.That(spec.SpeakSeconds, Is.EqualTo(2.25f));
         }
 
         [Test]
@@ -87,6 +89,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.MinIntervalSeconds, Is.EqualTo(0.75f));
             Assert.That(spec.CrowdRadius, Is.EqualTo(12f));
             Assert.That(spec.GrenadeWarningRadius, Is.EqualTo(8f));
+            Assert.That(spec.SpeakSeconds, Is.EqualTo(2f));
         }
 
         [Test]
@@ -107,6 +110,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.MaxSpeakersInCrowd, Is.EqualTo(2));
             Assert.That(spec.HearingDistance, Is.EqualTo(30f));
             Assert.That(spec.GrenadeWarningRadius, Is.EqualTo(8f));
+            Assert.That(spec.SpeakSeconds, Is.EqualTo(2f));
         }
 
         [Test]
@@ -136,6 +140,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(BarkSpec.DefaultMaxSpeakersInCrowd, Is.EqualTo(2));
             Assert.That(BarkSpec.DefaultHearingDistance, Is.EqualTo(30f));
             Assert.That(BarkSpec.DefaultGrenadeWarningRadius, Is.EqualTo(8f));
+            Assert.That(BarkSpec.DefaultSpeakSeconds, Is.EqualTo(2f));
             Assert.That(BarkSpec.Kinds, Is.EqualTo(new[]
             {
                 BarkKind.Spotted, BarkKind.LostTarget, BarkKind.Reloading, BarkKind.Grenade,
@@ -164,6 +169,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.MaxSpeakersInCrowd, Is.EqualTo(2));
             Assert.That(spec.HearingDistance, Is.EqualTo(30f));
             Assert.That(spec.GrenadeWarningRadius, Is.EqualTo(8f));
+            Assert.That(spec.SpeakSeconds, Is.EqualTo(2f));
         }
 
         [Test]
@@ -214,6 +220,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("{\"maxSpeakersInCrowd\": 0}", "maxSpeakersInCrowd")]
         [TestCase("{\"hearingDistance\": 0}", "hearingDistance")]
         [TestCase("{\"grenadeWarningRadius\": -2}", "grenadeWarningRadius")]
+        [TestCase("{\"speakSeconds\": -1}", "speakSeconds")]
         [TestCase("{\"kindCooldownSeconds\": {\"reloading\": -1}}", "kindCooldownSeconds.reloading")]
         public void AnOutOfRangeValueIsRejectedWithItsItem(string json, string item)
         {
@@ -266,7 +273,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(
                 BarkLog.Loaded(BarkSpec.Default),
                 Is.EqualTo("[Bark] spec kinds=Spotted:6.00,LostTarget:8.00,Reloading:4.00,Grenade:3.00,TakingFire:5.00,MovingToCover:6.00,AllyDown:8.00"
-                    + " speaker=3.00 interval=0.75 crowdRadius=12.00 crowdMax=2 hearing=30.00 grenadeWarning=8.00"));
+                    + " speaker=3.00 interval=0.75 crowdRadius=12.00 crowdMax=2 hearing=30.00 grenadeWarning=8.00 speak=2.00"));
             Assert.Throws<ArgumentNullException>(() => BarkLog.Loaded(null));
         }
 

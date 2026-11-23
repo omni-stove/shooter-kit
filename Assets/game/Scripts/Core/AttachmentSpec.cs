@@ -23,7 +23,8 @@ namespace Shooter.Core
             float shotNoiseRadiusMultiplier = DefaultMultiplier,
             float moveSpeedMultiplier = DefaultMultiplier,
             IEnumerable<float> zoomLevels = null,
-            SightSpec sight = null)
+            SightSpec sight = null,
+            WeaponLightSpec light = null)
         {
             Slot = SlotName(slot, nameof(slot));
             WeaponIds = Ids(weaponIds);
@@ -38,6 +39,7 @@ namespace Shooter.Core
             MoveSpeedMultiplier = SpecGuard.NonNegativeFinite(moveSpeedMultiplier, nameof(moveSpeedMultiplier));
             ZoomLevels = Zooms(zoomLevels);
             Sight = sight;
+            Light = light;
         }
 
         public string Slot { get; }
@@ -67,6 +69,10 @@ namespace Shooter.Core
         public SightSpec Sight { get; }
 
         public bool IsOptic => ZoomLevels != null || Sight != null;
+
+        public WeaponLightSpec Light { get; }
+
+        public bool IsLight => Light != null;
 
         public bool Fits(string weaponId)
         {
