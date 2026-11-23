@@ -273,8 +273,8 @@ namespace Shooter.Editor
 
         protected override void AddModeObjects(ModeSceneContext context)
         {
-            var rifle = WeaponAssetBuilder.FindInCatalog(context.Catalog, PickupsObjectName, WeaponAssetBuilder.RifleId);
-            var handgun = WeaponAssetBuilder.FindInCatalog(context.Catalog, PickupsObjectName, WeaponAssetBuilder.HandgunId);
+            var rifle = WeaponAssetBuilder.FindInCatalog(context.Catalog, PickupsObjectName, WeaponAssetBuilder.CarbineId);
+            var handgun = WeaponAssetBuilder.FindInCatalog(context.Catalog, PickupsObjectName, WeaponAssetBuilder.PistolId);
 
             // 中身を先に作って検査し、不正なら何も置かない。建物の中の物は戸口から入れることも確かめる。
             var placements = PickupPlacements(rifle, handgun);

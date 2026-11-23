@@ -80,7 +80,7 @@ namespace Shooter.Server
         private void StartWeaponSwing(Swinger swinger, MeleeSpec spec, float chargeFraction, string weaponId)
         {
             var playerId = swinger.PlayerId;
-            var refusal = Check(playerId);
+            var refusal = CheckWeapon(playerId);
             if (refusal != MeleeRefusal.None)
             {
                 LogRefused(playerId, refusal);
@@ -107,7 +107,7 @@ namespace Shooter.Server
                 return;
             }
 
-            var refusal = Check(playerId);
+            var refusal = CheckWeapon(playerId);
             if (refusal == MeleeRefusal.Cooldown && !swinger.Swing.IsSwinging)
             {
                 refusal = MeleeRefusal.None;

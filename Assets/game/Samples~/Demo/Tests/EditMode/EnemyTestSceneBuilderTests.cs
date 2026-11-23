@@ -104,9 +104,9 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ActorsAreWiredInCode()
         {
-            var playerWeapon = NewWeapon("PlayerRifle", WeaponAssetBuilder.RifleSpec());
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
-            var handgun = NewWeapon("Handgun", WeaponAssetBuilder.HandgunSpec());
+            var playerWeapon = NewWeapon("PlayerRifle", DemoTestWeapons.CarbineSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
+            var handgun = NewWeapon("Handgun", DemoTestWeapons.PistolSpec());
             var catalog = NewCatalog("WeaponCatalog", handgun, rifle);
             try
             {
@@ -128,7 +128,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ActorsNeedAPlayerWeaponAndACatalog()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var catalog = NewCatalog("WeaponCatalog", rifle);
             try
             {
@@ -147,8 +147,8 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ActorsRefuseAWeaponIdThatIsNotInTheCatalog()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
-            var handgun = NewWeapon("Handgun", WeaponAssetBuilder.HandgunSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
+            var handgun = NewWeapon("Handgun", DemoTestWeapons.PistolSpec());
             var catalog = NewCatalog("HandgunOnly", handgun);
             try
             {
@@ -170,7 +170,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ActorsRefuseAnInvalidCatalog()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var empty = ScriptableObject.CreateInstance<WeaponCatalogAsset>();
             try
             {

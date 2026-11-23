@@ -14,8 +14,6 @@ namespace Shooter.Editor
     {
         public static string Folder => WeaponAssets.Folder;
 
-        public static string RiflePath => Folder + "/Rifle.asset";
-        public static string HandgunPath => Folder + "/Handgun.asset";
         public static string CatalogPath => WeaponAssets.CatalogPath;
         public static string LoadoutPath => Folder + "/DefaultLoadout.asset";
         public static string LauncherPath => Folder + "/Launcher.asset";
@@ -40,18 +38,22 @@ namespace Shooter.Editor
 
         public static string RealisticWeaponsPath => Folder + "/RealisticWeapons.asset";
 
+        // 既定の武器は手で値を決めず、ゲームの値を参考にした Reference と JsonFolder の武器から選ぶ。
+        public static string CarbinePath => ReferenceFolder + "/Carbine556.asset";
+        public static string PistolPath => ReferenceFolder + "/CompactPistol.asset";
+        public static string MachetePath => Folder + "/Machete.asset";
+
         public const string MenuPath = "Shooter/Build Weapon Assets";
         public const string LogTag = "[WeaponAssetBuilder]";
 
         // 再ビルドしても Id が変わらないよう固定する。サーバーとクライアントはこの Id で武器を突き合わせる
-        public const string RifleId = "6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83";
-        public const string HandgunId = "b4e2a9d7-3c16-4a58-8f2e-7d0b9c6a1e45";
+        public const string CarbineId = "25974cbc-c194-4f98-b22d-c9d34c3ba6e4";
+        public const string PistolId = "343b6024-75f2-4d68-8ac6-d31fad86aa47";
+        public const string MacheteId = "e1920316-c182-4151-9273-26f94c3adaf9";
         public const string LauncherId = "e7a3c5d1-2f84-4b69-a0d3-5c8e1b7f2a96";
         public const string KnifeId = "f4df3778-7da1-49c7-88a6-3f4769c23f9e";
         public const string RiotShieldId = "3e7b9c41-5a2d-4f86-b1c3-9d4e7a2f6b18";
 
-        public const string RifleNameKey = "weapon.rifle";
-        public const string HandgunNameKey = "weapon.handgun";
         public const string LauncherNameKey = "weapon.launcher";
         public const string KnifeNameKey = "weapon.knife";
 
@@ -60,108 +62,7 @@ namespace Shooter.Editor
         // 弾倉が 1 発なので、実際の間隔はリロード時間で決まる。
         public const float LauncherFireInterval = 0.5f;
 
-        // 共通の初期値 (AdsZoom.DefaultFieldOfView) より狭くして、遠くを狙いやすくする。
-        public const float RifleAdsFieldOfView = 45f;
-
-        // 近距離で使うので rifle より広くする。
-        public const float HandgunAdsFieldOfView = 55f;
-
-        public const float RifleBlindFireSpreadDegrees = 8f;
-
-        public const float RifleActiveReloadWindowStart = 0.5f;
-
-        public const float RifleActiveReloadWindowLength = 0.15f;
-
-        public const float RifleActiveReloadFailSeconds = 0.6f;
-
-        // 連射間隔 0.1 秒が反動の戻り待ち (WeaponSpec.DefaultRecoilRecoveryDelaySeconds) より短いので、
-        // 撃ち続ける間は戻らずに上へ溜まり、30 発撃ち切ると 15° 上がる。
-        public const float RifleRecoilPitchDegrees = 0.5f;
-
-        // 縦より小さくし、溜まる向きを上に寄せる。
-        public const float RifleRecoilYawDegrees = 0.2f;
-
-        // 撃ち切った 15° が、離してから約 1.5 秒で戻る速さにする。
-        public const float RifleRecoilRecoveryPerSecond = 10f;
-
-        public const float RifleHipSpreadDegrees = 3f;
-
-        public const float RifleAdsSpreadDegrees = 0.5f;
-
-        public const float RifleMoveSpreadDegrees = 3f;
-
-        // 覗き込んで動いたときに照準の開きが腰だめで動いたときより大きく見えないよう、移動の 3 割に絞る。
-        public const float RifleAdsMoveSpreadDegrees = 0.9f;
-
-        public const float RifleWeight = 3.5f;
-
-        // rifle の 1 発より大きく跳ねるようにする。
-        public const float HandgunRecoilPitchDegrees = 2.5f;
-
-        public const float HandgunRecoilYawDegrees = 0.6f;
-
-        // 連射間隔 0.2 秒のうち戻り待ち 0.15 秒を除いた 0.05 秒で 1 発分 (縦横で最大約 2.57°) が戻るので、
-        // 最短間隔で撃ち続けても上へは溜まらない。
-        public const float HandgunRecoilRecoveryPerSecond = 60f;
-
-        // 近距離用なので rifle より狭くする。
-        public const float HandgunHipSpreadDegrees = 2f;
-
-        // 片手寄りの構えなので rifle ほどは絞れなくする。
-        public const float HandgunAdsSpreadDegrees = 0.8f;
-
-        // 軽いので rifle より小さくする。
-        public const float HandgunMoveSpreadDegrees = 1.5f;
-
-        // rifle と同じく移動の 3 割に絞る。
-        public const float HandgunAdsMoveSpreadDegrees = 0.45f;
-
-        public const float HandgunWeight = 1f;
-
         public const float LauncherWeight = 7f;
-
-        // 片手で構えるので rifle より広くする。
-        public const float HandgunBlindFireSpreadDegrees = 12f;
-
-        public const float HandgunActiveReloadWindowStart = 0.45f;
-
-        public const float HandgunActiveReloadWindowLength = 0.2f;
-
-        public const float HandgunActiveReloadFailSeconds = 0.4f;
-
-        public static WeaponSpec RifleSpec()
-        {
-            return new WeaponSpec(
-                RifleId,
-                RifleNameKey,
-                WeaponCategory.AssaultRifle,
-                FireMode.Auto,
-                30,
-                90,
-                0.1f,
-                2f,
-                25,
-                100f,
-                new DamageFalloff(20f, 60f, 0.5f),
-                adsFieldOfView: RifleAdsFieldOfView,
-                blindFireSpreadDegrees: RifleBlindFireSpreadDegrees,
-                activeReloadWindowStart: RifleActiveReloadWindowStart,
-                activeReloadWindowLength: RifleActiveReloadWindowLength,
-                activeReloadFailSeconds: RifleActiveReloadFailSeconds,
-                recoilPitchDegrees: RifleRecoilPitchDegrees,
-                recoilYawDegrees: RifleRecoilYawDegrees,
-                recoilRecoveryPerSecond: RifleRecoilRecoveryPerSecond,
-                hipSpreadDegrees: RifleHipSpreadDegrees,
-                adsSpreadDegrees: RifleAdsSpreadDegrees,
-                moveSpreadDegrees: RifleMoveSpreadDegrees,
-                weight: RifleWeight,
-                adsMoveSpreadDegrees: RifleAdsMoveSpreadDegrees);
-        }
-
-        public static WeaponDefinition LoadRifle()
-        {
-            return LoadDefinition(RiflePath);
-        }
 
         public static WeaponDefinition LoadDefinition(string path) => WeaponAssets.LoadDefinition(path);
 
@@ -169,35 +70,6 @@ namespace Shooter.Editor
 
         public static WeaponDefinition FindInCatalog(WeaponCatalogAsset catalog, string placementId, string weaponId) =>
             WeaponAssets.FindInCatalog(catalog, placementId, weaponId);
-
-        public static WeaponSpec HandgunSpec()
-        {
-            return new WeaponSpec(
-                HandgunId,
-                HandgunNameKey,
-                WeaponCategory.Handgun,
-                FireMode.Semi,
-                12,
-                48,
-                0.2f,
-                1.5f,
-                34,
-                60f,
-                new DamageFalloff(15f, 40f, 0.6f),
-                adsFieldOfView: HandgunAdsFieldOfView,
-                blindFireSpreadDegrees: HandgunBlindFireSpreadDegrees,
-                activeReloadWindowStart: HandgunActiveReloadWindowStart,
-                activeReloadWindowLength: HandgunActiveReloadWindowLength,
-                activeReloadFailSeconds: HandgunActiveReloadFailSeconds,
-                recoilPitchDegrees: HandgunRecoilPitchDegrees,
-                recoilYawDegrees: HandgunRecoilYawDegrees,
-                recoilRecoveryPerSecond: HandgunRecoilRecoveryPerSecond,
-                hipSpreadDegrees: HandgunHipSpreadDegrees,
-                adsSpreadDegrees: HandgunAdsSpreadDegrees,
-                moveSpreadDegrees: HandgunMoveSpreadDegrees,
-                weight: HandgunWeight,
-                adsMoveSpreadDegrees: HandgunAdsMoveSpreadDegrees);
-        }
 
         // 建造物を壊す確認用なので、既定のロードアウトとカタログには入れない。
         public static WeaponSpec LauncherSpec()
@@ -308,13 +180,32 @@ namespace Shooter.Editor
             return new[] { WeaponCategory.Handgun };
         }
 
-        public static LoadoutSlotDefinition[] DefaultLoadoutSlots(WeaponDefinition rifle, WeaponDefinition handgun)
+        public static LoadoutSlotDefinition[] DefaultLoadoutSlots(WeaponDefinition melee, WeaponDefinition pistol)
         {
             return new[]
             {
-                new LoadoutSlotDefinition(DefaultPrimaryCategories(), rifle),
-                new LoadoutSlotDefinition(DefaultSecondaryCategories(), handgun),
+                new LoadoutSlotDefinition(DefaultPrimaryCategories(), melee),
+                new LoadoutSlotDefinition(DefaultSecondaryCategories(), pistol),
             };
+        }
+
+        // 1 枠目は近接武器なので、銃が要る場所 (乗り物の砲・射撃の確かめ) は装備から最初の銃を選ぶ。
+        public static WeaponDefinition FirstGun(IReadOnlyList<WeaponDefinition> weapons)
+        {
+            if (weapons == null)
+            {
+                throw new ArgumentNullException(nameof(weapons));
+            }
+
+            foreach (var weapon in weapons)
+            {
+                if (weapon != null && !weapon.ToSpec().IsMelee)
+                {
+                    return weapon;
+                }
+            }
+
+            throw new InvalidOperationException($"{LogTag} the loadout has no gun; give '{LoadoutPath}' a gun and rerun {MenuPath}");
         }
 
         public static WeaponCatalogAsset LoadRangeWeapons() => WeaponAssets.LoadCatalog(RangeWeaponsPath);
@@ -358,10 +249,9 @@ namespace Shooter.Editor
             BuildFromJsonAt(RealisticJsonFolder, RealisticFolder, RealisticWeaponsPath);
             WindUpSoundAssetBuilder.Build();
 
-            // rifle と handgun はコードの値でなく JSON から作ったアセットを並べ、JSON を直せば既定の武器も変わるようにする。
-            var rifle = LoadDefinition(RiflePath);
-            var handgun = LoadDefinition(HandgunPath);
-            BuildCatalogAndLoadoutAt(rifle, handgun, CatalogPath, LoadoutPath);
+            // 既定の武器はコードの値でなく JSON から作ったアセットを並べ、JSON を直せば既定の武器も変わるようにする。
+            BuildCatalogAndLoadoutAt(
+                LoadDefinition(MachetePath), LoadDefinition(PistolPath), LoadDefinition(CarbinePath), CatalogPath, LoadoutPath);
             BuildKnifeAt(KnifePath);
         }
 
@@ -398,31 +288,23 @@ namespace Shooter.Editor
             return knife;
         }
 
-        public static WeaponCatalogAsset BuildAt(string riflePath, string handgunPath, string catalogPath, string loadoutPath)
+        // 一覧には装備の 2 本に加えて、敵・タレット・購入・ガンゲームが撃たせる carbine も入れる。
+        public static WeaponCatalogAsset BuildCatalogAndLoadoutAt(
+            WeaponDefinition melee, WeaponDefinition pistol, WeaponDefinition carbine, string catalogPath, string loadoutPath)
         {
-            riflePath = SceneBuildHelpers.ValidateAssetPath(riflePath);
-            handgunPath = SceneBuildHelpers.ValidateAssetPath(handgunPath);
+            if (melee == null || pistol == null || carbine == null)
+            {
+                throw new ArgumentNullException(melee == null ? nameof(melee) : pistol == null ? nameof(pistol) : nameof(carbine));
+            }
+
             catalogPath = SceneBuildHelpers.ValidateAssetPath(catalogPath);
             loadoutPath = SceneBuildHelpers.ValidateAssetPath(loadoutPath);
-            RequireDistinct(riflePath, handgunPath, catalogPath, loadoutPath);
+            RequireDistinct(catalogPath, loadoutPath);
 
-            var rifleSpec = RifleSpec();
-            var handgunSpec = HandgunSpec();
-            var rifle = SceneBuildHelpers.CreateOrUpdateAsset<WeaponDefinition>(riflePath, d => Configure(d, rifleSpec));
-            var handgun = SceneBuildHelpers.CreateOrUpdateAsset<WeaponDefinition>(handgunPath, d => Configure(d, handgunSpec));
-            var catalog = BuildCatalogAndLoadoutAt(rifle, handgun, catalogPath, loadoutPath);
-
-            Debug.Log($"{LogTag} saved '{riflePath}' and '{handgunPath}'");
-            return catalog;
-        }
-
-        private static WeaponCatalogAsset BuildCatalogAndLoadoutAt(
-            WeaponDefinition rifle, WeaponDefinition handgun, string catalogPath, string loadoutPath)
-        {
             var catalog = SceneBuildHelpers.CreateOrUpdateAsset<WeaponCatalogAsset>(
-                catalogPath, c => Configure(c, new[] { rifle, handgun }));
+                catalogPath, c => Configure(c, new[] { carbine, pistol, melee }));
             SceneBuildHelpers.CreateOrUpdateAsset<LoadoutDefinition>(
-                loadoutPath, l => Configure(l, DefaultLoadoutSlots(rifle, handgun), LoadoutDefinition.DefaultSwitchSeconds));
+                loadoutPath, l => Configure(l, DefaultLoadoutSlots(melee, pistol), LoadoutDefinition.DefaultSwitchSeconds));
 
             Debug.Log($"{LogTag} saved '{catalogPath}' and '{loadoutPath}'");
             return catalog;

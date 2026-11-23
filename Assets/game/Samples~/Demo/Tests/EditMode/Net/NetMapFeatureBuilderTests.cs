@@ -144,19 +144,19 @@ namespace Shooter.Net.Tests
             var roots = _scene.GetRootGameObjects();
 
             var ladder = MapCollisionExporter.CollectLadders(roots).Ladders.Single();
-            Assert.That(ladder.Span.Bottom, Is.EqualTo(new System.Numerics.Vector3(-18f, GroundY, 15f)).Using<System.Numerics.Vector3>(Near));
-            Assert.That(ladder.Span.Facing, Is.EqualTo(new System.Numerics.Vector3(-1f, 0f, 0f)).Using<System.Numerics.Vector3>(Near));
+            Assert.That(ladder.Span.Bottom, Is.EqualTo(new System.Numerics.Vector3(-18f, GroundY, 15f)).Using(NearVector.Instance));
+            Assert.That(ladder.Span.Facing, Is.EqualTo(new System.Numerics.Vector3(-1f, 0f, 0f)).Using(NearVector.Instance));
             Assert.That(ladder.Span.Height, Is.EqualTo(3f));
             Assert.That(ladder.Span.Width, Is.EqualTo(0.8f));
 
             var water = MapCollisionExporter.CollectWater(roots).Water.Single();
-            Assert.That(water.Box.Min, Is.EqualTo(new System.Numerics.Vector3(16f, GroundY, 11f)).Using<System.Numerics.Vector3>(Near));
-            Assert.That(water.Box.Max, Is.EqualTo(new System.Numerics.Vector3(24f, GroundY + 3f, 19f)).Using<System.Numerics.Vector3>(Near));
+            Assert.That(water.Box.Min, Is.EqualTo(new System.Numerics.Vector3(16f, GroundY, 11f)).Using(NearVector.Instance));
+            Assert.That(water.Box.Max, Is.EqualTo(new System.Numerics.Vector3(24f, GroundY + 3f, 19f)).Using(NearVector.Instance));
             Assert.That(water.Box.SurfaceY, Is.EqualTo(GroundY + 2.5f).Within(Epsilon));
 
             var vehicles = MapVehicleExporter.Collect(roots).Vehicles;
             Assert.That(vehicles.Select(v => v.Spec.Id), Is.EqualTo(new[] { CarFixtureBuilder.VehicleId, VehicleFixtureBuilder.DefaultName }));
-            Assert.That(vehicles[0].Position, Is.EqualTo(new System.Numerics.Vector3(-20f, GroundY, -15f)).Using<System.Numerics.Vector3>(Near));
+            Assert.That(vehicles[0].Position, Is.EqualTo(new System.Numerics.Vector3(-20f, GroundY, -15f)).Using(NearVector.Instance));
             Assert.That(vehicles[0].Seats, Has.Count.EqualTo(2));
             Assert.That(vehicles[0].Hull, Is.Not.Empty);
 
@@ -322,9 +322,21 @@ namespace Shooter.Net.Tests
             return Shooter.Core.CaptureTheFlagSpec.DefaultCaptureRadius;
         }
 
-        private static bool Near(System.Numerics.Vector3 a, System.Numerics.Vector3 b)
+        // Unity の NUnit には Func<T, T, bool> を取る Using が無く、比べ方を IEqualityComparer で渡す。
+        private sealed class NearVector : IEqualityComparer<System.Numerics.Vector3>
         {
-            return System.Numerics.Vector3.Distance(a, b) < Epsilon;
+            public static readonly NearVector Instance = new NearVector();
+
+            public bool Equals(System.Numerics.Vector3 a, System.Numerics.Vector3 b)
+            {
+                return System.Numerics.Vector3.Distance(a, b) < Epsilon;
+            }
+
+            // 近い値どうしを等しいとみなすため、ハッシュで振り分けない。
+            public int GetHashCode(System.Numerics.Vector3 value)
+            {
+                return 0;
+            }
         }
     }
 }

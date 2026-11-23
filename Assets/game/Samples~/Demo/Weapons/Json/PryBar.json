@@ -1,0 +1,61 @@
+{
+  "id": "2bc69e47-9784-47b3-92cb-e18a1623ff2f",
+  "nameKey": "weapon.pryBar",
+  "description": "Half-Life 2: Deathmatch のバールを参考。体 25・75 HU = 1.91 m・0.4 秒に 1 回で、振った瞬間に当たる。シングルプレイの 10 ではなく対戦の値で、体力 100 なのでダメージはそのまま。扇は元に無いので Crowbar と同じ 70°。溜めと投げは元に無いので入れていない。",
+  "category": "Melee",
+  "shotNoiseRadius": 50,
+  "weight": 1,
+  "moveSpeedMultiplier": 1,
+  "trigger": {
+    "fireMode": "Auto",
+    "fireInterval": 0.1
+  },
+  "ammo": {
+    "kind": "Magazine",
+    "magazineSize": 30,
+    "reserveAmmo": 90,
+    "reloadSeconds": 2,
+    "activeReloadWindowStart": 0.5,
+    "activeReloadWindowLength": 0.15,
+    "activeReloadFailSeconds": 0.5,
+    "reloadStyle": "Whole",
+    "reloadSecondsPerRound": 0
+  },
+  "round": {
+    "delivery": "Hitscan",
+    "range": 100,
+    "pelletCount": 1,
+    "pelletSpreadDegrees": 0,
+    "radius": 0
+  },
+  "impact": {
+    "damage": 25,
+    "falloff": "None",
+    "structureRadius": 0
+  },
+  "aim": {
+    "hipSpreadDegrees": 0,
+    "adsSpreadDegrees": 0,
+    "moveSpreadDegrees": 0,
+    "recoilPitchDegrees": 0,
+    "recoilYawDegrees": 0,
+    "recoilRecoveryPerSecond": 0,
+    "recoilRecoveryDelaySeconds": 0.15,
+    "blindFireSpreadDegrees": 0,
+    "zoomLevels": [50],
+    "swayDegrees": 0
+  },
+  "melee": {
+    "swing": {
+      "damage": 25,
+      "reach": 1.91,
+      "arcDegrees": 70,
+      "swingSeconds": 0.4,
+      "cooldownSeconds": 0,
+      "impactSeconds": 0,
+      "lungeDistance": 0
+    },
+    "chargeDelaySeconds": 0.2,
+    "chargeSeconds": 0.8
+  }
+}

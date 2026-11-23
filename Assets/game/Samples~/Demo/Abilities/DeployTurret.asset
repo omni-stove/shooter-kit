@@ -28,7 +28,7 @@ MonoBehaviour:
   _previewPrefab: {fileID: 0}
   _validColor: {r: 0.2, g: 0.9, b: 0.3, a: 0.45}
   _invalidColor: {r: 0.95, g: 0.2, b: 0.2, a: 0.45}
-  _weapon: {fileID: 11400000, guid: 21c1a05afcc5c46a087ddec7d9027b93, type: 2}
+  _weapon: {fileID: 11400000, guid: d994a3529cf8f4ca88ba801a74e77d37, type: 2}
   _rounds: 60
   _lifetimeSeconds: 30
   _sightRange: 12

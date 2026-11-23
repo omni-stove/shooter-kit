@@ -285,11 +285,12 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ADroppedWeaponPickupWeighsItsAttachments()
         {
-            var rifle = Definition("Rifle", TestWeapons.RifleSpec());
+            // 実際の持ち物の表 (Tuning/inventory.json) の消音器は 0.4 kg で、表の carbine に付く
+            const string shippedCarbineId = "25974cbc-c194-4f98-b22d-c9d34c3ba6e4";
+            var rifle = Definition("Rifle", TestWeapons.WithId(TestWeapons.RifleSpec(), shippedCarbineId));
             rifle.Weight = 3f;
 
-            // 実際の持ち物の表 (Tuning/inventory.json) の消音器は 0.4 kg
-            var contents = PickupContents.ForDroppedWeapon(rifle, new WeaponAmmo(TestWeapons.RifleId, 10, 0), attachments: new[] { _suppressorId });
+            var contents = PickupContents.ForDroppedWeapon(rifle, new WeaponAmmo(shippedCarbineId, 10, 0), attachments: new[] { _suppressorId });
 
             Assert.That(contents.ToSpec().WeaponWeight, Is.EqualTo(3.4f).Within(1e-4f));
             Assert.That(contents.Clone().Attachments, Is.EqualTo(new[] { _suppressorId }));

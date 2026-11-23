@@ -332,8 +332,9 @@ namespace Shooter.Core.Tests
                     .Value;
                 var code = GameLanguages.Code(language);
 
-                Assert.That(items.Get("weapon.rifle"), Is.EqualTo("Rifle"), code);
-                Assert.That(items.Get("weapon.handgun"), Is.EqualTo("Handgun"), code);
+                Assert.That(items.Get("weapon.ref.carbine556"), Is.Not.Null.And.Not.Empty, code);
+                Assert.That(items.Get("weapon.ref.compactPistol"), Is.Not.Null.And.Not.Empty, code);
+                Assert.That(items.Get("weapon.machete"), Is.Not.Null.And.Not.Empty, code);
                 Assert.That(items.Get("weapon.launcher"), Is.EqualTo("Launcher"), code);
             }
         }

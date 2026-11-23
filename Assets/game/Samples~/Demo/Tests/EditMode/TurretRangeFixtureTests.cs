@@ -21,7 +21,7 @@ namespace Shooter.Tests.EditMode
             _scene = TestScenes.NewAdditive();
             _rifle = ScriptableObject.CreateInstance<WeaponDefinition>();
             _rifle.name = "Rifle";
-            WeaponAssetBuilder.Configure(_rifle, WeaponAssetBuilder.RifleSpec());
+            WeaponAssetBuilder.Configure(_rifle, DemoTestWeapons.CarbineSpec());
         }
 
         [TearDown]

@@ -13,5 +13,6 @@ MonoBehaviour:
   m_Name: WeaponCatalog
   m_EditorClassIdentifier: Shooter.Runtime::Shooter.Runtime.WeaponCatalogAsset
   _weapons:
-  - {fileID: 11400000, guid: 21c1a05afcc5c46a087ddec7d9027b93, type: 2}
-  - {fileID: 11400000, guid: d96f9ac9ccfb14f6b9303123108fd62a, type: 2}
+  - {fileID: 11400000, guid: d994a3529cf8f4ca88ba801a74e77d37, type: 2}
+  - {fileID: 11400000, guid: de9bbb944c97c4ad5b7a24433d5a4931, type: 2}
+  - {fileID: 11400000, guid: c7122a4452eb84de4934edb7d069bee4, type: 2}

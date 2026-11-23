@@ -430,8 +430,8 @@ namespace Shooter.Editor
                 bootstrap.WeaponDefinitions = playerWeapons;
                 bootstrap.RulesDefinition = rules;
 
-                // 銃座の銃は、プレイヤーと同じ規則で撃てることを見比べられるよう、ロードアウトの最初の武器にする。
-                created.Add(CarFixtureBuilder.Create(scene, null, GunCarName, GunCarOrigin, GunCarRotation, playerWeapons[0]).gameObject);
+                // 銃座の銃は、プレイヤーと同じ規則で撃てることを見比べられるよう、ロードアウトの最初の銃にする。
+                created.Add(CarFixtureBuilder.Create(scene, null, GunCarName, GunCarOrigin, GunCarRotation, WeaponAssetBuilder.FirstGun(playerWeapons)).gameObject);
                 created.Add(CarFixtureBuilder.Create(scene, null, CarName, CarOrigin, CarRotation).gameObject);
                 created.Add(MountedGunFixtureBuilder.Create(scene, null, MountedGunName, MountedGunOrigin, MountedGunRotation, gunWeapon).gameObject);
                 var plane = AircraftFixtureBuilder.Create(scene, null, AircraftName, AircraftOrigin, AircraftRotation, aircraft, aircraftEngine);
@@ -477,7 +477,7 @@ namespace Shooter.Editor
                     SceneBuildHelpers.FacingTowards(EnemyGround, new Vector3(EnemyGround.x, 0f, GunCarOrigin.z)),
                     new List<Vector3>(),
                     EnemyBodySize,
-                    playerWeapons[0]);
+                    WeaponAssetBuilder.FirstGun(playerWeapons));
                 enemy.ApplySpec(EnemyAiSpec());
 
                 EditorSceneManager.MarkSceneDirty(scene);

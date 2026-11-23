@@ -433,7 +433,7 @@ namespace Shooter.Editor
             switch (_step)
             {
                 case Step.CheckView:
-                    return CheckView(world);
+                    return CheckView(world, weapon);
 
                 case Step.EnterCover:
                     return EnterLowCover(world, cover);
@@ -497,7 +497,7 @@ namespace Shooter.Editor
             }
         }
 
-        private static string CheckView(BootstrapWorld world)
+        private static string CheckView(BootstrapWorld world, WeaponController weapon)
         {
             var actions = world.Rules.Actions;
             if (actions.Cover != Cover.On
@@ -521,7 +521,42 @@ namespace Shooter.Editor
                 return $"the TPS range must start in third person (got {rig.Mode}); rerun {TpsRangeSceneBuilder.MenuPath}";
             }
 
+            // 既定のロードアウトは近接武器から始まるので、遮蔽物から撃つ前に銃へ持ち替え、構え終えるまで待つ。
+            if (weapon.Weapon.Spec.IsMelee)
+            {
+                var gun = FirstGunId(weapon);
+                if (gun == null)
+                {
+                    return $"the TPS range loadout has no gun; rerun {WeaponAssetBuilder.MenuPath}";
+                }
+
+                if (!weapon.Select(gun))
+                {
+                    return $"the player could not switch to the gun '{gun}'";
+                }
+
+                return null;
+            }
+
+            if (weapon.IsSwitching)
+            {
+                return null;
+            }
+
             _step = Step.EnterCover;
+            return null;
+        }
+
+        private static string FirstGunId(WeaponController weapon)
+        {
+            foreach (var item in weapon.Loadout.Items)
+            {
+                if (!item.Spec.IsMelee)
+                {
+                    return item.Spec.Id;
+                }
+            }
+
             return null;
         }
 

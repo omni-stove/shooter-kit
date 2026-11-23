@@ -15,7 +15,7 @@ MonoBehaviour:
   _initialInfected: 1
   _startDelaySeconds: 10
   _roundSeconds: 300
-  _infectedWeapon: {fileID: 11400000, guid: d96f9ac9ccfb14f6b9303123108fd62a, type: 2}
+  _infectedWeapon: {fileID: 11400000, guid: de9bbb944c97c4ad5b7a24433d5a4931, type: 2}
   _infectedMaxHealth: 150
   _infectedSpeedMultiplier: 1.15
   _infectedRespawnSeconds: 3

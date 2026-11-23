@@ -230,6 +230,37 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheWeaponStillSwingsAndThrowsWithTheMeleeRuleOff()
+        {
+            _melee.Configure(GameRules.Default.WithActions(ActionRules.Default.WithMelee(Melee.Off)));
+            PlaceDummy(new Vector3(0f, 0f, 1.5f));
+
+            LogAssert.Expect(LogType.Log, "[Melee] weapon-swing id=holder weapon=" + CrowbarId + " charge=0.00");
+            _weapon.PullTrigger(false, true);
+            Assert.That(_melee.IsMeleeWeaponSwinging, Is.True);
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[Melee\] hit id=holder target=Dummy dmg=30 "));
+            _melee.Tick(Light.ImpactSeconds);
+            Assert.That(_dummy.Damageable.Health.Current, Is.EqualTo(TargetDummy.DefaultMaxHealth - Light.Damage));
+
+            _melee.Tick(Light.SwingSeconds);
+            LogAssert.Expect(LogType.Log, "[Melee] thrown id=holder weapon=" + CrowbarId);
+            Assert.That(_melee.TryThrowWeapon(), Is.True);
+        }
+
+        [Test]
+        public void TheMeleeRuleOffStillRefusesTheGunBash()
+        {
+            _melee.Configure(GameRules.Default.WithActions(ActionRules.Default.WithMelee(Melee.Off)));
+            Assert.That(_weapon.Select(TestWeapons.RifleId), Is.True);
+            TickUntilDrawn();
+
+            LogAssert.Expect(LogType.Log, "[Melee] refused id=holder reason=Off");
+            Assert.That(_melee.TrySwing(), Is.False);
+            Assert.That(_melee.IsSwinging, Is.False);
+        }
+
+        [Test]
         public void TheMeleeButtonSwingsTheWeaponsLightSwing()
         {
             LogAssert.Expect(LogType.Log, "[Melee] weapon-swing id=holder weapon=" + CrowbarId + " charge=0.00");

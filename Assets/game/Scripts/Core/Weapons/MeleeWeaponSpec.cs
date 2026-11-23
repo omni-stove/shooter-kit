@@ -82,14 +82,28 @@ namespace Shooter.Core
             var light = Swing;
             var heavy = HeavySwing;
             var t = chargeFraction;
+            var swingSeconds = Lerp(light.SwingSeconds, heavy.SwingSeconds, t);
+            var impactSeconds = Math.Min(Lerp(light.ImpactSeconds, heavy.ImpactSeconds, t), swingSeconds);
             return new MeleeSpec(
                 (int)Math.Round(Lerp(light.Damage, heavy.Damage, t), MidpointRounding.AwayFromZero),
                 Lerp(light.Reach, heavy.Reach, t),
                 Lerp(light.ArcDegrees, heavy.ArcDegrees, t),
-                Lerp(light.SwingSeconds, heavy.SwingSeconds, t),
+                swingSeconds,
                 Lerp(light.CooldownSeconds, heavy.CooldownSeconds, t),
-                Math.Min(Lerp(light.ImpactSeconds, heavy.ImpactSeconds, t), Lerp(light.SwingSeconds, heavy.SwingSeconds, t)),
-                Lerp(light.LungeDistance, heavy.LungeDistance, t));
+                impactSeconds,
+                Lerp(light.LungeDistance, heavy.LungeDistance, t),
+                path: FitPath(MeleePath.Lerp(light.Path, heavy.Path, t), swingSeconds - impactSeconds));
+        }
+
+        // 軌道の型が違って片方の軌道をそのまま使うと、寄せた振りの秒数に刃が通り終えるまでが収まらないことがある。
+        private static MeleePath FitPath(MeleePath path, float availableSeconds)
+        {
+            if (path == null || path.ActiveSeconds <= availableSeconds)
+            {
+                return path;
+            }
+
+            return new MeleePath(path.Style, path.FromDegrees, path.ToDegrees, path.WidthDegrees, Math.Max(0f, availableSeconds), path.MaxTargets);
         }
 
         private static float Lerp(float from, float to, float t)

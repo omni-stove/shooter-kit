@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: GunGameLadder
   m_EditorClassIdentifier: Shooter.Runtime::Shooter.Runtime.GunGameLadderDefinition
   _tiers:
-  - {fileID: 11400000, guid: 21c1a05afcc5c46a087ddec7d9027b93, type: 2}
+  - {fileID: 11400000, guid: d994a3529cf8f4ca88ba801a74e77d37, type: 2}
   - {fileID: 11400000, guid: c1fd8f0c7f1f24f53b46d1d1ab74859c, type: 2}
-  - {fileID: 11400000, guid: d96f9ac9ccfb14f6b9303123108fd62a, type: 2}
+  - {fileID: 11400000, guid: de9bbb944c97c4ad5b7a24433d5a4931, type: 2}
   _meleeWeapons:
   - {fileID: 11400000, guid: c81d87d1c875e4f6d9b1f5a6cd8f32ba, type: 2}
   _demotesOnMelee: 1

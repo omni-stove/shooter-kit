@@ -31,6 +31,8 @@ namespace Shooter.Editor
         public const string LandingSound = "Landing";
         public const string HurtVoiceSound = "HurtVoice";
         public const string ExplosionSound = "Explosion";
+        public const string MeleeSwingSound = "MeleeSwing";
+        public const string MeleeHitSound = "MeleeHit";
 
         public const string RifleMuzzleFlashEffect = "RifleMuzzleFlash";
         public const string HandgunMuzzleFlashEffect = "HandgunMuzzleFlash";
@@ -61,13 +63,11 @@ namespace Shooter.Editor
         internal const float BlendAlpha = 0f;
         internal const float BlendAdditive = 2f;
 
-        // カタログには入らない launcher も、建造物の破壊の確認で撃つため含める。
+        // カタログには入らない launcher は、種類からは決まらない音を付けるため名指しする。建造物の破壊の確認で撃つ。
         public static IReadOnlyList<(string WeaponId, string Fire, string Reload, string MuzzleFlash, string ThirdPersonMuzzleFlash)> WeaponEntries()
         {
             return new[]
             {
-                (WeaponAssetBuilder.RifleId, RifleFireSound, RifleReloadSound, RifleMuzzleFlashEffect, RifleThirdPersonMuzzleFlashEffect),
-                (WeaponAssetBuilder.HandgunId, HandgunFireSound, HandgunReloadSound, HandgunMuzzleFlashEffect, HandgunThirdPersonMuzzleFlashEffect),
                 (WeaponAssetBuilder.LauncherId, LauncherFireSound, LauncherReloadSound, LauncherMuzzleFlashEffect, LauncherThirdPersonMuzzleFlashEffect),
             };
         }
@@ -197,6 +197,17 @@ namespace Shooter.Editor
                     new SoundLayer(0f, 2.3f, 0.004f, 0.45f, 1.2f, 450f, 0.7f, 55f, 28f),
                     new SoundLayer(0.05f, 2.3f, 0.06f, 0.8f, 0.5f, 180f),
                 }),
+                // 音程を下げていく弱いノイズを重ね、刃が空気を切って通り過ぎるように聞かせる。
+                new SoundSpec(MeleeSwingSound, 2601u, 0.3f, 0.7f, new[]
+                {
+                    new SoundLayer(0f, 0.28f, 0.08f, 0.12f, 0.9f, 2200f),
+                    new SoundLayer(0.04f, 0.2f, 0.05f, 0.08f, 0f, 0f, 0.15f, 520f, 260f),
+                }),
+                new SoundSpec(MeleeHitSound, 2602u, 0.3f, 0.85f, new[]
+                {
+                    new SoundLayer(0f, 0.06f, 0.0005f, 0.015f, 0.8f, 4000f),
+                    new SoundLayer(0f, 0.25f, 0.001f, 0.06f, 0.9f, 700f, 0.7f, 120f, 60f),
+                }),
             };
         }
 
@@ -310,6 +321,8 @@ namespace Shooter.Editor
             catalog.HurtVoice = clips[HurtVoiceSound];
             catalog.ExplosionSound = clips[ExplosionSound];
             catalog.Explosion = effects[ExplosionEffect];
+            catalog.MeleeSwingSound = clips[MeleeSwingSound];
+            catalog.MeleeHitSound = clips[MeleeHitSound];
         }
 
         private static SoundLayer Click(float start, float pitchHz)

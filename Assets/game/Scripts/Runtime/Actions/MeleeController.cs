@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Shooter.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -66,6 +67,10 @@ namespace Shooter.Runtime
         private WeaponDefinition _meleeWeapon;
 
         private MeleeSwing _swing;
+
+        // 軌道のある振りで、この振りがもう当てた相手。刃が何フレームにまたがっても同じ相手に二度当てない。
+        private readonly HashSet<Damageable> _struck = new HashSet<Damageable>();
+        private readonly List<MeleeStrike.Result> _crossed = new List<MeleeStrike.Result>();
         private PlayerController _mover;
         private WeaponController _weapon;
         private Damageable _self;
@@ -258,10 +263,9 @@ namespace Shooter.Runtime
 
             _rule = rules.Actions.Melee;
             _interruptsReload = rules.Actions.InterruptsReload(ReloadInterrupt.Melee);
-            enabled = _rule == Melee.On;
 
-            // Edit Mode では enabled を変えても OnEnable / OnDisable が走らないので、差し込みと振りの取り消しはここでも揃える。
-            if (!enabled)
+            // ルールの Melee は持っている銃で殴る振りだけを止める。近接武器と盾の振りは武器の攻撃なので、Off でも差し込んだまま振れるようにする。
+            if (_rule != Melee.On && IsSwinging && !IsMeleeWeaponSwinging && !IsShieldBashing)
             {
                 CancelSwing();
             }
@@ -332,9 +336,16 @@ namespace Shooter.Runtime
             SyncHooks();
         }
 
+        // 持っている銃で殴る振り (と技) を振れるか。ルールの Melee が Off なら振れない。
         public MeleeRefusal CheckSwing()
         {
-            if (_rule != Melee.On || !enabled)
+            return _rule != Melee.On ? MeleeRefusal.Off : CheckWeaponSwing();
+        }
+
+        // 近接武器・盾の振りと投げを振れるか。武器の攻撃なので、ルールの Melee が Off でも振れる。
+        public MeleeRefusal CheckWeaponSwing()
+        {
+            if (!enabled)
             {
                 return MeleeRefusal.Off;
             }
@@ -382,7 +393,10 @@ namespace Shooter.Runtime
 
         private bool StartSwing(MeleeSpec weaponSwing, float chargeFraction)
         {
-            var refusal = CheckSwing();
+            var bash = ShieldBash;
+            var melee = HeldMeleeWeapon;
+            var held = bash ?? weaponSwing ?? melee?.Swing;
+            var refusal = held != null ? CheckWeaponSwing() : CheckSwing();
             if (refusal != MeleeRefusal.None)
             {
                 Debug.Log(MeleeLog.Refused(AttackerId, refusal), this);
@@ -390,9 +404,6 @@ namespace Shooter.Runtime
             }
 
             // 振りは始めたときの値で終えるので (MeleeSwing.Spec)、盾・近接武器の値は振り始めにだけ差し替えて戻す。調整値の Spec は変えない。
-            var bash = ShieldBash;
-            var melee = HeldMeleeWeapon;
-            var held = bash ?? weaponSwing ?? melee?.Swing;
             var normal = _swing.Spec;
             if (held != null)
             {
@@ -433,7 +444,7 @@ namespace Shooter.Runtime
                 return false;
             }
 
-            var refusal = CheckSwing();
+            var refusal = CheckWeaponSwing();
             if (refusal == MeleeRefusal.Cooldown && !IsSwinging)
             {
                 refusal = MeleeRefusal.None;
@@ -481,9 +492,24 @@ namespace Shooter.Runtime
 
             var spec = swing.CurrentSpec;
             var impact = swing.Tick(deltaSeconds);
-            if (impact)
+            if (spec.Path == null)
             {
-                Strike(spec);
+                if (impact)
+                {
+                    Strike(spec);
+                }
+            }
+            else
+            {
+                if (impact)
+                {
+                    _struck.Clear();
+                }
+
+                if (swing.HasSweep)
+                {
+                    Sweep(spec, swing.SweepFrom, swing.SweepTo);
+                }
             }
 
             if (!swing.IsSwinging)
@@ -554,16 +580,52 @@ namespace Shooter.Runtime
             var presenter = ResolvePresenter();
             if (!MeleeStrike.TryFind(transform, origin, forward, spec, _hitMask, out var hit))
             {
-                Debug.Log(MeleeLog.Miss(AttackerId), this);
-                if (IsMeleeWeaponSwinging)
-                {
-                    StrikeSurface(spec);
-                }
-
-                presenter?.OnMissed(gameObject);
+                Miss(spec, presenter);
                 return;
             }
 
+            Hit(spec, hit, presenter);
+        }
+
+        // 軌道 (MeleeSpec.Path) のある振りは、刃がこのフレームに通った相手へ通った順に与え、振りごとの上限 (MeleePath.MaxTargets) で止める。
+        // 向きはフレームごとの照準を使う。振りの途中で向きを変えれば刃もついて回る (サーバーの ServerMelee.Sweep と同じ)。
+        // 足元から測ると、平らな床の正面の相手も見上げる角度になり、横振りの上下の幅 (MeleePath.WidthDegrees) から外れる。サーバーと同じく体の中心から測る。
+        private void Sweep(MeleeSpec spec, float progressFrom, float progressTo)
+        {
+            var presenter = ResolvePresenter();
+            MeleeStrike.FindCrossed(transform, BodyCenter(), AimForward(), spec, _hitMask, progressFrom, progressTo, _crossed);
+            foreach (var hit in _crossed)
+            {
+                if (_struck.Count >= spec.Path.MaxTargets)
+                {
+                    break;
+                }
+
+                if (_struck.Add(hit.Target))
+                {
+                    Hit(spec, hit, presenter);
+                }
+            }
+
+            if (progressTo >= 1f && _struck.Count == 0)
+            {
+                Miss(spec, presenter);
+            }
+        }
+
+        private void Miss(MeleeSpec spec, IMeleePresenter presenter)
+        {
+            Debug.Log(MeleeLog.Miss(AttackerId), this);
+            if (IsMeleeWeaponSwinging)
+            {
+                StrikeSurface(spec);
+            }
+
+            presenter?.OnMissed(gameObject);
+        }
+
+        private void Hit(MeleeSpec spec, MeleeStrike.Result hit, IMeleePresenter presenter)
+        {
             Debug.Log(MeleeLog.Hit(AttackerId, hit.Target.Id, spec.Damage, hit.Distance), this);
             // 盾で殴って倒したら、近接の武器 (ナイフなど) ではなく盾の武器で倒したことにする。
             var damage = MeleeStrike.Apply(gameObject, hit, spec.Damage, _swingWeaponId ?? StrikeWeaponId);
@@ -591,6 +653,12 @@ namespace Shooter.Runtime
         }
 
         // 三人称ではカメラが体の後ろにあるので、線や投げの起点はカメラでなく目 (ViewRig が無ければ体) にする。GrenadeThrower と同じ。
+        private Vector3 BodyCenter()
+        {
+            var controller = _mover != null ? _mover.Controller : null;
+            return controller != null && controller.enabled ? controller.bounds.center : transform.position;
+        }
+
         private Vector3 EyeOrigin()
         {
             var rig = GetComponent<ViewRig>();

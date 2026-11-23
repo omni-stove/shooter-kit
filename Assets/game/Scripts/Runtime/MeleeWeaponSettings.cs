@@ -31,6 +31,9 @@ namespace Shooter.Runtime
         [SerializeField, Min(0f), Tooltip("振るときに前へ踏み込む距離 (m)")]
         private float _lungeDistance = MeleeWeaponSpec.DefaultSwingLungeDistance;
 
+        [SerializeField, Tooltip("ふつうの振りの刃の軌道")]
+        private MeleePathSettings _path = new MeleePathSettings();
+
         [SerializeField, Tooltip("攻撃のボタンを長く押して溜め、強く振れるようにする")]
         private bool _canCharge;
 
@@ -54,6 +57,9 @@ namespace Shooter.Runtime
 
         [SerializeField, Min(0f), Tooltip("溜め切って振ったときに前へ踏み込む距離 (m)")]
         private float _heavyLungeDistance = MeleeWeaponSpec.DefaultSwingLungeDistance * 2f;
+
+        [SerializeField, Tooltip("溜め切って振ったときの刃の軌道")]
+        private MeleePathSettings _heavyPath = new MeleePathSettings();
 
         [SerializeField, Min(0f), Tooltip("これより短く押して離したら溜めずに振る秒数")]
         private float _chargeDelaySeconds = MeleeWeaponSpec.DefaultChargeDelaySeconds;
@@ -105,9 +111,9 @@ namespace Shooter.Runtime
                 return null;
             }
 
-            var swing = new MeleeSpec(_damage, _reach, _arcDegrees, _swingSeconds, _cooldownSeconds, _impactSeconds, _lungeDistance);
+            var swing = new MeleeSpec(_damage, _reach, _arcDegrees, _swingSeconds, _cooldownSeconds, _impactSeconds, _lungeDistance, path: _path.ToPath());
             var heavy = _canCharge
-                ? new MeleeSpec(_heavyDamage, _heavyReach, _heavyArcDegrees, _heavySwingSeconds, _heavyCooldownSeconds, _heavyImpactSeconds, _heavyLungeDistance)
+                ? new MeleeSpec(_heavyDamage, _heavyReach, _heavyArcDegrees, _heavySwingSeconds, _heavyCooldownSeconds, _heavyImpactSeconds, _heavyLungeDistance, path: _heavyPath.ToPath())
                 : null;
             var thrown = _canThrow
                 ? new MeleeThrowSpec(_throwDamage, _throwSpeed, _throwUpwardDegrees, _throwSpinDegreesPerSecond, _throwRadius, _throwMaxFlightSeconds)
@@ -131,6 +137,7 @@ namespace Shooter.Runtime
             _cooldownSeconds = spec.Swing.CooldownSeconds;
             _impactSeconds = spec.Swing.ImpactSeconds;
             _lungeDistance = spec.Swing.LungeDistance;
+            _path.Set(spec.Swing.Path);
             _chargeDelaySeconds = spec.ChargeDelaySeconds;
             _chargeSeconds = spec.ChargeSeconds;
 
@@ -144,6 +151,7 @@ namespace Shooter.Runtime
                 _heavyCooldownSeconds = spec.HeavySwing.CooldownSeconds;
                 _heavyImpactSeconds = spec.HeavySwing.ImpactSeconds;
                 _heavyLungeDistance = spec.HeavySwing.LungeDistance;
+                _heavyPath.Set(spec.HeavySwing.Path);
             }
 
             _canThrow = spec.CanThrow;

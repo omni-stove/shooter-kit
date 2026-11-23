@@ -14,12 +14,18 @@ namespace Shooter.Tests.EditMode
             return WeaponAssetBuilder.RangeWeaponSources().ToDictionary(source => source.Name, source => WeaponLook.For(source.Spec));
         }
 
+        // 既定の武器 (Carbine556・CompactPistol) は Reference の武器なので、射撃場の武器と分けて引く。
+        private static Dictionary<string, WeaponLook> AllLooks()
+        {
+            return WeaponAssetBuilder.AllWeaponSources().ToDictionary(source => source.Name, source => WeaponLook.For(source.Spec));
+        }
+
         [Test]
         public void EveryRangeWeaponLooksDifferent()
         {
             var looks = Looks();
 
-            Assert.That(looks.Count, Is.EqualTo(25));
+            Assert.That(looks.Count, Is.EqualTo(27));
             var duplicates = looks.GroupBy(pair => pair.Value.Signature()).Where(group => group.Count() > 1).Select(group => string.Join(", ", group.Select(pair => pair.Key)));
             Assert.That(duplicates, Is.Empty);
         }
@@ -28,14 +34,15 @@ namespace Shooter.Tests.EditMode
         public void EachMechanismAddsItsOwnPart()
         {
             var looks = Looks();
+            var defaults = AllLooks();
 
             Assert.That(looks["Minigun"].HasPrefix(WeaponLook.RotaryBarrelPrefix), Is.True);
             Assert.That(looks["Minigun"].Has(WeaponLook.AmmoBoxName), Is.True);
             Assert.That(looks["Minigun"].Has(WeaponLook.BarrelName), Is.False);
-            Assert.That(looks["Rifle"].HasPrefix(WeaponLook.RotaryBarrelPrefix), Is.False);
-            Assert.That(looks["Rifle"].Has(WeaponLook.MagazineName), Is.True);
-            Assert.That(looks["Rifle"].Has(WeaponLook.StockName), Is.True);
-            Assert.That(looks["Rifle"].Has(WeaponLook.ScopeName), Is.False);
+            Assert.That(defaults["Carbine556"].HasPrefix(WeaponLook.RotaryBarrelPrefix), Is.False);
+            Assert.That(defaults["Carbine556"].Has(WeaponLook.MagazineName), Is.True);
+            Assert.That(defaults["Carbine556"].Has(WeaponLook.StockName), Is.True);
+            Assert.That(defaults["Carbine556"].Has(WeaponLook.ScopeName), Is.False);
             Assert.That(looks["BurstRifle"].Has(WeaponLook.ForegripName), Is.True);
             Assert.That(looks["Dmr"].Has(WeaponLook.ScopeName), Is.True);
             Assert.That(looks["ScopedRifle"].Has(WeaponLook.LongScopeName), Is.True);
@@ -64,9 +71,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(looks["GrenadeLauncher"].Has(WeaponLook.DrumName), Is.True);
             Assert.That(looks["GrenadeLauncher"].Has(WeaponLook.TubeName), Is.False);
             Assert.That(looks["RicochetPistol"].Has(WeaponLook.CompensatorName), Is.True);
-            Assert.That(looks["Handgun"].Has(WeaponLook.CompensatorName), Is.False);
-            Assert.That(looks["Handgun"].Has(WeaponLook.StockName), Is.False);
-            Assert.That(looks["Handgun"].ForeGrip, Is.Null);
+            Assert.That(defaults["CompactPistol"].Has(WeaponLook.CompensatorName), Is.False);
+            Assert.That(defaults["CompactPistol"].Has(WeaponLook.StockName), Is.False);
+            Assert.That(defaults["CompactPistol"].ForeGrip, Is.Null);
         }
 
         [Test]
@@ -129,7 +136,6 @@ namespace Shooter.Tests.EditMode
             Assert.That(looks["MachinePistol"].Has(WeaponLook.DotSightName), Is.False);
             Assert.That(looks["Revolver"].Has("FrontSight"), Is.True);
             Assert.That(looks["Revolver"].Has(WeaponLook.DotSightName), Is.False);
-            Assert.That(looks["Rifle"].Has("FrontSight"), Is.True, "the default rifle keeps its iron sights so the red dot attachment shows");
         }
 
         [Test]
@@ -182,9 +188,10 @@ namespace Shooter.Tests.EditMode
         public void TheAccentColorShowsWhatTheRoundDoes()
         {
             var looks = Looks();
+            var defaults = AllLooks();
 
-            Assert.That(looks["Rifle"].AccentColor, Is.Null);
-            Assert.That(looks["Rifle"].Has(WeaponLook.BandName), Is.False);
+            Assert.That(defaults["Carbine556"].AccentColor, Is.Null);
+            Assert.That(defaults["Carbine556"].Has(WeaponLook.BandName), Is.False);
             Assert.That(looks["IncendiaryRifle"].AccentColor, Is.EqualTo(WeaponLook.BurnAccent));
             Assert.That(looks["IncendiaryRifle"].Has(WeaponLook.BandName), Is.True);
             Assert.That(looks["Flamethrower"].AccentColor, Is.EqualTo(WeaponLook.BurnAccent));
@@ -200,15 +207,16 @@ namespace Shooter.Tests.EditMode
         public void TheBodyAndFurnitureColorsFollowTheCategory()
         {
             var looks = Looks();
+            var defaults = AllLooks();
 
-            Assert.That(looks["Rifle"].BodyColor, Is.EqualTo(WeaponLook.MetalColor));
+            Assert.That(defaults["Carbine556"].BodyColor, Is.EqualTo(WeaponLook.MetalColor));
             Assert.That(looks["Laser"].BodyColor, Is.EqualTo(WeaponLook.EnergyBodyColor));
             Assert.That(looks["EnergyRifle"].BodyColor, Is.EqualTo(WeaponLook.EnergyBodyColor));
             Assert.That(looks["RocketLauncher"].BodyColor, Is.EqualTo(WeaponLook.LauncherBodyColor));
             Assert.That(looks["Shotgun"].FurnitureColor, Is.EqualTo(WeaponLook.WoodColor));
             Assert.That(looks["BoltSniper"].FurnitureColor, Is.EqualTo(WeaponLook.TanColor));
             Assert.That(looks["Dmr"].FurnitureColor, Is.EqualTo(WeaponLook.OliveColor));
-            Assert.That(looks["Rifle"].FurnitureColor, Is.EqualTo(WeaponLook.PolymerColor));
+            Assert.That(defaults["Carbine556"].FurnitureColor, Is.EqualTo(WeaponLook.PolymerColor));
         }
 
         [Test]
@@ -226,7 +234,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void BuildPlacesEveryPartWithoutColliders()
         {
-            var look = WeaponLook.For(WeaponAssetBuilder.RifleSpec());
+            var look = WeaponLook.For(DemoTestWeapons.CarbineSpec());
             var root = new GameObject("Gun");
             try
             {

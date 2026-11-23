@@ -39,10 +39,10 @@ namespace Shooter.Tests.EditMode
             CampaignSceneBuilder.Configure(_definition, _spec);
             _rifle = ScriptableObject.CreateInstance<WeaponDefinition>();
             _rifle.name = "Rifle";
-            WeaponAssetBuilder.Configure(_rifle, WeaponAssetBuilder.RifleSpec());
+            WeaponAssetBuilder.Configure(_rifle, DemoTestWeapons.CarbineSpec());
             _handgun = ScriptableObject.CreateInstance<WeaponDefinition>();
             _handgun.name = "Handgun";
-            WeaponAssetBuilder.Configure(_handgun, WeaponAssetBuilder.HandgunSpec());
+            WeaponAssetBuilder.Configure(_handgun, DemoTestWeapons.PistolSpec());
             _catalog = ScriptableObject.CreateInstance<WeaponCatalogAsset>();
             _catalog.name = "WeaponCatalog";
             WeaponAssetBuilder.Configure(_catalog, new[] { _rifle, _handgun });
@@ -406,7 +406,7 @@ namespace Shooter.Tests.EditMode
                 new ObjectiveDefinition("reach", ""),
                 new ObjectiveDefinition("kill", "", 2, false, "reach"),
             };
-            var enemy = EnemyPlacement.Ambush("Enemy", "enemy", WeaponAssetBuilder.RifleId, Vector3.zero, Vector3.forward);
+            var enemy = EnemyPlacement.Ambush("Enemy", "enemy", WeaponAssetBuilder.CarbineId, Vector3.zero, Vector3.forward);
             var reach = CampaignAreaElement.Reach("Reach", "reach", Vector3.zero, Vector3.one);
 
             var e = Assert.Throws<ArgumentException>(() => Spec(objectives, reach, new CampaignEnemyGroupElement("Enemies", new[] { enemy }, "kill")));

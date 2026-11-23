@@ -17,7 +17,7 @@ namespace Shooter.Runtime
         public bool IsWallClimbing => _parkour.Move == ParkourMove.WallClimb;
 
         // 崖のぼりのルール (MantleRule) を見ないのは、予測とサーバーがそのルールを知らずにふちで上に乗るので、オフラインだけ落ちると動きが分かれるため。
-        partial void TryOverrideMoveForWallClimb(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
+        private void TryOverrideMoveForWallClimb(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
         {
             if (!(deltaSeconds > 0f) || float.IsInfinity(deltaSeconds))
             {

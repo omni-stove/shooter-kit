@@ -36,7 +36,7 @@ namespace Shooter.Tests.EditMode
         public void SetUp()
         {
             _scene = TestScenes.NewAdditive();
-            _rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            _rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             _heatGun = NewWeapon(
                 "HeatGun",
                 new WeaponSpec(

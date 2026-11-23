@@ -43,7 +43,7 @@ namespace Shooter.Editor
         public const float PoleDiameter = 0.15f;
         public static readonly Vector3 FlagSize = new Vector3(0.9f, 0.6f, 0.05f);
 
-        public const string BotWeaponId = WeaponAssetBuilder.RifleId;
+        public const string BotWeaponId = WeaponAssetBuilder.CarbineId;
 
         public static string NavMeshDataPath => ModeSceneBuilder.NavMeshDataPathFor(ScenePath);
 

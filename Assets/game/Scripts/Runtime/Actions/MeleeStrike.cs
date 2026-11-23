@@ -40,9 +40,52 @@ namespace Shooter.Runtime
             }
 
             result = default;
+            var candidates = FindCandidates(attacker, origin, spec.Reach, mask);
+            var numerics = ToNumerics(candidates);
+            var best = MeleeJudge.SelectNearest(origin.ToNumerics(), forward.ToNumerics(), spec, numerics);
+            if (best < 0)
+            {
+                return false;
+            }
+
+            result = ToResult(origin, forward, candidates[best]);
+            return true;
+        }
+
+        // 軌道 (MeleeSpec.Path) のある振りで、刃が progressFrom から progressTo まで進む間に通った相手を、通った順に results へ入れる。
+        // 一度当てた相手を外すのは呼ぶ側 (振りごとに覚える)。
+        public static void FindCrossed(Transform attacker, Vector3 origin, Vector3 forward, MeleeSpec spec, LayerMask mask, float progressFrom, float progressTo, List<Result> results)
+        {
+            if (attacker == null)
+            {
+                throw new ArgumentNullException(nameof(attacker));
+            }
+
+            if (spec == null)
+            {
+                throw new ArgumentNullException(nameof(spec));
+            }
+
+            if (results == null)
+            {
+                throw new ArgumentNullException(nameof(results));
+            }
+
+            results.Clear();
+            var candidates = FindCandidates(attacker, origin, spec.Reach, mask);
+            var crossed = new List<int>();
+            MeleeJudge.SelectCrossed(origin.ToNumerics(), forward.ToNumerics(), spec, ToNumerics(candidates), progressFrom, progressTo, crossed);
+            foreach (var index in crossed)
+            {
+                results.Add(ToResult(origin, forward, candidates[index]));
+            }
+        }
+
+        private static List<(Damageable Owner, Vector3 Point)> FindCandidates(Transform attacker, Vector3 origin, float reach, LayerMask mask)
+        {
             var owners = new List<Damageable>();
             var points = new List<Vector3>();
-            foreach (var collider in Physics.OverlapSphere(origin, spec.Reach, mask, QueryTriggerInteraction.Ignore))
+            foreach (var collider in Physics.OverlapSphere(origin, reach, mask, QueryTriggerInteraction.Ignore))
             {
                 if (collider.transform.IsChildOf(attacker))
                 {
@@ -79,22 +122,24 @@ namespace Shooter.Runtime
             }
 
             candidates.Sort((a, b) => string.CompareOrdinal(a.Owner.Id, b.Owner.Id));
+            return candidates;
+        }
+
+        private static System.Numerics.Vector3[] ToNumerics(List<(Damageable Owner, Vector3 Point)> candidates)
+        {
             var numerics = new System.Numerics.Vector3[candidates.Count];
             for (var i = 0; i < candidates.Count; i++)
             {
                 numerics[i] = candidates[i].Point.ToNumerics();
             }
 
-            var best = MeleeJudge.SelectNearest(origin.ToNumerics(), forward.ToNumerics(), spec, numerics);
-            if (best < 0)
-            {
-                return false;
-            }
+            return numerics;
+        }
 
-            var chosen = candidates[best];
+        private static Result ToResult(Vector3 origin, Vector3 forward, (Damageable Owner, Vector3 Point) chosen)
+        {
             var direction = MeleeJudge.HitDirection(origin.ToNumerics(), forward.ToNumerics(), chosen.Point.ToNumerics()).ToUnity();
-            result = new Result(chosen.Owner, chosen.Point, Vector3.Distance(origin, chosen.Point), direction);
-            return true;
+            return new Result(chosen.Owner, chosen.Point, Vector3.Distance(origin, chosen.Point), direction);
         }
 
         // 武器の Id を帰属に入れるのは、キルフィードが近接で倒したときも持っていた武器を出せるようにするため。素手なら空。

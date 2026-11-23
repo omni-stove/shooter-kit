@@ -8,6 +8,8 @@ namespace Shooter.Core.Tests
     // サーバーの設置物の値は Unity のアセット (Samples~/Demo/Abilities) を書き出したものではないので、食い違いをここで見つける
     public sealed class DeployablesTuningFileTests
     {
+        private static readonly string[] _sampleWeaponFolders = { "Json", "ReferenceJson", "RealisticJson" };
+
         private static readonly string[] _shippedIds =
         {
             "deploy-turret", "deploy-shield", "deploy-decoy", "deploy-beacon", "deploy-mine", "deploy-remote-charge",
@@ -65,12 +67,13 @@ namespace Shooter.Core.Tests
         {
             var root = RepositoryRoot();
             var turret = Read(root).All.Single(t => t.Role == DeployRole.Turret);
-            var samples = Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", "Json"), "*.json")
+            var samples = _sampleWeaponFolders
+                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", folder), "*.json"))
                 .Select(path => WeaponSpecJson.Parse(File.ReadAllText(path), path))
                 .ToDictionary(spec => spec.Id);
 
             Assert.That(samples.ContainsKey(turret.WeaponId), Is.True);
-            Assert.That(samples[turret.WeaponId].NameKey, Is.EqualTo("weapon.rifle"));
+            Assert.That(samples[turret.WeaponId].NameKey, Is.EqualTo("weapon.ref.carbine556"));
             Assert.That(samples[turret.WeaponId].Round.Delivery, Is.EqualTo(RoundDelivery.Hitscan), "the server turret fires only hitscan rounds");
         }
 

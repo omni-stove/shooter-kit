@@ -9,6 +9,8 @@ namespace Shooter.Server.Tests
     // 専用サーバーがその目的を作れて、例のマップで遊べるかを確かめる
     public sealed class ServerRulesExamplesTests
     {
+        private static readonly string[] _gunGameTierIds = { "25974cbc-c194-4f98-b22d-c9d34c3ba6e4", "343b6024-75f2-4d68-8ac6-d31fad86aa47" };
+
         private const string _map = "NetArena01";
         private const string _battleRoyaleMap = "NetBattleRoyale";
         private static readonly int[] _arenaCheckpoints = { 3 };
@@ -227,7 +229,7 @@ namespace Shooter.Server.Tests
         {
             Assert.That(ServerRulesData.TryLoad("GunGame", Roots(), out var data, out var error), Is.True, error);
 
-            Assert.That(data.Settings.GunGame.TierWeaponIds, Is.EqualTo(new[] { TestRules.RifleId, TestRules.HandgunId }));
+            Assert.That(data.Settings.GunGame.TierWeaponIds, Is.EqualTo(_gunGameTierIds), "the sample carbine, then the sample pistol");
             foreach (var id in data.Settings.GunGame.TierWeaponIds)
             {
                 Assert.That(data.File.CreateLoadout().Contains(id), Is.True, id);

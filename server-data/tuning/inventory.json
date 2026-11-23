@@ -86,9 +86,9 @@
     },
     {
       "id": "39cb64db-b31c-478c-9784-9ecf8006a0f1",
-      "nameKey": "weapon.rifle",
-      "iconId": "rifle",
-      "weaponId": "6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83",
+      "nameKey": "weapon.ref.carbine556",
+      "iconId": "carbine556",
+      "weaponId": "25974cbc-c194-4f98-b22d-c9d34c3ba6e4",
       "attachmentSlots": ["optic", "muzzle", "underbarrel", "magazine"],
       "ammoItemId": "212170da-0998-4fa9-9457-761c75a2a797",
       "width": 4,
@@ -106,9 +106,9 @@
     },
     {
       "id": "b5b5df13-2868-4b0a-b2c0-fbe6a055a4fa",
-      "nameKey": "weapon.handgun",
-      "iconId": "handgun",
-      "weaponId": "b4e2a9d7-3c16-4a58-8f2e-7d0b9c6a1e45",
+      "nameKey": "weapon.ref.compactPistol",
+      "iconId": "compactPistol",
+      "weaponId": "343b6024-75f2-4d68-8ac6-d31fad86aa47",
       "attachmentSlots": ["optic", "muzzle"],
       "ammoItemId": "02e07a84-f063-4b41-8f63-17a410a3d069",
       "width": 2,
@@ -135,6 +135,62 @@
       "height": 2
     },
     {
+      "id": "6188d17b-d40b-4133-8901-9857e0430127",
+      "nameKey": "weapon.crowbar",
+      "iconId": "crowbar",
+      "weaponId": "2b92ec24-9e3b-4b5a-bf0a-ebaf3b48b544",
+      "width": 3,
+      "height": 1
+    },
+    {
+      "id": "d89339ba-1fcf-4675-be8e-98ce6fa578ae",
+      "nameKey": "weapon.club",
+      "iconId": "club",
+      "weaponId": "79d598f9-4151-4934-b953-2d4cf52118db",
+      "width": 3,
+      "height": 1
+    },
+    {
+      "id": "6b49f534-fc81-4cdf-ba8c-17e3840d3bd1",
+      "nameKey": "weapon.machete",
+      "iconId": "machete",
+      "weaponId": "e1920316-c182-4151-9273-26f94c3adaf9",
+      "width": 3,
+      "height": 1
+    },
+    {
+      "id": "9bcc30f7-3f6c-47c0-b90c-ba8dd219d30f",
+      "nameKey": "weapon.combatKnife",
+      "iconId": "combatKnife",
+      "weaponId": "d88b9133-ca9f-4144-beab-1cdb5b3ca887",
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "ddc1f8e9-5c7d-4c20-b022-c57d3b311a99",
+      "nameKey": "weapon.pryBar",
+      "iconId": "pryBar",
+      "weaponId": "2bc69e47-9784-47b3-92cb-e18a1623ff2f",
+      "width": 4,
+      "height": 1
+    },
+    {
+      "id": "81a46f2c-309c-456b-8365-c17a4f3aaaf8",
+      "nameKey": "weapon.kukri",
+      "iconId": "kukri",
+      "weaponId": "dcbc4835-7e56-4137-a5fe-367b995884d7",
+      "width": 2,
+      "height": 1
+    },
+    {
+      "id": "a33cf1f2-e7dc-48bd-9bdd-643e3dc87cb2",
+      "nameKey": "weapon.sledgehammer",
+      "iconId": "sledgehammer",
+      "weaponId": "e657fa2f-f919-4298-b0e3-2d672ffa0ba1",
+      "width": 4,
+      "height": 1
+    },
+    {
       "id": "2451a5a1-24e5-45ed-bbc1-8b23276152f8",
       "nameKey": "item.redDot",
       "iconId": "redDot",
@@ -157,7 +213,7 @@
       "height": 1,
       "attachment": {
         "slot": "optic",
-        "weaponIds": ["6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
+        "weaponIds": ["25974cbc-c194-4f98-b22d-c9d34c3ba6e4", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
         "adsSpreadMultiplier": 0.6,
         "moveSpreadMultiplier": 1.2,
         "zoomLevels": [25, 15],
@@ -191,7 +247,7 @@
       "height": 1,
       "attachment": {
         "slot": "optic",
-        "weaponIds": ["6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
+        "weaponIds": ["25974cbc-c194-4f98-b22d-c9d34c3ba6e4", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
         "adsSpreadMultiplier": 0.6,
         "moveSpreadMultiplier": 1.2,
         "zoomLevels": [30],
@@ -244,7 +300,7 @@
       "weight": 0.3,
       "attachment": {
         "slot": "magazine",
-        "weaponIds": ["6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
+        "weaponIds": ["25974cbc-c194-4f98-b22d-c9d34c3ba6e4", "9795f821-8fac-4c4f-90f8-c0a80841de96"],
         "reloadSecondsMultiplier": 1.15,
         "magazineSizeBonus": 10
       }

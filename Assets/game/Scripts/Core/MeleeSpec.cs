@@ -78,6 +78,9 @@ namespace Shooter.Core
         // 相手の真後ろを中心にした扇の全体の角度。ArcDegrees と同じく半角でなく全体で持つ。
         public float BehindArcDegrees { get; }
 
+        // null なら当たりの瞬間に扇の中のいちばん近い 1 人に当てる。軌道を持たない作品の値 (Source 系など) をそのまま置けるように残す。
+        public MeleePath Path { get; }
+
         // 処刑技 (ContextMeleeMove.Finisher) と背後から倒す技 (ContextMeleeMove.Takedown) の値を省けるのは、敵の近接や盾の殴りなど技を出さない側が値を並べなくて済むようにするため。
         public MeleeSpec(
             int damage,
@@ -96,7 +99,8 @@ namespace Shooter.Core
             float takedownWitnessAwareness = DefaultTakedownWitnessAwareness,
             float alignSeconds = DefaultAlignSeconds,
             float standDistance = DefaultStandDistance,
-            float behindArcDegrees = DefaultBehindArcDegrees)
+            float behindArcDegrees = DefaultBehindArcDegrees,
+            MeleePath path = null)
         {
             if (damage <= 0)
             {
@@ -173,6 +177,12 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(behindArcDegrees), behindArcDegrees, "behindArcDegrees must be at least 1 and at most 360");
             }
 
+            // 刃が通り終える前に振りが終わると、扇の後ろ側が判定されないまま残る。
+            if (path != null && impactSeconds + path.ActiveSeconds > swingSeconds + 1e-5f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(path), path.ActiveSeconds, "impactSeconds + path.activeSeconds must be at most swingSeconds");
+            }
+
             Damage = damage;
             Reach = reach;
             ArcDegrees = arcDegrees;
@@ -190,6 +200,7 @@ namespace Shooter.Core
             AlignSeconds = alignSeconds;
             StandDistance = standDistance;
             BehindArcDegrees = behindArcDegrees;
+            Path = path;
         }
 
         // 踏み込みの間は一定の速さで進む。当たりの瞬間が 0 秒なら踏み込まない (0 で割らない)。

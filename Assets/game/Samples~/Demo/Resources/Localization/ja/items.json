@@ -1,6 +1,4 @@
 {
-  "weapon.rifle": "Rifle",
-  "weapon.handgun": "Handgun",
   "weapon.launcher": "Launcher",
   "weapon.shotgun": "ショットガン",
   "weapon.crossbow": "クロスボウ",
@@ -26,6 +24,10 @@
   "weapon.crowbar": "バール",
   "weapon.club": "棍棒",
   "weapon.machete": "マチェーテ",
+  "weapon.combatKnife": "コンバットナイフ",
+  "weapon.pryBar": "長バール",
+  "weapon.kukri": "ククリ",
+  "weapon.sledgehammer": "大槌",
   "grenade.frag": "破片手榴弾",
   "grenade.smoke": "スモークグレネード",
   "grenade.flash": "フラッシュバン",

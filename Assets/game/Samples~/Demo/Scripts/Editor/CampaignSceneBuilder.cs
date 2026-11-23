@@ -219,18 +219,18 @@ namespace Shooter.Editor
         public static readonly IReadOnlyList<EnemyPlacement> Patrollers = new[]
         {
             EnemyPlacement.Patrol(
-                "Enemy-Patrol-1", "patrol-1", WeaponAssetBuilder.RifleId, new Vector3(-11f, 0f, 55f), new Vector3(11f, 0f, 55f)),
+                "Enemy-Patrol-1", "patrol-1", WeaponAssetBuilder.CarbineId, new Vector3(-11f, 0f, 55f), new Vector3(11f, 0f, 55f)),
             EnemyPlacement.Patrol(
-                "Enemy-Patrol-2", "patrol-2", WeaponAssetBuilder.RifleId, new Vector3(11f, 0f, 63f), new Vector3(-11f, 0f, 63f)),
+                "Enemy-Patrol-2", "patrol-2", WeaponAssetBuilder.CarbineId, new Vector3(11f, 0f, 63f), new Vector3(-11f, 0f, 63f)),
         };
 
         // 見張る出口までは 8m ほどで handgun の減衰が始まる距離 (15m) より近いので、handgun を持たせる。
         public static readonly IReadOnlyList<EnemyPlacement> Ambushers = new[]
         {
             EnemyPlacement.Ambush(
-                "Enemy-Ambush-1", "ambush-1", WeaponAssetBuilder.HandgunId, new Vector3(-12f, 0f, 49f), new Vector3(-11.5f, 0f, 41.5f)),
+                "Enemy-Ambush-1", "ambush-1", WeaponAssetBuilder.PistolId, new Vector3(-12f, 0f, 49f), new Vector3(-11.5f, 0f, 41.5f)),
             EnemyPlacement.Ambush(
-                "Enemy-Ambush-2", "ambush-2", WeaponAssetBuilder.HandgunId, new Vector3(12f, 0f, 49f), new Vector3(11.5f, 0f, 41.5f)),
+                "Enemy-Ambush-2", "ambush-2", WeaponAssetBuilder.PistolId, new Vector3(12f, 0f, 49f), new Vector3(11.5f, 0f, 41.5f)),
         };
 
         public const float NavMeshCheckRadius = 1f;

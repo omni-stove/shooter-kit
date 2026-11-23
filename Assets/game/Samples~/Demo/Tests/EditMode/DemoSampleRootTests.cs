@@ -73,8 +73,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameRulesAssetBuilder.PayloadPath, Is.EqualTo(Root + "/Rules/Payload.asset"));
             Assert.That(SearchAndDestroySceneBuilder.EconomyPath, Is.EqualTo(Root + "/Modes/SearchAndDestroyEconomy.asset"));
 
-            Assert.That(WeaponAssetBuilder.RiflePath, Is.EqualTo(Root + "/Weapons/Rifle.asset"));
-            Assert.That(WeaponAssetBuilder.HandgunPath, Is.EqualTo(Root + "/Weapons/Handgun.asset"));
+            Assert.That(WeaponAssetBuilder.MachetePath, Is.EqualTo(Root + "/Weapons/Machete.asset"));
+            Assert.That(WeaponAssetBuilder.CarbinePath, Is.EqualTo(Root + "/Weapons/Reference/Carbine556.asset"));
+            Assert.That(WeaponAssetBuilder.PistolPath, Is.EqualTo(Root + "/Weapons/Reference/CompactPistol.asset"));
             Assert.That(WeaponAssetBuilder.CatalogPath, Is.EqualTo(Root + "/Weapons/WeaponCatalog.asset"));
             Assert.That(WeaponAssetBuilder.LoadoutPath, Is.EqualTo(Root + "/Weapons/DefaultLoadout.asset"));
             Assert.That(WeaponAssetBuilder.LauncherPath, Is.EqualTo(Root + "/Weapons/Launcher.asset"));
@@ -143,7 +144,7 @@ namespace Shooter.Tests.EditMode
             ShooterKitRoot.SetPreferredOutput("Assets/ShooterKit/");
 
             Assert.That(ShooterKitRoot.Output, Is.EqualTo("Assets/ShooterKit"));
-            Assert.That(WeaponAssetBuilder.RiflePath, Is.EqualTo("Assets/ShooterKit/Weapons/Rifle.asset"));
+            Assert.That(WeaponAssetBuilder.MachetePath, Is.EqualTo("Assets/ShooterKit/Weapons/Machete.asset"));
             Assert.That(GameRulesAssetBuilder.RangePath, Is.EqualTo("Assets/ShooterKit/Rules/Range.asset"));
             Assert.That(BuildSceneList.MainMenuScene, Is.EqualTo("Assets/ShooterKit/Scenes/MainMenu.unity"));
             Assert.That(CampaignSceneBuilder.NavMeshDataPath, Is.EqualTo("Assets/ShooterKit/Scenes/Campaign01/NavMesh-Level.asset"));

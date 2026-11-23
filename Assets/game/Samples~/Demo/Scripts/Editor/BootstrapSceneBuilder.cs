@@ -56,13 +56,13 @@ namespace Shooter.Editor
         // サンプルを全部 (Reference と Realistic で 64) 並べると出現位置の前が埋まるので、それぞれ武器種ごとに 1 つだけにし、同じ武器種の順にして前後の列で撃ち比べられるようにする。
         public static readonly IReadOnlyList<string> FeaturedReferenceWeaponIds = new[]
         {
-            "25974cbc-c194-4f98-b22d-c9d34c3ba6e4",
+            WeaponAssetBuilder.CarbineId,
             "6b1ce288-952f-4ead-b23b-337df82d3a02",
             "7f8258fd-a401-403b-93d2-60a22a69cb0b",
             "e250274d-82be-401c-a098-2ee06295b582",
             "07895118-2fb7-4b50-aa16-8f8afef0fc79",
             "7875b62b-86b5-4af7-bc20-27f643d3c4fe",
-            "343b6024-75f2-4d68-8ac6-d31fad86aa47",
+            WeaponAssetBuilder.PistolId,
             "b9daae5b-9015-46cf-b104-6f9a9ba9c623",
         };
 
@@ -82,8 +82,8 @@ namespace Shooter.Editor
 
         public static readonly IReadOnlyList<string> PlayerWeaponIds = new[]
         {
-            "25974cbc-c194-4f98-b22d-c9d34c3ba6e4",
-            "343b6024-75f2-4d68-8ac6-d31fad86aa47",
+            WeaponAssetBuilder.CarbineId,
+            WeaponAssetBuilder.PistolId,
         };
 
         // 出現位置で拾える範囲 (RangeWeaponRackFixture.PickupRadius) に入らず、遮蔽物より手前に置く。
@@ -98,11 +98,11 @@ namespace Shooter.Editor
 
         public const string GearTableName = "GearTable";
 
-        // サーマルの照準は持ち物の表 (inventory.json) で付けられる武器が決まり、射撃場の Reference の武器には付かないので、付けられる rifle を一緒に置く。
+        // サーマルの照準は持ち物の表 (inventory.json) で付けられる武器が決まり、射撃場の台の武器には付かないので、付けられる carbine を一緒に置く。
         public static readonly IReadOnlyList<string> GearWeaponIds = new[]
         {
             WeaponAssetBuilder.RiotShieldId,
-            WeaponAssetBuilder.RifleId,
+            WeaponAssetBuilder.CarbineId,
         };
 
         public static readonly IReadOnlyList<string> GearItemIds = new[]
@@ -273,7 +273,7 @@ namespace Shooter.Editor
                 ?? throw new InvalidOperationException(
                     $"[BootstrapSceneBuilder] no range weapon has a homing round for the lock-on turret; add one to '{WeaponAssetBuilder.RangeWeaponsPath}'");
             var elevator = BuildElevatorSettings();
-            var gearWeapons = LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons());
+            var gearWeapons = LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons(), WeaponAssetBuilder.LoadCatalog());
             var abilities = LoadAbilities();
 
             var directory = Path.GetDirectoryName(path);
@@ -541,9 +541,23 @@ namespace Shooter.Editor
             return FindAll(reference, FeaturedReferenceWeaponIds).Concat(FindAll(realistic, FeaturedRealisticWeaponIds)).ToArray();
         }
 
-        public static WeaponDefinition[] LoadGearWeapons(WeaponCatalogAsset range)
+        // 盾は射撃場の一覧に、carbine は既定の武器の一覧にあるので、先に射撃場から探して無ければ既定の一覧から引く。
+        public static WeaponDefinition[] LoadGearWeapons(WeaponCatalogAsset range, WeaponCatalogAsset catalog)
         {
-            return FindAll(range, GearWeaponIds, GearTableName);
+            if (range == null)
+            {
+                throw new ArgumentNullException(nameof(range));
+            }
+
+            var weapons = new WeaponDefinition[GearWeaponIds.Count];
+            for (var i = 0; i < weapons.Length; i++)
+            {
+                weapons[i] = range.TryFind(GearWeaponIds[i], out var found)
+                    ? found
+                    : WeaponAssetBuilder.FindInCatalog(catalog, GearTableName, GearWeaponIds[i]);
+            }
+
+            return weapons;
         }
 
         // 能力の枠は 2 つ (AbilityHost.SlotCount) なので、射撃場で試すゴーグルとドローンで埋める。使えるかはルールの Abilities で決まる (射撃場の既定は Off)。

@@ -275,8 +275,8 @@ namespace Shooter.Tests.EditMode
                 Assert.That(runner.Definition, Is.SameAs(definition));
                 Assert.That(triggers, Is.EqualTo(2));
 
-                var rifle = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.RiflePath);
-                Assert.That(rifle, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build");
+                var machete = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.MachetePath);
+                Assert.That(machete, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build");
                 Assert.That(bootstrap, Is.Not.Null);
                 Assert.That(bootstrap.WeaponDefinitions, Is.EqualTo(TestScenes.ExpectedPlayerWeapons()), $"rerun {nameof(MissionTestSceneBuilder)}.Build");
             }

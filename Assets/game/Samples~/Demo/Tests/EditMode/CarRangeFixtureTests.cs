@@ -100,7 +100,7 @@ namespace Shooter.Tests.EditMode
             try
             {
                 weapon.name = "Rifle";
-                WeaponAssetBuilder.Configure(weapon, WeaponAssetBuilder.RifleSpec());
+                WeaponAssetBuilder.Configure(weapon, DemoTestWeapons.CarbineSpec());
 
                 var vehicle = CarFixtureBuilder.Create(_scene, null, "GunCar", Vector3.zero, Quaternion.identity, weapon);
 
@@ -117,7 +117,7 @@ namespace Shooter.Tests.EditMode
                 var mount = vehicle.WeaponMounts.Single();
                 Assert.That(mount.name, Is.EqualTo(CarFixtureBuilder.GunName));
                 Assert.That(mount.SeatIndex, Is.EqualTo(2));
-                Assert.That(mount.WeaponSpec.Id, Is.EqualTo(WeaponAssetBuilder.RifleId));
+                Assert.That(mount.WeaponSpec.Id, Is.EqualTo(WeaponAssetBuilder.CarbineId));
                 Assert.That(mount.Spec.PitchMinDegrees, Is.EqualTo(CarFixtureBuilder.GunPitchMinDegrees));
                 Assert.That(mount.Spec.TurnSpeedDegreesPerSecond, Is.EqualTo(CarFixtureBuilder.GunTurnSpeedDegreesPerSecond));
                 Assert.That(mount.transform.localPosition, Is.EqualTo(new Vector3(0f, 2.3f, -0.6f)));

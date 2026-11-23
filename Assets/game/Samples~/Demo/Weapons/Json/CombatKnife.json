@@ -1,0 +1,70 @@
+{
+  "id": "d88b9133-ca9f-4144-beab-1cdb5b3ca887",
+  "nameKey": "weapon.combatKnife",
+  "description": "CS2 のナイフを参考。左の切りつけ (体 40・48 HU = 1.22 m・当てて 0.5 秒に 1 回) を振りに、右の突き (体 65・32 HU = 0.81 m・当てて 1.1 秒に 1 回) を溜め切った振りに置いた。右クリックの代わりに 0.3 秒押し続けると突きになる。CS2 は体力 100 なのでダメージはそのまま。続けて切ったときの 25 と背後からの 90/180 は入れていない。Source は前方への箱で当たりを取り扇を持たないので、刃に見える 100° にした。",
+  "category": "Melee",
+  "shotNoiseRadius": 50,
+  "weight": 0.3,
+  "moveSpeedMultiplier": 1,
+  "trigger": {
+    "fireMode": "Auto",
+    "fireInterval": 0.1
+  },
+  "ammo": {
+    "kind": "Magazine",
+    "magazineSize": 30,
+    "reserveAmmo": 90,
+    "reloadSeconds": 2,
+    "activeReloadWindowStart": 0.5,
+    "activeReloadWindowLength": 0.15,
+    "activeReloadFailSeconds": 0.5,
+    "reloadStyle": "Whole",
+    "reloadSecondsPerRound": 0
+  },
+  "round": {
+    "delivery": "Hitscan",
+    "range": 100,
+    "pelletCount": 1,
+    "pelletSpreadDegrees": 0,
+    "radius": 0
+  },
+  "impact": {
+    "damage": 25,
+    "falloff": "None",
+    "structureRadius": 0
+  },
+  "aim": {
+    "hipSpreadDegrees": 0,
+    "adsSpreadDegrees": 0,
+    "moveSpreadDegrees": 0,
+    "recoilPitchDegrees": 0,
+    "recoilYawDegrees": 0,
+    "recoilRecoveryPerSecond": 0,
+    "recoilRecoveryDelaySeconds": 0.15,
+    "blindFireSpreadDegrees": 0,
+    "zoomLevels": [50],
+    "swayDegrees": 0
+  },
+  "melee": {
+    "swing": {
+      "damage": 40,
+      "reach": 1.22,
+      "arcDegrees": 100,
+      "swingSeconds": 0.4,
+      "cooldownSeconds": 0.1,
+      "impactSeconds": 0,
+      "lungeDistance": 0
+    },
+    "heavySwing": {
+      "damage": 65,
+      "reach": 0.81,
+      "arcDegrees": 100,
+      "swingSeconds": 1,
+      "cooldownSeconds": 0.1,
+      "impactSeconds": 0,
+      "lungeDistance": 0
+    },
+    "chargeDelaySeconds": 0.2,
+    "chargeSeconds": 0.1
+  }
+}

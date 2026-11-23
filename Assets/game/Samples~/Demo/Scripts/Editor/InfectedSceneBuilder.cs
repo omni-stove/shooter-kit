@@ -16,8 +16,8 @@ namespace Shooter.Editor
         // プレイヤーを合わせて 5 人の生存者から始める。
         public const int SurvivorBots = 4;
 
-        // 生存者が持つ rifle と分け、感染者は handgun に持ち替える。
-        public const string InfectedWeaponId = WeaponAssetBuilder.HandgunId;
+        // ボットが持つ carbine と分け、感染者は pistol に持ち替える。
+        public const string InfectedWeaponId = WeaponAssetBuilder.PistolId;
 
         public InfectedSceneBuilder()
             : base(ScenePathValue, RulesPathValue)
@@ -40,11 +40,21 @@ namespace Shooter.Editor
 
         public static InfectedDefinition LoadOrCreateDefinition(string path, WeaponCatalogAsset catalog)
         {
-            return ModeDefinitionAssets.LoadOrCreate<InfectedDefinition>(path, d =>
+            var definition = ModeDefinitionAssets.LoadOrCreate<InfectedDefinition>(path, d =>
             {
                 d.CopyFrom(InfectedSpec.Default);
                 d.InfectedWeapon = WeaponAssetBuilder.FindInCatalog(catalog, ModeName, InfectedWeaponId);
             });
+
+            // 既にあるアセットは手で直した値を残すが、武器のアセットが消されて参照が切れたときだけ既定の武器を入れ直す。
+            if (definition.InfectedWeapon == null)
+            {
+                definition.InfectedWeapon = WeaponAssetBuilder.FindInCatalog(catalog, ModeName, InfectedWeaponId);
+                EditorUtility.SetDirty(definition);
+                AssetDatabase.SaveAssetIfDirty(definition);
+            }
+
+            return definition;
         }
 
         protected override ModeRunnerBase AddRunner(GameObject host, ModeSceneContext context)

@@ -227,8 +227,8 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ThereIsPlentyOfLootInsideAndAroundTheBuildingsAndOnTheHills()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
-            var handgun = NewWeapon("Handgun", WeaponAssetBuilder.HandgunSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
+            var handgun = NewWeapon("Handgun", DemoTestWeapons.PistolSpec());
             try
             {
                 var placements = BattleRoyaleSceneBuilder.PickupPlacements(rifle, handgun);
@@ -306,7 +306,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void PickupPlacementsNeedBothWeapons()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             try
             {
                 Assert.Throws<ArgumentNullException>(() => BattleRoyaleSceneBuilder.PickupPlacements(null, rifle));
@@ -321,7 +321,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void EverySupplyCrateHoldsARifleHealthAndAmmo()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             try
             {
                 var contents = BattleRoyaleSceneBuilder.SupplyCrateContents(rifle);
@@ -494,8 +494,8 @@ namespace Shooter.Tests.EditMode
                 yield return ($"rally {side.Side.Id}", BattleRoyaleSceneBuilder.RallyPoint(side.Side.Id));
             }
 
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
-            var handgun = NewWeapon("Handgun", WeaponAssetBuilder.HandgunSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
+            var handgun = NewWeapon("Handgun", DemoTestWeapons.PistolSpec());
             try
             {
                 foreach (var placement in BattleRoyaleSceneBuilder.PickupPlacements(rifle, handgun))

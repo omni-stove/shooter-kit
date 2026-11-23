@@ -57,7 +57,7 @@ namespace Shooter.Editor
             }
 
             // 武器のアセットが無ければ何も置かずに止める (先に WeaponAssetBuilder.Build を走らせる)。
-            var weapon = WeaponAssetBuilder.FindInCatalog(WeaponAssetBuilder.LoadCatalog(), EnemyId, WeaponAssetBuilder.RifleId);
+            var weapon = WeaponAssetBuilder.FindInCatalog(WeaponAssetBuilder.LoadCatalog(), EnemyId, WeaponAssetBuilder.CarbineId);
 
             var root = new GameObject(FixtureName);
             try

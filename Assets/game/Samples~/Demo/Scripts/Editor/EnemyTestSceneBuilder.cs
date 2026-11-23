@@ -27,7 +27,7 @@ namespace Shooter.Editor
         public const string EnemyName = "Enemy-1";
         public const string EnemyId = "enemy-1";
 
-        public const string EnemyWeaponId = WeaponAssetBuilder.RifleId;
+        public const string EnemyWeaponId = WeaponAssetBuilder.CarbineId;
         public const string BootstrapObjectName = "GameBootstrap";
 
         // Plane は 10m 四方なので、4 倍で 40m 四方にする。

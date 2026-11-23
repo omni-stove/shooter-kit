@@ -21,13 +21,15 @@ namespace Shooter.Server
             return _swingers.TryGetValue(playerId, out var swinger) ? swinger.Swing.CooldownRemaining : 0f;
         }
 
+        // 持っている銃で殴る振り (と技) を振れるか。ルールの Melee が Off なら振れない
         internal MeleeRefusal Check(int playerId)
         {
-            if (_combat.Rules.Rules?.Actions.Melee != Melee.On)
-            {
-                return MeleeRefusal.Off;
-            }
+            return _combat.Rules.Rules?.Actions.Melee != Melee.On ? MeleeRefusal.Off : CheckWeapon(playerId);
+        }
 
+        // 近接武器の振りと投げを振れるか。武器の攻撃なので、ルールの Melee が Off でも振れる (MeleeController.CheckWeaponSwing と同じ)
+        internal MeleeRefusal CheckWeapon(int playerId)
+        {
             if (!IsStanding(playerId)
                 || _movement.IsRiding(playerId)
                 || !_context.Bodies.TryGet(playerId, out var body)

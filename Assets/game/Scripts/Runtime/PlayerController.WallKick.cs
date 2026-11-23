@@ -6,7 +6,7 @@ namespace Shooter.Runtime
     // 予測・サーバーの CharacterMotorSimulation.TryStepWallKick と同じ決まりで蹴る。蹴らなかった tick も WallKickStep を通し、着地で壁蹴りを終える。
     public sealed partial class PlayerController
     {
-        partial void TryOverrideMoveForWallKick(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
+        private void TryOverrideMoveForWallKick(Vector2 move, bool jumpPressed, float deltaSeconds, ref bool overridden, ref Vector3 displacement)
         {
             if (!(deltaSeconds > 0f) || float.IsInfinity(deltaSeconds))
             {

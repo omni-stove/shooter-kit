@@ -14,9 +14,9 @@ namespace Shooter.Tests.EditMode
     {
         private const float Tolerance = 1e-4f;
 
-        // 名前のキーが空の枠は Id を、キーのある枠は表 (items.json の weapon.rifle は "Rifle") を名前にする
+        // 名前のキーが空の枠は Id を、キーのある枠は表 (items.json の weapon.ref.carbine556 は "5.56mm カービン") を名前にする
         private static readonly StreakSlot _uavReady = new StreakSlot("uav", string.Empty, 3, true);
-        private static readonly StreakSlot _rifleNext = new StreakSlot("rifle-drop", "weapon.rifle", 5, false);
+        private static readonly StreakSlot _rifleNext = new StreakSlot("rifle-drop", "weapon.ref.carbine556", 5, false);
         private static readonly StreakSlot _strikeLater = new StreakSlot("strike", string.Empty, 7, false);
         private static readonly StreakSlot _strikeReady = new StreakSlot("strike", string.Empty, 7, true);
 
@@ -76,7 +76,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(view.Element.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             Assert.That(view.KillsText, Is.EqualTo("ストリーク 3"));
             Assert.That(view.Cards.Select(card => card.RewardId), Is.EqualTo(new[] { "uav", "rifle-drop", "strike" }), "one card per reward in slot order");
-            Assert.That(view.Cards.Select(card => card.Name), Is.EqualTo(new[] { "uav", "Rifle", "strike" }));
+            Assert.That(view.Cards.Select(card => card.Name), Is.EqualTo(new[] { "uav", "5.56mm カービン", "strike" }));
             Assert.That(view.Cards.Select(card => card.State), Is.EqualTo(new[] { StreakCardState.Selected, StreakCardState.Charging, StreakCardState.Charging }));
             Assert.That(view.Cards[0].Caption, Is.EqualTo(UseCaption(view.KeyLabel)));
             Assert.That(view.Cards[1].Caption, Is.EqualTo("3/5"));

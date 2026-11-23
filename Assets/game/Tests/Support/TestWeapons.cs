@@ -147,6 +147,18 @@ namespace Shooter.Tests.EditMode
                 drawSeconds: 0.3f);
         }
 
+        // 配る持ち物の表 (Tuning/inventory.json) は武器を Id で引くので、表に頼るテストは値をそのままに Id だけを表の武器に合わせる。
+        public static WeaponSpec WithId(WeaponSpec spec, string id)
+        {
+            if (spec == null)
+            {
+                throw new ArgumentNullException(nameof(spec));
+            }
+
+            var json = WeaponSpecJson.Write(spec).Replace("\"" + spec.Id + "\"", "\"" + id + "\"");
+            return WeaponSpecJson.Parse(json, id);
+        }
+
         public static LoadoutSlotDefinition[] LoadoutSlots(WeaponDefinition rifle, WeaponDefinition handgun)
         {
             var primary = new List<WeaponCategory>();

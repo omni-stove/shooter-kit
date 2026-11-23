@@ -54,8 +54,8 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheInfectedSwitchToADifferentWeaponFromTheBots()
         {
-            Assert.That(InfectedSceneBuilder.InfectedWeaponId, Is.EqualTo(WeaponAssetBuilder.HandgunId));
-            Assert.That(InfectedSceneBuilder.InfectedWeaponId, Is.Not.EqualTo(WeaponAssetBuilder.RifleId));
+            Assert.That(InfectedSceneBuilder.InfectedWeaponId, Is.EqualTo(WeaponAssetBuilder.PistolId));
+            Assert.That(InfectedSceneBuilder.InfectedWeaponId, Is.Not.EqualTo(WeaponAssetBuilder.CarbineId));
         }
     }
 }

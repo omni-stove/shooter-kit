@@ -92,7 +92,7 @@ namespace Shooter.Tests.EditMode
             SceneManager.MoveGameObjectToScene(weaponHolder, _scene);
             var rifle = ScriptableObject.CreateInstance<WeaponDefinition>();
             rifle.name = "Rifle";
-            WeaponAssetBuilder.Configure(rifle, WeaponAssetBuilder.RifleSpec());
+            WeaponAssetBuilder.Configure(rifle, DemoTestWeapons.CarbineSpec());
             weaponHolder.AddComponent<GameBootstrap>().WeaponDefinitions = new[] { rifle };
 
             try

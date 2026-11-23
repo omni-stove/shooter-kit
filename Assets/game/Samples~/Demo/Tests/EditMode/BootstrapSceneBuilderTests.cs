@@ -630,7 +630,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(weapons.Select(w => w.name), Is.EqualTo(new[] { "Carbine556", "CompactPistol" }));
             Assert.That(weapons[0].ToSpec().Category, Is.EqualTo(WeaponCategory.AssaultRifle));
             Assert.That(weapons[1].ToSpec().Category, Is.EqualTo(WeaponCategory.Handgun));
-            Assert.That(weapons, Is.Not.EqualTo(TestScenes.ExpectedPlayerWeapons()), "the range no longer starts with the kit's rifle and handgun");
+            Assert.That(weapons, Is.Not.EqualTo(TestScenes.ExpectedPlayerWeapons()), "the range starts with guns, not the kit's machete and pistol");
         }
 
         [Test]
@@ -699,23 +699,23 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void TheGearIsTheRiotShieldAndARifleThatTakesTheThermalScope()
+        public void TheGearIsTheRiotShieldAndTheCarbineThatTakesTheThermalScope()
         {
-            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons());
+            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons(), WeaponAssetBuilder.LoadCatalog());
 
-            Assert.That(gear.Select(w => w.Id), Is.EqualTo(new[] { WeaponAssetBuilder.RiotShieldId, WeaponAssetBuilder.RifleId }));
+            Assert.That(gear.Select(w => w.Id), Is.EqualTo(new[] { WeaponAssetBuilder.RiotShieldId, WeaponAssetBuilder.CarbineId }));
             Assert.That(gear[0].ToSpec().IsShield, Is.True);
             Assert.That(BootstrapSceneBuilder.GearItemIds, Is.EqualTo(new[] { "c8e4f2a1-7b3d-4e95-a6c0-1d2f3b4a5e67" }));
             Assert.That(KitTuning.Items.TryFindAttachment(BootstrapSceneBuilder.GearItemIds[0], out var scope), Is.True);
             Assert.That(scope.Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
-            Assert.That(KitTuning.Items.CanAttach(gear[1].Id, scope.Id), Is.True, "the thermal scope fits the rifle on the gear table");
+            Assert.That(KitTuning.Items.CanAttach(gear[1].Id, scope.Id), Is.True, "the thermal scope fits the carbine on the gear table");
             Assert.That(KitTuning.Items.CanAttach(gear[0].Id, scope.Id), Is.False, "the shield takes no scope");
         }
 
         [Test]
         public void TheGearTableLinesUpWeaponsThenItemsBehindTheSpawn()
         {
-            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons());
+            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons(), WeaponAssetBuilder.LoadCatalog());
             var scene = TestScenes.NewAdditive();
             try
             {
@@ -759,7 +759,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void CreateGearTableRejectsAnEmptyWeaponOrAnUnknownItem()
         {
-            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons());
+            var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons(), WeaponAssetBuilder.LoadCatalog());
             var scene = TestScenes.NewAdditive();
             try
             {

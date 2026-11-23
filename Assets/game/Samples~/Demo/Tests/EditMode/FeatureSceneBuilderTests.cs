@@ -426,7 +426,7 @@ namespace Shooter.Tests.EditMode
 
         private WeaponDefinition[] NewWeapons()
         {
-            return new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()), NewWeapon("Launcher", WeaponAssetBuilder.LauncherSpec()) };
+            return new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()), NewWeapon("Launcher", WeaponAssetBuilder.LauncherSpec()) };
         }
 
         private WeaponDefinition NewWeapon(string name, WeaponSpec spec)

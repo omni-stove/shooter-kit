@@ -1,4 +1,61 @@
 {
   "vehicles": [
+    {
+      "id": "car",
+      "position": [-25, -1, 0],
+      "rotation": [0, 0, 0, 1],
+      "maxHealth": 1000,
+      "enterRange": 2.5,
+      "seats": [
+        {
+          "role": "Driver",
+          "pose": "Seated",
+          "cameraView": "Chase",
+          "ownWeaponArcDegrees": 0,
+          "ownWeaponSpreadMultiplier": 1.5,
+          "sit": [-0.399999619, 0.7, 0.2],
+          "sitYawDegrees": 0,
+          "enter": [[-1.39999962, 0, 0.2]],
+          "exits": [[-2, 0, 0.2], [2, 0, 0.2]]
+        },
+        {
+          "role": "Passenger",
+          "pose": "Seated",
+          "cameraView": "Chase",
+          "ownWeaponArcDegrees": 0,
+          "ownWeaponSpreadMultiplier": 1.5,
+          "sit": [0.399999619, 0.7, 0.2],
+          "sitYawDegrees": 0,
+          "enter": [[1.39999962, 0, 0.2]],
+          "exits": [[2, 0, 0.2], [-2, 0, 0.2]]
+        }
+      ],
+      "exits": [[0, 0, -3]],
+      "weapons": [
+      ],
+      "parts": [
+      ],
+      "hull": [
+        {
+          "center": [0, 0.9, 0],
+          "halfExtents": [0.9, 0.4, 2],
+          "rotation": [0, 0, 0, 1]
+        }
+      ],
+      "durability": {
+        "smokeHealthFraction": 0.5,
+        "burnHealthFraction": 0.25,
+        "burnDamagePerSecond": 25,
+        "explosionMaxDamage": 150,
+        "explosionRadius": 8,
+        "explosionFullDamageRadius": 2,
+        "explosionStructureDamage": 150
+      },
+      "drive": {
+        "maxSpeed": 30,
+        "correctionDistance": 1,
+        "burstSeconds": 0.5
+      }
+    }
   ]
 }

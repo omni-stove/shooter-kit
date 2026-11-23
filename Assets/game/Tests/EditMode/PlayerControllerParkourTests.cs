@@ -85,7 +85,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheParkourTuningDefaultsToTheGameWideValues()
         {
-            Assert.That(_player.ParkourTuning, Is.SameAs(Shooter.Runtime.Traversal.TraversalTuning.Current.Parkour));
+            Assert.That(_player.ParkourTuning, Is.SameAs(TraversalTuning.Current.Parkour));
 
             _player.ParkourTuning = _everyMoveOn;
             Assert.That(_player.ParkourTuning, Is.SameAs(_everyMoveOn));

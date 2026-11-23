@@ -77,7 +77,7 @@ namespace Shooter.Editor
 
         protected virtual IReadOnlyList<ModeObstacle> Obstacles => DefaultObstacles;
 
-        protected virtual string BotWeaponId => WeaponAssetBuilder.RifleId;
+        protected virtual string BotWeaponId => WeaponAssetBuilder.CarbineId;
 
         protected virtual EnemyBody BotBody => DefaultBotBody;
 

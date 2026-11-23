@@ -12,7 +12,7 @@ namespace Shooter.Runtime
         private string _id = string.Empty;
 
         // 表示名をそのまま持っていた頃のアセットも読めるようにする。その値はキーとして引かれ、表に無ければそのまま出る
-        [SerializeField, FormerlySerializedAs("_displayName"), Tooltip("プレイヤーに見せる名前を引く表のキー (例: weapon.rifle)。文は Resources/Localization/<言語>/*.json に書く。空なら Id を出す")]
+        [SerializeField, FormerlySerializedAs("_displayName"), Tooltip("プレイヤーに見せる名前を引く表のキー (例: weapon.machete)。文は Resources/Localization/<言語>/*.json に書く。空なら Id を出す")]
         private string _nameKey = string.Empty;
 
         [SerializeField, TextArea, Tooltip("作る人向けのメモ (どの銃を模したか・どんな役回りか)。プレイヤーには見せない")]

@@ -81,8 +81,8 @@ namespace Shooter.Tests.EditMode
                 Assert.That(assets.ThirdPersonMuzzleFlash, Is.SameAs(Prefab(entry.ThirdPersonMuzzleFlash)), entry.ThirdPersonMuzzleFlash);
             }
 
-            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.RifleId, out var rifle), Is.True);
-            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.HandgunId, out var handgun), Is.True);
+            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.CarbineId, out var rifle), Is.True);
+            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.PistolId, out var handgun), Is.True);
             Assert.That(rifle.Fire, Is.Not.SameAs(handgun.Fire));
             Assert.That(catalog.TryGetWeapon("not-a-weapon", out _), Is.False);
         }
@@ -97,6 +97,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(catalog.Landing, Is.SameAs(Clip(PresentationAssetBuilder.LandingSound)));
             Assert.That(catalog.HurtVoice, Is.SameAs(Clip(PresentationAssetBuilder.HurtVoiceSound)));
             Assert.That(catalog.ExplosionSound, Is.SameAs(Clip(PresentationAssetBuilder.ExplosionSound)));
+            Assert.That(catalog.MeleeSwingSound, Is.SameAs(Clip(PresentationAssetBuilder.MeleeSwingSound)));
+            Assert.That(catalog.MeleeHitSound, Is.SameAs(Clip(PresentationAssetBuilder.MeleeHitSound)));
             Assert.That(catalog.ImpactSpark, Is.SameAs(Prefab(PresentationAssetBuilder.ImpactSparkEffect)));
             Assert.That(catalog.Tracer, Is.SameAs(Prefab(PresentationAssetBuilder.TracerEffect)));
             Assert.That(catalog.Explosion, Is.SameAs(Prefab(PresentationAssetBuilder.ExplosionEffect)));

@@ -133,8 +133,9 @@ namespace Shooter.Server.Tests
             Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth - 20));
         }
 
+        // ルールの Melee は銃で殴る振りだけを止め、近接武器は武器の攻撃として振れる
         [Test]
-        public void TheChargedSwingIsRefusedWhenTheRulesTurnMeleeOff()
+        public void TheChargedSwingStillLandsWhenTheRulesTurnMeleeOff()
         {
             Start(MeleeRules().WithActions(MeleeRules().Actions.WithMelee(Melee.Off)));
             Join(1);
@@ -147,8 +148,9 @@ namespace Shooter.Server.Tests
             Hold(1, InputButtons.Melee, 48);
             Hold(1, InputButtons.None, 60);
 
-            Assert.That(_log.ToString(), Does.Contain("[Melee] refused id=1 reason=Off"));
-            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Melee] refused"));
+            Assert.That(_log.ToString(), Does.Contain("[Melee] weapon-swing id=1 weapon=" + _macheteId + " charge=1.00"));
+            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth - 60), _log.ToString());
         }
 
         [Test]
@@ -308,7 +310,7 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
-        public void TheThrowIsRefusedWhenTheRulesTurnMeleeOff()
+        public void TheThrowStillWorksWhenTheRulesTurnMeleeOff()
         {
             Start(MeleeRules().WithActions(MeleeRules().Actions.WithMelee(Melee.Off)));
             Join(1);
@@ -319,9 +321,9 @@ namespace Shooter.Server.Tests
 
             Hold(1, InputButtons.Aim, 1);
 
-            Assert.That(_melee.ThrownCount, Is.Zero);
-            Assert.That(_log.ToString(), Does.Contain("[Melee] refused id=1 reason=Off"));
-            Assert.That(_combat.WeaponsOf(1).Specs.Select(s => s.Id), Does.Contain(_macheteId));
+            Assert.That(_melee.ThrownCount, Is.EqualTo(1));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Melee] refused"));
+            Assert.That(_combat.WeaponsOf(1).Specs.Select(s => s.Id), Is.EqualTo(new[] { TestRules.RifleId }));
         }
 
         // 東 (yaw = 90 度) へ水平に、真上へ起こすと上を向く

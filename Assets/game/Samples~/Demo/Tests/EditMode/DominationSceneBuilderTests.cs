@@ -160,7 +160,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void PopulatesABootstrapInFirstPersonWithTheRulesAndSideSpawnPointsForBothTeams()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.DominationRules());
 
             var runner = DominationSceneBuilder.PopulateScene(_scene, new[] { rifle }, rules, rifle);
@@ -183,7 +183,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void PopulatesTheControlPointsWithMarkersThatDoNotBlock()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             DominationSceneBuilder.PopulateScene(_scene, new[] { rifle }, NewRules(GameRulesAssetBuilder.DominationRules()), rifle);
 
             var root = Find(DominationSceneBuilder.ControlPointsRootName).transform;
@@ -213,7 +213,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void PopulatesBravoBotsThatPatrolThePointsAndTargetThePlayer()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             DominationSceneBuilder.PopulateScene(_scene, new[] { rifle }, NewRules(GameRulesAssetBuilder.DominationRules()), rifle);
 
             var root = Find(DominationSceneBuilder.BotsRootName).transform;
@@ -240,7 +240,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void RefusesMissingOrInvalidArgumentsAndPlacesNothing()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.DominationRules());
             var broken = NewRules(GameRulesAssetBuilder.DominationRules());
             broken.ReserveAmmoMultiplier = -1f;
@@ -257,7 +257,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void WiresTheTuningAssetToTheRunnerAndRefusesAnInvalidOne()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.DominationRules());
             var tuning = ScriptableObject.CreateInstance<DominationDefinition>();
             _assets.Add(tuning);

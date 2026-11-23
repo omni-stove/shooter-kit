@@ -4,17 +4,30 @@ run = "scripts/install.sh"
 quiet = true
 
 [setup]
-description = "Install dependencies and skill-kit, sync, then build every demo scene with build-scenes (run by make setup; close the Editor first)"
+description = "Install dependencies and skill-kit, sync, then make everything the demo runs on: the weapon assets, catalog and default loadout (build-weapons), the game rules assets (build-rules), the ability assets and catalog (build-abilities), every demo scene with the net maps' server data (build-scenes) and the server's rules, points and tuning (export-server-rules), so the demo plays offline and against make server-dotnet (run by make setup; close the Editor first)"
 depends = ["install"]
+# アビリティのタレットと装備は武器のアセットを指し、build-scenes のシーンはルールとアビリティのカタログと装備を指し、export-server-rules は作ったシーンから地点を読むので、この順に走らせる
 run = [
   "curl -fsSL https://raw.githubusercontent.com/omni-stove/skill-kit/main/install.sh | sh",
   "skill-kit game sync",
+  "mise run build-weapons",
+  "mise run build-rules",
+  "mise run build-abilities",
   "mise run build-scenes",
+  "mise run export-server-rules",
 ]
 
 [build-scenes]
 description = "Rebuild every demo scene (and write the net maps' server data, as export-server-data does) with the Unity editor in batch mode via Shooter.Editor.SceneBuildSteps.BuildAll, the Shooter/Build All Scenes menu (close the Editor first). Commit the result"
 run = "unity --non-interactive run . -- -executeMethod Shooter.Editor.SceneBuildSteps.BuildAll"
+
+[build-weapons]
+description = "Rebuild the Demo weapon assets from their JSON (Weapons/Json, ReferenceJson, RealisticJson), the weapon catalog (Weapons/WeaponCatalog.asset) and the default loadout (Weapons/DefaultLoadout.asset) with the Unity editor in batch mode via Shooter.Editor.WeaponAssetBuilder.Build, the Shooter/Build Weapon Assets menu (close the Editor first). Commit the result"
+run = "unity --non-interactive run . -- -executeMethod Shooter.Editor.WeaponAssetBuilder.Build"
+
+[build-rules]
+description = "Rebuild the Demo game rules assets (Rules/*.asset, the modes' rules among them) with the Unity editor in batch mode via Shooter.Editor.GameRulesAssetBuilder.Build, the Shooter/Build Game Rules Assets menu; export-server-rules reads each mode's Objective from them (close the Editor first). Commit the result"
+run = "unity --non-interactive run . -- -executeMethod Shooter.Editor.GameRulesAssetBuilder.Build"
 
 [build-abilities]
 description = "Rebuild the Demo ability assets and the ability catalog (Abilities/AbilityCatalog.asset) with the Unity editor in batch mode via Shooter.Editor.AbilityAssetBuilder.Build, the Shooter/Build Ability Assets menu; it needs the Demo weapons and loadout, and game-content puts the catalog in GameContent (close the Editor first). Commit the result"
@@ -148,6 +161,10 @@ run = "bash scripts/affected-test.sh"
 [gitattributes-test]
 description = "Run the tests of the attributes .gitattributes gives each file type (LF line endings, binary files)"
 run = "sh scripts/gitattributes-test.sh"
+
+[setup-test]
+description = "Run the tests of the setup task, which checks that it makes every asset the demo runs on in the order they depend on"
+run = "sh scripts/setup-test.sh"
 
 [server-tuning-test]
 description = "Run the tests of scripts/server-tuning.sh, which checks that each server-data/tuning JSON equals the Assets/game/Resources/Tuning file of the same name (economy.json and chat-words.json are the server's own)"

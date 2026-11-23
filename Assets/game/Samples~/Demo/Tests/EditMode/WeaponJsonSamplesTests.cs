@@ -36,8 +36,6 @@ namespace Shooter.Tests.EditMode
             var imported = WeaponJsonImporter.ImportFrom(SamplesFolder, _folder, null);
 
             Assert.That(imported.Count(), Is.EqualTo(System.IO.Directory.GetFiles(ShooterKitRoot.PhysicalPath(SamplesFolder), "*.json").Length));
-            AssertSameSpec(Load("Rifle").ToSpec(), WeaponAssetBuilder.RifleSpec());
-            AssertSameSpec(Load("Handgun").ToSpec(), WeaponAssetBuilder.HandgunSpec());
             AssertSameSpec(Load("Launcher").ToSpec(), WeaponAssetBuilder.LauncherSpec());
         }
 
@@ -113,15 +111,12 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ImportingTheSamplesMatchesTheCommittedAssetFields()
         {
-            var committedRifle = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.RiflePath);
-            var committedHandgun = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.HandgunPath);
-            Assume.That(committedRifle, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build first");
-            Assume.That(committedHandgun, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build first");
+            var committedMachete = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.MachetePath);
+            Assume.That(committedMachete, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build first");
 
             WeaponJsonImporter.ImportFrom(SamplesFolder, _folder, null);
 
-            AssertSameFields(Load("Rifle"), committedRifle);
-            AssertSameFields(Load("Handgun"), committedHandgun);
+            AssertSameFields(Load("Machete"), committedMachete);
         }
 
         private WeaponDefinition Load(string name)

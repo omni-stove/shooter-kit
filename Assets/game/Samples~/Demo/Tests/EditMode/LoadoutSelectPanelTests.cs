@@ -34,8 +34,8 @@ namespace Shooter.Tests.EditMode
         {
             var catalog = new WeaponCatalog(new[]
             {
-                Spec(_rifle, "weapon.rifle", WeaponCategory.AssaultRifle),
-                Spec(_handgun, "weapon.handgun", WeaponCategory.Handgun),
+                Spec(_rifle, "weapon.ref.carbine556", WeaponCategory.AssaultRifle),
+                Spec(_handgun, "weapon.ref.compactPistol", WeaponCategory.Handgun),
                 Spec(_smg, "SMG", WeaponCategory.SubmachineGun),
                 Spec(_pistol, "Pistol", WeaponCategory.Handgun),
             });
@@ -99,8 +99,8 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(rows, Has.Length.EqualTo(2));
             Assert.That(rows[0].Q<Label>(className: LoadoutSelectPanel.SlotTitleClass).text, Is.EqualTo(LoadoutFormat.SlotTitle(0)));
-            Assert.That(OptionTexts(rows[0]), Is.EqualTo(new[] { "Rifle / アサルトライフル", "SMG / サブマシンガン" }));
-            Assert.That(OptionTexts(rows[1]), Is.EqualTo(new[] { "Handgun / ハンドガン", "Pistol / ハンドガン" }));
+            Assert.That(OptionTexts(rows[0]), Is.EqualTo(new[] { "5.56mm カービン / アサルトライフル", "SMG / サブマシンガン" }));
+            Assert.That(OptionTexts(rows[1]), Is.EqualTo(new[] { "コンパクトピストル / ハンドガン", "Pistol / ハンドガン" }));
             Assert.That(SelectedIndices(rows[0]), Is.EqualTo(new[] { 0 }));
             Assert.That(SelectedIndices(rows[1]), Is.EqualTo(new[] { 0 }));
             Assert.That(_container.ClassListContains(LoadoutSelectPanel.PanelClass), Is.True);
@@ -637,8 +637,8 @@ namespace Shooter.Tests.EditMode
         {
             var catalog = new WeaponCatalog(new[]
             {
-                Spec(_rifle, "weapon.rifle", WeaponCategory.AssaultRifle),
-                Spec(_handgun, "weapon.handgun", WeaponCategory.Handgun),
+                Spec(_rifle, "weapon.ref.carbine556", WeaponCategory.AssaultRifle),
+                Spec(_handgun, "weapon.ref.compactPistol", WeaponCategory.Handgun),
                 Spec(_smg, "SMG", WeaponCategory.SubmachineGun),
                 Spec(_pistol, "Pistol", WeaponCategory.Handgun),
             });
@@ -693,7 +693,7 @@ namespace Shooter.Tests.EditMode
             var rule = new LoadoutRule(new[] { new[] { WeaponCategory.AssaultRifle, WeaponCategory.SubmachineGun } });
             var catalog = new WeaponCatalog(new[]
             {
-                Spec(_rifle, "weapon.rifle", WeaponCategory.AssaultRifle),
+                Spec(_rifle, "weapon.ref.carbine556", WeaponCategory.AssaultRifle),
                 Spec(_smg, "SMG", WeaponCategory.SubmachineGun),
             });
             _panel.Dispose();

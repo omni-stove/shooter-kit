@@ -29,7 +29,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(DisplayNames.Of(GrenadeSpec.Default), Is.EqualTo(new LocalizedText("grenade.frag")));
             Assert.That(DisplayNames.Of(new GunGameTier("rifle", " weapon.rifle ")), Is.EqualTo(new LocalizedText("weapon.rifle")));
             Assert.That(DisplayNames.Of(new GunGameTier(" rifle ", " ")), Is.EqualTo(LocalizedText.Literal("rifle")));
-            Assert.That(Localizer.Resolve(DisplayNames.Of(rifle)), Is.EqualTo("Rifle"));
+            Assert.That(Localizer.Resolve(new LocalizedText("weapon.ref.carbine556")), Is.EqualTo("5.56mm カービン"));
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace Shooter.Tests.EditMode
                 DisplayNames.Of(new BuyItem("rifle-id", BuyItemKind.Weapon, 2700, nameKey: "weapon.rifle")),
                 Is.EqualTo(new LocalizedText("weapon.rifle")));
             Assert.That(DisplayNames.Of(new BuyItem("vest", BuyItemKind.Armor, 650, amount: 50)), Is.EqualTo(LocalizedText.Literal("vest")));
-            Assert.That(Localizer.Resolve(DisplayNames.Of(new BuyItem("rifle-id", BuyItemKind.Weapon, 2700, nameKey: "weapon.rifle"))), Is.EqualTo("Rifle"));
+            Assert.That(Localizer.Resolve(DisplayNames.Of(new BuyItem("rifle-id", BuyItemKind.Weapon, 2700, nameKey: "weapon.ref.carbine556"))), Is.EqualTo("5.56mm カービン"));
             Assert.Throws<ArgumentNullException>(() => DisplayNames.Of((BuyItem)null));
         }
 

@@ -6,15 +6,22 @@ namespace Shooter.Core.Tests
 {
     public sealed class InventoryTuningFilesTests
     {
+        private static readonly string[] _sampleWeaponFolders = { "Json", "ReferenceJson", "RealisticJson" };
+
         private static readonly string[] _languages = { "ja", "en" };
         private static readonly string[] _shippedNameKeys =
         {
             "item.bandage", "item.medkit", "item.armorPlate", "item.keycard", "item.toolbox", "item.ammo9mm", "item.ammo556", "item.ammo12ga",
-            "weapon.rifle", "weapon.burstRifle", "weapon.handgun", "weapon.ricochetPistol", "weapon.shotgun",
+            "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun",
+            "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
             "item.redDot", "item.scope4x", "item.holoSight", "item.thermalScope", "item.suppressor", "item.compensator", "item.foregrip", "item.extendedMagazine",
         };
         private static readonly string[] _thermalNameKeys = { "item.thermalScope" };
-        private static readonly string[] _thermalWeaponNameKeys = { "weapon.rifle", "weapon.burstRifle" };
+        private static readonly string[] _thermalWeaponNameKeys = { "weapon.ref.carbine556", "weapon.burstRifle" };
+        private static readonly string[] _meleeNameKeys =
+        {
+            "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
+        };
         private static readonly string[] _usableNameKeys = { "item.bandage", "item.medkit", "item.armorPlate" };
 
         [Test]
@@ -42,23 +49,21 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void EveryWeaponItemIsASampleWeaponAndFiresItsAmmoItem()
+        public void EveryGunItemIsASampleWeaponAndFiresItsAmmoItem()
         {
             var root = RepositoryRoot();
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(root)), "inventory.json");
-            var samples = Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", "Json"), "*.json")
-                .Select(path => WeaponSpecJson.Parse(File.ReadAllText(path), path))
-                .ToDictionary(spec => spec.Id);
+            var samples = SampleWeapons(root);
             var expected = new (string NameKey, string AmmoNameKey)[]
             {
-                ("weapon.rifle", "item.ammo556"),
+                ("weapon.ref.carbine556", "item.ammo556"),
                 ("weapon.burstRifle", "item.ammo556"),
-                ("weapon.handgun", "item.ammo9mm"),
+                ("weapon.ref.compactPistol", "item.ammo9mm"),
                 ("weapon.ricochetPistol", "item.ammo9mm"),
                 ("weapon.shotgun", "item.ammo12ga"),
             };
 
-            var weapons = catalog.Items.Where(i => i.IsWeapon).ToList();
+            var weapons = catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId != null).ToList();
             Assert.That(weapons.Select(w => (w.NameKey, catalog.Items.Single(i => i.Id == w.AmmoItemId).NameKey)), Is.EqualTo(expected));
             foreach (var weapon in weapons)
             {
@@ -69,19 +74,37 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void EveryAttachmentFitsAShippedWeaponAndEveryWeaponHasSlots()
+        public void EveryMeleeItemIsASampleMeleeWeaponWithoutAmmoOrSlots()
+        {
+            var root = RepositoryRoot();
+            var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(root)), "inventory.json");
+            var samples = SampleWeapons(root);
+
+            var melee = catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId == null).ToList();
+            Assert.That(melee.Select(w => w.NameKey), Is.EqualTo(_meleeNameKeys));
+            foreach (var weapon in melee)
+            {
+                Assert.That(samples.ContainsKey(weapon.WeaponId), weapon.NameKey + " points at a sample weapon");
+                Assert.That(samples[weapon.WeaponId].NameKey, Is.EqualTo(weapon.NameKey));
+                Assert.That(samples[weapon.WeaponId].Category, Is.EqualTo(WeaponCategory.Melee), weapon.NameKey);
+                Assert.That(weapon.AttachmentSlots, Is.Empty, weapon.NameKey + " takes no attachment");
+            }
+        }
+
+        [Test]
+        public void EveryAttachmentFitsAShippedWeaponAndEveryGunHasSlots()
         {
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(RepositoryRoot())), "inventory.json");
             var expected = new (string NameKey, string[] Slots)[]
             {
-                ("weapon.rifle", new[] { "optic", "muzzle", "underbarrel", "magazine" }),
+                ("weapon.ref.carbine556", new[] { "optic", "muzzle", "underbarrel", "magazine" }),
                 ("weapon.burstRifle", new[] { "optic", "muzzle", "underbarrel", "magazine" }),
-                ("weapon.handgun", new[] { "optic", "muzzle" }),
+                ("weapon.ref.compactPistol", new[] { "optic", "muzzle" }),
                 ("weapon.ricochetPistol", new[] { "optic", "muzzle" }),
                 ("weapon.shotgun", new[] { "optic", "underbarrel" }),
             };
 
-            Assert.That(catalog.Items.Where(i => i.IsWeapon).Select(w => (w.NameKey, w.AttachmentSlots.ToArray())), Is.EqualTo(expected));
+            Assert.That(catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId != null).Select(w => (w.NameKey, w.AttachmentSlots.ToArray())), Is.EqualTo(expected));
             foreach (var attachment in catalog.Items.Where(i => i.IsAttachment))
             {
                 Assert.That(
@@ -128,6 +151,15 @@ namespace Shooter.Core.Tests
                     Assert.That(table, Does.Contain("\"" + item.NameKey + "\":"), language + " names " + item.NameKey);
                 }
             }
+        }
+
+        // 既定の武器は Reference の武器から選んでいるので、サンプルの 3 つのフォルダをまとめて探す。
+        private static System.Collections.Generic.Dictionary<string, WeaponSpec> SampleWeapons(string root)
+        {
+            return _sampleWeaponFolders
+                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", folder), "*.json"))
+                .Select(path => WeaponSpecJson.Parse(File.ReadAllText(path), path))
+                .ToDictionary(spec => spec.Id);
         }
 
         private static string UnityPath(string root)

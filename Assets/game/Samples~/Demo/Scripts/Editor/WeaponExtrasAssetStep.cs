@@ -48,8 +48,6 @@ namespace Shooter.Editor
         {
             return new[]
             {
-                (WeaponAssetBuilder.RifleId, RifleShellPrefab, ShellDropSound, DryFireClickSound),
-                (WeaponAssetBuilder.HandgunId, HandgunShellPrefab, ShellDropSound, DryFireClickSound),
                 (WeaponAssetBuilder.LauncherId, LauncherShellPrefab, HeavyShellDropSound, DryFireClickSound),
             };
         }

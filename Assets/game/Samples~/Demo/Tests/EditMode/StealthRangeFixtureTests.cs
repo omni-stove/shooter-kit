@@ -171,7 +171,7 @@ namespace Shooter.Tests.EditMode
             var weapon = ScriptableObject.CreateInstance<WeaponDefinition>();
             weapon.name = "Rifle";
             _assets.Add(weapon);
-            WeaponAssetBuilder.Configure(weapon, WeaponAssetBuilder.RifleSpec());
+            WeaponAssetBuilder.Configure(weapon, DemoTestWeapons.CarbineSpec());
             return weapon;
         }
 

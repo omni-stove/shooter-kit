@@ -30,8 +30,8 @@ namespace Shooter.Tests.EditMode
         {
             return new[]
             {
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Shooter.Runtime.WeaponDefinition>(Shooter.Editor.WeaponAssetBuilder.RiflePath),
-                UnityEditor.AssetDatabase.LoadAssetAtPath<Shooter.Runtime.WeaponDefinition>(Shooter.Editor.WeaponAssetBuilder.HandgunPath),
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Shooter.Runtime.WeaponDefinition>(Shooter.Editor.WeaponAssetBuilder.MachetePath),
+                UnityEditor.AssetDatabase.LoadAssetAtPath<Shooter.Runtime.WeaponDefinition>(Shooter.Editor.WeaponAssetBuilder.PistolPath),
             };
         }
 

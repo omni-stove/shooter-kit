@@ -18,7 +18,7 @@ namespace Shooter.Tests.EditMode
         private const string ArmorId = "armor-light";
         private const int MaxMoney = 16000;
 
-        private static readonly string[] _namesJa = { "跳弾ピストル", "Rifle", "破片手榴弾", "armor-light" };
+        private static readonly string[] _namesJa = { "跳弾ピストル", "5.56mm カービン", "破片手榴弾", "armor-light" };
         private static readonly string[] _detailsJa = { "武器・枠 2", "武器・枠 1", "投げ物", "防具 +50" };
         private static readonly string[] _detailsEn = { "Weapon · slot 2", "Weapon · slot 1", "Throwable", "Armor +50" };
         private static readonly string[] _prices = { "$500", "$2700", "$300", "$650" };
@@ -34,7 +34,7 @@ namespace Shooter.Tests.EditMode
         private static BuyCatalog Catalog() => new BuyCatalog(new[]
         {
             new BuyItem(PistolId, BuyItemKind.Weapon, 500, slot: 1, nameKey: "weapon.ricochetPistol"),
-            new BuyItem(RifleId, BuyItemKind.Weapon, 2700, slot: 0, nameKey: "weapon.rifle"),
+            new BuyItem(RifleId, BuyItemKind.Weapon, 2700, slot: 0, nameKey: "weapon.ref.carbine556"),
             new BuyItem(FragId, BuyItemKind.Throwable, 300, nameKey: "grenade.frag"),
             new BuyItem(ArmorId, BuyItemKind.Armor, 650, amount: 50),
         });
@@ -172,7 +172,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(_panel.Buy(1), Is.False);
 
             Assert.That(_sender.ItemIds, Is.Empty);
-            Assert.That(_panel.Status, Is.EqualTo("Rifle を買うお金が足りない"));
+            Assert.That(_panel.Status, Is.EqualTo("5.56mm カービン を買うお金が足りない"));
             Assert.That(_panel.IsStatusError, Is.True);
             Assert.That(_panel.MoneyText, Is.EqualTo("所持金 $800"));
         }
@@ -383,7 +383,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(_panel.Title, Is.EqualTo("BUY"));
             Assert.That(_panel.MoneyText, Is.EqualTo("Money $800"));
             Assert.That(Each(_panel.ItemDetail), Is.EqualTo(_detailsEn));
-            Assert.That(_panel.Status, Is.EqualTo("Not enough money for Rifle"));
+            Assert.That(_panel.Status, Is.EqualTo("Not enough money for 5.56 Carbine"));
             Assert.That(_panel.CloseButton.text, Is.EqualTo("CLOSE"));
         }
 

@@ -12,7 +12,7 @@ namespace Shooter.Tests.EditMode
     {
         private static WeaponSpec NewSpec()
         {
-            return new WeaponSpec("00000000-0000-4000-8000-000000000001", "weapon.rifle", WeaponCategory.AssaultRifle, FireMode.Auto, 30, 90, 0f, 1f, 25, 100f, DamageFalloff.None);
+            return new WeaponSpec("00000000-0000-4000-8000-000000000001", "weapon.ref.carbine556", WeaponCategory.AssaultRifle, FireMode.Auto, 30, 90, 0f, 1f, 25, 100f, DamageFalloff.None);
         }
 
         private static readonly AmmoTypeSpec Slug = new AmmoTypeSpec("00000000-0000-4000-8000-0000000000a1", "ammo.slug");
@@ -606,12 +606,12 @@ namespace Shooter.Tests.EditMode
             Assert.That(view.WeaponNameLabel.style.display.value, Is.EqualTo(DisplayStyle.None));
 
             model.BindWeapon(new Weapon(NewSpec()));
-            Assert.That(view.WeaponNameLabel.text, Is.EqualTo("Rifle"));
+            Assert.That(view.WeaponNameLabel.text, Is.EqualTo("5.56mm カービン"));
             Assert.That(view.WeaponNameLabel.style.display.value, Is.EqualTo(DisplayStyle.Flex));
 
             model.BindWeapon(new Weapon(new WeaponSpec(
-                "00000000-0000-4000-8000-000000000002", "weapon.handgun", WeaponCategory.Handgun, FireMode.Semi, 12, 48, 0.2f, 1.5f, 34, 60f, DamageFalloff.None)));
-            Assert.That(view.WeaponNameLabel.text, Is.EqualTo("Handgun"));
+                "00000000-0000-4000-8000-000000000002", "weapon.ref.compactPistol", WeaponCategory.Handgun, FireMode.Semi, 12, 48, 0.2f, 1.5f, 34, 60f, DamageFalloff.None)));
+            Assert.That(view.WeaponNameLabel.text, Is.EqualTo("コンパクトピストル"));
             Assert.That(view.AmmoLabel.text, Is.EqualTo("12 / 48"));
 
             model.BindWeapon(null);

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a87778676ad4936cb9aa29da696599, type: 3}
+  m_Name: Horse
+  m_EditorClassIdentifier: Shooter.Runtime::Shooter.Runtime.HorseDefinition
+  _mass: 500
+  _walkSpeed: 1.8
+  _trotSpeed: 4.5
+  _canterSpeed: 9
+  _reverseSpeed: 1.2
+  _acceleration: 4
+  _deceleration: 8
+  _turnRate: 120
+  _canterTurnScale: 0.35
+  _jumpSpeed: 5
+  _maxSlopeAngle: 40
+  _walkThreshold: 0.2
+  _trotThreshold: 2.5
+  _canterThreshold: 6

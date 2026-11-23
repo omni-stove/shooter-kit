@@ -78,7 +78,7 @@ namespace Shooter.Runtime
         [SerializeField, Min(0), Tooltip("出撃ごとに持つグレネードの数。Grenade が Off なら使わない")]
         private int _grenadeCount;
 
-        [SerializeField, Tooltip("近接攻撃を使えるか")]
+        [SerializeField, Tooltip("持っている銃で殴る近接攻撃と、テイクダウンなどの近接の技を使えるか。近接武器と盾の攻撃は Off でも使える")]
         private Melee _melee = Melee.Off;
 
         [SerializeField, Tooltip("被弾したときに怯むか")]

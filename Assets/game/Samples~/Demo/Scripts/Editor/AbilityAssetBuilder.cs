@@ -435,7 +435,7 @@ namespace Shooter.Editor
             path = SceneBuildHelpers.ValidateAssetPath(path);
 
             // 武器が無ければアセットを作る前に止める。
-            var weapon = WeaponAssetBuilder.FindInCatalog(WeaponAssetBuilder.LoadCatalog(), TurretAbilityId, WeaponAssetBuilder.RifleId);
+            var weapon = WeaponAssetBuilder.FindInCatalog(WeaponAssetBuilder.LoadCatalog(), TurretAbilityId, WeaponAssetBuilder.CarbineId);
             SceneBuildHelpers.EnsureFolder(System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/'));
             var ability = SceneBuildHelpers.CreateOrUpdateAsset<TurretDeployDefinition>(path, a => ConfigureTurret(a, weapon));
             Debug.Log($"{LogTag} saved '{path}'");

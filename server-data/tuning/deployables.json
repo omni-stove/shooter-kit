@@ -16,7 +16,7 @@
       "rechargeSeconds": 30,
       "cooldownSeconds": 1,
       "turret": {
-        "weaponId": "6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83",
+        "weaponId": "25974cbc-c194-4f98-b22d-c9d34c3ba6e4",
         "rounds": 60,
         "lifetimeSeconds": 30,
         "sightRange": 12,

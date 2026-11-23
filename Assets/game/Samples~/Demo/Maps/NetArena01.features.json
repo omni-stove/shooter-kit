@@ -1,0 +1,62 @@
+{
+    "ladderTowers": [
+        {
+            "name": "Ladder Tower Alpha",
+            "baseCenter": {
+                "x": -25.0,
+                "y": -1.0,
+                "z": -14.0
+            },
+            "size": {
+                "x": 4.0,
+                "y": 3.0,
+                "z": 4.0
+            },
+            "side": "east",
+            "ladderWidth": 0.800000011920929
+        },
+        {
+            "name": "Ladder Tower Bravo",
+            "baseCenter": {
+                "x": -25.0,
+                "y": -1.0,
+                "z": 14.0
+            },
+            "size": {
+                "x": 4.0,
+                "y": 3.0,
+                "z": 4.0
+            },
+            "side": "east",
+            "ladderWidth": 0.800000011920929
+        }
+    ],
+    "waterPools": [
+        {
+            "name": "Pond East",
+            "groundCenter": {
+                "x": 25.0,
+                "y": -1.0,
+                "z": 0.0
+            },
+            "size": {
+                "x": 5.0,
+                "y": 3.0,
+                "z": 10.0
+            },
+            "surfaceHeight": 2.5
+        }
+    ],
+    "vehicles": [
+        {
+            "name": "Car West",
+            "kind": "car",
+            "position": {
+                "x": -25.0,
+                "y": -1.0,
+                "z": 0.0
+            },
+            "yawDegrees": 0.0
+        }
+    ]
+}

@@ -277,6 +277,35 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheMeleePathsRoundTripThroughTheDefinition()
+        {
+            var definition = NewDefinition("Crowbar");
+            var source = new WeaponSpec(
+                _rifleId,
+                "weapon.crowbar",
+                WeaponCategory.Melee,
+                melee: new MeleeWeaponSpec(
+                    new MeleeSpec(30, 2f, 70f, 0.35f, 0.05f, 0.12f, 0.25f, path: new MeleePath(MeleePathStyle.Horizontal, 45f, -45f, 25f, 0.1f, 2)),
+                    new MeleeSpec(75, 2.2f, 80f, 0.55f, 0.15f, 0.2f, 0.6f, path: new MeleePath(MeleePathStyle.Vertical, 60f, -30f, 35f, 0.15f, 1))));
+
+            WeaponAssets.Configure(definition, source);
+            var swing = definition.ToSpec().Melee.Swing.Path;
+            var heavy = definition.ToSpec().Melee.HeavySwing.Path;
+
+            Assert.That(swing.Style, Is.EqualTo(MeleePathStyle.Horizontal));
+            Assert.That(swing.FromDegrees, Is.EqualTo(45f));
+            Assert.That(swing.ToDegrees, Is.EqualTo(-45f));
+            Assert.That(swing.WidthDegrees, Is.EqualTo(25f));
+            Assert.That(swing.ActiveSeconds, Is.EqualTo(0.1f));
+            Assert.That(swing.MaxTargets, Is.EqualTo(2));
+            Assert.That(heavy.Style, Is.EqualTo(MeleePathStyle.Vertical));
+            Assert.That(heavy.WidthDegrees, Is.EqualTo(35f));
+
+            WeaponAssets.Configure(definition, new WeaponSpec(_rifleId, "weapon.crowbar", WeaponCategory.Melee, melee: new MeleeWeaponSpec(new MeleeSpec(30, 2f, 70f, 0.35f, 0.05f, 0.12f, 0.25f))));
+            Assert.That(definition.ToSpec().Melee.Swing.Path, Is.Null, "a swing without a path clears the one stored before");
+        }
+
+        [Test]
         public void TheMeleeValuesRoundTripThroughTheDefinitionAndKeepTheLook()
         {
             var definition = NewDefinition("Crowbar");

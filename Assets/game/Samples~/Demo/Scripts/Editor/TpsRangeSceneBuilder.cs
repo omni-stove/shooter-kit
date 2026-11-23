@@ -248,8 +248,8 @@ namespace Shooter.Editor
                 hut.DebrisPool = pool;
                 SceneBuildHelpers.SetSurfaceMaterial(hut.gameObject, SceneBuildHelpers.SurfaceIdOf(SurfaceIds, HutName));
 
-                // 銃座の銃は、プレイヤーと同じ規則で撃てることを見比べられるよう、ロードアウトの最初の武器にする。
-                created.Add(VehicleFixtureBuilder.Create(scene, null, VehicleName, VehicleOrigin, Quaternion.identity, weapons[0]).gameObject);
+                // 銃座の銃は、プレイヤーと同じ規則で撃てることを見比べられるよう、ロードアウトの最初の銃にする。
+                created.Add(VehicleFixtureBuilder.Create(scene, null, VehicleName, VehicleOrigin, Quaternion.identity, WeaponAssetBuilder.FirstGun(weapons)).gameObject);
                 created.Add(SceneBuildHelpers.CreateStaticBox(
                     scene, null, VehicleExitBlocker.Name, VehicleExitBlocker.Center, VehicleExitBlocker.Size));
 

@@ -135,24 +135,24 @@ namespace Shooter.Editor
         public static readonly IReadOnlyList<EnemyPlacement> Guards = new[]
         {
             EnemyPlacement.Patrol(
-                "Guard-Patrol-1", "guard-patrol-1", WeaponAssetBuilder.RifleId, new Vector3(-14f, 0f, 32f), new Vector3(14f, 0f, 32f)),
+                "Guard-Patrol-1", "guard-patrol-1", WeaponAssetBuilder.CarbineId, new Vector3(-14f, 0f, 32f), new Vector3(14f, 0f, 32f)),
             EnemyPlacement.Ambush(
-                "Guard-Ambush-1", "guard-ambush-1", WeaponAssetBuilder.HandgunId, new Vector3(-12f, 0f, 42f), new Vector3(0f, 0f, 28f)),
+                "Guard-Ambush-1", "guard-ambush-1", WeaponAssetBuilder.PistolId, new Vector3(-12f, 0f, 42f), new Vector3(0f, 0f, 28f)),
             EnemyPlacement.Ambush(
-                "Guard-Ambush-2", "guard-ambush-2", WeaponAssetBuilder.HandgunId, new Vector3(12f, 0f, 42f), new Vector3(0f, 0f, 28f)),
+                "Guard-Ambush-2", "guard-ambush-2", WeaponAssetBuilder.PistolId, new Vector3(12f, 0f, 42f), new Vector3(0f, 0f, 28f)),
             EnemyPlacement.Ambush(
-                "Guard-Lobby", "guard-lobby", WeaponAssetBuilder.HandgunId, new Vector3(0f, 0f, 56f), new Vector3(0f, 0f, 46f)),
+                "Guard-Lobby", "guard-lobby", WeaponAssetBuilder.PistolId, new Vector3(0f, 0f, 56f), new Vector3(0f, 0f, 46f)),
         };
 
         // 増援が現れる裏庭は、端末からは壁に遮られて見えない所にする。
         public static readonly IReadOnlyList<EnemyPlacement> Reinforcements = new[]
         {
             EnemyPlacement.Patrol(
-                "Reinforcement-1", "reinforcement-1", WeaponAssetBuilder.RifleId, new Vector3(-14f, 0f, 86f), new Vector3(-6f, 0f, 68f)),
+                "Reinforcement-1", "reinforcement-1", WeaponAssetBuilder.CarbineId, new Vector3(-14f, 0f, 86f), new Vector3(-6f, 0f, 68f)),
             EnemyPlacement.Patrol(
-                "Reinforcement-2", "reinforcement-2", WeaponAssetBuilder.RifleId, new Vector3(-8f, 0f, 87f), new Vector3(2f, 0f, 63f)),
+                "Reinforcement-2", "reinforcement-2", WeaponAssetBuilder.CarbineId, new Vector3(-8f, 0f, 87f), new Vector3(2f, 0f, 63f)),
             EnemyPlacement.Patrol(
-                "Reinforcement-3", "reinforcement-3", WeaponAssetBuilder.HandgunId, new Vector3(-2f, 0f, 86f), new Vector3(-12f, 0f, 62f)),
+                "Reinforcement-3", "reinforcement-3", WeaponAssetBuilder.PistolId, new Vector3(-2f, 0f, 86f), new Vector3(-12f, 0f, 62f)),
         };
 
         public static int ReinforcementCount => Reinforcements.Count;

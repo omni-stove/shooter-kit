@@ -20,13 +20,26 @@ namespace Shooter.Core
         public const string ThrowRadiusItem = "radius";
         public const string ThrowMaxFlightSecondsItem = "maxFlightSeconds";
 
+        public const string PathItem = "path";
+        public const string PathStyleItem = "style";
+        public const string PathFromDegreesItem = "fromDegrees";
+        public const string PathToDegreesItem = "toDegrees";
+        public const string PathWidthDegreesItem = "widthDegrees";
+        public const string PathActiveSecondsItem = "activeSeconds";
+        public const string PathMaxTargetsItem = "maxTargets";
+
         public static IReadOnlyList<string> ItemNames { get; } = new[]
         {
             SwingItem, HeavySwingItem, ChargeDelaySecondsItem, ChargeSecondsItem, ThrowItem,
         };
 
-        // 近接武器の振りは技 (処刑技・背後から倒す技) を出さないので、振りの値だけを書かせる。
-        public static IReadOnlyList<string> SwingItemNames { get; } = RiotShieldSpecJson.BashItemNames;
+        // 近接武器の振りは技 (処刑技・背後から倒す技) を出さないので、振りの値と軌道だけを書かせる。軌道は盾の殴りに無いので足す。
+        public static IReadOnlyList<string> SwingItemNames { get; } = new List<string>(RiotShieldSpecJson.BashItemNames) { PathItem };
+
+        public static IReadOnlyList<string> PathItemNames { get; } = new[]
+        {
+            PathStyleItem, PathFromDegreesItem, PathToDegreesItem, PathWidthDegreesItem, PathActiveSecondsItem, PathMaxTargetsItem,
+        };
 
         public static IReadOnlyList<string> ThrowItemNames { get; } = new[]
         {
@@ -109,6 +122,18 @@ namespace Shooter.Core
             writer.Float(MeleeJson.CooldownSecondsItem, swing.CooldownSeconds);
             writer.Float(MeleeJson.ImpactSecondsItem, swing.ImpactSeconds);
             writer.Float(MeleeJson.LungeDistanceItem, swing.LungeDistance);
+            if (swing.Path != null)
+            {
+                writer.BeginObject(PathItem);
+                writer.Enum(PathStyleItem, swing.Path.Style);
+                writer.Float(PathFromDegreesItem, swing.Path.FromDegrees);
+                writer.Float(PathToDegreesItem, swing.Path.ToDegrees);
+                writer.Float(PathWidthDegreesItem, swing.Path.WidthDegrees);
+                writer.Float(PathActiveSecondsItem, swing.Path.ActiveSeconds);
+                writer.Int(PathMaxTargetsItem, swing.Path.MaxTargets);
+                writer.EndObject();
+            }
+
             writer.EndObject();
         }
 
@@ -119,6 +144,9 @@ namespace Shooter.Core
                 return defaults;
             }
 
+            // 溜め切った振りで軌道を省いたら、ふつうの振りの軌道を受け継ぐ (ほかの項目と同じ)。
+            var pathFields = fields.Object(PathItem, PathItemNames);
+            var path = pathFields == null ? defaults.Path : ReadPath(pathFields, defaults.Path);
             try
             {
                 return new MeleeSpec(
@@ -128,11 +156,30 @@ namespace Shooter.Core
                     fields.ReadFloat(MeleeJson.SwingSecondsItem, defaults.SwingSeconds),
                     fields.ReadFloat(MeleeJson.CooldownSecondsItem, defaults.CooldownSeconds),
                     fields.ReadFloat(MeleeJson.ImpactSecondsItem, defaults.ImpactSeconds),
-                    fields.ReadFloat(MeleeJson.LungeDistanceItem, defaults.LungeDistance));
+                    fields.ReadFloat(MeleeJson.LungeDistanceItem, defaults.LungeDistance),
+                    path: path);
             }
             catch (ArgumentException e)
             {
                 throw fields.Rejected(Known(SwingItemNames, e.ParamName) ? fields.ItemPath(e.ParamName) : fields.Path, e.Message, e);
+            }
+        }
+
+        private static MeleePath ReadPath(ServerDataJson.Fields fields, MeleePath defaults)
+        {
+            try
+            {
+                return new MeleePath(
+                    fields.ReadEnum(PathStyleItem, defaults?.Style ?? MeleePath.DefaultStyle),
+                    fields.ReadFloat(PathFromDegreesItem, defaults?.FromDegrees ?? MeleePath.DefaultFromDegrees),
+                    fields.ReadFloat(PathToDegreesItem, defaults?.ToDegrees ?? MeleePath.DefaultToDegrees),
+                    fields.ReadFloat(PathWidthDegreesItem, defaults?.WidthDegrees ?? MeleePath.DefaultWidthDegrees),
+                    fields.ReadFloat(PathActiveSecondsItem, defaults?.ActiveSeconds ?? MeleePath.DefaultActiveSeconds),
+                    fields.ReadInt(PathMaxTargetsItem, defaults?.MaxTargets ?? MeleePath.DefaultMaxTargets));
+            }
+            catch (ArgumentException e)
+            {
+                throw fields.Rejected(Known(PathItemNames, e.ParamName) ? fields.ItemPath(e.ParamName) : fields.Path, e.Message, e);
             }
         }
 

@@ -1,4 +1,24 @@
 {
   "ladders": [
+    {
+      "bottom": [-23, -1, -14],
+      "facing": [-1, 0, -1.19209275E-07],
+      "height": 3,
+      "width": 0.8,
+      "climbSpeed": 2.5,
+      "grabDistance": 0.4,
+      "jumpOffSpeed": 4,
+      "regrabSeconds": 0.4
+    },
+    {
+      "bottom": [-23, -1, 14],
+      "facing": [-1, 0, -1.19209275E-07],
+      "height": 3,
+      "width": 0.8,
+      "climbSpeed": 2.5,
+      "grabDistance": 0.4,
+      "jumpOffSpeed": 4,
+      "regrabSeconds": 0.4
+    }
   ]
 }

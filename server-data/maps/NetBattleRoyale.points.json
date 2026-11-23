@@ -1,0 +1,130 @@
+{
+  "spawnPoints": [
+    {
+      "position": [0, 0, -60]
+    },
+    {
+      "position": [42.5, 0, -42.5]
+    },
+    {
+      "position": [60, 0, 0]
+    },
+    {
+      "position": [42.5, 0, 42.5]
+    },
+    {
+      "position": [0, 0, 60]
+    },
+    {
+      "position": [-42.5, 0, 42.5]
+    },
+    {
+      "position": [-60, 0, 0]
+    },
+    {
+      "position": [-42.5, 0, -42.5]
+    }
+  ],
+  "controlPoints": [
+  ],
+  "lootContainers": [
+    {
+      "id": "net-br-box-01",
+      "table": "demo-supplies",
+      "position": [0, -1, -30],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-02",
+      "table": "demo-supplies",
+      "position": [21.2, -1, -21.2],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-03",
+      "table": "demo-supplies",
+      "position": [30, -1, 0],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-04",
+      "table": "demo-supplies",
+      "position": [21.2, -1, 21.2],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-05",
+      "table": "demo-supplies",
+      "position": [0, -1, 30],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-06",
+      "table": "demo-supplies",
+      "position": [-21.2, -1, 21.2],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-07",
+      "table": "demo-supplies",
+      "position": [-30, -1, 0],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-08",
+      "table": "demo-supplies",
+      "position": [-21.2, -1, -21.2],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-09",
+      "table": "demo-valuables",
+      "position": [8, -1, 8],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-10",
+      "table": "demo-valuables",
+      "position": [-8, -1, 8],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-11",
+      "table": "demo-valuables",
+      "position": [-8, -1, -8],
+      "reach": 1.6
+    },
+    {
+      "id": "net-br-box-12",
+      "table": "demo-valuables",
+      "position": [8, -1, -8],
+      "reach": 1.6
+    }
+  ],
+  "extractionPoints": [
+    {
+      "id": "net-br-exit-north",
+      "center": [0, -1, 70],
+      "radius": 3
+    },
+    {
+      "id": "net-br-exit-east",
+      "center": [70, -1, 0],
+      "radius": 3
+    },
+    {
+      "id": "net-br-exit-south",
+      "center": [0, -1, -70],
+      "radius": 3
+    },
+    {
+      "id": "net-br-exit-west",
+      "center": [-70, -1, 0],
+      "radius": 3
+    }
+  ],
+  "zone": {
+    "center": [0, -1, 0],
+    "radius": 75
+  }
+}

@@ -25,7 +25,7 @@ namespace Shooter.Editor
         public const string TemplateName = "EnemyTemplate";
         public const string TemplateId = "wave-template";
 
-        public const string EnemyWeaponId = WeaponAssetBuilder.RifleId;
+        public const string EnemyWeaponId = WeaponAssetBuilder.CarbineId;
 
         // プレイヤーは ModeRunnerBase と同じく陣営 0 なので、敵はそれと別の陣営にする。
         public static readonly Side EnemySide = Side.Bravo;

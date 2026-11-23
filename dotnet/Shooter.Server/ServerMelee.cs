@@ -93,9 +93,25 @@ namespace Shooter.Server
 
                 var spec = swing.CurrentSpec;
                 var weaponId = swinger.SwingWeaponId;
-                if (swing.Tick(deltaSeconds))
+                var impact = swing.Tick(deltaSeconds);
+                if (spec.Path == null)
                 {
-                    Strike(swinger.PlayerId, spec, weaponId);
+                    if (impact)
+                    {
+                        Strike(swinger.PlayerId, spec, weaponId);
+                    }
+
+                    continue;
+                }
+
+                if (impact)
+                {
+                    swinger.Struck.Clear();
+                }
+
+                if (swing.HasSweep)
+                {
+                    Sweep(swinger, spec, weaponId, swing.SweepFrom, swing.SweepTo);
                 }
             }
 
@@ -241,6 +257,9 @@ namespace Shooter.Server
             public int LastTick { get; set; } = -1;
 
             public bool Held { get; set; }
+
+            // 軌道のある振りで、この振りがもう当てた相手。刃が何 Tick にまたがっても同じ相手に二度当てない。
+            public HashSet<int> Struck { get; } = new HashSet<int>();
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Shooter.Tests.EditMode
         public void TheLadderStartsWithTheBotWeaponAndHasSeveralTiers()
         {
             Assert.That(GunGameSceneBuilder.LadderWeaponPaths.Count, Is.GreaterThan(1));
-            Assert.That(GunGameSceneBuilder.LadderWeaponPaths[0], Is.EqualTo(WeaponAssetBuilder.RiflePath));
+            Assert.That(GunGameSceneBuilder.LadderWeaponPaths[0], Is.EqualTo(WeaponAssetBuilder.CarbinePath));
             Assert.That(GunGameSceneBuilder.LadderWeaponPaths, Is.Unique);
         }
 
@@ -96,7 +96,7 @@ namespace Shooter.Tests.EditMode
             var rifle = ScriptableObject.CreateInstance<WeaponDefinition>();
             try
             {
-                WeaponAssetBuilder.Configure(rifle, WeaponAssetBuilder.RifleSpec());
+                WeaponAssetBuilder.Configure(rifle, DemoTestWeapons.CarbineSpec());
 
                 Assert.Throws<ArgumentException>(
                     () => GunGameSceneBuilder.Configure(ladder, Array.Empty<WeaponDefinition>(), Array.Empty<WeaponDefinition>(), true));

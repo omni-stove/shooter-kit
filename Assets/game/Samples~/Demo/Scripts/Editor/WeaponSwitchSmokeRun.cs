@@ -200,7 +200,7 @@ namespace Shooter.Editor
                 ids.Add(item.Spec.Id);
             }
 
-            Expect(problems, ids.Count == 2 && ids[0] == WeaponAssetBuilder.RifleId && ids[1] == WeaponAssetBuilder.HandgunId,
+            Expect(problems, ids.Count == 2 && ids[0] == WeaponAssetBuilder.CarbineId && ids[1] == WeaponAssetBuilder.PistolId,
                 $"the loadout is rifle, handgun (got {string.Join(", ", ids)})");
             if (ids.Count != 2)
             {
@@ -220,7 +220,7 @@ namespace Shooter.Editor
             Expect(problems, weapon.StartReload(), "the rifle starts reloading");
             Expect(problems, weapon.SelectNext(), "Next switches to the handgun");
             Expect(problems, !rifle.IsReloading, "switching away cancels the rifle's reload");
-            Expect(problems, weapon.Weapon.Spec.Id == WeaponAssetBuilder.HandgunId, "the handgun is held after Next");
+            Expect(problems, weapon.Weapon.Spec.Id == WeaponAssetBuilder.PistolId, "the handgun is held after Next");
             ExpectHudName(problems, hud, weapon);
             Expect(problems, !weapon.PullTrigger(true, true), "the handgun does not fire while it is being drawn");
             weapon.Tick(weapon.SwitchSeconds);

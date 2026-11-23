@@ -64,6 +64,12 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("爆発のエフェクト")]
         private GameObject _explosion;
 
+        [SerializeField, Tooltip("近接で振り始めたときの風切り音。空なら鳴らさない")]
+        private AudioClip _meleeSwingSound;
+
+        [SerializeField, Tooltip("近接で相手に当てたときの打撃音。空なら鳴らさない")]
+        private AudioClip _meleeHitSound;
+
         [SerializeField, Tooltip("生きている相手に当てたときの音。空なら鳴らさない")]
         private AudioClip _hitMarkerSound;
 
@@ -132,6 +138,18 @@ namespace Shooter.Runtime
         {
             get => _explosion;
             set => _explosion = value;
+        }
+
+        public AudioClip MeleeSwingSound
+        {
+            get => _meleeSwingSound;
+            set => _meleeSwingSound = value;
+        }
+
+        public AudioClip MeleeHitSound
+        {
+            get => _meleeHitSound;
+            set => _meleeHitSound = value;
         }
 
         public AudioClip HitMarkerSound

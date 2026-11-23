@@ -1,0 +1,61 @@
+{
+  "id": "e657fa2f-f919-4298-b0e3-2d672ffa0ba1",
+  "nameKey": "weapon.sledgehammer",
+  "description": "Team Fortress 2 の Pyro の Homewrecker (大槌) を参考。体 65 に対プレイヤーの -25% を掛けた 48.75・0.8 秒に 1 回・振り始めて 0.2 秒で当たる・48 HU = 1.22 m。Kukri と同じく体力 125 をキットの 100 に合わせて 0.8 倍の 39 にした。建物への 2 倍と味方の消火は入れていない。扇は元に無いので Club と同じ 80°。溜めと投げは元に無いので入れていない。",
+  "category": "Melee",
+  "shotNoiseRadius": 50,
+  "weight": 2.5,
+  "moveSpeedMultiplier": 1,
+  "trigger": {
+    "fireMode": "Auto",
+    "fireInterval": 0.1
+  },
+  "ammo": {
+    "kind": "Magazine",
+    "magazineSize": 30,
+    "reserveAmmo": 90,
+    "reloadSeconds": 2,
+    "activeReloadWindowStart": 0.5,
+    "activeReloadWindowLength": 0.15,
+    "activeReloadFailSeconds": 0.5,
+    "reloadStyle": "Whole",
+    "reloadSecondsPerRound": 0
+  },
+  "round": {
+    "delivery": "Hitscan",
+    "range": 100,
+    "pelletCount": 1,
+    "pelletSpreadDegrees": 0,
+    "radius": 0
+  },
+  "impact": {
+    "damage": 25,
+    "falloff": "None",
+    "structureRadius": 0
+  },
+  "aim": {
+    "hipSpreadDegrees": 0,
+    "adsSpreadDegrees": 0,
+    "moveSpreadDegrees": 0,
+    "recoilPitchDegrees": 0,
+    "recoilYawDegrees": 0,
+    "recoilRecoveryPerSecond": 0,
+    "recoilRecoveryDelaySeconds": 0.15,
+    "blindFireSpreadDegrees": 0,
+    "zoomLevels": [50],
+    "swayDegrees": 0
+  },
+  "melee": {
+    "swing": {
+      "damage": 39,
+      "reach": 1.22,
+      "arcDegrees": 80,
+      "swingSeconds": 0.8,
+      "cooldownSeconds": 0,
+      "impactSeconds": 0.2,
+      "lungeDistance": 0
+    },
+    "chargeDelaySeconds": 0.2,
+    "chargeSeconds": 0.8
+  }
+}

@@ -169,7 +169,7 @@ namespace Shooter.Tests.EditMode
             var labels = row.Query<Label>().ToList();
             Assert.That(
                 labels.ConvertAll(l => l.text),
-                Is.EqualTo(new[] { Localizer.Resolve(KillFeedText.FriendlyMark), "P1", "[Rifle] " + Localizer.Resolve(KillFeedText.HeadshotMark), "P2" }));
+                Is.EqualTo(new[] { Localizer.Resolve(KillFeedText.FriendlyMark), "P1", "[5.56mm カービン] " + Localizer.Resolve(KillFeedText.HeadshotMark), "P2" }));
             Assert.That(labels[1].style.color.value, Is.EqualTo(_hud.TeamColor(Team.Alpha)));
             Assert.That(labels[2].ClassListContains(KillFeedView.HeadshotClass), Is.True);
             Assert.That(_view.Element.style.display.value, Is.EqualTo(DisplayStyle.Flex));
@@ -227,7 +227,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(row.ClassListContains(KillFeedView.LocalRowClass), Is.False);
 
             var labels = row.Query<Label>().ToList();
-            Assert.That(labels.ConvertAll(l => l.text), Is.EqualTo(new[] { "P2", "[Rifle]", "P3", Localizer.Resolve(KillFeedText.AssistMark) }));
+            Assert.That(labels.ConvertAll(l => l.text), Is.EqualTo(new[] { "P2", "[5.56mm カービン]", "P3", Localizer.Resolve(KillFeedText.AssistMark) }));
             Assert.That(labels[3].ClassListContains(KillFeedView.AssistClass), Is.True);
         }
 
@@ -323,7 +323,7 @@ namespace Shooter.Tests.EditMode
             public KillFeedLine Describe(KillFeedEntry entry)
             {
                 return new KillFeedLine(
-                    entry, NameOf(entry.KillerId), NameOf(entry.VictimId), entry.WeaponId.Length > 0 ? new LocalizedText("weapon.rifle") : default,
+                    entry, NameOf(entry.KillerId), NameOf(entry.VictimId), entry.WeaponId.Length > 0 ? new LocalizedText("weapon.ref.carbine556") : default,
                     entry.AssisterIds.Contains(1));
             }
 

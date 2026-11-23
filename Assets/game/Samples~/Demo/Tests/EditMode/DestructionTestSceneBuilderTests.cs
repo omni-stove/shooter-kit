@@ -171,7 +171,7 @@ namespace Shooter.Tests.EditMode
         public void ActorsAreWiredInCode()
         {
             var launcher = NewWeapon("Launcher", WeaponAssetBuilder.LauncherSpec());
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.RangeRules());
 
             var hut = DestructionTestSceneBuilder.CreateActors(_scene, new[] { launcher, rifle }, rules);

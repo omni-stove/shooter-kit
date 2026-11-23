@@ -287,11 +287,11 @@ namespace Shooter.Tests.EditMode
             Assert.That(a, Is.Not.EqualTo(new KillFeedName("P1", Team.Bravo, false)));
         }
 
-        [TestCase("weapon.rifle", false, false, ExpectedResult = "[Rifle]")]
-        [TestCase("weapon.rifle", true, false, ExpectedResult = "[Rifle] 頭")]
+        [TestCase("weapon.ref.carbine556", false, false, ExpectedResult = "[5.56mm カービン]")]
+        [TestCase("weapon.ref.carbine556", true, false, ExpectedResult = "[5.56mm カービン] 頭")]
         [TestCase(null, false, true, ExpectedResult = "[自滅]")]
         [TestCase(null, false, false, ExpectedResult = "[-]")]
-        [TestCase("weapon.rifle", false, true, ExpectedResult = "[Rifle]")]
+        [TestCase("weapon.ref.carbine556", false, true, ExpectedResult = "[5.56mm カービン]")]
         public string FormatsTheWeapon(string weaponNameKey, bool headshot, bool suicide)
         {
             var name = weaponNameKey == null ? default : new LocalizedText(weaponNameKey);

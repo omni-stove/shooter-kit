@@ -181,7 +181,7 @@ namespace Shooter.Editor
                 throw new WeaponJsonException(
                     file,
                     LegacyDisplayNameField,
-                    $"is no longer read; write the key of the name (e.g. \"weapon.rifle\") in '{NameKeyField}' "
+                    $"is no longer read; write the key of the name (e.g. \"weapon.machete\") in '{NameKeyField}' "
                     + "and the text itself in Resources/Localization/<language>/*.json",
                     e);
             }

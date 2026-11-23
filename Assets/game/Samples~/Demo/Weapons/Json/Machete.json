@@ -52,7 +52,15 @@
       "swingSeconds": 0.45,
       "cooldownSeconds": 0.1,
       "impactSeconds": 0.15,
-      "lungeDistance": 0.3
+      "lungeDistance": 0.3,
+      "path": {
+        "style": "Horizontal",
+        "fromDegrees": 60,
+        "toDegrees": -60,
+        "widthDegrees": 30,
+        "activeSeconds": 0.15,
+        "maxTargets": 2
+      }
     },
     "heavySwing": {
       "damage": 95,
@@ -61,7 +69,15 @@
       "swingSeconds": 0.65,
       "cooldownSeconds": 0.2,
       "impactSeconds": 0.25,
-      "lungeDistance": 0.8
+      "lungeDistance": 0.8,
+      "path": {
+        "style": "Horizontal",
+        "fromDegrees": 80,
+        "toDegrees": -80,
+        "widthDegrees": 30,
+        "activeSeconds": 0.2,
+        "maxTargets": 3
+      }
     },
     "chargeDelaySeconds": 0.2,
     "chargeSeconds": 0.8,

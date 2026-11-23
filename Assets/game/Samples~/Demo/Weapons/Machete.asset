@@ -201,6 +201,14 @@ MonoBehaviour:
     _cooldownSeconds: 0.1
     _impactSeconds: 0.15
     _lungeDistance: 0.3
+    _path:
+      _enabled: 1
+      _style: 0
+      _fromDegrees: 60
+      _toDegrees: -60
+      _widthDegrees: 30
+      _activeSeconds: 0.15
+      _maxTargets: 2
     _canCharge: 1
     _heavyDamage: 95
     _heavyReach: 2.1
@@ -209,6 +217,14 @@ MonoBehaviour:
     _heavyCooldownSeconds: 0.2
     _heavyImpactSeconds: 0.25
     _heavyLungeDistance: 0.8
+    _heavyPath:
+      _enabled: 1
+      _style: 0
+      _fromDegrees: 80
+      _toDegrees: -80
+      _widthDegrees: 30
+      _activeSeconds: 0.2
+      _maxTargets: 3
     _chargeDelaySeconds: 0.2
     _chargeSeconds: 0.8
     _canThrow: 1

@@ -1,6 +1,4 @@
 {
-  "weapon.rifle": "Rifle",
-  "weapon.handgun": "Handgun",
   "weapon.launcher": "Launcher",
   "weapon.shotgun": "Shotgun",
   "weapon.crossbow": "Crossbow",
@@ -26,6 +24,10 @@
   "weapon.crowbar": "Crowbar",
   "weapon.club": "Club",
   "weapon.machete": "Machete",
+  "weapon.combatKnife": "Combat Knife",
+  "weapon.pryBar": "Pry Bar",
+  "weapon.kukri": "Kukri",
+  "weapon.sledgehammer": "Sledgehammer",
   "grenade.frag": "Frag Grenade",
   "grenade.smoke": "Smoke Grenade",
   "grenade.flash": "Flashbang",

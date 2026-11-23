@@ -85,7 +85,7 @@ namespace Shooter.Tests.EditMode
             var dummy = root.transform.Find(ExplosivePropRangeFixture.DummyId).GetComponent<Damageable>();
             var collider = first.GetComponent<Collider>();
 
-            StructureDamage.Apply(collider, collider.bounds.center, WeaponAssetBuilder.RifleSpec().Damage, 0f);
+            StructureDamage.Apply(collider, collider.bounds.center, DemoTestWeapons.CarbineSpec().Damage, 0f);
             Assert.That(first.IsTriggered, Is.True, "one rifle bullet sets the barrel off");
             Assert.That(first.Tick(0f), Is.True);
 

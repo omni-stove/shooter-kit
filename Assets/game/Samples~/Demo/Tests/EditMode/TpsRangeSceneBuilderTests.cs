@@ -54,7 +54,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void BootstrapStartsInThirdPersonWithTheRulesAndAMatchRunner()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var launcher = NewWeapon("Launcher", WeaponAssetBuilder.LauncherSpec());
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
 
@@ -79,7 +79,7 @@ namespace Shooter.Tests.EditMode
         public void TheFloorIsWalledInAlongItsEdges()
         {
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
-            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules);
+            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules);
 
             Assert.That(Find(SceneBuildHelpers.PerimeterName), Is.Not.Null);
             SceneBuildHelpersTests.AssertPerimeterEncloses(_scene, -40f, 40f, -40f, 40f, 0f);
@@ -90,7 +90,7 @@ namespace Shooter.Tests.EditMode
         public void PlacesTheCoversTheVaultWallTheOpenAreaAndTheHut()
         {
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
-            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules);
+            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules);
             Physics.SyncTransforms();
 
             var covers = Find(TpsRangeSceneBuilder.CoversName).transform;
@@ -129,7 +129,7 @@ namespace Shooter.Tests.EditMode
         public void PlacesAParkedVehicleWhoseDriverExitIsBlocked()
         {
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
-            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules);
+            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules);
             Physics.SyncTransforms();
 
             var vehicle = Find(TpsRangeSceneBuilder.VehicleName).GetComponent<Vehicle>();
@@ -164,7 +164,7 @@ namespace Shooter.Tests.EditMode
         public void WallsAndBoxesCarryTheirSurfaceMaterials()
         {
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
-            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules);
+            TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules);
 
             var covers = Find(TpsRangeSceneBuilder.CoversName).transform;
             foreach (var box in TpsRangeSceneBuilder.Covers)
@@ -289,7 +289,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void RefusesMissingOrInvalidArgumentsAndPlacesNothing()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
             var broken = NewRules(GameRulesAssetBuilder.TpsRangeRules());
             broken.ReserveAmmoMultiplier = -1f;
@@ -310,7 +310,7 @@ namespace Shooter.Tests.EditMode
             var second = new FakeFixture("FixtureB");
 
             TpsRangeSceneBuilder.PopulateScene(
-                _scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules, new ITpsRangeFixture[] { first, second });
+                _scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules, new ITpsRangeFixture[] { first, second });
 
             var roots = _scene.GetRootGameObjects();
             Assert.That(roots[roots.Length - 2].name, Is.EqualTo("FixtureA"));
@@ -322,7 +322,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void RefusesFixturesWithEmptyOrTakenNamesAndPlacesNothing()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
 
             Assert.Throws<ArgumentNullException>(() => TpsRangeSceneBuilder.PopulateScene(_scene, new[] { rifle }, rules, null));
@@ -347,7 +347,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void AFixtureThatBreaksTheRulesUndoesEverything()
         {
-            var rifle = NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec());
+            var rifle = NewWeapon("Rifle", DemoTestWeapons.CarbineSpec());
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
 
             Assert.Throws<InvalidOperationException>(
@@ -398,7 +398,7 @@ namespace Shooter.Tests.EditMode
             var rules = NewRules(GameRulesAssetBuilder.TpsRangeRules());
 
             Assert.Throws<InvalidOperationException>(
-                () => TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", WeaponAssetBuilder.RifleSpec()) }, rules));
+                () => TpsRangeSceneBuilder.PopulateScene(_scene, new[] { NewWeapon("Rifle", DemoTestWeapons.CarbineSpec()) }, rules));
             Assert.That(_scene.rootCount, Is.EqualTo(1));
         }
 

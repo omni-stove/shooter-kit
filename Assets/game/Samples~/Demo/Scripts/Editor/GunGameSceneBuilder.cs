@@ -16,12 +16,12 @@ namespace Shooter.Editor
 
         public const int BotCount = 5;
 
-        // 0 段目は bot が最初に持つ武器 (ModeSceneBuilder.BotWeaponId の rifle) と揃える。
+        // 0 段目は bot が最初に持つ武器 (ModeSceneBuilder.BotWeaponId の carbine) と揃える。
         public static IReadOnlyList<string> LadderWeaponPaths => new[]
         {
-            WeaponAssetBuilder.RiflePath,
+            WeaponAssetBuilder.CarbinePath,
             WeaponAssetBuilder.LauncherPath,
-            WeaponAssetBuilder.HandgunPath,
+            WeaponAssetBuilder.PistolPath,
         };
 
         public static IReadOnlyList<string> MeleeWeaponPaths => new[]

@@ -39,10 +39,10 @@ namespace Shooter.Tests.EditMode
             CampaignSceneBuilder.Configure(_definition);
             _rifle = ScriptableObject.CreateInstance<WeaponDefinition>();
             _rifle.name = "Rifle";
-            WeaponAssetBuilder.Configure(_rifle, WeaponAssetBuilder.RifleSpec());
+            WeaponAssetBuilder.Configure(_rifle, DemoTestWeapons.CarbineSpec());
             _handgun = ScriptableObject.CreateInstance<WeaponDefinition>();
             _handgun.name = "Handgun";
-            WeaponAssetBuilder.Configure(_handgun, WeaponAssetBuilder.HandgunSpec());
+            WeaponAssetBuilder.Configure(_handgun, DemoTestWeapons.PistolSpec());
             _catalog = ScriptableObject.CreateInstance<WeaponCatalogAsset>();
             _catalog.name = "WeaponCatalog";
             WeaponAssetBuilder.Configure(_catalog, new[] { _rifle, _handgun });
@@ -285,7 +285,7 @@ namespace Shooter.Tests.EditMode
                 var saved = CampaignSave.FromJson(text);
                 Assert.That(saved.CheckpointId, Is.EqualTo(CampaignSceneBuilder.AreaACheckpointId));
                 Assert.That(saved.Weapons.Count(), Is.EqualTo(2), "every weapon in the loadout is saved");
-                Assert.That(saved.EquippedWeaponId, Is.EqualTo(WeaponAssetBuilder.RifleId));
+                Assert.That(saved.EquippedWeaponId, Is.EqualTo(PlayerWeapons[0].Id));
 
                 layout.Campaign.Tick(layout.Campaign.SavedNoticeSeconds);
                 Assert.That(hud.ShownModel.Notice, Is.EqualTo(HudNotice.None), "the saved notice disappears");
@@ -520,7 +520,7 @@ namespace Shooter.Tests.EditMode
                     () => CampaignSceneBuilder.PopulateScene(_scene, _definition, PlayerWeapons, rifleOnly, Rules));
                 var ambusher = CampaignSceneBuilder.Ambushers[0];
                 Assert.That(e.Message, Does.Contain($"'{ambusher.Id}'"), "names the placement");
-                Assert.That(e.Message, Does.Contain($"'{WeaponAssetBuilder.HandgunId}'"), "names the weapon id");
+                Assert.That(e.Message, Does.Contain($"'{WeaponAssetBuilder.PistolId}'"), "names the weapon id");
                 Assert.That(e.Message, Does.Contain("'RifleOnly'"), "names the catalog");
                 Assert.That(_scene.rootCount, Is.Zero, "nothing is placed");
             }
@@ -686,8 +686,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(triggers, Is.EqualTo(2));
             Assert.That(enemies, Is.EqualTo(CampaignSceneBuilder.EnemyCount));
 
-            var rifle = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.RiflePath);
-            Assert.That(rifle, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build");
+            var machete = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(WeaponAssetBuilder.MachetePath);
+            Assert.That(machete, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build");
             Assert.That(bootstrap.WeaponDefinitions, Is.EqualTo(TestScenes.ExpectedPlayerWeapons()), $"rerun {nameof(CampaignSceneBuilder)}.Build");
             var catalog = AssetDatabase.LoadAssetAtPath<WeaponCatalogAsset>(WeaponAssetBuilder.CatalogPath);
             Assert.That(catalog, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build");

@@ -114,9 +114,19 @@ namespace Shooter.Tests.EditMode
             Assert.That(_player.MovementOverrides, Does.Contain(_melee));
 
             _melee.Configure(Rules(Melee.Off));
-            Assert.That(_melee.enabled, Is.False);
-            Assert.That(_weapon.Modifiers, Has.No.Member(_melee));
-            Assert.That(_player.MovementOverrides, Has.No.Member(_melee));
+            Assert.That(_melee.enabled, Is.True, "melee weapons still swing with the rule Off");
+            Assert.That(_weapon.Modifiers, Does.Contain(_melee));
+            Assert.That(_player.MovementOverrides, Does.Contain(_melee));
+        }
+
+        [Test]
+        public void TurningTheRuleOffCancelsAGunBash()
+        {
+            Assert.That(_melee.TrySwing(), Is.True);
+
+            _melee.Configure(Rules(Melee.Off));
+
+            Assert.That(_melee.IsSwinging, Is.False);
         }
 
         [Test]
@@ -321,7 +331,8 @@ namespace Shooter.Tests.EditMode
             var installer = new MeleeActionInstaller();
             installer.Install(_body, Rules(Melee.Off));
             Assert.That(_body.GetComponents<MeleeController>(), Has.Length.EqualTo(1));
-            Assert.That(_melee.enabled, Is.False);
+            Assert.That(_melee.enabled, Is.True);
+            Assert.That(_melee.Rule, Is.EqualTo(Melee.Off));
 
             installer.Install(_body, Rules(Melee.On));
             Assert.That(_melee.enabled, Is.True);

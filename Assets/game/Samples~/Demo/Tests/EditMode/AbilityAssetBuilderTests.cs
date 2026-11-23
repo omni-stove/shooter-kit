@@ -405,7 +405,14 @@ namespace Shooter.Tests.EditMode
         private string BuildLoadout()
         {
             var loadoutPath = _folder + "/Loadout.asset";
-            WeaponAssetBuilder.BuildAt(_folder + "/Rifle.asset", _folder + "/Handgun.asset", _folder + "/Catalog.asset", loadoutPath);
+            var carbine = SceneBuildHelpers.CreateOrUpdateAsset<WeaponDefinition>(
+                _folder + "/Carbine.asset", d => WeaponAssetBuilder.Configure(d, DemoTestWeapons.CarbineSpec()));
+            var pistol = SceneBuildHelpers.CreateOrUpdateAsset<WeaponDefinition>(
+                _folder + "/Pistol.asset", d => WeaponAssetBuilder.Configure(d, DemoTestWeapons.PistolSpec()));
+            var macheteJson = System.IO.File.ReadAllText(ShooterKitRoot.PhysicalPath(WeaponAssetBuilder.JsonFolder + "/Machete.json"));
+            var machete = SceneBuildHelpers.CreateOrUpdateAsset<WeaponDefinition>(
+                _folder + "/Machete.asset", d => WeaponAssetBuilder.Configure(d, WeaponJsonImporter.ParseSpec(macheteJson, "Machete.json")));
+            WeaponAssetBuilder.BuildCatalogAndLoadoutAt(machete, pistol, carbine, _folder + "/Catalog.asset", loadoutPath);
             return loadoutPath;
         }
     }

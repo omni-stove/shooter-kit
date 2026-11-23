@@ -79,8 +79,8 @@ namespace Shooter.Tests.EditMode
         {
             var catalog = ViewmodelAssetStep.BuildAt(_viewmodelFolder, _catalogPath);
 
-            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.RifleId, out var rifle), Is.True);
-            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.HandgunId, out var handgun), Is.True);
+            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.CarbineId, out var rifle), Is.True);
+            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.PistolId, out var handgun), Is.True);
             var rifleMuzzle = WeaponSockets.FindSocket(rifle.Prefab.transform, WeaponSockets.MuzzleName);
             var handgunMuzzle = WeaponSockets.FindSocket(handgun.Prefab.transform, WeaponSockets.MuzzleName);
 
@@ -97,7 +97,7 @@ namespace Shooter.Tests.EditMode
             var minigunId = ViewmodelAssetStep.Weapons().Single(weapon => weapon.Name == "Minigun").Spec.Id;
 
             Assert.That(catalog.TryGetWeapon(minigunId, out var minigun), Is.True);
-            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.RifleId, out var rifle), Is.True);
+            Assert.That(catalog.TryGetWeapon(WeaponAssetBuilder.CarbineId, out var rifle), Is.True);
             Assert.That(minigun.Prefab, Is.Not.SameAs(rifle.Prefab));
             Assert.That(minigun.Prefab.transform.Find(ViewmodelAssetStep.GunName + "/" + WeaponLook.RotaryBarrelPrefix + "0"), Is.Not.Null);
             Assert.That(rifle.Prefab.transform.Find(ViewmodelAssetStep.GunName + "/" + WeaponLook.RotaryBarrelPrefix + "0"), Is.Null);
@@ -125,12 +125,12 @@ namespace Shooter.Tests.EditMode
         public void RebuildingKeepsTheGuids()
         {
             var first = ViewmodelAssetStep.BuildAt(_viewmodelFolder, _catalogPath);
-            first.TryGetWeapon(WeaponAssetBuilder.RifleId, out var rifle);
+            first.TryGetWeapon(WeaponAssetBuilder.CarbineId, out var rifle);
             var catalogGuid = AssetDatabase.AssetPathToGUID(_catalogPath);
             var prefabGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(rifle.Prefab));
 
             var second = ViewmodelAssetStep.BuildAt(_viewmodelFolder, _catalogPath);
-            second.TryGetWeapon(WeaponAssetBuilder.RifleId, out var rebuilt);
+            second.TryGetWeapon(WeaponAssetBuilder.CarbineId, out var rebuilt);
 
             Assert.That(AssetDatabase.AssetPathToGUID(_catalogPath), Is.EqualTo(catalogGuid));
             Assert.That(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(rebuilt.Prefab)), Is.EqualTo(prefabGuid));

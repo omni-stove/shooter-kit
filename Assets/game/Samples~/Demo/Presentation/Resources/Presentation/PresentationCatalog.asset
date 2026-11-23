@@ -436,6 +436,8 @@ MonoBehaviour:
   _hurtVoice: {fileID: 8300000, guid: e91c58fb951fe424ba6e136d27c56037, type: 3}
   _explosionSound: {fileID: 8300000, guid: fef910dca32ac4b629c0f52bca370dd3, type: 3}
   _explosion: {fileID: 7746079728175826336, guid: f9d02165d462d40b9b1a7630b0a98999, type: 3}
+  _meleeSwingSound: {fileID: 8300000, guid: a070f966bb7a64b7d93071743861c276, type: 3}
+  _meleeHitSound: {fileID: 8300000, guid: 4e737c2b8b55d47fba8b33e8ccc5acb4, type: 3}
   _hitMarkerSound: {fileID: 0}
   _killMarkerSound: {fileID: 0}
   _hitMarkerVolume: 0.4
