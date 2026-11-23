@@ -152,6 +152,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("グラフィック設定の初期値 (画質・VSync・fps 上限) と選べる fps 上限の JSON。空なら Resources/Tuning/graphics")]
         private TextAsset _graphicsTuning;
 
+        [SerializeField, Tooltip("武器をしまう動作 (しまっている間の移動速度の倍率・武装と数える状態) の JSON。空なら Resources/Tuning/holster")]
+        private TextAsset _holsterTuning;
+
         [Header("武器・キャンペーン")]
         [SerializeField, Tooltip("使える武器の一覧")]
         private WeaponCatalogAsset _weaponCatalog;
@@ -547,6 +550,12 @@ namespace Shooter.Runtime
         {
             get => _graphicsTuning;
             set => _graphicsTuning = value;
+        }
+
+        public TextAsset HolsterTuning
+        {
+            get => _holsterTuning;
+            set => _holsterTuning = value;
         }
 
         public WeaponCatalogAsset WeaponCatalog

@@ -346,6 +346,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Holster",
+                    "type": "Button",
+                    "id": "d41f7a3e-6b28-4c95-a0e7-3f8c2b9d5e14",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1182,6 +1191,17 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Countermeasure",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8a2c6e1f-4d93-4b70-9e5a-c7f1b3d8a062",
+                    "path": "<Keyboard>/o",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Holster",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

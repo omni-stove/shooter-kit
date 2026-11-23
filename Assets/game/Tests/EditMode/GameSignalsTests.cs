@@ -66,6 +66,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.Stamina.Value, Is.Null);
             Assert.That(GameSignals.LockOnWarning.Value, Is.Null);
             Assert.That(GameSignals.Emotes.Value, Is.Null);
+            Assert.That(GameSignals.Holster.Value, Is.Null);
+            Assert.That(GameSignals.WeaponFreeZone.Value, Is.Null);
             Assert.That(GameSignals.VoteKick.Value, Is.Null);
             Assert.That(GameSignals.VoteKickSender.Value, Is.Null);
             Assert.That(GameSignals.Wallet.Value, Is.Null);
@@ -199,6 +201,8 @@ namespace Shooter.Tests.EditMode
             GameSignals.Stamina.Publish(new StaminaStatus(0f, 100f, true));
             GameSignals.LockOnWarning.Publish(new LockOnWarningStatus(LockOnWarningStage.Locked, 90f));
             GameSignals.Emotes.Publish(new FakeEmoteControl());
+            GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstered, 1f, false));
+            GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnThenHostile, true, 3f));
             GameSignals.VoteKick.Publish(new VoteKickStatus(3, 1, 1, 4, 30f));
             GameSignals.VoteKickSender.Publish(new FakeVoteKickSender());
             GameSignals.Wallet.Publish(new WalletStatus(800, 16000, true));
@@ -274,6 +278,32 @@ namespace Shooter.Tests.EditMode
             Assert.That(heardStamina, Is.Zero);
             Assert.That(heardLockOn, Is.Zero);
             Assert.That(heardEmotes, Is.Zero);
+        }
+
+        [Test]
+        public void TheHolsterAndWeaponFreeZoneSignalsHoldWhatWasPublishedUntilResetAll()
+        {
+            var heardHolster = new List<HolsterStatus?>();
+            var heardZone = new List<WeaponFreeZoneStatus?>();
+            GameSignals.Holster.Changed += heardHolster.Add;
+            GameSignals.WeaponFreeZone.Changed += heardZone.Add;
+
+            GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstering, 0.25f, false));
+            GameSignals.WeaponFreeZone.Publish(WeaponFreeZoneStatus.Outside);
+
+            Assert.That(GameSignals.Holster.Value, Is.EqualTo((HolsterStatus?)new HolsterStatus(HolsterPhase.Holstering, 0.25f, false)));
+            Assert.That(GameSignals.Holster.Value.Value.Lowering, Is.EqualTo(0.25f));
+            Assert.That(GameSignals.WeaponFreeZone.HasValue, Is.True, "being outside is still something to show");
+            Assert.That(GameSignals.WeaponFreeZone.Value.Value.Inside, Is.False);
+            Assert.That(heardHolster, Has.Count.EqualTo(1));
+            Assert.That(heardZone, Has.Count.EqualTo(1));
+
+            GameSignals.ResetAll();
+            GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Drawn, 0f, true));
+            GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.BlockDraw, false, 0f));
+
+            Assert.That(heardHolster, Has.Count.EqualTo(1), "subscribers from before the reset are gone");
+            Assert.That(heardZone, Has.Count.EqualTo(1));
         }
 
         [Test]
