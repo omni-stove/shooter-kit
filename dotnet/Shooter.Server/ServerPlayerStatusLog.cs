@@ -45,6 +45,18 @@ namespace Shooter.Server
                 kind);
         }
 
+        public static string StaggerImposed(int playerId, StaggerVerdict verdict, string source)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} imposed player={1} kind={2} seconds={3:0.00} source={4}",
+                StaggerTag,
+                playerId,
+                verdict.Kind,
+                verdict.Seconds,
+                string.IsNullOrEmpty(source) ? "-" : source);
+        }
+
         public static string StaggerResisted(int playerId, StaggerKind kind)
         {
             return StaggerTag + " resisted player=" + Text(playerId) + " kind=" + kind;
