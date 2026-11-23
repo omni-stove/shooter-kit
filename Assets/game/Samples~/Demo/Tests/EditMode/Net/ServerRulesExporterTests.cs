@@ -44,14 +44,100 @@ namespace Shooter.Net.Tests
         }
 
         [Test]
-        public void TheBattleRoyaleExtractionAndHordeRulesAreAlwaysExported()
+        public void RulesAssetsWithAnObjectiveAreExportedInNameOrder()
         {
-            Assert.That(ServerRulesExporter.ModeRulesToExport, Is.EqualTo(new[]
+            var payload = Rules(GameRulesAssetBuilder.PayloadName, GameRulesAssetBuilder.PayloadRules());
+            var horde = Rules(GameRulesAssetBuilder.HordeName, GameRulesAssetBuilder.HordeRules());
+            var battleRoyale = Rules(GameRulesAssetBuilder.BattleRoyaleName, GameRulesAssetBuilder.BattleRoyaleRules());
+            var freeForAll = Rules(GameRulesAssetBuilder.FreeForAllName, GameRulesAssetBuilder.FreeForAllRules());
+            var range = Rules("Range", GameRulesAssetBuilder.RangeRules());
+
+            var picked = ServerRulesExporter.ModeRulesToExport(
+                new[] { payload, horde, null, freeForAll, battleRoyale, range, horde }, new HashSet<string>());
+
+            Assert.That(picked, Is.EqualTo(new[] { battleRoyale, horde, payload }), "FreeForAll and Range have the objective None");
+        }
+
+        [Test]
+        public void HandWrittenRulesAreNotExported()
+        {
+            var payload = Rules(GameRulesAssetBuilder.PayloadName, GameRulesAssetBuilder.PayloadRules());
+            var horde = Rules(GameRulesAssetBuilder.HordeName, GameRulesAssetBuilder.HordeRules());
+
+            var picked = ServerRulesExporter.ModeRulesToExport(new[] { payload, horde }, new HashSet<string> { "Payload", "horde" });
+
+            Assert.That(picked, Is.EqualTo(new[] { horde }), "the names are matched by case, as scripts/server-rules.sh does");
+        }
+
+        [Test]
+        public void TheHandWrittenListTakesTheFirstWordOfEachLineOutsideComments()
+        {
+            var names = ServerRulesExporter.ParseHandWritten(
+                "# kept by hand\n\nElimination\r\n  FreeForAll   # deathCamera KillCam\n\tGunGame\ttiers\n# Payload\nVip#no asset\n");
+
+            Assert.That(names, Is.EquivalentTo(new[] { "Elimination", "FreeForAll", "GunGame", "Vip" }));
+            Assert.That(ServerRulesExporter.ParseHandWritten(string.Empty), Is.Empty);
+        }
+
+        [Test]
+        public void AMissingHandWrittenListNamesNoRules()
+        {
+            Assert.That(ServerRulesExporter.LoadHandWritten(Path.Combine(_directory, ServerRulesExporter.HandWrittenFileName)), Is.Empty);
+
+            Directory.CreateDirectory(_directory);
+            File.WriteAllText(Path.Combine(_directory, ServerRulesExporter.HandWrittenFileName), "Elimination\n");
+
+            Assert.That(
+                ServerRulesExporter.LoadHandWritten(Path.Combine(_directory, ServerRulesExporter.HandWrittenFileName)),
+                Is.EquivalentTo(new[] { "Elimination" }));
+        }
+
+        [Test]
+        public void RulesFilesNeitherWrittenNorHandWrittenAreLeftover()
+        {
+            Assert.That(ServerRulesExporter.LeftoverRulesFiles(_directory, Array.Empty<string>(), new HashSet<string>()), Is.Empty, "no directory yet");
+
+            Directory.CreateDirectory(_directory);
+            foreach (var name in new[] { "TeamDeathmatch.json", "Vip.json", "Elimination.json", "Juggernaut.json", "hand-written.txt" })
             {
-                (GameRulesAssetBuilder.BattleRoyaleName, MatchObjective.BattleRoyale),
-                (GameRulesAssetBuilder.ExtractionName, MatchObjective.Extraction),
-                (GameRulesAssetBuilder.HordeName, MatchObjective.Horde),
+                File.WriteAllText(Path.Combine(_directory, name), "{}");
+            }
+
+            var leftover = ServerRulesExporter.LeftoverRulesFiles(
+                _directory, new[] { Path.Combine(_directory, "TeamDeathmatch.json") }, new HashSet<string> { "Elimination" });
+
+            Assert.That(leftover, Is.EqualTo(new[] { "Juggernaut.json", "Vip.json" }));
+        }
+
+        [Test]
+        public void TheCommittedListNamesTheThirteenHandWrittenRules()
+        {
+            Assert.That(ServerRulesExporter.LoadHandWritten(ServerRulesExporter.HandWrittenPath), Is.EquivalentTo(new[]
+            {
+                "Elimination", "CaptureTheFlag", "Execution", "FreeForAll", "Guardian", "GunGame", "Hardpoint", "Infected",
+                "KillConfirmed", "SearchAndDestroy", "Payload", "Juggernaut", "Vip",
             }));
+        }
+
+        [Test]
+        public void AFolderThatDoesNotExistHoldsNoRulesAssets()
+        {
+            Assert.That(ServerRulesExporter.LoadRulesAssets("Assets/ServerRulesExporterTests-Missing"), Is.Empty);
+        }
+
+        [Test]
+        public void TheRulesAssetsOfTheFolderWithAnObjectiveAreTheModeRules()
+        {
+            var assets = ServerRulesExporter.LoadRulesAssets(GameRulesAssetBuilder.Folder);
+
+            var names = ServerRulesExporter.LoadModeRules(new HashSet<string>()).Select(asset => asset.name).ToArray();
+
+            Assert.That(names, Is.EqualTo(assets
+                .Where(asset => asset.Objective != MatchObjective.None)
+                .Select(asset => asset.name)
+                .Distinct()
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray()));
         }
 
         [Test]
@@ -108,18 +194,6 @@ namespace Shooter.Net.Tests
             var combined = ServerRulesExporter.WithModeRules(new[] { teamDeathmatch, battleRoyale }, new[] { battleRoyale, null, extraction });
 
             Assert.That(combined, Is.EqualTo(new[] { teamDeathmatch, battleRoyale, extraction }));
-        }
-
-        [Test]
-        public void ModeRulesWithAnotherObjectiveAreRefused()
-        {
-            var stale = Rules(GameRulesAssetBuilder.BattleRoyaleName, GameRulesAssetBuilder.TeamDeathmatchRules());
-
-            var e = Assert.Throws<InvalidOperationException>(() => ServerRulesExporter.RequireObjective(stale, MatchObjective.BattleRoyale));
-
-            Assert.That(e.Message, Does.Contain("has the objective None").And.Contain("plays 'BattleRoyale' as BattleRoyale"));
-            Assert.DoesNotThrow(() => ServerRulesExporter.RequireObjective(
-                Rules(GameRulesAssetBuilder.ExtractionName, GameRulesAssetBuilder.ExtractionRules()), MatchObjective.Extraction));
         }
 
         [Test]

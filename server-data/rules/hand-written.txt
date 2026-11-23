@@ -1,0 +1,27 @@
+# make export-server-rules (ServerRulesExporter) が書き出さず、手で保つルールの名前を 1 行に 1 つ書く。# から行末までは読まない。
+# ここに名前のあるルールは、Demo のルールアセットに目的 (Objective) があっても書き出しが上書きしない。
+# ここにも無く、書き出しの対象でもない *.json がこのフォルダーにあると、書き出しと scripts/server-rules.sh (lint) が落ちる。
+# 手で保つファイルは、下に書いた項目のほかを Demo の同じ名前のルールアセット (Assets/game/Samples~/Demo/Rules) と同じ値にしておく。
+# アセットがオンラインの値を全部持つようになったら、その名前をここから消して書き出しに任せる。
+
+# 同じ名前のアセットが無い。
+Elimination
+
+# アセットの Objective が None (オフラインのモードは Objective を読まない) で、サーバーは目的をファイルから選ぶ。
+# どれも objective をモードの名前にする。ほかにアセットと変えている項目を名前の後ろに書く。
+CaptureTheFlag    # deathCamera KillCam
+Execution         # match.roundPreparationSeconds 3
+FreeForAll        # deathCamera KillCam、friendlyFire On
+Guardian          # deathCamera KillCam、downed Off、abilities Off、respawnAnchor Base
+GunGame           # deathCamera KillCam、friendlyFire On、streaks Off、match.gunGame.tierWeaponIds
+Hardpoint         # deathCamera KillCam
+Infected          # deathCamera KillCam
+KillConfirmed     # deathCamera KillCam
+SearchAndDestroy  # deathCamera KillCam
+
+# アセットに Objective はあるが、deathCamera を KillCam にしている。
+Payload
+
+# アセットをまだコミットしていない (make build-rules が作る)。deathCamera を KillCam にしている。
+Juggernaut
+Vip
