@@ -3,6 +3,7 @@
     "rootNamespace": "Shooter.Tests.EditMode",
     "references": [
         "Shooter.Core",
+        "Shooter.Core.Vehicle",
         "Shooter.Aircraft.Core",
         "Shooter.Runtime",
         "Shooter.Aircraft"

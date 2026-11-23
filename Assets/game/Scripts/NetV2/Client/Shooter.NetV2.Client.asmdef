@@ -4,6 +4,15 @@
     "references": [
         "Shooter.Core",
         "Shooter.Core.World",
+        "Shooter.Core.Replay",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.Spectate",
+        "Shooter.Core.Services",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Vehicle",
+        "Shooter.Core.Chat",
         "Shooter.Protocol"
     ],
     "includePlatforms": [],

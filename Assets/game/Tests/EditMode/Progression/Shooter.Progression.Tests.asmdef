@@ -5,6 +5,7 @@
         "Shooter.Tests.Support",
         "Shooter.Tests.Components",
         "Shooter.Core",
+        "Shooter.Core.Services",
         "Shooter.Progression.Core",
         "Shooter.Runtime",
         "Shooter.Services",

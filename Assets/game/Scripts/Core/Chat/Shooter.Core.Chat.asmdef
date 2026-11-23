@@ -1,0 +1,17 @@
+{
+    "name": "Shooter.Core.Chat",
+    "rootNamespace": "Shooter.Core",
+    "references": [
+        "Shooter.Core",
+        "Shooter.Core.World"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

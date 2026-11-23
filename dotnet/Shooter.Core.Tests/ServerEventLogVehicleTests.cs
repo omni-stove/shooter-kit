@@ -11,7 +11,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void EnteringAVehicleNamesTheSeatAndRole()
         {
-            var line = ServerEventLog.VehicleEntered(_time, _matchId, 3, null, 0, "jeep", 2, VehicleSeatRole.Gunner);
+            var line = ServerEventLog.VehicleEntered(_time, _matchId, 3, null, 0, "jeep", 2, VehicleSeatRole.Gunner.ToString());
 
             Assert.That(line, Is.EqualTo(
                 "{\"type\":\"vehicle_entered\",\"time\":\"2026-11-17T09:00:00.123Z\",\"matchId\":\"" + _matchId
@@ -21,7 +21,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void LeavingAVehicleNamesTheReason()
         {
-            var line = ServerEventLog.VehicleLeft(_time, _matchId, 3, null, 1, "jeep", 0, VehicleLeaveReason.Wrecked);
+            var line = ServerEventLog.VehicleLeft(_time, _matchId, 3, null, 1, "jeep", 0, VehicleLeaveReason.Wrecked.ToString());
 
             Assert.That(line, Is.EqualTo(
                 "{\"type\":\"vehicle_left\",\"time\":\"2026-11-17T09:00:00.123Z\",\"matchId\":\"" + _matchId
@@ -44,10 +44,10 @@ namespace Shooter.Core.Tests
         public void InvalidValuesAreRefused()
         {
             Assert.That(
-                () => ServerEventLog.VehicleEntered(_time, _matchId, 3, null, -1, "jeep", 0, VehicleSeatRole.Driver),
+                () => ServerEventLog.VehicleEntered(_time, _matchId, 3, null, -1, "jeep", 0, VehicleSeatRole.Driver.ToString()),
                 Throws.InstanceOf<ArgumentOutOfRangeException>());
             Assert.That(
-                () => ServerEventLog.VehicleLeft(_time, _matchId, 3, null, 0, "", 0, VehicleLeaveReason.Request),
+                () => ServerEventLog.VehicleLeft(_time, _matchId, 3, null, 0, "", 0, VehicleLeaveReason.Request.ToString()),
                 Throws.ArgumentException);
             Assert.That(
                 () => ServerEventLog.VehicleExploded(_time, _matchId, 0, "jeep", null, null, -1, 0, 0),

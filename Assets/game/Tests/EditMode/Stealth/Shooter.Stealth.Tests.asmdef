@@ -5,6 +5,7 @@
         "Shooter.Tests.Support",
         "Shooter.Tests.Components",
         "Shooter.Core",
+        "Shooter.Core.Presentation",
         "Shooter.Stealth.Core",
         "Shooter.Runtime",
         "Shooter.Stealth",

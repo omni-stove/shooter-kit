@@ -3,6 +3,7 @@
     "rootNamespace": "Shooter.Core.Tests",
     "references": [
         "Shooter.Core",
+        "Shooter.Core.Vehicle",
         "Shooter.Aircraft.Core",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

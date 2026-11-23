@@ -425,7 +425,8 @@ namespace Shooter.Server
         {
             if (_events.Enabled)
             {
-                _events.Write(ServerEventLog.Chat(_utcNow(), MatchId, line.SenderId, ProductUserIdOf(line.SenderId), line.Channel, line.Text.Length));
+                _events.Write(ServerEventLog.Chat(
+                    _utcNow(), MatchId, line.SenderId, ProductUserIdOf(line.SenderId), line.Channel.ToString(), line.Text.Length));
             }
         }
 
@@ -433,7 +434,12 @@ namespace Shooter.Server
         {
             if (_events.Enabled)
             {
-                _events.Write(ServerEventLog.ChatRefused(_utcNow(), MatchId, playerId, ProductUserIdOf(playerId), reason));
+                if (reason == ChatRefusal.None || !Enum.IsDefined(reason))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(reason), reason, "reason must be a ChatRefusal other than None");
+                }
+
+                _events.Write(ServerEventLog.ChatRefused(_utcNow(), MatchId, playerId, ProductUserIdOf(playerId), reason.ToString()));
             }
         }
 
@@ -441,7 +447,8 @@ namespace Shooter.Server
         {
             if (_events.Enabled)
             {
-                _events.Write(ServerEventLog.VehicleEntered(_utcNow(), MatchId, playerId, ProductUserIdOf(playerId), vehicle, vehicleId, seat, role));
+                _events.Write(ServerEventLog.VehicleEntered(
+                    _utcNow(), MatchId, playerId, ProductUserIdOf(playerId), vehicle, vehicleId, seat, role.ToString()));
             }
         }
 
@@ -449,7 +456,13 @@ namespace Shooter.Server
         {
             if (_events.Enabled)
             {
-                _events.Write(ServerEventLog.VehicleLeft(_utcNow(), MatchId, playerId, ProductUserIdOf(playerId), vehicle, vehicleId, seat, reason));
+                if (!Enum.IsDefined(reason))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(reason), reason, "reason must be a VehicleLeaveReason");
+                }
+
+                _events.Write(ServerEventLog.VehicleLeft(
+                    _utcNow(), MatchId, playerId, ProductUserIdOf(playerId), vehicle, vehicleId, seat, reason.ToString()));
             }
         }
 

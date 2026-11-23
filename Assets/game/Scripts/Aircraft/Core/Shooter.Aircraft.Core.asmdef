@@ -2,7 +2,8 @@
     "name": "Shooter.Aircraft.Core",
     "rootNamespace": "Shooter.Core",
     "references": [
-        "Shooter.Core"
+        "Shooter.Core",
+        "Shooter.Core.Vehicle"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

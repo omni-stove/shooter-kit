@@ -166,26 +166,22 @@ namespace Shooter.Core
             return FlatJsonObject.Format(values);
         }
 
+        // 席の役割と降りた理由は Vehicle の enum を受けず名前の文字列で受ける。Telemetry を Vehicle の asmdef に依存させないため
         public static string VehicleEntered(
-            DateTime utcNow, string matchId, int playerId, string productUserId, int vehicle, string vehicleId, int seat, VehicleSeatRole role)
+            DateTime utcNow, string matchId, int playerId, string productUserId, int vehicle, string vehicleId, int seat, string role)
         {
             var values = BeginVehicle(VehicleEnteredType, utcNow, matchId, playerId, productUserId, vehicle, vehicleId);
             values.Add(Pair("seat", Number(seat)));
-            values.Add(Pair("role", role.ToString()));
+            values.Add(Pair("role", RequireText(role, nameof(role))));
             return FlatJsonObject.Format(values);
         }
 
         public static string VehicleLeft(
-            DateTime utcNow, string matchId, int playerId, string productUserId, int vehicle, string vehicleId, int seat, VehicleLeaveReason reason)
+            DateTime utcNow, string matchId, int playerId, string productUserId, int vehicle, string vehicleId, int seat, string reason)
         {
-            if (!Enum.IsDefined(typeof(VehicleLeaveReason), reason))
-            {
-                throw new ArgumentOutOfRangeException(nameof(reason), reason, "reason must be a VehicleLeaveReason");
-            }
-
             var values = BeginVehicle(VehicleLeftType, utcNow, matchId, playerId, productUserId, vehicle, vehicleId);
             values.Add(Pair("seat", Number(seat)));
-            values.Add(Pair("reason", reason.ToString()));
+            values.Add(Pair("reason", RequireText(reason, nameof(reason))));
             return FlatJsonObject.Format(values);
         }
 
@@ -213,13 +209,10 @@ namespace Shooter.Core
         }
 
         // 本文はプレイヤーが書いたものなので出さず、長さだけを出す (ChatLine.ToString と同じ)。
-        public static string Chat(DateTime utcNow, string matchId, int playerId, string productUserId, ChatChannel channel, int length)
+        // チャンネルと断った理由は Chat の enum を受けず名前の文字列で受ける。Telemetry を Chat の asmdef に依存させないため
+        public static string Chat(DateTime utcNow, string matchId, int playerId, string productUserId, string channel, int length)
         {
-            if (!Enum.IsDefined(typeof(ChatChannel), channel))
-            {
-                throw new ArgumentOutOfRangeException(nameof(channel), channel, "channel must be a ChatChannel");
-            }
-
+            RequireText(channel, nameof(channel));
             if (length <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(length), length, "length must be positive");
@@ -227,21 +220,17 @@ namespace Shooter.Core
 
             var values = BeginMatch(ChatType, utcNow, matchId);
             AddPlayer(values, "playerId", "productUserId", playerId, productUserId);
-            values.Add(Pair("channel", channel.ToString()));
+            values.Add(Pair("channel", channel));
             values.Add(Pair("length", Number(length)));
             return FlatJsonObject.Format(values);
         }
 
-        public static string ChatRefused(DateTime utcNow, string matchId, int playerId, string productUserId, ChatRefusal reason)
+        public static string ChatRefused(DateTime utcNow, string matchId, int playerId, string productUserId, string reason)
         {
-            if (reason == ChatRefusal.None || !Enum.IsDefined(typeof(ChatRefusal), reason))
-            {
-                throw new ArgumentOutOfRangeException(nameof(reason), reason, "reason must be a ChatRefusal other than None");
-            }
-
+            RequireText(reason, nameof(reason));
             var values = BeginMatch(ChatRefusedType, utcNow, matchId);
             AddPlayer(values, "playerId", "productUserId", playerId, productUserId);
-            values.Add(Pair("reason", reason.ToString()));
+            values.Add(Pair("reason", reason));
             return FlatJsonObject.Format(values);
         }
 
