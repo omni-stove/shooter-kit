@@ -5,7 +5,7 @@ using Shooter.Runtime;
 
 namespace Shooter.NetV2
 {
-    // NetV2 の自分の体は Damageable も WeaponController も持たないので、オフラインの体が一人称の武器モデルを隠す場面 (死んだ・はしごで武器をしまった・自分の武器を撃てない席に乗った) を
+    // NetV2 の自分の体は Damageable も WeaponController も持たないので、オフラインの体が一人称の武器モデルを隠す場面 (死んだ・はしごで武器をしまった・自分の武器を撃てない席に乗った・自分でしまった) を
     // スナップショットと予測から同じ理由 (ViewmodelPresenter.Reason*) で決める。倒れている間は撃てない (ClientFire.Decide) ので、それも隠す。
     public static class NetV2Viewmodel
     {
@@ -29,6 +29,12 @@ namespace Shooter.NetV2
             if (seatHidesWeapon)
             {
                 return ViewmodelPresenter.ReasonSeated;
+            }
+
+            // しまう途中と構える途中は下げて見せるので隠さず、しまい切った間だけ隠す (オフラインの WeaponController.Holster と同じ)
+            if (own >= 0 && latest.Players[own].HolsterPhase == HolsterPhase.Holstered)
+            {
+                return ViewmodelPresenter.ReasonHolstered;
             }
 
             return predicted.Ladder.IsClimbing ? ViewmodelPresenter.ReasonHolstered : null;

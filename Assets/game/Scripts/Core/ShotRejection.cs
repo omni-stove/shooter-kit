@@ -46,5 +46,8 @@ namespace Shooter.Core
 
         // 盾の武器は弾を撃たない (オフラインの WeaponController.IsFireBlocked と同じ)。
         ShieldWeapon,
+
+        // 武器をしまっている・しまう途中・構える途中 (オフラインの WeaponController.IsFireBlocked の IsHolstered と同じ)。
+        Holstered,
     }
 }

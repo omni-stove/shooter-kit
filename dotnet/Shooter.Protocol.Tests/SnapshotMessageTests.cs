@@ -881,6 +881,133 @@ namespace Shooter.Protocol.Tests
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
         }
 
+        [Test]
+        public void AFreshPlayerIsDrawnWithNothingLowered()
+        {
+            var got = Send(Build(100, 0f), null);
+
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(HolsterPhase.Drawn));
+            Assert.That(got.Players[0].HolsterLowering, Is.Zero);
+        }
+
+        [TestCase(HolsterPhase.Holstering, 0.5f)]
+        [TestCase(HolsterPhase.Drawing, 0.25f)]
+        public void AMovingHolsterRoundTripsWithItsLoweringInSteps(HolsterPhase phase, float lowering)
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].HolsterPhase = phase;
+            sent.Players[0].HolsterLowering = lowering;
+
+            var got = Send(sent, null);
+
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(phase));
+            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(lowering).Within(1f / 255f));
+            Assert.That(got.Players[1].HolsterPhase, Is.EqualTo(HolsterPhase.Drawn));
+            AssertSame(sent, got);
+        }
+
+        [Test]
+        public void AHolsteredPlayerIsReadFullyLowered()
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].HolsterPhase = HolsterPhase.Holstered;
+            sent.Players[0].HolsterLowering = 1f;
+
+            var got = Send(sent, null);
+
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(HolsterPhase.Holstered));
+            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(1f));
+        }
+
+        // 武器の部分は Id の文字列 (長さ 2 + "rifle" 5)・状態 (1)。動いている間だけ下げ具合 (1) が足される
+        [Test]
+        public void ChangingOnlyTheHolsterSendsTheWeaponPartAndOnlyAMovingOneCarriesTheLowering()
+        {
+            const int stoppedWeaponBytes = 2 + 5 + 1;
+            var baseline = Build(100, 0f);
+            var unchanged = Build(101, 0f);
+            var holstered = Build(101, 0f);
+            holstered.Players[0].HolsterPhase = HolsterPhase.Holstered;
+            holstered.Players[0].HolsterLowering = 1f;
+            var holstering = Build(101, 0f);
+            holstering.Players[0].HolsterPhase = HolsterPhase.Holstering;
+            holstering.Players[0].HolsterLowering = 0.4f;
+            var received = Send(baseline, null);
+
+            var got = Send(holstering, baseline);
+
+            Assert.That(Size(holstered, baseline) - Size(unchanged, baseline), Is.EqualTo(stoppedWeaponBytes));
+            Assert.That(Size(holstering, baseline) - Size(unchanged, baseline), Is.EqualTo(stoppedWeaponBytes + 1));
+            Assert.That(got.Players[0].Present, Is.EqualTo(PlayerFields.Weapon));
+            Assert.That(got.TryResolve(received), Is.True);
+            Assert.That(got.Players[0].WeaponId, Is.EqualTo("rifle"));
+            Assert.That(got.Players[0].HolsterPhase, Is.EqualTo(HolsterPhase.Holstering));
+            Assert.That(got.Players[0].HolsterLowering, Is.EqualTo(0.4f).Within(0.5f / 255f));
+        }
+
+        [Test]
+        public void ALoweringChangeSmallerThanAStepIsNotSent()
+        {
+            var baseline = Build(100, 0f);
+            baseline.Players[0].HolsterPhase = HolsterPhase.Drawing;
+            baseline.Players[0].HolsterLowering = 0.5f;
+            var current = Build(101, 0f);
+            current.Players[0].HolsterPhase = HolsterPhase.Drawing;
+            current.Players[0].HolsterLowering = 0.5f + (0.1f / 255f);
+
+            Assert.That(current.Players[0].ChangedBits(baseline.Players[0]), Is.Zero);
+
+            current.Players[0].HolsterLowering = 0.5f + (2f / 255f);
+            Assert.That(current.Players[0].ChangedBits(baseline.Players[0]), Is.EqualTo((int)PlayerFields.Weapon));
+        }
+
+        [TestCase(HolsterPhase.Drawn, 0.5f)]
+        [TestCase(HolsterPhase.Holstered, 0.5f)]
+        [TestCase(HolsterPhase.Holstering, 1.5f)]
+        [TestCase(HolsterPhase.Drawing, -0.1f)]
+        [TestCase(HolsterPhase.Drawing, float.NaN)]
+        public void ALoweringThatDoesNotFitThePhaseIsNotWritten(HolsterPhase phase, float lowering)
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].HolsterPhase = phase;
+            sent.Players[0].HolsterLowering = lowering;
+
+            Assert.Throws<InvalidOperationException>(() => new MessageWriter().WriteMessage(sent));
+        }
+
+        [Test]
+        public void AnUndefinedHolsterPhaseIsNotWritten()
+        {
+            var sent = Build(100, 0f);
+            sent.Players[0].HolsterPhase = (HolsterPhase)Enum.GetValues<HolsterPhase>().Length;
+
+            Assert.Throws<InvalidOperationException>(() => new MessageWriter().WriteMessage(sent));
+        }
+
+        [Test]
+        public void AnUndefinedHolsterPhaseIsNotRead()
+        {
+            var data = OnePlayerDelta(PlayerFields.Weapon, w =>
+            {
+                w.WriteString("rifle");
+                w.WriteByte((byte)Enum.GetValues<HolsterPhase>().Length);
+            });
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
+        }
+
+        [Test]
+        public void AMovingHolsterWithoutItsLoweringIsNotRead()
+        {
+            var data = OnePlayerDelta(PlayerFields.Weapon, w =>
+            {
+                w.WriteString("rifle");
+                w.WriteByte((byte)HolsterPhase.Drawing);
+            });
+
+            Assert.Throws<MessageReadException>(() => MatchMessages.CreateClientTable().Read(data));
+        }
+
         // Build と同じ試合の部分に、player 1 の bits の部分だけを parts で手で書き足した、持ち主も他の物も無いスナップショット
         private static ArraySegment<byte> OnePlayerDelta(PlayerFields bits, Action<MessageWriter> parts)
         {

@@ -34,6 +34,11 @@ namespace Shooter.NetV2
 
         public bool IsConcealed { get; private set; }
 
+        // 体に銃を持たせる見た目 (ゲームの体のプレハブなど) が読む口。0 が構えた状態、1 がしまい切った状態
+        public float WeaponLowering { get; private set; }
+
+        public bool IsWeaponHidden { get; private set; }
+
         public Transform Body => _body;
 
         // スナップショットが載せてきた見た目の Id。体を替えられなかった (カタログに無い・絵が無い) ときも Id は残し、同じ Id で引き直さない。
@@ -138,6 +143,8 @@ namespace Shooter.NetV2
             // パラシュートはオフラインの ParachuteMovement と同じく移動の横取りなので、リーンや壁走りの傾きに替えて立ったまま吊る。
             // 開いた tick にリーンがまだ戻りきっていなくても傾けないよう、届いたリーンの量は読まない。
             IsParachuting = pose.Parachuting;
+            WeaponLowering = pose.HolsterLowering;
+            IsWeaponHidden = pose.IsWeaponHidden;
             var target = pose.Parachuting
                 ? Quaternion.identity
                 : PlayerMockPose.TraversalLean(pose.Lean, pose.Swimming, pose.WallRun, pose.Parkour, _leanAngleDegrees);

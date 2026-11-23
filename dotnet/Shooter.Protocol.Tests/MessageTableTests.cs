@@ -400,6 +400,7 @@ namespace Shooter.Protocol.Tests
         [TestCase(MessageIds.PickupRequest)]
         [TestCase(MessageIds.DetonateRequest)]
         [TestCase(MessageIds.HordeFortifyRequest)]
+        [TestCase(MessageIds.HolsterRequest)]
         public void TheNewRequestsAreOnlyReadByTheServer(ushort id)
         {
             Assert.That(MatchMessages.CreateServerTable().TryGet(id, out _), Is.True);
@@ -487,6 +488,15 @@ namespace Shooter.Protocol.Tests
             Assert.That(new PlayerNamesMessage().Id, Is.EqualTo(MessageIds.PlayerNames));
             Assert.That(MatchMessages.CreateClientTable().TryGet(MessageIds.PlayerNames, out var names), Is.True);
             Assert.That(names, Is.InstanceOf<PlayerNamesMessage>());
+        }
+
+        [Test]
+        public void TheHolsterRequestFollowsTheHordeFortifyRequestAndIsReadAsItsType()
+        {
+            Assert.That(MessageIds.HolsterRequest, Is.EqualTo(MessageIds.HordeFortifyRequest + 1));
+            Assert.That(MatchMessages.CreateServerTable().TryGet(MessageIds.HolsterRequest, out var holster), Is.True);
+            Assert.That(holster, Is.InstanceOf<HolsterRequestMessage>());
+            Assert.That(MessageTable.IsReserved(MessageIds.HolsterRequest), Is.False);
         }
 
         [Test]

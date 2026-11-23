@@ -1,0 +1,379 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Shooter.Core;
+using Shooter.Protocol;
+
+namespace Shooter.Server
+{
+    // しまう・構えるの要求 (HolsterRequestMessage) を受け、Core の HolsterState を持っている武器の秒数で進めて、スナップショットの
+    // Weapon の部分で全員へ配る。しまっている・しまう途中・構える途中の手の武器は ServerCombat が撃たせず込めさせない。
+    // 秒数はオフラインと同じく、しまうのが WeaponSpec.HolsterSeconds (0 なら構える秒数)、構えるのが Loadout.DrawSecondsOf
+    internal sealed class ServerHolster : IServerModule, ISnapshotContributor
+    {
+        // 断った理由のログを出す最短の間隔 (秒)。連打でログを埋めないため
+        private const float _refusalLogInterval = 1f;
+
+        private readonly ServerCombat _combat;
+        private readonly ServerMovement _movement;
+        private readonly Dictionary<int, HolsterState> _holders = new Dictionary<int, HolsterState>();
+        private readonly List<int> _scratch = new List<int>();
+        private ServerContext _context;
+        private TextWriter _log;
+        private double _now;
+        private double _nextRefusalLogTime = double.NegativeInfinity;
+
+        public ServerHolster(ServerCombat combat, ServerMovement movement)
+        {
+            _combat = combat ?? throw new ArgumentNullException(nameof(combat));
+            _movement = movement ?? throw new ArgumentNullException(nameof(movement));
+        }
+
+        public enum Refusal
+        {
+            None,
+
+            // 同じ向きへもう進んでいる・止まっている。要求が重なって届いただけなので、ログに残さない
+            Unchanged,
+
+            Dead,
+
+            Downed,
+
+            Riding,
+
+            NoWeapon,
+
+            Switching,
+        }
+
+        public enum ResetReason
+        {
+            Died,
+
+            Spawned,
+
+            NoWeapon,
+
+            Switched,
+
+            MatchStarted,
+
+            MapChanged,
+        }
+
+        public string Name => "holster";
+
+        public void Start(ServerContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _log = context.Log;
+            _combat.IsHolstered = IsLowered;
+            context.Match.PlayerLeft += HandlePlayerLeft;
+            context.Match.MapChanged += HandleMapChanged;
+            _combat.Rules.PlayerSpawned += HandlePlayerSpawned;
+            _combat.Rules.PlayerKilled += HandlePlayerKilled;
+            _combat.Rules.MatchStarted += HandleMatchStarted;
+            _log.WriteLine(ServerHolsterLog.Started());
+        }
+
+        public void Tick(long tick, float deltaSeconds)
+        {
+            _now += deltaSeconds;
+            if (_holders.Count == 0)
+            {
+                return;
+            }
+
+            // 戻すと一覧から外すので、回している間に書き換えないよう先に写す
+            _scratch.Clear();
+            _scratch.AddRange(_holders.Keys);
+            foreach (var playerId in _scratch)
+            {
+                var state = _holders[playerId];
+                var reset = ResetReasonOf(playerId);
+                if (reset.HasValue)
+                {
+                    Reset(playerId, reset.Value);
+                    continue;
+                }
+
+                if (state.Tick(deltaSeconds))
+                {
+                    _log.WriteLine(ServerHolsterLog.Settled(playerId, state.Phase));
+                }
+
+                if (state.Phase == HolsterPhase.Drawn)
+                {
+                    _holders.Remove(playerId);
+                }
+            }
+
+            _scratch.Clear();
+        }
+
+        public void OnConnected(ConnectionId connection)
+        {
+        }
+
+        public void OnDisconnected(ConnectionId connection)
+        {
+        }
+
+        public void OnMessage(ConnectionId connection, IMessage message)
+        {
+            if (!(message is HolsterRequestMessage request) || !_context.Match.TryGetPlayer(connection, out var player))
+            {
+                return;
+            }
+
+            Request(player.PlayerId, request.Action);
+        }
+
+        public void Stop()
+        {
+            if (_context == null)
+            {
+                return;
+            }
+
+            _context.Match.PlayerLeft -= HandlePlayerLeft;
+            _context.Match.MapChanged -= HandleMapChanged;
+            _combat.Rules.PlayerSpawned -= HandlePlayerSpawned;
+            _combat.Rules.PlayerKilled -= HandlePlayerKilled;
+            _combat.Rules.MatchStarted -= HandleMatchStarted;
+            _combat.IsHolstered = null;
+            _holders.Clear();
+        }
+
+        // 構えている人は一覧に持たないので、行の既定 (Drawn・0) のまま送る
+        public void Contribute(SnapshotMessage snapshot, ServerPlayer receiver)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+            if (_holders.Count == 0)
+            {
+                return;
+            }
+
+            var players = snapshot.Players;
+            for (var i = 0; i < players.Count; i++)
+            {
+                ref var row = ref players[i];
+                if (_holders.TryGetValue(row.PlayerId, out var state))
+                {
+                    row.HolsterPhase = state.Phase;
+                    row.HolsterLowering = state.Lowering;
+                }
+            }
+        }
+
+        public HolsterPhase PhaseOf(int playerId)
+        {
+            return _holders.TryGetValue(playerId, out var state) ? state.Phase : HolsterPhase.Drawn;
+        }
+
+        public float LoweringOf(int playerId)
+        {
+            return _holders.TryGetValue(playerId, out var state) ? state.Lowering : 0f;
+        }
+
+        // オフラインの WeaponController.IsFireBlocked と同じく、構え終えるまでは撃たせない
+        public bool IsLowered(int playerId)
+        {
+            return _holders.TryGetValue(playerId, out var state) && state.Phase != HolsterPhase.Drawn;
+        }
+
+        internal Refusal Request(int playerId, HolsterAction action)
+        {
+            var refusal = action == HolsterAction.Holster ? BeginHolster(playerId) : BeginDraw(playerId);
+            if (refusal != Refusal.None && refusal != Refusal.Unchanged)
+            {
+                Refuse(playerId, action, refusal);
+            }
+
+            return refusal;
+        }
+
+        private Refusal BeginHolster(int playerId)
+        {
+            var refusal = CheckAlive(playerId);
+            if (refusal != Refusal.None)
+            {
+                return refusal;
+            }
+
+            // オフラインと同じく、乗り物などで入力を手放している間はしまわない
+            if (_movement.IsRiding(playerId))
+            {
+                return Refusal.Riding;
+            }
+
+            var weapons = _combat.WeaponsOf(playerId);
+            if (weapons.CurrentSpec == null)
+            {
+                return Refusal.NoWeapon;
+            }
+
+            // 持ち替えは構え終えるまで武器を下げているので、その上からしまうと下げ具合が二重になる
+            if (weapons.IsSwitching)
+            {
+                return Refusal.Switching;
+            }
+
+            var state = GetOrAdd(playerId);
+            var seconds = weapons.CurrentHolsterSeconds;
+            if (!state.BeginHolster(seconds))
+            {
+                return Refusal.Unchanged;
+            }
+
+            weapons.CancelReload();
+            _log.WriteLine(ServerHolsterLog.Began(playerId, HolsterPhase.Holstering, seconds, weapons.CurrentSpec.Id));
+            if (state.Phase == HolsterPhase.Holstered)
+            {
+                _log.WriteLine(ServerHolsterLog.Settled(playerId, state.Phase));
+            }
+
+            return Refusal.None;
+        }
+
+        // 乗っている・ダウンしている間も構え直せる。座席から手の武器で撃つ席や、ダウン中に撃てるルールで、しまったまま撃てなくならないように
+        private Refusal BeginDraw(int playerId)
+        {
+            if (!_holders.TryGetValue(playerId, out var state))
+            {
+                return Refusal.Unchanged;
+            }
+
+            var refusal = CheckAlive(playerId);
+            if (refusal != Refusal.None && refusal != Refusal.Downed)
+            {
+                return refusal;
+            }
+
+            var weapons = _combat.WeaponsOf(playerId);
+            var seconds = weapons.CurrentDrawSeconds;
+            if (!state.BeginDraw(seconds))
+            {
+                return Refusal.Unchanged;
+            }
+
+            _log.WriteLine(ServerHolsterLog.Began(playerId, HolsterPhase.Drawing, seconds, weapons.CurrentSpec?.Id));
+            if (state.Phase == HolsterPhase.Drawn)
+            {
+                _log.WriteLine(ServerHolsterLog.Settled(playerId, state.Phase));
+                _holders.Remove(playerId);
+            }
+
+            return Refusal.None;
+        }
+
+        // ダウンは体力 0 で倒れた後の状態で、生きていない扱いにもなり得るので、先に見ないと Downed が出ない (ServerEmotes と同じ順)
+        private Refusal CheckAlive(int playerId)
+        {
+            var session = _combat.Rules.Session;
+            if (session != null && session.HasPlayer(playerId) && session.IsDowned(playerId))
+            {
+                return Refusal.Downed;
+            }
+
+            if (session == null
+                || !session.HasPlayer(playerId)
+                || !session.IsAlive(playerId)
+                || !_context.Bodies.TryGet(playerId, out var body)
+                || !body.HasSpawned)
+            {
+                return Refusal.Dead;
+            }
+
+            return Refusal.None;
+        }
+
+        private ResetReason? ResetReasonOf(int playerId)
+        {
+            var session = _combat.Rules.Session;
+            if (session == null || !session.HasPlayer(playerId) || (!session.IsAlive(playerId) && !session.IsDowned(playerId)))
+            {
+                return ResetReason.Died;
+            }
+
+            var weapons = _combat.WeaponsOf(playerId);
+            if (weapons.CurrentSpec == null)
+            {
+                return ResetReason.NoWeapon;
+            }
+
+            // オフラインと同じく、持ち替えたら Loadout の構える時間で上げるので、しまう状態は構えた状態へ戻す
+            return weapons.IsSwitching ? ResetReason.Switched : (ResetReason?)null;
+        }
+
+        private void Reset(int playerId, ResetReason reason)
+        {
+            if (!_holders.Remove(playerId))
+            {
+                return;
+            }
+
+            _log.WriteLine(ServerHolsterLog.Reset(playerId, reason));
+        }
+
+        private void ResetAll(ResetReason reason)
+        {
+            _scratch.Clear();
+            _scratch.AddRange(_holders.Keys);
+            foreach (var playerId in _scratch)
+            {
+                Reset(playerId, reason);
+            }
+
+            _scratch.Clear();
+        }
+
+        private HolsterState GetOrAdd(int playerId)
+        {
+            if (!_holders.TryGetValue(playerId, out var state))
+            {
+                state = new HolsterState();
+                _holders.Add(playerId, state);
+            }
+
+            return state;
+        }
+
+        private void Refuse(int playerId, HolsterAction action, Refusal reason)
+        {
+            if (_now < _nextRefusalLogTime)
+            {
+                return;
+            }
+
+            _nextRefusalLogTime = _now + _refusalLogInterval;
+            _log.WriteLine(ServerHolsterLog.Refused(playerId, action, reason));
+        }
+
+        private void HandlePlayerLeft(ServerPlayer player)
+        {
+            _holders.Remove(player.PlayerId);
+        }
+
+        private void HandlePlayerSpawned(int playerId)
+        {
+            Reset(playerId, ResetReason.Spawned);
+        }
+
+        private void HandlePlayerKilled(KillFeedEntry entry)
+        {
+            Reset(entry.VictimId, ResetReason.Died);
+        }
+
+        private void HandleMatchStarted()
+        {
+            ResetAll(ResetReason.MatchStarted);
+        }
+
+        private void HandleMapChanged(ServerMapData map)
+        {
+            ResetAll(ResetReason.MapChanged);
+        }
+    }
+}

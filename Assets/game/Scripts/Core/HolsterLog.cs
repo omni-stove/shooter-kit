@@ -22,6 +22,22 @@ namespace Shooter.Core
             return $"{Tag} holder={Name(holderId)} reset=Drawn reason={Name(reason)}";
         }
 
+        // オンラインは秒数をサーバーが持つので、送った向き (Holstering か Drawing) だけを残す
+        public static string NetRequested(HolsterPhase toward)
+        {
+            return $"{Tag} net requested={toward}";
+        }
+
+        public static string NetNotSent(HolsterPhase toward, string reason)
+        {
+            return $"{Tag} net not-sent={toward} reason={Name(reason)}";
+        }
+
+        public static string NetChanged(HolsterPhase from, HolsterPhase to)
+        {
+            return $"{Tag} net phase={from}->{to}";
+        }
+
         public static string NoInput(string actionPath)
         {
             return $"{Tag} input action '{Name(actionPath)}' is missing; the holster key is not read";

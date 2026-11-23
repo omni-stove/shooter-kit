@@ -31,6 +31,21 @@ namespace Shooter.NetV2
             WallRunSide wallRun,
             bool parachuting,
             ParkourMove parkour)
+            : this(position, yaw, stance, weaponId, lean, swimming, wallRun, parachuting, parkour, 0f)
+        {
+        }
+
+        public RemotePose(
+            Vector3 position,
+            float yaw,
+            PlayerStance stance,
+            string weaponId,
+            float lean,
+            bool swimming,
+            WallRunSide wallRun,
+            bool parachuting,
+            ParkourMove parkour,
+            float holsterLowering)
         {
             Position = position;
             Yaw = yaw;
@@ -45,6 +60,9 @@ namespace Shooter.NetV2
 
             // 壁走りの向きと同じく、見た目が知らない動きの番号で迷わないよう、範囲の外は何もしていないことにする
             Parkour = parkour <= ParkourMove.LedgeClimbUp ? parkour : ParkourMove.None;
+
+            // リーンと同じく、見た目の下げ (PlayerMockPose の Lowered) が範囲の外で迷わないよう、届いた値はここで収める
+            HolsterLowering = float.IsNaN(holsterLowering) ? 0f : (holsterLowering < 0f ? 0f : (holsterLowering > 1f ? 1f : holsterLowering));
         }
 
         public Vector3 Position { get; }
@@ -69,6 +87,15 @@ namespace Shooter.NetV2
 
         public ParkourMove Parkour { get; }
 
+        // 体の銃をどれだけ下げるか。0 が構えた状態、1 がしまい切った状態 (Loadout.SwitchLowering と同じ向き)
+        public float HolsterLowering { get; }
+
+        // しまい切った体は銃を持たないので、オフラインの WeaponController.Holster と同じく銃を隠す
+        public bool IsWeaponHidden => HolsterLowering >= 1f;
+
+        // 体に持たせて見せる武器。しまい切っていれば空。WeaponId はしまっていても持っている武器のまま残す
+        public string ShownWeaponId => IsWeaponHidden ? "" : WeaponId;
+
         // 伏せとしゃがみはサーバーが同時に立てないので、伏せを先に見る。
         public static RemotePose From(in Shooter.Protocol.PlayerSnapshot row)
         {
@@ -82,7 +109,8 @@ namespace Shooter.NetV2
                 row.Swimming,
                 (WallRunSide)(byte)row.WallRunSide,
                 row.IsParachuting,
-                (ParkourMove)(byte)row.ParkourMove);
+                (ParkourMove)(byte)row.ParkourMove,
+                row.HolsterLowering);
         }
     }
 }

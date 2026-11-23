@@ -39,6 +39,24 @@ namespace Shooter.Server
 
         public bool IsSwitching => _loadout != null && _loadout.IsSwitching;
 
+        // 今の武器を構える秒数。持ち替えで構えるのと同じ秒数 (Loadout.DrawSecondsOf) にそろえる。武器が無ければ 0
+        public float CurrentDrawSeconds => _loadout == null ? 0f : _loadout.DrawSecondsOf(_loadout.CurrentIndex);
+
+        // 今の武器をしまう秒数。WeaponSpec.HolsterSeconds が 0 の武器は、構えるのと同じ秒数をかける (オフラインの HolsterController と同じ)
+        public float CurrentHolsterSeconds
+        {
+            get
+            {
+                if (_loadout == null)
+                {
+                    return 0f;
+                }
+
+                var holster = _loadout.HolsterSecondsOf(_loadout.CurrentIndex);
+                return holster > 0f ? holster : CurrentDrawSeconds;
+            }
+        }
+
         // 盾の武器は弾を込めない (オフラインの WeaponController.StartReload と同じ)
         private bool HoldsShield => _loadout != null && _loadout.Current.Spec.IsShield;
 
