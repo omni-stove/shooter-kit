@@ -54,7 +54,7 @@ namespace Shooter.NetV2
             _count = 0;
         }
 
-        // しゃがみ・泳ぎ・壁走り・パラシュート・パルクールの動きは補間で切り替わらないので、前の記録の値を使う。リーンは量なので位置と同じく補間する。
+        // しゃがみ・泳ぎ・壁走り・パラシュート・パルクールの動きは補間で切り替わらないので、前の記録の値を使う。リーンと銃の下げ具合は量なので位置と同じく補間する。
         public bool TrySample(float tick, out RemotePose pose)
         {
             pose = default;
@@ -96,7 +96,8 @@ namespace Shooter.NetV2
                     before.Swimming,
                     before.WallRun,
                     before.Parachuting,
-                    before.Parkour);
+                    before.Parkour,
+                    before.HolsterLowering + ((after.HolsterLowering - before.HolsterLowering) * t));
                 return true;
             }
 

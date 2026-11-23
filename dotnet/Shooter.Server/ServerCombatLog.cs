@@ -1,5 +1,6 @@
 using System.Globalization;
 using Shooter.Core;
+using Shooter.Protocol;
 
 namespace Shooter.Server
 {
@@ -15,6 +16,11 @@ namespace Shooter.Server
         public static string ReloadInterrupted(int playerId, ReloadInterrupt by)
         {
             return ServerCombat.LogTag + " reload-cancelled player=" + Text(playerId) + " by=" + by;
+        }
+
+        public static string WeaponActionHolstered(int playerId, WeaponAction action)
+        {
+            return ServerCombat.LogTag + " ignored " + action + " player=" + Text(playerId) + " reason=" + ShotRejection.Holstered;
         }
 
         public static string ShieldBlocked(int holderId, int shooterId, string weaponId, int damage)

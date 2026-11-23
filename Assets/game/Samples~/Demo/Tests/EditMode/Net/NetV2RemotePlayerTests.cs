@@ -156,6 +156,27 @@ namespace Shooter.Net.Tests
         }
 
         [Test]
+        public void TheWeaponLoweringFollowsThePoseAndAHolsteredWeaponIsHidden()
+        {
+            _remote.Show(new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, "rifle", 0f, false, WallRunSide.None, false, ParkourMove.None, 0.5f));
+
+            Assert.That(_remote.WeaponLowering, Is.EqualTo(0.5f));
+            Assert.That(_remote.IsWeaponHidden, Is.False);
+
+            _remote.Show(new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, "rifle", 0f, false, WallRunSide.None, false, ParkourMove.None, 1f));
+
+            Assert.That(_remote.WeaponLowering, Is.EqualTo(1f));
+            Assert.That(_remote.IsWeaponHidden, Is.True);
+
+            _remote.Show(new RemotePose(System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, "rifle"));
+
+            Assert.That(_remote.WeaponLowering, Is.Zero, "drawing again raises the weapon");
+            Assert.That(_remote.IsWeaponHidden, Is.False);
+        }
+
+        [Test]
         public void ALeanWithoutAParachuteStillTiltsTheBody()
         {
             _remote.Show(new RemotePose(System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 1f, false, WallRunSide.None, false));

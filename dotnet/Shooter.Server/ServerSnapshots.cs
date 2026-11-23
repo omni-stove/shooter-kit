@@ -288,6 +288,8 @@ namespace Shooter.Server
             row.Ladder = CharacterLadderState.None;
             row.Vehicle = VehicleSeatSync.None;
             row.WeaponId = "";
+            row.HolsterPhase = HolsterPhase.Drawn;
+            row.HolsterLowering = 0f;
             row.Lean = 0f;
             row.Swimming = false;
             row.WallRunSide = default;

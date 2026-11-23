@@ -142,17 +142,21 @@ namespace Shooter.Server
 
             // スタミナ・よろけ・制圧はこの tick の被弾と移動を数えた後に戻すので、戦闘・Bot・近接より後。
             // 拾い物は拾った武器と持ち物を、持ち物を持たせ直した後 (ServerInventories) に入れる。
-            // エモートは移動・射撃・倒れたことで止めるので、それらを進めた後に見る
+            // エモートは移動・射撃・倒れたことで止めるので、それらを進めた後に見る。
+            // しまう・構えるは持ち替え・倒れた・武器を手放したことで構えに戻すので、戦闘と持ち物・拾い物がこの tick の武器を決めた後に見る
             var pickups = new ServerPickups(rules, combat, inventories);
+            var holster = new ServerHolster(combat, movement);
             modules.Add(status);
             modules.Add(pickups);
             modules.Add(new ServerEmotes(rules, movement, signals, tuning.Emotes, tuning.EmotesPath));
+            modules.Add(holster);
 
             // 箱は目的 (ルール) が書いた旗・爆弾・台車の後の空きに足し、拾い物は箱の後の空きに足すので、ルール・箱・拾い物の順。
-            // 近接はルールが書いたダウンの欄にとどめの進み具合を書き足すので、ルールより後
+            // 近接はルールが書いたダウンの欄にとどめの進み具合を書き足すので、ルールより後。
+            // しまう・構えるは戦闘が書いた武器の欄に書き足すので、戦闘より後
             modules.Add(new ServerSnapshots(
                 motorSettings.Rules,
-                new ISnapshotContributor[] { movement, rules, loot, pickups, combat, vehicles, streaks, deployables, bots, status, melee },
+                new ISnapshotContributor[] { movement, rules, loot, pickups, combat, vehicles, streaks, deployables, bots, status, melee, holster },
                 tuning.AntiCheat,
                 rules));
 

@@ -99,6 +99,15 @@ namespace Shooter.Server
         // ServerMelee が自分を差し込む。ServerMelee は ServerCombat に頼って作られるので、逆向きに持たせずこの形で受ける
         internal Func<int, bool> IsMeleeSwinging { get; set; }
 
+        // ServerHolster が自分を差し込む。しまっている・しまう途中・構える途中なら true。ServerHolster は ServerCombat に頼って作られるので、
+        // IsMeleeSwinging と同じく逆向きに持たせずこの形で受ける
+        internal Func<int, bool> IsHolstered { get; set; }
+
+        private bool IsHolsterLowered(int playerId)
+        {
+            return IsHolstered != null && IsHolstered(playerId);
+        }
+
         internal void InterruptReload(int playerId, ReloadInterrupt by)
         {
             if (!_data.Rules.Actions.InterruptsReload(by) || !_fighters.TryGetValue(playerId, out var fighter))
@@ -227,6 +236,18 @@ namespace Shooter.Server
                     break;
                 case WeaponActionRequestMessage action:
                     var weapons = ActiveWeapons(fighter);
+
+                    // オフラインと同じく、下げている手の武器は込めも弾の切り替えもしない。座席の武器はしまっていても扱える
+                    if (weapons == fighter.Weapons && IsHolsterLowered(fighter.PlayerId))
+                    {
+                        if (CanWarn())
+                        {
+                            _log.WriteLine(ServerCombatLog.WeaponActionHolstered(fighter.PlayerId, action.Action));
+                        }
+
+                        break;
+                    }
+
                     if (action.Action == WeaponAction.ActiveReload)
                     {
                         weapons.TryActiveReload();

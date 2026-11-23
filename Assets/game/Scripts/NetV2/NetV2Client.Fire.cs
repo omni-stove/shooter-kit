@@ -120,7 +120,7 @@ namespace Shooter.NetV2
                 return;
             }
 
-            switch (ClientFire.Decide(latest, _client.PlayerId, _match.LocalState, trigger.Spec))
+            switch (ClientFire.Decide(latest, _client.PlayerId, _match.LocalState, trigger.Spec, _vehicles.FiresVehicleWeapon()))
             {
                 case FireDecision.Fire:
                     for (var i = 0; i < pull.Shots; i++)
@@ -157,7 +157,7 @@ namespace Shooter.NetV2
 
             if (pull.Pressed && !sending)
             {
-                switch (ClientFire.Decide(latest, _client.PlayerId, _match.LocalState, trigger.Spec))
+                switch (ClientFire.Decide(latest, _client.PlayerId, _match.LocalState, trigger.Spec, _vehicles.FiresVehicleWeapon()))
                 {
                     case FireDecision.Fire:
                         SendContinuous(direction, weaponId, trigger.Spec, pull, TriggerEdge.Pressed, owner);

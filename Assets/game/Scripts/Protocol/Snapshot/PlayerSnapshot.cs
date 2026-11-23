@@ -8,6 +8,7 @@ namespace Shooter.Protocol
         private const int _motionFlagCount = 5;
         private const int _identityFlagCount = 3;
         private const float _leanSteps = 127f;
+        private const float _loweringSteps = 255f;
 
         public int PlayerId { get; set; }
         public PlayerFields Present { get; set; }
@@ -62,6 +63,12 @@ namespace Shooter.Protocol
         public VehicleSeatSync Vehicle { get; set; }
 
         public string WeaponId { get; set; }
+
+        // 部分のビットに空きが無いので Weapon に載せる。しまう・構えるは持っている武器の見た目を変えるもので、持ち替えと同じく武器と一緒に描くため。
+        // 下げ具合は 1 バイトに丸め、動いている間 (Holstering・Drawing) だけ送る。止まっている間は状態から 0 か 1 に決まる
+        public HolsterPhase HolsterPhase { get; set; }
+
+        public float HolsterLowering { get; set; }
 
         public int Kills { get; set; }
         public int Deaths { get; set; }
@@ -175,7 +182,11 @@ namespace Shooter.Protocol
                 bits |= PlayerFields.Downed;
             }
 
-            if (!string.Equals(WeaponId ?? "", baseline.WeaponId ?? "", System.StringComparison.Ordinal))
+            // 書けない下げ具合を前と同じ段に丸めて載せずに済ませると、書くときに断れないので変わったとみなす
+            if (!string.Equals(WeaponId ?? "", baseline.WeaponId ?? "", System.StringComparison.Ordinal)
+                || HolsterPhase != baseline.HolsterPhase
+                || !IsHolsterLoweringValid(HolsterPhase, HolsterLowering)
+                || LoweringStep(HolsterLowering) != LoweringStep(baseline.HolsterLowering))
             {
                 bits |= PlayerFields.Weapon;
             }
@@ -280,6 +291,7 @@ namespace Shooter.Protocol
             if ((fields & PlayerFields.Weapon) != 0)
             {
                 writer.WriteString(WeaponId, MatchProtocol.MaxContentIdBytes);
+                WriteHolster(writer, HolsterPhase, HolsterLowering);
             }
 
             if ((fields & PlayerFields.Score) != 0)
@@ -429,6 +441,10 @@ namespace Shooter.Protocol
             if ((fields & PlayerFields.Weapon) != 0)
             {
                 WeaponId = reader.ReadString(MatchProtocol.MaxContentIdBytes, WeaponId);
+                HolsterPhase = (HolsterPhase)reader.ReadByteBelow(EnumRange<HolsterPhase>.Count, "holster phase");
+                HolsterLowering = IsHolsterMoving(HolsterPhase)
+                    ? reader.ReadByte() / _loweringSteps
+                    : (HolsterPhase == HolsterPhase.Holstered ? 1f : 0f);
             }
 
             if ((fields & PlayerFields.Score) != 0)
@@ -549,6 +565,8 @@ namespace Shooter.Protocol
             if ((missing & PlayerFields.Weapon) != 0)
             {
                 WeaponId = baseline.WeaponId;
+                HolsterPhase = baseline.HolsterPhase;
+                HolsterLowering = baseline.HolsterLowering;
             }
 
             if ((missing & PlayerFields.Score) != 0)
@@ -612,6 +630,54 @@ namespace Shooter.Protocol
         {
             var clamped = lean >= -1f ? (lean <= 1f ? lean : 1f) : -1f;
             return (int)System.Math.Round(clamped * _leanSteps);
+        }
+
+        private static bool IsHolsterMoving(HolsterPhase phase)
+        {
+            return phase == HolsterPhase.Holstering || phase == HolsterPhase.Drawing;
+        }
+
+        // 止まっている状態の下げ具合は送らずに読む側が決めるので、決まる値と違う組は書けない
+        private static bool IsHolsterLoweringValid(HolsterPhase phase, float lowering)
+        {
+            switch (phase)
+            {
+                case HolsterPhase.Drawn:
+                    return lowering == 0f;
+                case HolsterPhase.Holstered:
+                    return lowering == 1f;
+                case HolsterPhase.Holstering:
+                case HolsterPhase.Drawing:
+                    return lowering >= 0f && lowering <= 1f;
+                default:
+                    return false;
+            }
+        }
+
+        private static int LoweringStep(float lowering)
+        {
+            var clamped = lowering >= 0f ? (lowering <= 1f ? lowering : 1f) : 0f;
+            return (int)System.Math.Round(clamped * _loweringSteps);
+        }
+
+        private static void WriteHolster(MessageWriter writer, HolsterPhase phase, float lowering)
+        {
+            if ((int)phase < 0 || (int)phase >= EnumRange<HolsterPhase>.Count)
+            {
+                throw new System.InvalidOperationException("holster phase " + (int)phase + " is not defined");
+            }
+
+            if (!IsHolsterLoweringValid(phase, lowering))
+            {
+                throw new System.InvalidOperationException(
+                    "holster lowering " + lowering.ToString(System.Globalization.CultureInfo.InvariantCulture) + " does not fit the phase " + phase);
+            }
+
+            writer.WriteByte((byte)phase);
+            if (IsHolsterMoving(phase))
+            {
+                writer.WriteByte((byte)LoweringStep(lowering));
+            }
         }
 
         private static void WriteProne(MessageWriter writer, in CharacterProneState prone)

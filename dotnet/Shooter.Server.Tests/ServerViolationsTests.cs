@@ -198,11 +198,11 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
-        public void OnlyRejectionsWhileDodgingOrVaultingAreLeftOut()
+        public void OnlyRejectionsWhileDodgingVaultingOrHolsteredAreLeftOut()
         {
             foreach (ShotRejection reason in Enum.GetValues<ShotRejection>())
             {
-                var counted = reason != ShotRejection.Dodging && reason != ShotRejection.Vaulting;
+                var counted = reason != ShotRejection.Dodging && reason != ShotRejection.Vaulting && reason != ShotRejection.Holstered;
                 Assert.That(ServerViolations.IsCounted(reason), Is.EqualTo(counted), reason.ToString());
             }
         }
