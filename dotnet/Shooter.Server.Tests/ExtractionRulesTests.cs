@@ -457,6 +457,21 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void ABotThatFallsLeavesOnlyTheWeaponsFromItsStashInTheDeathBox()
+        {
+            Start();
+            Join(1);
+            var bot = BotRoster.FirstBotPlayerId;
+            _match.JoinBot(bot);
+
+            _rules.ApplyDamage(1, bot, 1000);
+
+            Assert.That(_loot.TryGetContents(ServerLoot.FirstItemId + 2, out var weapons, out _), Is.True, _log.ToString());
+            Assert.That(weapons.Select(w => w.Id), Is.EqualTo(new[] { TestRules.RifleId }));
+            Assert.That(weapons.Select(w => w.Id), Does.Not.Contain(TestRules.HandgunId));
+        }
+
+        [Test]
         public void ABotLeavesBehindWhatItsStashLacksWhenBotsDoNotBringTheLoadout()
         {
             Start(new ExtractionSpec(raidSeconds: 120f, extractHoldSeconds: _holdSeconds, openPoints: 1, openAfterSeconds: 0f, keepCarriedOnDeath: false, botsBringLoadout: false));
