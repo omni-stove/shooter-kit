@@ -12,6 +12,10 @@ namespace Shooter.Core.Tests
         // 0.25 刻みにするのは、float の足し引きで誤差が出ず、確率と秒数をそのまま比べられるため。
         private const float _fireInterval = 0.25f;
 
+        private static readonly string[] _firedThenJammed = { "fired", "jammed" };
+
+        private static readonly bool[] _onlyTrue = { true };
+
         private static readonly GameRules _jamOn = GameRules.Default.WithActions(ActionRules.Default.WithJam(WeaponJam.On));
 
         private static WeaponSpec Spec(JamSpec jam, int magazine = 10, int reserve = 20)
@@ -58,7 +62,7 @@ namespace Shooter.Core.Tests
             weapon.Jammed += () => order.Add("jammed");
 
             Assert.That(weapon.TryFire(), Is.True);
-            Assert.That(order, Is.EqualTo(new[] { "fired", "jammed" }));
+            Assert.That(order, Is.EqualTo(_firedThenJammed));
             Assert.That(weapon.IsJammed, Is.True);
             Assert.That(weapon.IsClearingJam, Is.False);
             Assert.That(weapon.AmmoInMagazine, Is.EqualTo(9));
@@ -347,7 +351,7 @@ namespace Shooter.Core.Tests
 
             Assert.That(weapon.IsJammed, Is.False);
             Assert.That(weapon.IsReloading, Is.True);
-            Assert.That(automatic, Is.EqualTo(new[] { true }));
+            Assert.That(automatic, Is.EqualTo(_onlyTrue));
         }
 
         [Test]
