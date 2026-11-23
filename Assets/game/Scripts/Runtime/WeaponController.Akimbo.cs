@@ -279,7 +279,7 @@ namespace Shooter.Runtime
         }
 
         // 込めた弾を作り直しで戻す (難易度を替える・セーブから戻す) ときは、左手も並びの Weapon の弾倉と同じにする。
-        private void BuildAkimboHands(Dictionary<string, int> leftMagazines, GameRules rules, bool resetAmmo)
+        private void BuildAkimboHands(Dictionary<string, int> leftMagazines, GameRules rules, bool resetAmmo, string freshWeaponId = null)
         {
             if (_loadout == null)
             {
@@ -295,7 +295,9 @@ namespace Shooter.Runtime
 
                 var right = weapon.AmmoInMagazine;
                 // 手放した弾から拾い直した組の左手は空から始める。右手と同じ数にすると、拾い直すたびに弾が増える。
-                var left = resetAmmo ? right : 0;
+                // 弾の渡されない新しい武器 (freshWeaponId) は右手と同じ満タンで始める。
+                var fresh = freshWeaponId != null && string.Equals(freshWeaponId, weapon.Spec.Id, StringComparison.Ordinal);
+                var left = resetAmmo || fresh ? right : 0;
                 if (!resetAmmo && leftMagazines != null && leftMagazines.TryGetValue(weapon.Spec.Id, out var kept))
                 {
                     left = Math.Min(kept, weapon.Spec.MagazineSize);
