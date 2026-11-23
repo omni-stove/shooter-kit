@@ -446,6 +446,53 @@ namespace Shooter.Net.Tests
                 NetMapLadders.None);
         }
 
+        private sealed class SilentTransport : IMatchTransport
+        {
+            public bool IsActive => false;
+
+            public void Listen(string address, ushort port)
+            {
+                throw new System.InvalidOperationException("a client transport does not listen");
+            }
+
+            public void Connect(string address, ushort port)
+            {
+            }
+
+            public void Disconnect(ConnectionId connection, string reason)
+            {
+            }
+
+            public void Send(ConnectionId connection, TransportChannel channel, System.ArraySegment<byte> payload)
+            {
+            }
+
+            public int GetMaxPayloadSize(TransportChannel channel)
+            {
+                return MessageWriter.DefaultMaxLength;
+            }
+
+            public bool TryGetRoundTripTime(ConnectionId connection, out int milliseconds)
+            {
+                milliseconds = 0;
+                return false;
+            }
+
+            public bool TryReceive(out TransportEvent transportEvent)
+            {
+                transportEvent = default;
+                return false;
+            }
+
+            public void Shutdown(string reason)
+            {
+            }
+
+            public void Dispose()
+            {
+            }
+        }
+
         private static DoorStateMessage State(params (BreachDoorPhase Phase, bool FarSideFront)[] doors)
         {
             var message = new DoorStateMessage();
