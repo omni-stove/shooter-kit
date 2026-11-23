@@ -10,6 +10,7 @@ namespace Shooter.Core
         public const int DefaultOpenPoints = 2;
         public const float DefaultOpenAfterSeconds = 0f;
         public const bool DefaultKeepCarriedOnDeath = false;
+        public const bool DefaultBotsBringLoadout = true;
 
         public static ExtractionSpec Default { get; } = new ExtractionSpec();
 
@@ -18,7 +19,8 @@ namespace Shooter.Core
             float extractHoldSeconds = DefaultExtractHoldSeconds,
             int openPoints = DefaultOpenPoints,
             float openAfterSeconds = DefaultOpenAfterSeconds,
-            bool keepCarriedOnDeath = DefaultKeepCarriedOnDeath)
+            bool keepCarriedOnDeath = DefaultKeepCarriedOnDeath,
+            bool botsBringLoadout = DefaultBotsBringLoadout)
         {
             RaidSeconds = SpecGuard.PositiveFinite(raidSeconds, nameof(raidSeconds));
             ExtractHoldSeconds = SpecGuard.NonNegativeFinite(extractHoldSeconds, nameof(extractHoldSeconds));
@@ -36,6 +38,7 @@ namespace Shooter.Core
             }
 
             KeepCarriedOnDeath = keepCarriedOnDeath;
+            BotsBringLoadout = botsBringLoadout;
         }
 
         public float RaidSeconds { get; }
@@ -47,5 +50,7 @@ namespace Shooter.Core
         public float OpenAfterSeconds { get; }
 
         public bool KeepCarriedOnDeath { get; }
+
+        public bool BotsBringLoadout { get; }
     }
 }

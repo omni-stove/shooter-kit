@@ -727,6 +727,15 @@ namespace Shooter.Server
 
                 if (raider.Stash.CountOf(item.Id) <= taken)
                 {
+                    // Bot は箱を開けても武器を拾わず、素手のままでは敵を見て立ち止まり脱出まで進まないので、持ち物庫に無い武器も持たせる。
+                    // 持ち込んだ物 (broughtIn) に数えないのは、持ち物庫から取っていない物を倒されて失ったり脱出して増やしたりしないため
+                    if (raider.IsBot && _spec.BotsBringLoadout)
+                    {
+                        raider.Allowed.Add(spec.Id);
+                        _host.Log.WriteLine(ExtractionRulesLog.BotBringsLoadout(raider.PlayerId, spec.Id));
+                        continue;
+                    }
+
                     _host.Log.WriteLine(ExtractionRulesLog.NotInStash(raider.PlayerId, spec.Id));
                     continue;
                 }
