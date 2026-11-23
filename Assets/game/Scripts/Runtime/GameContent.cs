@@ -250,6 +250,10 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("敵が気づいたときの印 (AwarenessIndicatorCatalog)")]
         private ScriptableObject _awarenessIndicator;
 
+        // 型を ScriptableObject にとどめるのは _awarenessIndicator と同じ理由。
+        [SerializeField, Tooltip("監視カメラの見た目と警報の音 (SecurityCameraCatalog)")]
+        private ScriptableObject _securityCamera;
+
         [SerializeField]
         private CameraShakeSettings _cameraShake;
 
@@ -738,6 +742,12 @@ namespace Shooter.Runtime
         {
             get => _awarenessIndicator;
             set => _awarenessIndicator = value;
+        }
+
+        public ScriptableObject SecurityCamera
+        {
+            get => _securityCamera;
+            set => _securityCamera = value;
         }
 
         public CameraShakeSettings CameraShake

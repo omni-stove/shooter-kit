@@ -74,6 +74,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.BuySender.Value, Is.Null);
             Assert.That(GameSignals.Vision.Value, Is.Null);
             Assert.That(GameSignals.Drone.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
             Assert.That(GameSignals.NetStats.Value, Is.Null);
         }
 
@@ -209,6 +211,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.BuySender.Publish(new FakeBuySender());
             GameSignals.Vision.Publish(new VisionStatus(VisionMode.Night, VisionSource.Goggles));
             GameSignals.Drone.Publish(new DroneStatus(1f, 1f, 0, true));
+            GameSignals.StealthAlarm.Publish(new SecurityAlarmStatus(true, 10f, new System.Numerics.Vector3(1f, 0f, 2f), "cam-a"));
             GameSignals.NetStats.Publish(new NetStatsSignal(40, 2, 900));
             heard = 0;
 
@@ -384,6 +387,30 @@ namespace Shooter.Tests.EditMode
             GameSignals.Drone.Publish(new DroneStatus(0.5f, 0.5f, 0, true));
 
             Assert.That(heard, Is.Zero);
+        }
+
+        [Test]
+        public void TheStealthAlarmSignalHoldsWhatWasPublishedUntilResetAll()
+        {
+            var heard = new List<SecurityAlarmStatus?>();
+            GameSignals.StealthAlarm.Changed += heard.Add;
+            var ringing = new SecurityAlarmStatus(true, 12f, new System.Numerics.Vector3(3f, 0f, -4f), "cam-lobby");
+
+            GameSignals.StealthAlarm.Publish(ringing);
+            GameSignals.StealthAlarm.Publish(SecurityAlarmStatus.Silent);
+
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.True, "a silent alarm is still something to show");
+            Assert.That(GameSignals.StealthAlarm.Value, Is.EqualTo((SecurityAlarmStatus?)SecurityAlarmStatus.Silent));
+            Assert.That(heard, Is.EqualTo(new SecurityAlarmStatus?[] { ringing, SecurityAlarmStatus.Silent }));
+            Assert.That(heard[0].Value.CameraId, Is.EqualTo("cam-lobby"));
+            Assert.That(heard[0].Value.SecondsLeft, Is.EqualTo(12f));
+
+            GameSignals.ResetAll();
+
+            Assert.That(GameSignals.StealthAlarm.Value, Is.Null);
+            Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
+            GameSignals.StealthAlarm.Publish(ringing);
+            Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
         }
 
         [Test]
