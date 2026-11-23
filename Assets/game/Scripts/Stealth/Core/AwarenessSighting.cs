@@ -7,7 +7,7 @@ namespace Shooter.Core
         public static AwarenessSighting None => default;
 
         public AwarenessSighting(
-            bool hasLineOfSight, float distance, float angleDegrees, AwarenessPosture posture, float lightFactor, float speed)
+            bool hasLineOfSight, float distance, float angleDegrees, AwarenessPosture posture, float lightFactor, float speed, bool isArmed = true)
         {
             RequireNonNegative(distance, nameof(distance));
             RequireNonNegative(angleDegrees, nameof(angleDegrees));
@@ -33,6 +33,7 @@ namespace Shooter.Core
             Posture = posture;
             LightFactor = lightFactor;
             Speed = speed;
+            IsArmed = isArmed;
         }
 
         public bool HasLineOfSight { get; }
@@ -48,6 +49,9 @@ namespace Shooter.Core
         public float LightFactor { get; }
 
         public float Speed { get; }
+
+        // 既定を武装にするのは、しまう仕組みを持たない相手 (bot・囮) を今までどおり武器を出している者として数えるため。
+        public bool IsArmed { get; }
 
         private static void RequireNonNegative(float value, string name)
         {

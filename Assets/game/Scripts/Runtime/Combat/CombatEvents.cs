@@ -42,6 +42,9 @@ namespace Shooter.Runtime
         // IBuySender.Buy が答えを返さないのは、ネット対戦では答えが後から届くため。この端末の人が送った購入の答えだけを、オフラインでもネット対戦でもここで知らせる。
         public static event Action<PurchaseAnswer> PurchaseAnswered;
 
+        // 途中の段 (しまう途中・構える途中) は GameSignals.Holster で毎フレーム読めるので、ここはしまい切った・構え終えた瞬間だけを流す。
+        public static event Action<HolsterChange> HolsterChanged;
+
         public static ShotAttribution? CurrentAttribution => _attribution;
 
         // ルートを辿らないのは、敵や標的が 1 つの親の下にまとめて置かれ、ルートでは全員が同じ Id になるため。
@@ -138,6 +141,11 @@ namespace Shooter.Runtime
             Invoke(PurchaseAnswered, new PurchaseAnswer(itemId, verdict));
         }
 
+        public static void RaiseHolsterChanged(GameObject holder, HolsterPhase phase)
+        {
+            Invoke(HolsterChanged, new HolsterChange(holder, phase));
+        }
+
         // 他のアセンブリの出来事に自前で呼ばせないのは、購読者の例外で戦闘の処理を止めない流し方をここの出来事と揃えるため。
         public static void Notify<T>(Action<T> handlers, T value)
         {
@@ -170,6 +178,7 @@ namespace Shooter.Runtime
             Landed = null;
             MatchFinished = null;
             PurchaseAnswered = null;
+            HolsterChanged = null;
             _attribution = null;
             foreach (var clear in _clears)
             {
@@ -367,6 +376,26 @@ namespace Shooter.Runtime
         {
             Center = center;
             _weaponId = weaponId ?? string.Empty;
+        }
+    }
+
+    public readonly struct HolsterChange
+    {
+        public GameObject Holder { get; }
+
+        public HolsterPhase Phase { get; }
+
+        public bool IsHolstered => Phase == HolsterPhase.Holstered;
+
+        public HolsterChange(GameObject holder, HolsterPhase phase)
+        {
+            if (phase != HolsterPhase.Holstered && phase != HolsterPhase.Drawn)
+            {
+                throw new ArgumentOutOfRangeException(nameof(phase), phase, "only a settled phase (Holstered or Drawn) is a holster change");
+            }
+
+            Holder = holder;
+            Phase = phase;
         }
     }
 

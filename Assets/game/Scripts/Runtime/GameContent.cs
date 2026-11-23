@@ -154,6 +154,8 @@ namespace Shooter.Runtime
 
         [SerializeField, Tooltip("設定画面で選べるゲームパッドの配置とスティック・トリガーの入れ替えの JSON。空なら Resources/Tuning/gamepad-layouts")]
         private TextAsset _gamepadLayoutsTuning;
+        [SerializeField, Tooltip("武器をしまう動作 (しまっている間の移動速度の倍率・武装と数える状態) の JSON。空なら Resources/Tuning/holster")]
+        private TextAsset _holsterTuning;
 
         [Header("武器・キャンペーン")]
         [SerializeField, Tooltip("使える武器の一覧")]
@@ -556,6 +558,12 @@ namespace Shooter.Runtime
         {
             get => _gamepadLayoutsTuning;
             set => _gamepadLayoutsTuning = value;
+        }
+
+        public TextAsset HolsterTuning
+        {
+            get => _holsterTuning;
+            set => _holsterTuning = value;
         }
 
         public WeaponCatalogAsset WeaponCatalog

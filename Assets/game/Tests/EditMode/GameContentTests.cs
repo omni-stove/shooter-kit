@@ -392,6 +392,7 @@ namespace Shooter.Tests.EditMode
                 (() => content.LoadoutPresetsTuning, v => content.LoadoutPresetsTuning = v),
                 (() => content.GraphicsTuning, v => content.GraphicsTuning = v),
                 (() => content.GamepadLayoutsTuning, v => content.GamepadLayoutsTuning = v),
+                (() => content.HolsterTuning, v => content.HolsterTuning = v),
             };
 
             foreach (var slot in slots)
@@ -479,6 +480,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("_loadoutPresetsTuning", "Resources/Tuning/loadout-presets")]
         [TestCase("_graphicsTuning", "Resources/Tuning/graphics")]
         [TestCase("_gamepadLayoutsTuning", "Resources/Tuning/gamepad-layouts")]
+        [TestCase("_holsterTuning", "Resources/Tuning/holster")]
         public void TheTuningFieldsNameTheirResourceFallback(string field, string resourcePath)
         {
             var info = typeof(GameContent).GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -643,7 +645,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("loadout-presets"));
             Assert.That(asked, Does.Contain("graphics"));
             Assert.That(asked, Does.Contain("gamepad-layouts"));
-            Assert.That(asked, Has.Count.EqualTo(41));
+            Assert.That(asked, Does.Contain("holster"));
+            Assert.That(asked, Has.Count.EqualTo(42));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]

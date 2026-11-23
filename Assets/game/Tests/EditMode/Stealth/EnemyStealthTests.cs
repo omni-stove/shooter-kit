@@ -297,6 +297,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.GunshotGain, Is.EqualTo(expected.GunshotGain));
             Assert.That(spec.FootstepGain, Is.EqualTo(expected.FootstepGain));
             Assert.That(spec.InvestigateLevel, Is.EqualTo(expected.InvestigateLevel));
+            Assert.That(spec.ArmedGainFactor, Is.EqualTo(expected.ArmedGainFactor));
         }
 
         [Test]
@@ -321,6 +322,65 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.AlarmRadius, Is.EqualTo(8f));
             Assert.That(spec.InvestigateLevel, Is.EqualTo(0.8f));
             Assert.That(spec.FootstepGain, Is.EqualTo(AwarenessSpec.DefaultFootstepGain));
+        }
+
+        [Test]
+        public void TheArmedGainFactorRoundTripsThroughTheSettings()
+        {
+            Assert.That(_stealth.CreateSpec().ArmedGainFactor, Is.EqualTo(AwarenessSpec.DefaultArmedGainFactor));
+
+            _stealth.Settings.CopyFrom(new AwarenessSpec(armedGainFactor: 2.5f));
+
+            Assert.That(_stealth.CreateSpec().ArmedGainFactor, Is.EqualTo(2.5f));
+        }
+
+        [Test]
+        public void TheEntryArmedGainFactorWinsOverTheSettings()
+        {
+            var content = ScriptableObject.CreateInstance<GameContent>();
+            content.name = "Armed";
+            var text = new TextAsset("{ \"armedGainFactor\": 2 }") { name = "ArmedStealth" };
+            content.StealthTuning = text;
+            try
+            {
+                GameContent.Use(content);
+                _stealth.Settings.CopyFrom(new AwarenessSpec(armedGainFactor: 3f));
+
+                Assert.That(_stealth.TryInitialize(), Is.True);
+
+                Assert.That(_stealth.Awareness.Spec.ArmedGainFactor, Is.EqualTo(2f), "the entry wins, as the footstep radius does over the target");
+                Assert.That(_stealth.CreateSpec().ArmedGainFactor, Is.EqualTo(3f), "the settings themselves are left alone");
+            }
+            finally
+            {
+                GameContent.Use(null);
+                Object.DestroyImmediate(text);
+                Object.DestroyImmediate(content);
+            }
+        }
+
+        [Test]
+        public void WithoutTheEntryItemTheSettingsArmedGainFactorIsUsed()
+        {
+            var content = ScriptableObject.CreateInstance<GameContent>();
+            content.name = "Quiet";
+            var text = new TextAsset("{ \"footstepNoiseRadius\": 30 }") { name = "QuietStealth" };
+            content.StealthTuning = text;
+            try
+            {
+                GameContent.Use(content);
+                _stealth.Settings.CopyFrom(new AwarenessSpec(armedGainFactor: 3f));
+
+                Assert.That(_stealth.TryInitialize(), Is.True);
+
+                Assert.That(_stealth.Awareness.Spec.ArmedGainFactor, Is.EqualTo(3f));
+            }
+            finally
+            {
+                GameContent.Use(null);
+                Object.DestroyImmediate(text);
+                Object.DestroyImmediate(content);
+            }
         }
 
         [Test]

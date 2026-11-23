@@ -51,6 +51,7 @@ namespace Shooter.Tests.EditMode
         [TestCase(InputActionPaths.PushToTalk)]
         [TestCase(InputActionPaths.Emote)]
         [TestCase(InputActionPaths.Countermeasure)]
+        [TestCase(InputActionPaths.Holster)]
         public void EveryPathExistsInTheProjectWideActions(string path)
         {
             Find(path);
@@ -125,6 +126,7 @@ namespace Shooter.Tests.EditMode
         [TestCase(InputActionPaths.CycleMagnification, "<Keyboard>/h", true)]
         [TestCase(InputActionPaths.HoldBreath, "<Keyboard>/leftCtrl", true)]
         [TestCase(InputActionPaths.SwitchStreak, "<Keyboard>/3", true)]
+        [TestCase(InputActionPaths.Holster, "<Keyboard>/o", true)]
         [TestCase(InputActionPaths.LeanLeft, "<Mouse>/backButton", false)]
         [TestCase(InputActionPaths.LeanRight, "<Mouse>/forwardButton", false)]
         [TestCase(InputActionPaths.Chat, "<Keyboard>/enter", false)]
@@ -198,6 +200,22 @@ namespace Shooter.Tests.EditMode
             Assert.That(PlayerVehicleRider.CountermeasureActionPath, Is.EqualTo(InputActionPaths.Countermeasure));
             Assert.That(InputActionPaths.Countermeasure, Is.EqualTo("Player/Countermeasure"));
             Assert.That(InputActionPaths.Emote, Is.EqualTo("Player/Emote"));
+        }
+
+        [Test]
+        public void HolsterIsTheOnlyPlayerActionOnO()
+        {
+            Assert.That(InputActionPaths.Holster, Is.EqualTo("Player/Holster"));
+            var holster = Find(InputActionPaths.Holster);
+
+            Assert.That(holster.bindings, Has.Exactly(1).Matches<InputBinding>(b => b.path == "<Keyboard>/o"));
+            foreach (var other in holster.actionMap.actions)
+            {
+                if (other != holster)
+                {
+                    Assert.That(other.bindings, Has.None.Matches<InputBinding>(b => b.path == "<Keyboard>/o"), other.name);
+                }
+            }
         }
 
         [Test]

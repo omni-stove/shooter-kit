@@ -112,6 +112,10 @@ namespace Shooter.Runtime
 
         public static GameSignal<IEmoteControl> Emotes { get; } = new GameSignal<IEmoteControl>(nameof(Emotes));
 
+        public static GameSignal<HolsterStatus?> Holster { get; } = new GameSignal<HolsterStatus?>(nameof(Holster));
+
+        public static GameSignal<WeaponFreeZoneStatus?> WeaponFreeZone { get; } = new GameSignal<WeaponFreeZoneStatus?>(nameof(WeaponFreeZone));
+
         public static GameSignal<VoteKickStatus?> VoteKick { get; } = new GameSignal<VoteKickStatus?>(nameof(VoteKick));
 
         public static GameSignal<IVoteKickSender> VoteKickSender { get; } = new GameSignal<IVoteKickSender>(nameof(VoteKickSender));
@@ -191,6 +195,8 @@ namespace Shooter.Runtime
             Stamina.Reset();
             LockOnWarning.Reset();
             Emotes.Reset();
+            Holster.Reset();
+            WeaponFreeZone.Reset();
             VoteKick.Reset();
             VoteKickSender.Reset();
             Wallet.Reset();

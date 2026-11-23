@@ -132,6 +132,7 @@
   "settings.input.action.PushToTalk": "Push to talk",
   "settings.input.action.Emote": "Play emote",
   "settings.input.action.Countermeasure": "Drop flares",
+  "settings.input.action.Holster": "Holster weapon",
   "settings.input.move.up": "Move forward",
   "settings.input.move.down": "Move back",
   "settings.input.move.left": "Move left",
