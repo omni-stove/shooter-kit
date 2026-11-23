@@ -73,6 +73,12 @@ namespace Shooter.Core
             return Prefix(cameraId, SecurityCameraPhase.Destroyed, from);
         }
 
+        // 見張りと警報は入力が無くても動くので、止められないことだけを知らせる。
+        public static string NoInteractAction(string cameraId, string inputActionPath)
+        {
+            return $"{Tag} camera={Name(cameraId)} input={Name(inputActionPath)} is missing from the Input Actions; the camera cannot be disabled by holding it";
+        }
+
         private static string Prefix(string cameraId, SecurityCameraPhase to, SecurityCameraPhase from)
         {
             return $"{Tag} camera={Name(cameraId)} phase={to} from={from}";

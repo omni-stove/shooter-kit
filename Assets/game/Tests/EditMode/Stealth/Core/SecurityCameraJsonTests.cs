@@ -16,7 +16,7 @@ namespace Shooter.Core.Tests
         private static readonly string[] _expectedCameraItemNames =
         {
             "sweepDegrees", "sweepDegreesPerSecond", "edgePauseSeconds", "viewDistance", "fieldOfViewDegrees", "awareness",
-            "disableHoldSeconds", "disabledSeconds",
+            "disableHoldSeconds", "disabledSeconds", "maxHealth", "disableRadius",
         };
 
         private static readonly string[] _expectedCameraAwarenessItemNames =
@@ -50,6 +50,8 @@ namespace Shooter.Core.Tests
             Assert.That(camera.FieldOfViewDegrees, Is.EqualTo(60f));
             Assert.That(camera.DisableHoldSeconds, Is.EqualTo(1.5f));
             Assert.That(camera.DisabledSeconds, Is.EqualTo(30f));
+            Assert.That(camera.MaxHealth, Is.EqualTo(50));
+            Assert.That(camera.DisableRadius, Is.EqualTo(2.5f));
             Assert.That(camera.Awareness.FieldOfViewDegrees, Is.EqualTo(60f), "the awareness sees through the camera's own view");
             Assert.That(camera.Awareness.GainPerSecond, Is.EqualTo(AwarenessSpec.DefaultGainPerSecond));
             Assert.That(camera.Awareness.AlertThreshold, Is.EqualTo(AwarenessSpec.DefaultAlertThreshold));
@@ -85,6 +87,7 @@ namespace Shooter.Core.Tests
             var tuning = StealthNoiseJson.ParseTuning(
                 "{\"securityCamera\": {\"sweepDegrees\": 120, \"sweepDegreesPerSecond\": 30, \"edgePauseSeconds\": 0.5,"
                 + " \"viewDistance\": 25, \"fieldOfViewDegrees\": 45, \"disableHoldSeconds\": 3, \"disabledSeconds\": 10,"
+                + " \"maxHealth\": 120, \"disableRadius\": 4,"
                 + " \"awareness\": {\"gainPerSecond\": 2, \"fullGainDistance\": 5, \"farGainFactor\": 0.3, \"peripheralGainFactor\": 0.6,"
                 + " \"crouchGainFactor\": 0.7, \"proneGainFactor\": 0.1, \"stillGainFactor\": 0.9, \"fullMotionSpeed\": 4,"
                 + " \"decayDelaySeconds\": 1, \"decayPerSecond\": 0.2, \"noticeThreshold\": 0.3, \"alertThreshold\": 0.7,"
@@ -101,6 +104,8 @@ namespace Shooter.Core.Tests
             Assert.That(camera.FieldOfViewDegrees, Is.EqualTo(45f));
             Assert.That(camera.DisableHoldSeconds, Is.EqualTo(3f));
             Assert.That(camera.DisabledSeconds, Is.EqualTo(10f));
+            Assert.That(camera.MaxHealth, Is.EqualTo(120));
+            Assert.That(camera.DisableRadius, Is.EqualTo(4f));
 
             var awareness = camera.Awareness;
             Assert.That(awareness.FieldOfViewDegrees, Is.EqualTo(45f));
@@ -158,6 +163,8 @@ namespace Shooter.Core.Tests
             Assert.That(partial.Camera.FieldOfViewDegrees, Is.EqualTo(SecurityCameraSpec.DefaultFieldOfViewDegrees));
             Assert.That(partial.Camera.DisableHoldSeconds, Is.EqualTo(SecurityCameraSpec.DefaultDisableHoldSeconds));
             Assert.That(partial.Camera.DisabledSeconds, Is.EqualTo(SecurityCameraSpec.DefaultDisabledSeconds));
+            Assert.That(partial.Camera.MaxHealth, Is.EqualTo(SecurityCameraSpec.DefaultMaxHealth));
+            Assert.That(partial.Camera.DisableRadius, Is.EqualTo(SecurityCameraSpec.DefaultDisableRadius));
             Assert.That(partial.Camera.Awareness.GainPerSecond, Is.EqualTo(3f));
             Assert.That(partial.Camera.Awareness.AlertThreshold, Is.EqualTo(AwarenessSpec.DefaultAlertThreshold));
             Assert.That(partial.Camera.Awareness.FieldOfViewDegrees, Is.EqualTo(SecurityCameraSpec.DefaultFieldOfViewDegrees));
@@ -195,6 +202,9 @@ namespace Shooter.Core.Tests
         [TestCase("{\"securityCamera\": {\"fieldOfViewDegrees\": 0, \"awareness\": {\"gainPerSecond\": 2}}}", "securityCamera.fieldOfViewDegrees")]
         [TestCase("{\"securityCamera\": {\"disableHoldSeconds\": 0}}", "securityCamera.disableHoldSeconds")]
         [TestCase("{\"securityCamera\": {\"disabledSeconds\": -1}}", "securityCamera.disabledSeconds")]
+        [TestCase("{\"securityCamera\": {\"maxHealth\": 0}}", "securityCamera.maxHealth")]
+        [TestCase("{\"securityCamera\": {\"maxHealth\": 2.5}}", "securityCamera.maxHealth")]
+        [TestCase("{\"securityCamera\": {\"disableRadius\": 0}}", "securityCamera.disableRadius")]
         [TestCase("{\"securityCamera\": {\"viewDistance\": \"far\"}}", "securityCamera.viewDistance")]
         [TestCase("{\"securityCamera\": {\"viewDistance\": null}}", "securityCamera.viewDistance")]
         [TestCase("{\"securityCamera\": {\"awareness\": {\"gainPerSecond\": 0}}}", "securityCamera.awareness.gainPerSecond")]
@@ -244,6 +254,11 @@ namespace Shooter.Core.Tests
             Assert.That(
                 Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraSpec(disabledSeconds: float.PositiveInfinity)).ParamName,
                 Is.EqualTo("disabledSeconds"));
+            Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraSpec(maxHealth: -1)).ParamName, Is.EqualTo("maxHealth"));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityCameraSpec(disableRadius: float.NaN)).ParamName,
+                Is.EqualTo("disableRadius"));
+            Assert.That(new SecurityCameraSpec(maxHealth: 1).MaxHealth, Is.EqualTo(1), "one hit breaks it");
             Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityAlarmSpec(durationSeconds: float.NaN)).ParamName, Is.EqualTo("durationSeconds"));
             Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => _ = new SecurityAlarmSpec(radius: float.PositiveInfinity)).ParamName, Is.EqualTo("radius"));
         }

@@ -111,6 +111,40 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheSecurityCameraPromptShowsTheHoldUnderWayAndAStoppedCamera()
+        {
+            Assert.That(
+                SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0.5f, true, Interact), "E"),
+                Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisablingKey, 50)));
+            Assert.That(
+                SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0f, false, Interact), "E"),
+                Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisabledKey)));
+            Assert.That(
+                SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0.5f, false, Interact), "E"),
+                Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisabledKey)),
+                "a stopped camera says so even mid-hold");
+            Assert.That(SecurityCameraPrompt.ProgressPercent(0.999f), Is.EqualTo(99), "never 100% before the hold ends");
+            Assert.That(SecurityCameraPrompt.ProgressPercent(1f), Is.EqualTo(100));
+
+            Assert.That(Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0.5f, true, Interact), "E")), Is.EqualTo("カメラを止めている 50%"));
+            Assert.That(Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0f, false, Interact), "E")), Is.EqualTo("カメラは止まっている"));
+            Localizer.Apply(GameLanguage.English);
+            try
+            {
+                Assert.That(
+                    Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0.5f, true, Interact), "E")),
+                    Is.EqualTo("Disabling the camera... 50%"));
+                Assert.That(
+                    Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, 0f, false, Interact), "E")),
+                    Is.EqualTo("The camera is disabled"));
+            }
+            finally
+            {
+                Localizer.Apply(GameLanguage.Japanese);
+            }
+        }
+
+        [Test]
         public void ABoundViewShowsThePublishedSecurityCameraHint()
         {
             var root = BindToLayout();

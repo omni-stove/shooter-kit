@@ -39,7 +39,9 @@
       "litGainFactor": 1
     },
     "disableHoldSeconds": 1.5,
-    "disabledSeconds": 30
+    "disabledSeconds": 30,
+    "maxHealth": 50,
+    "disableRadius": 2.5
   },
   "alarm": {
     "durationSeconds": 20,

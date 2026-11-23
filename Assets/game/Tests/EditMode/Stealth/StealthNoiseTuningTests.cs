@@ -85,6 +85,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(camera.FieldOfViewDegrees, Is.EqualTo(defaults.FieldOfViewDegrees));
             Assert.That(camera.DisableHoldSeconds, Is.EqualTo(defaults.DisableHoldSeconds));
             Assert.That(camera.DisabledSeconds, Is.EqualTo(defaults.DisabledSeconds));
+            Assert.That(camera.MaxHealth, Is.EqualTo(defaults.MaxHealth));
+            Assert.That(camera.DisableRadius, Is.EqualTo(defaults.DisableRadius));
 
             var awareness = camera.Awareness;
             var awarenessDefaults = defaults.Awareness;

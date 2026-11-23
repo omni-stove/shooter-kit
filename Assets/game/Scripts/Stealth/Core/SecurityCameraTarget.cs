@@ -16,7 +16,8 @@ namespace Shooter.Core
             AwarenessPosture posture,
             float lightFactor,
             float speed,
-            bool isArmed = true)
+            bool isArmed = true,
+            bool isLit = false)
         {
             if (!(distance >= 0f) || float.IsInfinity(distance))
             {
@@ -56,6 +57,7 @@ namespace Shooter.Core
             LightFactor = lightFactor;
             Speed = speed;
             IsArmed = isArmed;
+            IsLit = isLit;
         }
 
         public bool HasLineOfSight { get; }
@@ -74,6 +76,8 @@ namespace Shooter.Core
         public float Speed { get; }
 
         public bool IsArmed { get; }
+
+        public bool IsLit { get; }
 
         private static bool IsFinite(float value)
         {
