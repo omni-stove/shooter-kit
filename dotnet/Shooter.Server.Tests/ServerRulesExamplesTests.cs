@@ -56,6 +56,40 @@ namespace Shooter.Server.Tests
             Assert.That(data.Rules.Actions.Melee, Is.EqualTo(Melee.On));
         }
 
+        // 手で保つ例 (server-data/rules/hand-written.txt) は Demo の同じ名前のルールアセットに合わせる。アセットはどれもチームデスマッチの値から作る (GameRulesAssetBuilder) ので、
+        // 書き出した TeamDeathmatch の例と比べ、モードごとに変えているダウン・出現直後の無敵・予備弾だけを期待値で持つ
+        [TestCase("CaptureTheFlag", Downed.Off, 2f, false)]
+        [TestCase("Execution", Downed.Revive, 0f, false)]
+        [TestCase("FreeForAll", Downed.Off, 2f, false)]
+        [TestCase("Guardian", Downed.Off, 2f, false)]
+        [TestCase("GunGame", Downed.Off, 2f, true)]
+        [TestCase("Hardpoint", Downed.Revive, 2f, false)]
+        [TestCase("Infected", Downed.Off, 2f, false)]
+        [TestCase("Juggernaut", Downed.Off, 2f, false)]
+        [TestCase("KillConfirmed", Downed.Revive, 2f, false)]
+        [TestCase("Payload", Downed.Revive, 2f, false)]
+        [TestCase("SearchAndDestroy", Downed.Off, 0f, false)]
+        [TestCase("Vip", Downed.Off, 0f, false)]
+        public void TheHandWrittenExamplesKeepTheValuesOfTheDemoRules(string name, Downed downed, float spawnProtectionSeconds, bool infiniteReserve)
+        {
+            Assert.That(ServerRulesData.TryLoad("TeamDeathmatch", Roots(), out var exported, out var error), Is.True, error);
+            Assert.That(ServerRulesData.TryLoad(name, Roots(), out var data, out error), Is.True, error);
+
+            Assert.That(data.Rules.RegenDelaySeconds, Is.EqualTo(exported.Rules.RegenDelaySeconds));
+            Assert.That(data.Rules.RegenPerSecond, Is.EqualTo(exported.Rules.RegenPerSecond));
+            Assert.That(data.Rules.DeathBody, Is.EqualTo(exported.Rules.DeathBody));
+            Assert.That(data.Rules.Destruction, Is.EqualTo(exported.Rules.Destruction));
+            Assert.That(data.Rules.IdleKickSeconds, Is.EqualTo(exported.Rules.IdleKickSeconds));
+            Assert.That(data.Rules.Actions.ActiveReload, Is.EqualTo(exported.Rules.Actions.ActiveReload));
+            Assert.That(data.Rules.Actions.Grenade, Is.EqualTo(exported.Rules.Actions.Grenade));
+            Assert.That(data.Rules.Actions.GrenadeCount, Is.EqualTo(exported.Rules.Actions.GrenadeCount));
+            Assert.That(data.Rules.Actions.Takedown, Is.EqualTo(exported.Rules.Actions.Takedown));
+            Assert.That(data.File.LoadoutAbilities, Is.EqualTo(exported.File.LoadoutAbilities));
+            Assert.That(data.Rules.Actions.Downed, Is.EqualTo(downed));
+            Assert.That(data.Rules.SpawnProtectionSeconds, Is.EqualTo(spawnProtectionSeconds));
+            Assert.That(data.Rules.InfiniteReserve, Is.EqualTo(infiniteReserve));
+        }
+
         [TestCase("CaptureTheFlag")]
         [TestCase("Hardpoint")]
         [TestCase("SearchAndDestroy")]

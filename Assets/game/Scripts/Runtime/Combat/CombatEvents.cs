@@ -48,7 +48,7 @@ namespace Shooter.Runtime
         // 仕掛けの途中は GameSignals.Breach で毎フレーム読めるので、ここは破れた瞬間だけを流す。
         public static event Action<DoorBreach> DoorBreached;
 
-        // 手元のプレイヤーの解除の残り秒は GameSignals.WeaponJam で毎フレーム読めるので、ここは詰まった・解除を始めた・解除し終えた瞬間だけを流す。
+        // 詰まっている間・解除の途中は、オフラインでは GameSignals.WeaponJam、ネット対戦では HudModel の Jam で毎フレーム読めるので、ここは詰まった・解除を始めた・解除し終えた瞬間だけを流す。
         public static event Action<WeaponJamInfo> WeaponJammed;
 
         public static event Action<WeaponJamInfo> WeaponJamClearStarted;
@@ -461,6 +461,7 @@ namespace Shooter.Runtime
     {
         private readonly string _weaponId;
 
+        // null を断らないのは、ネット対戦では HUD が持ち主の武器の値から流し、この端末の人の体を持たないため。
         public GameObject Holder { get; }
 
         public string WeaponId => _weaponId ?? string.Empty;

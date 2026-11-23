@@ -26,7 +26,13 @@ make export-server-rules    # ルールと調整値 → server-data/rules/、ser
 | `mutators.json` | `Assets/game/Resources/Tuning/` | 使うときだけ写す。無ければオンラインの変則ルールは無し |
 | `emotes.json` | 入口 `GameContent` の `EmotesTuning` (キットの `Resources/Tuning/` には無い) | `make export-server-rules` で写す。無ければ `{}` (エモート無し) を置き、サーバーはどの Id の要求も断る |
 
-`server-data/tuning/` と `Resources/Tuning/` の両方にある同じ名前のファイルは、`economy.json`・`chat-words.json` を除き、中身が同じでないと `scripts/lint.sh` (CI の lint) が落ちる (`scripts/server-tuning.sh`)。サーバー用に別の中身を持たせるファイルを増やすときは、そのスクリプトの `server_owned` とこの表に足す。
+`server-data/tuning/` と `Resources/Tuning/` の両方にある同じ名前のファイルは、`economy.json`・`chat-words.json` を除き、中身が同じでないと `scripts/lint.sh` (CI の lint) が落ちる (`scripts/server-tuning.sh`)。片方にしか無いファイルも、`scripts/server-tuning.txt` に `server-only`・`resources-only` として書いていなければ落ちる。サーバー用に別の中身を持たせるファイル (`server-owned`) や片方にだけ置くファイルを増やすときは、その一覧とこの表に足す。
+
+### ルール (`server-data/rules/`)
+
+`make export-server-rules` が書き出すのは、試合の設定 (`Rules/NetMatch.asset`) の並びにあるルールアセットと、ルールのフォルダーにある `Objective` が `None` でないルールアセット。サーバーは目的をファイルの `objective` で選ぶので、`None` のアセットは書き出さない。
+
+`server-data/rules/hand-written.txt` に名前のあるルールは書き出さず、手で保つ。オンラインだけの値 (キルカムの `deathCamera`、`match.gunGame.tierWeaponIds` など) をアセットが持たないモードがこれに当たり、変えている項目はその一覧に書いてある。ほかの項目は Demo の同じ名前のルールアセットに手で合わせる。書き出しの対象でも一覧でもない `*.json` が残っていると、`make export-server-rules` と `scripts/lint.sh` (`scripts/server-rules.sh`) が落ちる。
 
 `server-data/playlists/*.json` はサーバーのマップとルールの組み合わせで、クライアントの `Tuning/playlists.json` とは別に手で書く。
 

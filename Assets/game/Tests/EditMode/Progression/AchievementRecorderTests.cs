@@ -43,6 +43,7 @@ namespace Shooter.Tests.EditMode
             _progression.Uninstall();
             CombatEvents.ClearSubscribers();
             ProgressionSignals.Achievements.Clear();
+            GameSignals.Participants.Clear();
             GameContent.Use(null);
             KitTuning.Reload();
             foreach (var created in _created)
@@ -132,6 +133,42 @@ namespace Shooter.Tests.EditMode
             Assert.That(_progression.Profile.Headshots, Is.Zero);
             Assert.That(_progression.Profile.MeleeKills, Is.Zero);
             Assert.That(_progression.Profile.Achievements, Is.Empty);
+        }
+
+        [Test]
+        public void WhileARosterIsPublishedOnlyTheKillsOfItsLocalPlayerAreCounted()
+        {
+            // サーバーの Id が手元の連番と重なった形にする。自分の Id はオフラインでは敵の物、相手の Id はオフラインでは自分の物に当たる。
+            var localId = CombatEvents.OfflineId(_enemy);
+            var remoteId = CombatEvents.OfflineId(_player);
+            var roster = new ParticipantTable();
+            roster.Set(new Participant(localId, "P" + localId, Team.Alpha, true));
+            roster.Set(new Participant(remoteId, "P" + remoteId, Team.Bravo, false));
+            var progression = new ProgressionRecorder(_storage, ProgressionSpec.Default);
+            var recorder = new AchievementRecorder(progression, AchievementSpec.Default, () => _now);
+            try
+            {
+                progression.Install();
+                recorder.Install();
+                GameSignals.Participants.Publish(roster);
+
+                CombatEvents.RaiseKilled(new KillFeedEntry(remoteId, localId, KnifeId, headshot: true, friendly: false));
+
+                Assert.That(progression.Profile, Is.EqualTo(PlayerProfile.Empty), "a kill by another player under an id the offline table calls local");
+
+                LogAssert.Expect(LogType.Log, "[Achievement] unlocked id=first-blood stat=Kills target=1");
+                CombatEvents.RaiseKilled(new KillFeedEntry(localId, remoteId, KnifeId, headshot: true, friendly: false));
+
+                Assert.That(progression.Profile.Kills, Is.EqualTo(1));
+                Assert.That(progression.Profile.Headshots, Is.EqualTo(1));
+                Assert.That(progression.Profile.MeleeKills, Is.EqualTo(1));
+                Assert.That(progression.Profile.Achievements, Is.EqualTo(new[] { "first-blood" }));
+            }
+            finally
+            {
+                recorder.Uninstall();
+                progression.Uninstall();
+            }
         }
 
         [Test]

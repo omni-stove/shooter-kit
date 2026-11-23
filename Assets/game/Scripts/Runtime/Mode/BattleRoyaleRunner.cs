@@ -622,8 +622,9 @@ namespace Shooter.Runtime
                 return;
             }
 
+            var definition = EffectiveDefinition;
             zone.SetTargets(_zoneTargets);
-            if (zone.Begin())
+            if (zone.Begin(definition != null ? definition.ReadZone() : null))
             {
                 _runningZone = zone;
             }

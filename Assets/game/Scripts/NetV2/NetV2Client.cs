@@ -456,6 +456,7 @@ namespace Shooter.NetV2
                 ControlPointPosition = ControlPointPosition,
                 MapDecided = _mapChange.Decide,
                 LocalPlayer = () => _local,
+                World = () => _world,
                 Names = _names,
                 FindWeapon = _weapons.SpecFor,
 

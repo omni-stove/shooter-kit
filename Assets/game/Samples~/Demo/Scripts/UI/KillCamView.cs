@@ -81,6 +81,9 @@ namespace Shooter.Runtime
                     $"the kill cam layout needs a Label '{CaptionName}' and an element '{ProgressName}'; check Assets/game/Samples~/Demo/UI/Resources/Hud/Hud.uxml");
             }
 
+            // 倒した相手の名前は他のプレイヤーが決めた文字列なので、タグを書式として読ませない。
+            _captionLabel.enableRichText = false;
+
             if (IsShown)
             {
                 _text = Localizer.Resolve(_caption);

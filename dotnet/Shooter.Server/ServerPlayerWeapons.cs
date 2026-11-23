@@ -15,8 +15,15 @@ namespace Shooter.Server
         private readonly int _playerId;
         private readonly TextWriter _log;
         private readonly Func<double> _now;
+        private readonly Func<int> _matchSeed;
+        private readonly Func<int, IJamRoll> _newJamRoll;
+
+        // 出直すたびに武器を作り直すので、作るたびに同じ種から引き直すと、どの命でも同じ発で詰まる。そうならないよう、試合の間は武器ごとに 1 つを持ち回す
+        private readonly Dictionary<string, IJamRoll> _jamRolls = new Dictionary<string, IJamRoll>(StringComparer.Ordinal);
+        private int _jamRollsMatchSeed;
         private Loadout<ServerWeapon> _loadout;
         private double _reloadStartedAt;
+        private double _jamClearEndsAt;
         private float _chargeFraction;
         private double _chargeFrom;
         private int _burstRoundsLeft;
@@ -26,14 +33,20 @@ namespace Shooter.Server
         private IReadOnlyList<WeaponSpec> _baseSpecs = Array.Empty<WeaponSpec>();
         private readonly Dictionary<string, IReadOnlyList<string>> _attachments = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
-        public ServerPlayerWeapons(int playerId, TextWriter log, Func<double> now)
+        // matchSeed は武器を作るたびに読むので、試合が替わって種が変われば、その後に作る武器から新しい種で引く。
+        // newJamRoll は種から弾詰まりの乱数を作る。テストが固定の値の列を渡せるよう差し替えられる
+        public ServerPlayerWeapons(int playerId, TextWriter log, Func<double> now, Func<int> matchSeed = null, Func<int, IJamRoll> newJamRoll = null)
         {
             _playerId = playerId;
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _now = now ?? throw new ArgumentNullException(nameof(now));
+            _matchSeed = matchSeed ?? (() => 0);
+            _newJamRoll = newJamRoll ?? (seed => new JamRoll(seed));
         }
 
         public bool IsEquipped => _loadout != null;
+
+        public bool IsJammed => _loadout != null && _loadout.Current.IsJammed;
 
         public WeaponSpec CurrentSpec => _loadout?.Current.Spec;
 
@@ -90,7 +103,8 @@ namespace Shooter.Server
             var weapons = new ServerWeapon[specs.Count];
             for (var i = 0; i < specs.Count; i++)
             {
-                weapons[i] = new ServerWeapon(specs[i] ?? throw new ArgumentException("specs must not contain null", nameof(specs)), rules);
+                var spec = specs[i] ?? throw new ArgumentException("specs must not contain null", nameof(specs));
+                weapons[i] = new ServerWeapon(spec, rules, JamRollFor(spec.Id));
                 if (_poolFor != null)
                 {
                     weapons[i].UseAmmoPool(_poolFor(specs[i]));
@@ -134,7 +148,7 @@ namespace Shooter.Server
                 return true;
             }
 
-            var weapon = new ServerWeapon(spec, rules);
+            var weapon = new ServerWeapon(spec, rules, JamRollFor(spec.Id));
             if (_poolFor != null)
             {
                 weapon.UseAmmoPool(_poolFor(spec));
@@ -164,7 +178,7 @@ namespace Shooter.Server
             var items = _loadout.Items;
             var replaced = HeldAt(index);
             items[index].UseAmmoPool(null);
-            var weapon = new ServerWeapon(spec, rules);
+            var weapon = new ServerWeapon(spec, rules, JamRollFor(spec.Id));
             if (_poolFor != null)
             {
                 weapon.UseAmmoPool(_poolFor(spec));
@@ -409,7 +423,13 @@ namespace Shooter.Server
             }
 
             _loadout.Tick(deltaSeconds);
-            _loadout.Current.Tick(deltaSeconds);
+            var weapon = _loadout.Current;
+            var wasJammed = weapon.IsJammed;
+            weapon.Tick(deltaSeconds);
+            if (wasJammed && !weapon.IsJammed)
+            {
+                _log.WriteLine(ServerCombatLog.JamCleared(_playerId, weapon.Spec.Id));
+            }
         }
 
         public ShotRejection TryFire()
@@ -419,14 +439,51 @@ namespace Shooter.Server
                 return ShotRejection.NoWeapon;
             }
 
-            return _loadout.IsSwitching ? ShotRejection.Switching
-                : HoldsShield ? ShotRejection.ShieldWeapon
-                : _loadout.Current.TryFire();
+            if (_loadout.IsSwitching)
+            {
+                return ShotRejection.Switching;
+            }
+
+            if (HoldsShield)
+            {
+                return ShotRejection.ShieldWeapon;
+            }
+
+            var weapon = _loadout.Current;
+            var sustained = weapon.JamSustainedShots;
+            var chance = weapon.JamNextShotChance;
+            var result = weapon.TryFire();
+            if (result == ShotRejection.None && weapon.IsJammed)
+            {
+                _log.WriteLine(ServerCombatLog.Jammed(_playerId, weapon.Spec.Id, sustained, chance));
+            }
+
+            return result;
         }
 
+        // 解除に別の要求を足さないのは、詰まった武器には弾を込められず、リロードの要求が詰まっている間は他に意味を持たないため
         public bool TryReload()
         {
-            return _loadout != null && !_loadout.IsSwitching && !HoldsShield && _loadout.Current.TryStartReload();
+            if (_loadout == null || _loadout.IsSwitching || HoldsShield)
+            {
+                return false;
+            }
+
+            var weapon = _loadout.Current;
+            return weapon.IsJammed ? TryStartClearJam(weapon) : weapon.TryStartReload();
+        }
+
+        private bool TryStartClearJam(ServerWeapon weapon)
+        {
+            if (!weapon.TryStartClearJam())
+            {
+                return false;
+            }
+
+            var seconds = weapon.JamClearRemainingSeconds;
+            _jamClearEndsAt = _now() + seconds;
+            _log.WriteLine(ServerCombatLog.JamClearStarted(_playerId, weapon.Spec.Id, seconds));
+            return true;
         }
 
         public bool CancelReload()
@@ -560,6 +617,8 @@ namespace Shooter.Server
                 IsOverheated = weapon.IsOverheated,
                 ChargeFraction = spec.Trigger.Charge != null ? _chargeFraction : 0f,
                 AmmoTypeIndex = AmmoTypeIndex,
+                IsJammed = weapon.IsJammed,
+                JamClearEndsAt = weapon.IsClearingJam ? _jamClearEndsAt : 0d,
             };
         }
 
@@ -611,9 +670,55 @@ namespace Shooter.Server
 
         private static float HolsterSeconds(ServerWeapon weapon) => weapon.Spec.HolsterSeconds;
 
-        private static void HolsterWeapon(ServerWeapon weapon)
+        // 解除は途中までの分を残さず、詰まったまましまう。戻って構えたらリロードの要求で最初から解除し直す
+        private void HolsterWeapon(ServerWeapon weapon)
         {
             weapon.CancelReload();
+            var remaining = weapon.JamClearRemainingSeconds;
+            if (weapon.CancelClearJam())
+            {
+                _log.WriteLine(ServerCombatLog.JamClearCanceled(_playerId, weapon.Spec.Id, remaining));
+            }
+        }
+
+        private IJamRoll JamRollFor(string weaponId)
+        {
+            var matchSeed = _matchSeed();
+            if (matchSeed != _jamRollsMatchSeed)
+            {
+                _jamRolls.Clear();
+                _jamRollsMatchSeed = matchSeed;
+            }
+
+            if (!_jamRolls.TryGetValue(weaponId, out var roll))
+            {
+                roll = _newJamRoll(JamSeed(matchSeed, _playerId, weaponId));
+                _jamRolls.Add(weaponId, roll);
+            }
+
+            return roll;
+        }
+
+        // HashCode.Combine は起動ごとに種が変わるので使わず、FNV-1a (32 ビット) で混ぜる。同じ試合の Id ならログから同じ詰まり方を再現できる
+        internal static int JamSeed(int matchSeed, int playerId, string weaponId)
+        {
+            var hash = Mix(2166136261u, matchSeed);
+            hash = Mix(hash, playerId);
+            return unchecked((int)Mix(hash, JamRoll.SeedFor(weaponId)));
+        }
+
+        private static uint Mix(uint hash, int value)
+        {
+            unchecked
+            {
+                var bits = (uint)value;
+                for (var shift = 0; shift < 32; shift += 8)
+                {
+                    hash = (hash ^ ((bits >> shift) & 0xFFu)) * 16777619u;
+                }
+
+                return hash;
+            }
         }
 
         private void HandleSwitched(int index)

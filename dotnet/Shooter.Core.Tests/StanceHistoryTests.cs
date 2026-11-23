@@ -5,6 +5,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class StanceHistoryTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         [Test]
         public void RejectsNonPositiveCapacity()
         {
@@ -74,6 +77,20 @@ namespace Shooter.Core.Tests
             Assert.That(at3, Is.False);
             Assert.That(history.TrySample(4.5f, out var at4), Is.True);
             Assert.That(at4, Is.True);
+        }
+
+        [Test]
+        public void HoldsTheStanceOfTheTickBeforePastTheFloatRange()
+        {
+            var history = new StanceHistory();
+            history.Record(_lateTick, false);
+            history.Record(_lateTick + 1, true);
+
+            Assert.That(history.TrySample(_lateTick + 0.5d, out var between), Is.True);
+            Assert.That(between, Is.False);
+            Assert.That(history.TrySample(_lateTick + 1d, out var at), Is.True);
+            Assert.That(at, Is.True);
+            Assert.That(history.TrySample(_lateTick - 0.5d, out _), Is.False);
         }
     }
 }

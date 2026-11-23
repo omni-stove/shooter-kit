@@ -431,6 +431,30 @@ namespace Shooter.Core.Tests
             Assert.That(WeaponJamStatus.Of(new Weapon(Spec(AlwaysJams()), GameRules.Default)), Is.EqualTo(WeaponJamStatus.None), "the rule is off");
         }
 
+        [Test]
+        public void ServerWeaponShowsTheNextShotsChanceBeforeItFires()
+        {
+            var weapon = new ServerWeapon(Spec(Rising()), _jamOn, new FixedJamRoll(0.9f));
+
+            Assert.That(weapon.JamSustainedShots, Is.EqualTo(0));
+            Assert.That(weapon.JamNextShotChance, Is.EqualTo(0.25f));
+
+            Assert.That(weapon.TryFire(), Is.EqualTo(ShotRejection.None));
+
+            Assert.That(weapon.JamSustainedShots, Is.EqualTo(1));
+            Assert.That(weapon.JamNextShotChance, Is.EqualTo(0.5f));
+        }
+
+        [Test]
+        public void ServerWeaponWithTheRuleOffShowsNoChance()
+        {
+            var weapon = new ServerWeapon(Spec(Rising()), GameRules.Default, new FixedJamRoll(0f));
+            weapon.TryFire();
+
+            Assert.That(weapon.JamSustainedShots, Is.EqualTo(0));
+            Assert.That(weapon.JamNextShotChance, Is.EqualTo(0f));
+        }
+
         // 詰まった発の番号を返す。詰まったらすぐ解除を始め、連射間隔と同じ解除の秒数で次の発までに解除し終える。
         private static List<int> JamShots(Weapon weapon, int shots)
         {

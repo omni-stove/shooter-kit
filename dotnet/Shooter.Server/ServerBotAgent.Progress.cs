@@ -6,7 +6,7 @@ namespace Shooter.Server
     internal sealed partial class ServerBotAgent
     {
         private Vector3 _progressPosition;
-        private float _progressTime;
+        private double _progressTime;
         private bool _tracking;
 
         // はしごの上では上下に進むので、水平ではなく 3 次元の距離で測る

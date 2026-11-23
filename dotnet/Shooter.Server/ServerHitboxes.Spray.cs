@@ -11,7 +11,7 @@ namespace Shooter.Server
 
         // 火炎は人を素通りして円錐の中の全員に届くので、Cast のように線の上で近い順に止めず、相手ごとに円錐と世界の遮りを確かめる。
         public void Spray(
-            Vector3 origin, Vector3 direction, SpraySpec spray, float range, float tick, int shooterId, Func<int, bool> hittable, List<ShotHit> hits)
+            Vector3 origin, Vector3 direction, SpraySpec spray, float range, double tick, int shooterId, Func<int, bool> hittable, List<ShotHit> hits)
         {
             ArgumentNullException.ThrowIfNull(spray);
             ArgumentNullException.ThrowIfNull(hits);
@@ -43,7 +43,7 @@ namespace Shooter.Server
                 }
 
                 var hit = ShotHit.Target(point, -toward, distance, id, body.Position, body.Crouched, body.Zone(point));
-                hits.Add(hit.WithRewind(LastRecordedTick - clamped));
+                hits.Add(hit.WithRewind((float)(LastRecordedTick - clamped)));
             }
 
             hits.Sort(start, hits.Count - start, _nearestFirst);

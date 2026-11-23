@@ -14,7 +14,7 @@ namespace Shooter.Server
         private int? _damageAttackerId;
         private int? _damageVictimId;
 
-        private float _nextReviveWarningTime;
+        private double _nextReviveWarningTime;
 
         public int ReviveHoldCount => _reviveHolds.Count;
 

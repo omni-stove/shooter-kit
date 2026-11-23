@@ -562,6 +562,30 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(infos.Select(i => i.WeaponId), Is.EqualTo(new[] { string.Empty, "a", "b" }));
             Assert.That(infos.All(i => i.Holder == null), Is.True);
+        }
+
+        [Test]
+        public void WeaponJammedAndJamClearedPassTheHolderAndTheWeaponAndAreDroppedByClearSubscribers()
+        {
+            var holder = new GameObject("Holder");
+            _created.Add(holder);
+            var jammed = new List<WeaponJamInfo>();
+            var cleared = new List<WeaponJamInfo>();
+            CombatEvents.WeaponJammed += jammed.Add;
+            CombatEvents.WeaponJamCleared += cleared.Add;
+
+            CombatEvents.RaiseWeaponJammed(holder, "rifle");
+            CombatEvents.RaiseWeaponJamCleared(null, null);
+            CombatEvents.ClearSubscribers();
+            CombatEvents.RaiseWeaponJammed(holder, "rifle");
+            CombatEvents.RaiseWeaponJamCleared(holder, "rifle");
+
+            Assert.That(jammed, Has.Count.EqualTo(1));
+            Assert.That(jammed[0].Holder, Is.SameAs(holder));
+            Assert.That(jammed[0].WeaponId, Is.EqualTo("rifle"));
+            Assert.That(cleared, Has.Count.EqualTo(1));
+            Assert.That(cleared[0].Holder, Is.Null, "an online jam may have no body on this machine");
+            Assert.That(cleared[0].WeaponId, Is.Empty);
             Assert.That(default(WeaponJamInfo).WeaponId, Is.Empty);
         }
 

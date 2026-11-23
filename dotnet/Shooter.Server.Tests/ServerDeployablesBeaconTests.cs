@@ -57,7 +57,9 @@ namespace Shooter.Server.Tests
             Assert.That(_context.Bodies.TryGet(1, out var body), Is.True);
             Assert.That(body.Position.X, Is.EqualTo(_beaconSpawn.X).Within(1e-3f), _log.ToString());
             Assert.That(body.Position.Z, Is.EqualTo(_beaconSpawn.Z).Within(1e-3f));
-            Assert.That(body.Yaw, Is.EqualTo(90f).Within(1e-3f), "faces the way the beacon faces");
+            Assert.That(body.Yaw, Is.EqualTo(System.MathF.PI / 2f).Within(1e-5f), "faces the way the beacon faces: its 90 degrees as the body's radians");
+            Assert.That(System.MathF.Sin(body.Yaw), Is.EqualTo(1f).Within(1e-5f), "the body's forward is the beacon's +X");
+            Assert.That(System.MathF.Cos(body.Yaw), Is.EqualTo(0f).Within(1e-5f));
             Assert.That(_log.ToString(), Does.Contain("[Beacon] owner=1 kind=deploy-beacon serial=1 used by=1 at=(-2.00, 1.50, 0.00) uses=2/3"));
             Assert.That(_log.ToString(), Does.Contain("[Match] spawn player=1 at=(-2.00, 1.50, 0.00) from=Beacon"));
             Assert.That(_deployables.BeaconUsesLeft(1), Is.EqualTo(2));

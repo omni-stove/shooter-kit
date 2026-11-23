@@ -31,6 +31,22 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheWatchedPlayersNameIsNotReadAsRichText()
+        {
+            var view = CreateView();
+            var table = new ParticipantTable();
+            table.Set(new Participant(1, "P1", Team.Alpha, true));
+            table.Set(new Participant(2, "<size=900>A", Team.Alpha, false));
+            GameSignals.Participants.Publish(table);
+
+            GameSignals.Spectate.Publish(new SpectateStatus(2, 2, SpectateReason.Dead));
+
+            Assert.That(view.Lines, Is.EqualTo(new[] { "<size=900>A を観戦中", ControlsLine }));
+            Assert.That(RowTexts(view), Is.EqualTo(view.Lines));
+            Assert.That(view.Element.Children().All(row => !((Label)row).enableRichText), Is.True);
+        }
+
+        [Test]
         public void TheHudCarriesTheViewAndHidesItWithoutAValue()
         {
             var view = CreateView();

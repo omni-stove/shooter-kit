@@ -118,7 +118,8 @@ namespace Shooter.Tests.EditMode
             Frame(platform, Vector2.zero, false);
 
             // 宙に出た後は床に運ばれず、引き継いだ速さを空中の制御で落としながら進む
-            var expected = 3f * (1f - MotorSpec.DefaultAirControl) * _tick;
+            var kept = Mathf.Pow(1f - MotorSpec.DefaultAirControl, _tick * TickClock.DefaultTickRate);
+            var expected = 3f * kept * _tick;
             Assert.That(_body.transform.position.x - x, Is.EqualTo(expected).Within(2e-3f));
         }
 

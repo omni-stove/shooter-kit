@@ -5,7 +5,7 @@ namespace Shooter.Core
 {
     public readonly struct PingMarker : IEquatable<PingMarker>
     {
-        public PingMarker(int id, PingKind kind, int? targetKey, Vector3 position, bool isTracking, float placedAt, float expiresAt)
+        public PingMarker(int id, PingKind kind, int? targetKey, Vector3 position, bool isTracking, double placedAt, double expiresAt)
         {
             Id = id;
             Kind = kind;
@@ -26,13 +26,14 @@ namespace Shooter.Core
 
         public bool IsTracking { get; }
 
-        public float PlacedAt { get; }
+        // float にしないのは、長く動かしたサーバーの時刻 (数日分の秒) では float の刻みが 1 tick より粗くなり、消える時刻がずれるため。
+        public double PlacedAt { get; }
 
-        public float ExpiresAt { get; }
+        public double ExpiresAt { get; }
 
-        public float RemainingSeconds(float now) => Math.Max(0f, ExpiresAt - now);
+        public float RemainingSeconds(double now) => (float)Math.Max(0d, ExpiresAt - now);
 
-        public bool IsExpiredAt(float now) => now >= ExpiresAt;
+        public bool IsExpiredAt(double now) => now >= ExpiresAt;
 
         internal PingMarker WithPosition(Vector3 position) =>
             new PingMarker(Id, Kind, TargetKey, position, IsTracking, PlacedAt, ExpiresAt);

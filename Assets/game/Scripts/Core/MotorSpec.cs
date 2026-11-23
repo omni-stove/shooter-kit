@@ -54,8 +54,16 @@ namespace Shooter.Core
 
         public const float DefaultCoverPeekSlideSeconds = 0.15f;
 
-        // 足元の Ray (CharacterCoverSensor.ProbeHeight) に当たる壁はすべて入れるよう、下限は設けない。
+        // 足元の Ray (DefaultCoverProbeHeight) に当たる壁はすべて入れるよう、下限は設けない。
         public const float DefaultCoverMinWallHeight = 0f;
+
+        // 低い壁 (DefaultCoverLowWallHeight 未満) にも段差より上で当たる高さにしてある。
+        public const float DefaultCoverProbeHeight = 0.5f;
+
+        // 足元の Ray が車体の下の隙間を抜けたとき、車のように浮いた物にも当たる高さで探し直す。低い壁 (DefaultCoverLowWallHeight) より下にしてある。
+        public const float DefaultCoverUpperProbeHeight = 0.9f;
+
+        public const float DefaultCoverTopProbeHeight = 3f;
 
         public const float DefaultLadderTopEntryDepth = 0.3f;
 
@@ -141,6 +149,12 @@ namespace Shooter.Core
 
         public float CoverMinWallHeight { get; }
 
+        public float CoverProbeHeight { get; }
+
+        public float CoverUpperProbeHeight { get; }
+
+        public float CoverTopProbeHeight { get; }
+
         // 上の端からつかまったときに少し下から始めるのは、つかまった瞬間に上の端を越えて降り直さないため。
         public float LadderTopEntryDepth { get; }
 
@@ -206,7 +220,10 @@ namespace Shooter.Core
             float airJumpSpeed = DefaultAirJumpSpeed,
             float jumpGraceSeconds = DefaultJumpGraceSeconds,
             float coverEnterSpeed = DefaultCoverEnterSpeed,
-            float coverMinWallHeight = DefaultCoverMinWallHeight)
+            float coverMinWallHeight = DefaultCoverMinWallHeight,
+            float coverProbeHeight = DefaultCoverProbeHeight,
+            float coverUpperProbeHeight = DefaultCoverUpperProbeHeight,
+            float coverTopProbeHeight = DefaultCoverTopProbeHeight)
         {
             if (!(walkSpeed >= 0f) || float.IsInfinity(walkSpeed))
             {
@@ -318,6 +335,19 @@ namespace Shooter.Core
             RequireNotNegative(coverBackHoldSeconds, nameof(coverBackHoldSeconds));
             RequirePositive(coverPeekSlideSeconds, nameof(coverPeekSlideSeconds));
             RequireNotNegative(coverMinWallHeight, nameof(coverMinWallHeight));
+            RequireNotNegative(coverProbeHeight, nameof(coverProbeHeight));
+            RequireNotNegative(coverUpperProbeHeight, nameof(coverUpperProbeHeight));
+
+            // 壁を見つけた Ray より低い所から上端を測ると、始点が壁の中に入り、当たった所より低い上端になる。
+            if (!(coverTopProbeHeight > 0f && coverTopProbeHeight >= coverProbeHeight && coverTopProbeHeight >= coverUpperProbeHeight)
+                || float.IsInfinity(coverTopProbeHeight))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(coverTopProbeHeight),
+                    coverTopProbeHeight,
+                    "coverTopProbeHeight must be finite, positive and not below coverProbeHeight and coverUpperProbeHeight");
+            }
+
             RequireNotNegative(ladderTopEntryDepth, nameof(ladderTopEntryDepth));
             if (!(ladderMinApproachDot >= -1f && ladderMinApproachDot <= 1f))
             {
@@ -372,6 +402,9 @@ namespace Shooter.Core
             CoverBackHoldSeconds = coverBackHoldSeconds;
             CoverPeekSlideSeconds = coverPeekSlideSeconds;
             CoverMinWallHeight = coverMinWallHeight;
+            CoverProbeHeight = coverProbeHeight;
+            CoverUpperProbeHeight = coverUpperProbeHeight;
+            CoverTopProbeHeight = coverTopProbeHeight;
             LadderTopEntryDepth = ladderTopEntryDepth;
             LadderMinApproachDot = ladderMinApproachDot;
             LadderMinApproachSpeed = ladderMinApproachSpeed;

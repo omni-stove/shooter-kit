@@ -170,7 +170,7 @@ namespace Shooter.Server
         }
 
         // 噴射 1 回。今の向きで円錐の中の相手を集め直し、相手ごとに着弾を渡して、火炎の届いた所までを全員に送る
-        private void Emit(Spray spray, ServerBody body, float tick)
+        private void Emit(Spray spray, ServerBody body, double tick)
         {
             spray.Pose(body, out var origin, out var direction);
             var shot = spray.Shot;
@@ -226,10 +226,10 @@ namespace Shooter.Server
                 reason));
         }
 
-        private float LastRecordedTick()
+        private double LastRecordedTick()
         {
             var hitboxes = Combat.Hitboxes;
-            return hitboxes.HasHistory ? hitboxes.LastRecordedTick : float.NaN;
+            return hitboxes.HasHistory ? hitboxes.LastRecordedTick : double.NaN;
         }
 
         private sealed class Spray : HeldFire

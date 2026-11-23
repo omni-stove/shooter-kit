@@ -57,6 +57,12 @@ namespace Shooter.NetV2
                 return FireDecision.Hold;
             }
 
+            // 詰まっている間はサーバー (ServerWeapon) が断るので頼まない。弾倉が空でもリロードを頼まないのは、解除はリロードのキーで始めるため。
+            if (weapon.IsJammed)
+            {
+                return FireDecision.Hold;
+            }
+
             // 熱で撃つ武器は弾倉を持たずリロードもしないので、オーバーヒートして冷め切るまでは頼まずに待つ。
             if (spec != null && spec.Ammo.Kind == AmmoKind.Heat)
             {

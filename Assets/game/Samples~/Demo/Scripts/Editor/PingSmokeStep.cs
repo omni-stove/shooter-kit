@@ -229,7 +229,7 @@ namespace Shooter.Editor
             }
 
             _markerId = marker.Id;
-            _placedAt = marker.PlacedAt;
+            _placedAt = (float)marker.PlacedAt;
             _phase = Phase.Hide;
             return null;
         }
