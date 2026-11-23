@@ -204,12 +204,12 @@ namespace Shooter.NetV2
         private void SendFire(
             System.Numerics.Vector3 direction, string weaponId, WeaponSpec spec, in TriggerPull pull, TriggerEdge edge, OwnerSnapshot owner)
         {
-            var renderTick = Math.Max(0f, _match.Interpolation.RenderTick);
+            var time = ShotTime.FromTick(Math.Max(0d, _match.Interpolation.RenderTick));
             ClientFire.Fill(_fire, owner, weaponId, pull, edge, _lockOn != null ? _lockOn.LockedTargetId : null);
             _fire.Origin = NetV2Math.ToNumerics(_local.EyePosition);
             _fire.Direction = direction;
-            _fire.ClientTick = (int)renderTick;
-            _fire.InterpolationAlpha = renderTick - (int)renderTick;
+            _fire.ClientTick = time.Tick;
+            _fire.InterpolationAlpha = time.Alpha;
             _fire.ShotGeneration = _shotGeneration;
             _fire.ShotIndex = _shotIndex;
             _shotIndex = unchecked(_shotIndex + 1);

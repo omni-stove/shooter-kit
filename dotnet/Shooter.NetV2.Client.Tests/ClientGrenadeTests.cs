@@ -9,6 +9,9 @@ namespace Shooter.NetV2.Tests
 {
     public sealed class ClientGrenadeTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private const string _frag = "ff94f232-2647-4b77-a077-5693d8f954d1";
         private const string _smoke = "ecaf6e57-cb77-4707-9321-6ea5b659408f";
         private static readonly int[] _onlyGrenadeFive = { 5 };
@@ -184,6 +187,18 @@ namespace Shooter.NetV2.Tests
             }
 
             return pouch;
+        }
+
+        [Test]
+        public void AFlyingGrenadeIsShownBetweenTheSnapshotsPastTheFloatRange()
+        {
+            var world = World();
+            var removed = new List<int>();
+            world.ApplyGrenades(Snapshot(_lateTick, new Vector3(0f, 1f, 0f)), removed);
+            world.ApplyGrenades(Snapshot(_lateTick + 1, new Vector3(4f, 1f, 0f)), removed);
+
+            Assert.That(world.TryShowGrenade(5, _lateTick + 0.25d, null, out var position, out _), Is.True);
+            Assert.That(position.X, Is.EqualTo(1f).Within(1e-4f));
         }
     }
 }

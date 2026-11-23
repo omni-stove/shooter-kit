@@ -6,6 +6,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class ShotValidatorTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private static readonly ShotTime _valid = new ShotTime(100, 0.5f);
 
         [Test]
@@ -81,6 +84,30 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => ShotValidator.Check(Vector3.Zero, Vector3.UnitZ, _valid, Vector3.Zero, float.NaN));
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => ShotValidator.Check(Vector3.Zero, Vector3.UnitZ, _valid, Vector3.Zero, float.PositiveInfinity));
+        }
+
+        [Test]
+        public void AShotTimeKeepsItsFractionPastTheFloatRange()
+        {
+            Assert.That(new ShotTime(_lateTick, 0.25f).ToTick(), Is.EqualTo(16777217.25d));
+
+            var time = ShotTime.FromTick(16777217.25d);
+
+            Assert.That(time.Tick, Is.EqualTo(16777217));
+            Assert.That(time.Alpha, Is.EqualTo(0.25f));
+            Assert.That(time.IsValid, Is.True);
+        }
+
+        [Test]
+        public void AShotTimeFromATickJustBelowTheNextStaysValid()
+        {
+            var time = ShotTime.FromTick(6d - 1e-12d);
+
+            Assert.That(time.Tick, Is.EqualTo(5));
+            Assert.That(time.Alpha, Is.EqualTo(0.99999994f));
+            Assert.That(time.IsValid, Is.True);
+            Assert.That(ShotTime.FromTick(0d).Tick, Is.EqualTo(0));
+            Assert.That(ShotTime.FromTick(0d).Alpha, Is.EqualTo(0f));
         }
     }
 }

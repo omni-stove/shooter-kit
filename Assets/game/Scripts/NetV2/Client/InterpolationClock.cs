@@ -35,7 +35,8 @@ namespace Shooter.NetV2
 
         public bool HasStarted { get; private set; }
 
-        public float RenderTick { get; private set; }
+        // float で持つと長く動かしたサーバーの tick (2^23 以上) で 1 フレームの増分が丸めで消え、時計が進まなくなる。
+        public double RenderTick { get; private set; }
 
         public void Advance(float deltaSeconds, int newestTick)
         {
@@ -44,7 +45,7 @@ namespace Shooter.NetV2
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "delta must be zero or more");
             }
 
-            var target = newestTick - DelayTicks;
+            var target = newestTick - (double)DelayTicks;
             if (!HasStarted || Math.Abs(target - RenderTick) > _maxDriftTicks)
             {
                 HasStarted = true;
@@ -52,9 +53,9 @@ namespace Shooter.NetV2
                 return;
             }
 
-            var error = target - RenderTick;
+            var error = (float)(target - RenderTick);
             var rate = 1f + Clamp(error * _catchUpGain, -_maxCatchUp, _maxCatchUp);
-            RenderTick = Math.Min(RenderTick + deltaSeconds * TickRate * rate, newestTick);
+            RenderTick = Math.Min(RenderTick + ((double)deltaSeconds * TickRate * rate), newestTick);
         }
 
         private static float Clamp(float value, float min, float max)

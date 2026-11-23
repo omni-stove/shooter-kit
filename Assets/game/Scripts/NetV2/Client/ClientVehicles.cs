@@ -104,7 +104,7 @@ namespace Shooter.NetV2
             }
         }
 
-        public bool TrySample(int vehicle, float renderTick, out Vector3 position, out Quaternion rotation)
+        public bool TrySample(int vehicle, double renderTick, out Vector3 position, out Quaternion rotation)
         {
             position = default;
             rotation = Quaternion.Identity;

@@ -16,7 +16,7 @@ namespace Shooter.Server.Tests
             Join(1);
             Join(2);
             Step(0.2f);
-            var accepted = new List<(int Shooter, Vector3 Origin, Vector3 Direction, float Tick)>();
+            var accepted = new List<(int Shooter, Vector3 Origin, Vector3 Direction, double Tick)>();
             var hits = new List<(int Shooter, int Victim, HitZone Zone, float RewindTicks)>();
             var rejected = new List<(int Shooter, ShotRejection Reason)>();
             _signals.ShotAccepted += (shooter, origin, direction, tick) => accepted.Add((shooter, origin, direction, tick));
@@ -28,7 +28,7 @@ namespace Shooter.Server.Tests
 
             Fire(1, eye, direction, tick);
 
-            Assert.That(accepted, Is.EqualTo(new[] { (1, eye, direction, (float)tick) }));
+            Assert.That(accepted, Is.EqualTo(new[] { (1, eye, direction, (double)tick) }));
             Assert.That(hits, Is.EqualTo(new[] { (1, 2, HitZone.Body, 0f) }), _log.ToString());
             Assert.That(rejected, Is.Empty);
         }

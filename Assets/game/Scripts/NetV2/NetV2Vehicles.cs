@@ -90,7 +90,7 @@ namespace Shooter.NetV2
             _scene.Clear();
         }
 
-        public void Show(float renderTick, NetV2LocalPlayer local)
+        public void Show(double renderTick, NetV2LocalPlayer local)
         {
             if (_vehicles == null)
             {
