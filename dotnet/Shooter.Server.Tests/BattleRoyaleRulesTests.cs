@@ -194,6 +194,20 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void AZoneDamageIntervalBelowTheFloorStillEndsTheTickAndDealsTheDamagePerSecond()
+        {
+            Begin(Spec(zone: new ZoneSpec(new[] { new ZonePhase(60f, 10f, 8f, 10f) }, 1e-9f, 3)));
+            JoinFour();
+            _host.Steps(1);
+            _host.Place(1, _outside);
+
+            _host.Steps(65);
+
+            // 間隔は下限の 0.05 秒に切り上がるので、約 1.08 秒で 10 毎秒の 10〜11 が入る
+            Assert.That(_host.Session.GetHealth(1), Is.InRange(NetMatchSettings.DefaultMaxHealth - 11, NetMatchSettings.DefaultMaxHealth - 10), _log.ToString());
+        }
+
+        [Test]
         public void ZoneDamageBelowOnePerHitCarriesOverAsOffline()
         {
             Begin(Spec(zone: OnePhase(damagePerSecond: 0.5f)));
