@@ -14,12 +14,13 @@ namespace Shooter.Protocol.Tests
         // 33 で入力に縦の向き (InputFrame.Pitch) が増え、
         // 34 でエモートの要求と状態 (EmoteRequestMessage・EmoteStateMessage) が増え、
         // 35 で Horde の補強の要求 (HordeFortifyRequestMessage) が増え、
-        // 36 でスナップショットにパルクールの動き (PlayerSnapshot.ParkourMove) と、承認にその調整値 (NetMotorSettings.Parkour) が増えた。
+        // 36 でスナップショットにパルクールの動き (PlayerSnapshot.ParkourMove) と、承認にその調整値 (NetMotorSettings.Parkour) が増え、
+        // 37 で承認の壁登りの調整値に、ふちで上に乗るか (WallClimbTuning.MantleAtLedge) が増えた。
         // 前の版のクライアントはそれを読めないので、つなぐときに断る
         [Test]
-        public void TheProtocolVersionIs36()
+        public void TheProtocolVersionIs37()
         {
-            Assert.That(MatchProtocol.Version, Is.EqualTo(36));
+            Assert.That(MatchProtocol.Version, Is.EqualTo(37));
         }
 
         [Test]

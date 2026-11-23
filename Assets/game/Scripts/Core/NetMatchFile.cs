@@ -226,6 +226,7 @@ namespace Shooter.Core
         public const string WallClimbMaxSecondsItem = "wallClimbMaxSeconds";
         public const string WallClimbMaxHeightItem = "wallClimbMaxHeight";
         public const string WallClimbPushOffSpeedItem = "wallClimbPushOffSpeed";
+        public const string WallClimbMantleAtLedgeItem = "wallClimbMantleAtLedge";
         public const string LedgeHangEnabledItem = "ledgeHangEnabled";
         public const string LedgeGrabReachItem = "ledgeGrabReach";
         public const string LedgeShimmySpeedItem = "ledgeShimmySpeed";
@@ -261,7 +262,7 @@ namespace Shooter.Core
             ZiplineGrabRadiusItem, ZiplineHangOffsetItem, ZiplineRegrabSecondsItem,
             WallKickEnabledItem, WallKickUpSpeedItem, WallKickAwaySpeedItem,
             LandingRollEnabledItem, LandingRollWindowSecondsItem, LandingRollFallSpeedScaleItem, LandingRollSecondsItem, LandingRollMinFallSpeedItem,
-            WallClimbEnabledItem, WallClimbMinSpeedItem, WallClimbSpeedItem, WallClimbMaxSecondsItem, WallClimbMaxHeightItem, WallClimbPushOffSpeedItem,
+            WallClimbEnabledItem, WallClimbMinSpeedItem, WallClimbSpeedItem, WallClimbMaxSecondsItem, WallClimbMaxHeightItem, WallClimbPushOffSpeedItem, WallClimbMantleAtLedgeItem,
             LedgeHangEnabledItem, LedgeGrabReachItem, LedgeShimmySpeedItem, LedgeClimbUpSpeedItem, LedgeRegrabSecondsItem,
             SlideJumpBoostItem, VaultExitSpeedKeepItem,
         };
@@ -1546,6 +1547,7 @@ namespace Shooter.Core
                 writer.Float(WallClimbMaxSecondsItem, wallClimb.MaxSeconds);
                 writer.Float(WallClimbMaxHeightItem, wallClimb.MaxHeight);
                 writer.Float(WallClimbPushOffSpeedItem, wallClimb.PushOffSpeed);
+                writer.Bool(WallClimbMantleAtLedgeItem, wallClimb.MantleAtLedge);
             }
 
             var ledgeHang = parkour.LedgeHang;
@@ -1628,7 +1630,8 @@ namespace Shooter.Core
                     fields.ReadFloat(WallClimbSpeedItem, fallback.ClimbSpeed),
                     fields.ReadFloat(WallClimbMaxSecondsItem, fallback.MaxSeconds),
                     fields.ReadFloat(WallClimbMaxHeightItem, fallback.MaxHeight),
-                    fields.ReadFloat(WallClimbPushOffSpeedItem, fallback.PushOffSpeed));
+                    fields.ReadFloat(WallClimbPushOffSpeedItem, fallback.PushOffSpeed),
+                    fields.ReadBool(WallClimbMantleAtLedgeItem, fallback.MantleAtLedge));
             }
             catch (ArgumentException e)
             {

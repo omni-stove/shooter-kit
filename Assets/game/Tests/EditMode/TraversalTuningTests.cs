@@ -112,6 +112,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(parkour.WallClimb.MaxSeconds, Is.EqualTo(WallClimbTuning.DefaultMaxSeconds));
             Assert.That(parkour.WallClimb.MaxHeight, Is.EqualTo(WallClimbTuning.DefaultMaxHeight));
             Assert.That(parkour.WallClimb.PushOffSpeed, Is.EqualTo(WallClimbTuning.DefaultPushOffSpeed));
+            Assert.That(parkour.WallClimb.MantleAtLedge, Is.EqualTo(WallClimbTuning.DefaultMantleAtLedge));
             Assert.That(parkour.LedgeHang.Enabled, Is.False, "a game turns ledge hanging on");
             Assert.That(parkour.LedgeHang.GrabReach, Is.EqualTo(LedgeHangTuning.DefaultGrabReach));
             Assert.That(parkour.LedgeHang.ShimmySpeed, Is.EqualTo(LedgeHangTuning.DefaultShimmySpeed));

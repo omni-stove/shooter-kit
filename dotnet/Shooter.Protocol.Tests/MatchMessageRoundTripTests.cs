@@ -13,7 +13,7 @@ namespace Shooter.Protocol.Tests
         private const int _knockbackBytes = 18 * 4;
 
         // パラシュートの後ろに並ぶパルクールの値。壁蹴り (入切 1 バイト + 2 個)・受け身 (1 + 4 個)・壁登り (1 + 5 個)・ぶら下がり (1 + 4 個)・勢い 2 個
-        private const int _parkourBytes = (1 + (2 * 4)) + (1 + (4 * 4)) + (1 + (5 * 4)) + (1 + (4 * 4)) + (2 * 4);
+        private const int _parkourBytes = (1 + (2 * 4)) + (1 + (4 * 4)) + (1 + (5 * 4) + 1) + (1 + (4 * 4)) + (2 * 4);
 
         // 伏せの値の後ろに並ぶリーン 3 個・空中で跳べる回数 (4 バイト)・二段目の速さ・ジャンプの猶予・カバーへ走る速さ・カバーできる壁の高さの下限・水泳 3 個・
         // 壁走りの入切 (1 バイト)・壁走り 4 個・パラシュート 4 個・パルクールの値
@@ -231,7 +231,7 @@ namespace Shooter.Protocol.Tests
             var parkour = new ParkourTuning(
                 new WallKickTuning(true, 7f, 8f),
                 new LandingRollTuning(true, 0.25f, 0.4f, 0.7f, 5f),
-                new WallClimbTuning(true, 3f, 6f, 0.8f, 3f, 4f),
+                new WallClimbTuning(true, 3f, 6f, 0.8f, 3f, 4f, false),
                 new LedgeHangTuning(true, 0.75f, 2f, 2.5f, 0.4f),
                 new MomentumTuning(1.5f, 0.8f));
             var motor = new NetMotorSettings(
@@ -264,6 +264,7 @@ namespace Shooter.Protocol.Tests
             Assert.That(read.WallClimb.MaxSeconds, Is.EqualTo(0.8f));
             Assert.That(read.WallClimb.MaxHeight, Is.EqualTo(3f));
             Assert.That(read.WallClimb.PushOffSpeed, Is.EqualTo(4f));
+            Assert.That(read.WallClimb.MantleAtLedge, Is.False);
             Assert.That(read.LedgeHang.Enabled, Is.True);
             Assert.That(read.LedgeHang.GrabReach, Is.EqualTo(0.75f));
             Assert.That(read.LedgeHang.ShimmySpeed, Is.EqualTo(2f));

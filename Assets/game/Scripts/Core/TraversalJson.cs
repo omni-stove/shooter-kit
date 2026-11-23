@@ -57,6 +57,7 @@ namespace Shooter.Core
         public const string ClimbSpeedItem = "climbSpeed";
         public const string MaxHeightItem = "maxHeight";
         public const string PushOffSpeedItem = "pushOffSpeed";
+        public const string MantleAtLedgeItem = "mantleAtLedge";
 
         public const string GrabReachItem = "grabReach";
         public const string ShimmySpeedItem = "shimmySpeed";
@@ -141,6 +142,7 @@ namespace Shooter.Core
             MaxSecondsItem,
             MaxHeightItem,
             PushOffSpeedItem,
+            MantleAtLedgeItem,
         };
 
         public static IReadOnlyList<string> LedgeHangItemNames { get; } = new[]
@@ -326,9 +328,10 @@ namespace Shooter.Core
             var maxSeconds = fields.ReadFloat(MaxSecondsItem, defaults.MaxSeconds);
             var maxHeight = fields.ReadFloat(MaxHeightItem, defaults.MaxHeight);
             var pushOffSpeed = fields.ReadFloat(PushOffSpeedItem, defaults.PushOffSpeed);
+            var mantleAtLedge = fields.ReadBool(MantleAtLedgeItem, defaults.MantleAtLedge);
             try
             {
-                return new WallClimbTuning(enabled, minSpeed, climbSpeed, maxSeconds, maxHeight, pushOffSpeed);
+                return new WallClimbTuning(enabled, minSpeed, climbSpeed, maxSeconds, maxHeight, pushOffSpeed, mantleAtLedge);
             }
             catch (ArgumentException e)
             {

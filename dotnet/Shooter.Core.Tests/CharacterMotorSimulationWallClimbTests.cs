@@ -198,6 +198,35 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void WithMantleAtLedgeOffAStandableLedgeEndsInAFall()
+        {
+            AddBlock(3f, 3f);
+            var noMantle = new ParkourTuning(wallClimb: new WallClimbTuning(true, mantleAtLedge: false));
+            var simulation = NewSimulation(noMantle);
+            var state = simulation.Step(RunningAtTheWall(simulation, 6f), Input(jump: true));
+            Assert.That(state.Parkour.Move, Is.EqualTo(ParkourMove.WallClimb));
+
+            for (var i = 0; i < 60 && state.Parkour.Move == ParkourMove.WallClimb; i++)
+            {
+                state = simulation.Step(state, Input());
+            }
+
+            Assert.That(state.Parkour, Is.EqualTo(CharacterParkourState.None));
+            Assert.That(state.IsVaulting, Is.False, "the 3 m deep top could be stood on, but the tuning says not to mantle");
+            Assert.That(state.Velocity.X, Is.Zero);
+            Assert.That(state.Velocity.Y, Is.EqualTo(-20f * _tick).Within(1e-4f));
+            Assert.That(state.Velocity.Z, Is.Zero);
+
+            for (var i = 0; i < 120 && !state.IsGrounded; i++)
+            {
+                state = simulation.Step(state, Input());
+            }
+
+            Assert.That(state.IsGrounded, Is.True);
+            Assert.That(state.Position.Y, Is.LessThan(1.2f), "back on the floor, not on the 3 m top");
+        }
+
+        [Test]
         public void JumpingWhileClimbingPushesOffTheWall()
         {
             AddBlock(8f, 3f);

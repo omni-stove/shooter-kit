@@ -133,6 +133,38 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void WithMantleAtLedgeOffReachingTheLedgeEndsInAFallLikeTheSimulation()
+        {
+            AddBlock(3f, 3f);
+            _player.ParkourTuning = new ParkourTuning(wallClimb: new WallClimbTuning(true, mantleAtLedge: false));
+            var start = RunIntoTheWall();
+
+            LogAssert.Expect(LogType.Log, new Regex("^" + Regex.Escape(WallClimbLog.StartPrefix)));
+            LogAssert.Expect(LogType.Log, new Regex("^" + Regex.Escape(WallClimbLog.EndPrefixFor(WallClimbMotion.ReachedLedge))));
+            JumpAtTheWall();
+            for (var i = 0; i < 60 && _player.IsWallClimbing; i++)
+            {
+                Idle();
+            }
+
+            Assert.That(_player.IsWallClimbing, Is.False);
+            Assert.That(_player.IsMantling, Is.False, "the 3 m deep top could be stood on, but the tuning says not to mantle");
+            Assert.That(_player.TryGetMotorState(out var state), Is.True);
+            Assert.That(state.Velocity.X, Is.Zero);
+            Assert.That(state.Velocity.Y, Is.EqualTo(-20f * _tickSeconds).Within(1e-4f), "it falls from rest");
+            Assert.That(state.Velocity.Z, Is.Zero);
+
+            for (var i = 0; i < 120 && !_player.IsGrounded; i++)
+            {
+                Idle();
+                Assert.That(_player.IsMantling, Is.False, "tick " + i);
+            }
+
+            Assert.That(_player.IsGrounded, Is.True);
+            Assert.That(_body.transform.position.y, Is.EqualTo(start.y).Within(0.05f), "back on the floor");
+        }
+
+        [Test]
         public void AWallTallerThanTheClimbEndsInAFall()
         {
             AddBlock(8f, 3f);

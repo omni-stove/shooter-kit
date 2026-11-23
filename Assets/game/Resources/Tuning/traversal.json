@@ -51,7 +51,8 @@
     "climbSpeed": 5,
     "maxSeconds": 0.6,
     "maxHeight": 2.5,
-    "pushOffSpeed": 5
+    "pushOffSpeed": 5,
+    "mantleAtLedge": true
   },
   "ledgeHang": {
     "enabled": false,
