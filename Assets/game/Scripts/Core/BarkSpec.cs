@@ -32,6 +32,9 @@ namespace Shooter.Core
 
         public const float DefaultGrenadeWarningRadius = 8f;
 
+        // 全体の最小間隔 × 同時発声の上限より長くするのは、短いと上限に届く前に先の声が終わり、同時発声の上限が効かなくなるため。
+        public const float DefaultSpeakSeconds = 2f;
+
         private static readonly BarkKind[] _kinds = (BarkKind[])Enum.GetValues(typeof(BarkKind));
 
         private readonly float[] _kindCooldownSeconds;
@@ -52,6 +55,8 @@ namespace Shooter.Core
 
         public float GrenadeWarningRadius { get; }
 
+        public float SpeakSeconds { get; }
+
         // 種類の欠けを既定値で埋めるのは、barks.json に一部の種類だけを書いても残りの種類が黙らないようにするため。
         public BarkSpec(
             IReadOnlyDictionary<BarkKind, float> kindCooldownSeconds = null,
@@ -60,7 +65,8 @@ namespace Shooter.Core
             float crowdRadius = DefaultCrowdRadius,
             int maxSpeakersInCrowd = DefaultMaxSpeakersInCrowd,
             float hearingDistance = DefaultHearingDistance,
-            float grenadeWarningRadius = DefaultGrenadeWarningRadius)
+            float grenadeWarningRadius = DefaultGrenadeWarningRadius,
+            float speakSeconds = DefaultSpeakSeconds)
         {
             _kindCooldownSeconds = new float[_kinds.Length];
             foreach (var kind in _kinds)
@@ -97,6 +103,7 @@ namespace Shooter.Core
             MaxSpeakersInCrowd = SpecGuard.AtLeast(maxSpeakersInCrowd, 1, nameof(maxSpeakersInCrowd));
             HearingDistance = SpecGuard.PositiveFinite(hearingDistance, nameof(hearingDistance));
             GrenadeWarningRadius = SpecGuard.NonNegativeFinite(grenadeWarningRadius, nameof(grenadeWarningRadius));
+            SpeakSeconds = SpecGuard.NonNegativeFinite(speakSeconds, nameof(speakSeconds));
         }
 
         public static float DefaultCooldownSecondsFor(BarkKind kind)
