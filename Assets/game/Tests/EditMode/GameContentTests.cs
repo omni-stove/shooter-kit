@@ -395,6 +395,7 @@ namespace Shooter.Tests.EditMode
                 (() => content.GraphicsTuning, v => content.GraphicsTuning = v),
                 (() => content.GamepadLayoutsTuning, v => content.GamepadLayoutsTuning = v),
                 (() => content.HolsterTuning, v => content.HolsterTuning = v),
+                (() => content.BreachTuning, v => content.BreachTuning = v),
             };
 
             foreach (var slot in slots)

@@ -128,6 +128,9 @@ namespace Shooter.Runtime
 
         public static GameSignal<DroneStatus?> Drone { get; } = new GameSignal<DroneStatus?>(nameof(Drone));
 
+        // 爆薬を仕掛けている間と爆発を待つ間だけ出し、どちらでもなければ空に戻す。
+        public static GameSignal<BreachStatus?> Breach { get; } = new GameSignal<BreachStatus?>(nameof(Breach));
+
         // 測る相手 (サーバー) がいるネット対戦の接続中だけ出し、切れたら空に戻す。UI は空を「回線の表示なし」として隠す。
         public static GameSignal<NetStatsSignal?> NetStats { get; } = new GameSignal<NetStatsSignal?>(nameof(NetStats));
 
@@ -203,6 +206,7 @@ namespace Shooter.Runtime
             BuySender.Reset();
             Vision.Reset();
             Drone.Reset();
+            Breach.Reset();
             NetStats.Reset();
             Nameplates.Reset();
             foreach (var reset in _createdResets)

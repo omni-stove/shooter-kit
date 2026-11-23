@@ -166,6 +166,42 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ImposeStopsTheEnemyForTheGivenSecondsEvenWithTheRuleOff()
+        {
+            StaggerReaction.ActiveRule = Stagger.Off;
+            LogAssert.Expect(LogType.Log, "[AI] id=enemy-1 interrupted reason=stagger-Blast seconds=3.00");
+            LogAssert.Expect(LogType.Log, "[Stagger] id=enemy-1 imposed kind=Blast seconds=3.00 source=breach");
+
+            var verdict = _reaction.Impose(StaggerKind.Blast, 3f, "breach");
+
+            Assert.That(verdict.Outcome, Is.EqualTo(StaggerOutcome.Staggered));
+            Assert.That(_reaction.Current, Is.EqualTo(StaggerKind.Blast));
+            Assert.That(_agent.IsInterrupted, Is.True);
+            Assert.That(_agent.InterruptReason, Is.EqualTo("stagger-Blast"));
+
+            LogAssert.Expect(LogType.Log, "[Stagger] id=enemy-1 recovered kind=Blast shots=0");
+            _reaction.Tick(3f);
+            Assert.That(_reaction.IsStaggered, Is.False);
+        }
+
+        [Test]
+        public void ImposeDoesNothingForZeroSecondsOrADeadEnemyAndRejectsBadValues()
+        {
+            Assert.That(_reaction.Impose(StaggerKind.Stumble, 0f, "breach").Outcome, Is.EqualTo(StaggerOutcome.NoReaction));
+            Assert.That(_reaction.IsStaggered, Is.False);
+            Assert.That(_agent.IsInterrupted, Is.False);
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => _reaction.Impose((StaggerKind)99, 1f, "breach"));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => _reaction.Impose(StaggerKind.Stumble, float.NaN, "breach"));
+
+            LogAssert.Expect(LogType.Log, "[Combat] target died id=enemy-1");
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[AI\] id=enemy-1 state=Dead "));
+            _damageable.Kill();
+
+            Assert.That(_reaction.Impose(StaggerKind.Stumble, 1f, "breach").Outcome, Is.EqualTo(StaggerOutcome.NoReaction));
+            Assert.That(_reaction.IsStaggered, Is.False);
+        }
+
+        [Test]
         public void TheSpecRoundTripsThroughTheSerializedFields()
         {
             var fresh = new GameObject("Fresh").AddComponent<StaggerReaction>();
