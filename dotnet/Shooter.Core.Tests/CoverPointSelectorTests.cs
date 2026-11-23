@@ -81,6 +81,38 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void SelectUsesTheGivenMaxDistance()
+        {
+            var selector = new CoverPointSelector(new[] { Point(0f, 4f, _forward), Point(0f, -12f, _forward) });
+
+            Assert.That(selector.Select(Vector3.Zero, _threat, maxDistance: 5f), Is.Zero, "4m の点");
+            Assert.That(selector.Select(Vector3.Zero, _threat, maxDistance: 4f), Is.Zero, "ちょうど最大距離の点は選ぶ");
+            Assert.That(selector.Select(Vector3.Zero, _threat, maxDistance: 3.9f), Is.EqualTo(-1));
+            Assert.That(selector.Select(new Vector3(0f, 0f, -8f), _threat, maxDistance: 5f), Is.EqualTo(1), "-12m の点は 4m 先");
+            Assert.That(selector.Select(new Vector3(0f, 0f, 10f), _threat, maxDistance: 5f), Is.EqualTo(-1), "どちらも 5m より遠い");
+            Assert.That(selector.Select(new Vector3(0f, 0f, 10f), _threat), Is.Zero, "省略すると MaxDistance (15m) まで選ぶ");
+        }
+
+        [Test]
+        public void GivenMaxDistanceDoesNotReachBeyondMaxDistance()
+        {
+            var selector = new CoverPointSelector(new[] { Point(0f, -8f, _forward) }, maxDistance: 5f);
+
+            Assert.That(selector.Select(Vector3.Zero, _threat, maxDistance: 10f), Is.EqualTo(-1));
+            Assert.That(selector.Select(new Vector3(0f, 0f, -4f), _threat, maxDistance: 10f), Is.Zero);
+        }
+
+        [TestCase(-0.1f)]
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        public void SelectRejectsAnInvalidMaxDistance(float maxDistance)
+        {
+            var selector = new CoverPointSelector(new[] { Point(0f, 1f, _forward) });
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => selector.Select(Vector3.Zero, _threat, maxDistance: maxDistance));
+        }
+
+        [Test]
         public void SkipsPointsUsedByOtherOwnersButNotItsOwn()
         {
             var selector = new CoverPointSelector(new[] { Point(1f, 1f, _forward), Point(2f, 2f, _forward) });
