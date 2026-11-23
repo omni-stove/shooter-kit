@@ -177,6 +177,104 @@ namespace Shooter.Net.Tests
         }
 
         [Test]
+        public void NoWeaponLightIsMadeUntilTheSnapshotTurnsItOn()
+        {
+            _remote.Show(LightPose(false, 0f));
+
+            Assert.That(_remote.WeaponLight, Is.Null);
+            Assert.That(_remote.IsWeaponLightOn, Is.False);
+        }
+
+        [Test]
+        public void ALitWeaponLightIsBuiltOnTheBodyFromTheSpec()
+        {
+            _remote.WeaponLightCatalog = null;
+            _remote.WeaponLightSpec = new WeaponLightSpec(40f, 30f, 2f);
+
+            _remote.Show(LightPose(true, 0f));
+
+            var beam = _remote.WeaponLight;
+            Assert.That(beam, Is.Not.Null);
+            Assert.That(beam.IsOn, Is.True);
+            Assert.That(_remote.IsWeaponLightOn, Is.True);
+            Assert.That(beam.transform.IsChildOf(_remote.Body), Is.True, "concealing the body hides the light too");
+            Assert.That(beam.BuiltLight, Is.Not.Null, "without a catalog the spot is built in code");
+            Assert.That(beam.BuiltLight.range, Is.EqualTo(40f));
+            Assert.That(beam.BuiltLight.spotAngle, Is.EqualTo(30f));
+            Assert.That(beam.Visual.activeSelf, Is.True);
+        }
+
+        [Test]
+        public void TurningTheLightOffKeepsThePartButHidesTheLight()
+        {
+            _remote.WeaponLightCatalog = null;
+            _remote.Show(LightPose(true, 0f));
+            var beam = _remote.WeaponLight;
+
+            _remote.Show(LightPose(false, 0f));
+
+            Assert.That(_remote.WeaponLight, Is.SameAs(beam));
+            Assert.That(beam.IsOn, Is.False);
+            Assert.That(beam.Visual.activeSelf, Is.False);
+            Assert.That(_remote.IsWeaponLightOn, Is.False);
+
+            _remote.Show(LightPose(true, 0f));
+
+            Assert.That(_remote.WeaponLight, Is.SameAs(beam), "turning it on again reuses the same part");
+            Assert.That(beam.IsOn, Is.True);
+        }
+
+        [Test]
+        public void AHolsteredWeaponShowsNoLight()
+        {
+            _remote.WeaponLightCatalog = null;
+            _remote.Show(LightPose(true, 0f));
+
+            _remote.Show(LightPose(true, 1f));
+
+            Assert.That(_remote.IsWeaponLightOn, Is.False);
+            Assert.That(_remote.WeaponLight.IsOn, Is.False);
+        }
+
+        [Test]
+        public void ChangingTheSpecReconfiguresALightAlreadyMade()
+        {
+            _remote.WeaponLightCatalog = null;
+            _remote.Show(LightPose(true, 0f));
+
+            _remote.WeaponLightSpec = new WeaponLightSpec(12f, 20f, 1f);
+
+            Assert.That(_remote.WeaponLight.BuiltLight.range, Is.EqualTo(12f));
+            Assert.That(_remote.WeaponLight.IsOn, Is.True);
+        }
+
+        [Test]
+        public void TheLightMovesToANewBodyWhenTheCosmeticChanges()
+        {
+            _remote.WeaponLightCatalog = null;
+            _remote.Show(LightPose(true, 0f));
+            var beam = _remote.WeaponLight;
+
+            _remote.ShowCosmetic(Desert);
+
+            Assert.That(_remote.WeaponLight, Is.SameAs(beam), "the light is not destroyed with the old body");
+            Assert.That(beam.transform.IsChildOf(_remote.Body), Is.True);
+            Assert.That(beam.IsOn, Is.True);
+        }
+
+        [Test]
+        public void TheDefaultSpecIsUsedWhenNoneIsGiven()
+        {
+            Assert.That(_remote.WeaponLightSpec, Is.SameAs(WeaponLightSpec.Default));
+        }
+
+        private static RemotePose LightPose(bool on, float lowering)
+        {
+            return new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, "rifle", 0f, false, WallRunSide.None, false, ParkourMove.None, lowering, on);
+        }
+
+        [Test]
         public void ALeanWithoutAParachuteStillTiltsTheBody()
         {
             _remote.Show(new RemotePose(System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 1f, false, WallRunSide.None, false));

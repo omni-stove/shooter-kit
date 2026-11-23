@@ -22,6 +22,21 @@ namespace Shooter.Core
             return $"{Prefix} id={Name(holderId)} weapon={Name(weaponId)} not-lit reason={Name(reason)}";
         }
 
+        public static string NetRequested(bool on)
+        {
+            return $"{Prefix} net requested on={Bool(on)}";
+        }
+
+        public static string NetNotSent(bool on, string reason)
+        {
+            return $"{Prefix} net not-sent on={Bool(on)} reason={Name(reason)}";
+        }
+
+        public static string NetChanged(bool from, bool to)
+        {
+            return $"{Prefix} net on={Bool(from)}->{Bool(to)}";
+        }
+
         public static string NoInput(string actionPath)
         {
             return $"{Prefix} input action '{Name(actionPath)}' is missing; the light key is not read";
@@ -43,6 +58,11 @@ namespace Shooter.Core
                 light.SpotAngle,
                 light.Intensity,
                 Name(light.VisualId));
+        }
+
+        private static string Bool(bool value)
+        {
+            return value ? "true" : "false";
         }
 
         private static string Name(string id)

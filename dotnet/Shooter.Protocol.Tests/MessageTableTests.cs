@@ -402,6 +402,7 @@ namespace Shooter.Protocol.Tests
         [TestCase(MessageIds.HordeFortifyRequest)]
         [TestCase(MessageIds.HolsterRequest)]
         [TestCase(MessageIds.BreachRequest)]
+        [TestCase(MessageIds.WeaponLightRequest)]
         public void TheNewRequestsAreOnlyReadByTheServer(ushort id)
         {
             Assert.That(MatchMessages.CreateServerTable().TryGet(id, out _), Is.True);
@@ -499,6 +500,15 @@ namespace Shooter.Protocol.Tests
             Assert.That(MatchMessages.CreateServerTable().TryGet(MessageIds.HolsterRequest, out var holster), Is.True);
             Assert.That(holster, Is.InstanceOf<HolsterRequestMessage>());
             Assert.That(MessageTable.IsReserved(MessageIds.HolsterRequest), Is.False);
+        }
+
+        [Test]
+        public void TheWeaponLightRequestFollowsTheBreachRequestAndIsReadAsItsType()
+        {
+            Assert.That(MessageIds.WeaponLightRequest, Is.EqualTo(MessageIds.BreachRequest + 1));
+            Assert.That(MatchMessages.CreateServerTable().TryGet(MessageIds.WeaponLightRequest, out var light), Is.True);
+            Assert.That(light, Is.InstanceOf<WeaponLightRequestMessage>());
+            Assert.That(MessageTable.IsReserved(MessageIds.WeaponLightRequest), Is.False);
         }
 
         [Test]
