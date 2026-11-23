@@ -47,6 +47,13 @@
   "hud.vehicleBoard.driver": "[{0}] 運転席に乗る",
   "hud.vehicleBoard.passenger": "[{0}] 助手席に乗る",
   "hud.vehicleBoard.gunner": "[{0}] 銃座に乗る",
+  "hud.breach.kickOrPlant": "[{0}] 蹴破る / [{0}] 長押し: 爆薬を仕掛ける",
+  "hud.breach.kick": "[{0}] 蹴破る",
+  "hud.breach.plant": "[{0}] 長押し: 爆薬を仕掛ける",
+  "hud.breach.kickNoCharge": "[{0}] 蹴破る / 爆薬を仕掛けるには {1} が要る",
+  "hud.breach.noCharge": "爆薬を仕掛けるには {0} が要る",
+  "hud.breach.planting": "爆薬を仕掛けている {0}%",
+  "hud.breach.armed": "爆発まで {0} 秒",
   "hud.pickup.weapon": "[{0}] {1} を拾う",
   "hud.pickup.weaponSwap": "[{0}] {1} に持ち替える",
   "hud.pickup.weaponAmmo": "[{0}] {1} の弾を拾う",
@@ -87,6 +94,8 @@
   "hud.weaponFree.warnThenHostile": "武器をしまえ あと {0} 秒で敵対される",
   "hud.weaponFree.autoHolster": "ここでは武器を出してはいけない 武器をしまう",
   "hud.weaponFree.blockDraw": "ここでは武器を構えられない",
+  "hud.weaponLight.on": "ライト 点灯",
+  "hud.weaponLight.off": "ライト 消灯",
   "hud.securityAlarm.ringing": "警報 カメラに見つかった あと {0} 秒",
   "hud.securityCamera.disable": "[{0}] を {1} 秒長押しでカメラを止める"
 }

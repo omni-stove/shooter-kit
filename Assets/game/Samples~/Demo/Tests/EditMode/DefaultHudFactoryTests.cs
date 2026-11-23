@@ -213,6 +213,31 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheDefaultHudCarriesTheWeaponLightView()
+        {
+            var hud = DefaultHud;
+
+            Assert.That(hud.GetComponents<WeaponLightView>(), Has.Length.EqualTo(1));
+
+            DefaultHudFactory.AddActionViews(hud);
+            Assert.That(hud.GetComponents<WeaponLightView>(), Has.Length.EqualTo(1), "adding it again keeps one");
+
+            // Edit Mode では UIDocument が木を作らないことがあり、そのときは表示が結ばれない。
+            Assume.That(hud.View, Is.Not.Null, "the UIDocument built no visual tree in Edit Mode");
+            var view = hud.GetComponent<WeaponLightView>();
+            Assert.That(view.Element, Is.Not.Null);
+            Assert.That(view.Element.name, Is.EqualTo(WeaponLightView.UxmlName));
+            Assert.That(view.IsShown, Is.False, "no weapon light status has been published yet");
+
+            GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
+            Assert.That(view.IsShown, Is.True);
+            Assert.That(view.IsOn, Is.True);
+
+            GameSignals.WeaponLight.Publish(WeaponLightStatus.None);
+            Assert.That(view.IsShown, Is.False, "a weapon without a light shows no mark");
+        }
+
+        [Test]
         public void TheDefaultHudCarriesTheSecurityAlarmView()
         {
             var hud = DefaultHud;
