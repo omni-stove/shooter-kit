@@ -51,6 +51,34 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void APlayerWithoutAHolsterCountsAsArmed()
+        {
+            var target = _player.AddComponent<StealthTarget>();
+
+            Assert.That(target.IsArmed, Is.True);
+        }
+
+        [Test]
+        public void ArmedFollowsTheHolsterStatusAddedLater()
+        {
+            var target = _player.AddComponent<StealthTarget>();
+            Assert.That(target.IsArmed, Is.True);
+
+            var holster = _player.AddComponent<FakeHolsterStatusSource>();
+            holster.Status = new HolsterStatus(HolsterPhase.Holstered, 1f, false);
+            Assert.That(target.IsArmed, Is.False, "the holster is found even when added after the target");
+
+            holster.Status = new HolsterStatus(HolsterPhase.Drawing, 0.5f, true);
+            Assert.That(target.IsArmed, Is.True);
+
+            holster.Status = new HolsterStatus(HolsterPhase.Holstering, 0.5f, false);
+            Assert.That(target.IsArmed, Is.False);
+
+            Object.DestroyImmediate(holster);
+            Assert.That(target.IsArmed, Is.True, "a removed holster leaves the weapon out");
+        }
+
+        [Test]
         public void OutOfRangeValuesAreRejected()
         {
             var target = _player.AddComponent<StealthTarget>();

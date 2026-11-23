@@ -12,8 +12,10 @@ namespace Shooter.Runtime
 
         public const string AwarenessIndicatorSlotName = "AwarenessIndicator";
 
-        public static StealthNoiseSpec Noise =>
-            KitTuning.Load(c => c.StealthTuning, TuningResourcePath, StealthNoiseJson.Parse, StealthNoiseSpec.Default);
+        public static StealthTuningSpec Tuning =>
+            KitTuning.Load(c => c.StealthTuning, TuningResourcePath, StealthNoiseJson.ParseTuning, StealthTuningSpec.Default);
+
+        public static StealthNoiseSpec Noise => Tuning.Noise;
 
         public int Order => InstallOrder;
 

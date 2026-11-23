@@ -61,6 +61,9 @@ namespace Shooter.Runtime
         [SerializeField, Range(0.01f, 0.99f), Tooltip("物音を聞いて調べに行くときのゲージの量。音だけではこれより上がらない。警戒の境目以上")]
         private float _investigateLevel = AwarenessSpec.DefaultInvestigateLevel;
 
+        [SerializeField, Min(0f), Tooltip("相手が武器を出しているときの係数。1 で今までどおり、2 で倍の速さでたまる。stealth.json の armedGainFactor があればそちらを使う")]
+        private float _armedGainFactor = AwarenessSpec.DefaultArmedGainFactor;
+
         public AwarenessSpec ToSpec()
         {
             return new AwarenessSpec(
@@ -81,7 +84,8 @@ namespace Shooter.Runtime
                 _engagedHoldThreshold,
                 _gunshotGain,
                 _footstepGain,
-                _investigateLevel);
+                _investigateLevel,
+                _armedGainFactor);
         }
 
         public void CopyFrom(AwarenessSpec spec)
@@ -109,6 +113,7 @@ namespace Shooter.Runtime
             _gunshotGain = spec.GunshotGain;
             _footstepGain = spec.FootstepGain;
             _investigateLevel = spec.InvestigateLevel;
+            _armedGainFactor = spec.ArmedGainFactor;
         }
     }
 }

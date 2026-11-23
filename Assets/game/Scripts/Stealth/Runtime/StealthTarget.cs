@@ -25,6 +25,7 @@ namespace Shooter.Runtime
 
         private PlayerController _player;
         private ICharacterMotionSource _motion;
+        private IHolsterStatusSource _holster;
         private Vector3 _lastPosition;
         private bool _hasLastPosition;
         private float _speed;
@@ -105,6 +106,20 @@ namespace Shooter.Runtime
 
                 _motion ??= GetComponent<ICharacterMotionSource>();
                 return _motion != null && _motion.IsCrouched ? AwarenessPosture.Crouching : AwarenessPosture.Standing;
+            }
+        }
+
+        // しまう部品の無いプレイヤーは武器を出したままなので武装と数える。部品は取り付けの順で後から付くことがあるので、無いうちは毎回探し直す。
+        public bool IsArmed
+        {
+            get
+            {
+                if (_holster == null || (_holster is UnityEngine.Object destroyed && destroyed == null))
+                {
+                    _holster = GetComponent<IHolsterStatusSource>();
+                }
+
+                return _holster == null || _holster.HolsterStatus.IsArmed;
             }
         }
 
