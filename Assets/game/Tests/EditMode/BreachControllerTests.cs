@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
@@ -410,6 +411,13 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(target.GetComponent<BreachController>(), Is.Null);
             Assert.That(new BreachActionInstaller().Order, Is.EqualTo(BreachActionInstaller.InstallOrder));
+        }
+
+        [Test]
+        public void TheInstallerIsRegisteredOnceWithThePlayerActions()
+        {
+            Assert.That(PlayerActions.Installers.Count(i => i is BreachActionInstaller), Is.EqualTo(1));
+            Assert.That(PlayerActions.Installers.OfType<BreachActionInstaller>().Single().Order, Is.EqualTo(BreachActionInstaller.InstallOrder));
         }
 
         private void Kick()

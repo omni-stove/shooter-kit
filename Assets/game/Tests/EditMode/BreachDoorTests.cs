@@ -323,6 +323,62 @@ namespace Shooter.Tests.EditMode
             Assert.That(Vector3.Distance(_door.Visuals.ChargePoint(-1f), new Vector3(0f, 1.05f, -0.1f)), Is.LessThan(1e-4f));
         }
 
+        [Test]
+        public void TheDoorShowsItsPanelToTheMapExport()
+        {
+            IBreachDoorSource source = _door;
+
+            Assert.That(source.Panel, Is.SameAs(_door.Visuals.Panel));
+            Assert.That(Vector3.Distance(source.PanelCenter, new Vector3(0f, 1.05f, 0f)), Is.LessThan(1e-4f));
+            Assert.That(source.PanelFacing, Is.EqualTo(Vector3.forward));
+            Assert.That(source.PanelSize, Is.EqualTo(BreachDoorVisuals.DefaultPanelSize));
+        }
+
+        [Test]
+        public void AnUnboundDoorHasNoPanelToExportYet()
+        {
+            IBreachDoorSource source = Spawn("Unbound").AddComponent<BreachDoor>();
+
+            Assert.That(source.Panel, Is.Null);
+            Assert.That(source.PanelSize, Is.EqualTo(BreachDoorVisuals.DefaultPanelSize));
+        }
+
+        [Test]
+        public void ThePanelSizeIsReportedInWorldMetres()
+        {
+            var door = Spawn("Wide");
+            door.transform.localScale = new Vector3(2f, 1f, -1f);
+            var visuals = door.AddComponent<BreachDoorVisuals>();
+            visuals.PanelSize = new Vector3(1.2f, 2.2f, 0.1f);
+            IBreachDoorSource source = door.AddComponent<BreachDoor>();
+
+            Assert.That(visuals.PanelSize, Is.EqualTo(new Vector3(1.2f, 2.2f, 0.1f)));
+            Assert.That(Vector3.Distance(visuals.WorldPanelSize, new Vector3(2.4f, 2.2f, 0.1f)), Is.LessThan(1e-4f));
+            Assert.That(Vector3.Distance(source.PanelSize, new Vector3(2.4f, 2.2f, 0.1f)), Is.LessThan(1e-4f));
+        }
+
+        // シーンの生成で作った板はシーンに保存されるので、読み込んだ後の Bind は 2 枚目を作らず、保存された板を閉じた向きとして回す。
+        // 写し (Instantiate) は保存した値だけを持つので、シーンから読み込んだドアの代わりにする。
+        [Test]
+        public void ASavedPanelIsReusedAndSwingsFromWhereItWasSaved()
+        {
+            var copy = Object.Instantiate(_door.gameObject);
+            _spawned.Add(copy);
+            var door = copy.GetComponent<BreachDoor>();
+
+            Assert.That(door.IsBound, Is.False);
+            Assert.That(door.Visuals.Panel, Is.Not.Null);
+            Assert.That(door.Visuals.Panel.IsChildOf(copy.transform), Is.True);
+
+            Assert.That(door.Bind(), Is.True);
+            Assert.That(copy.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(1));
+
+            LogAssert.Expect(LogType.Log, "[Breach] door=door-1 kicked by=breacher phase=Opened");
+            Assert.That(door.Kick(_breacher), Is.True);
+            door.Visuals.Advance(1f);
+            Assert.That(Quaternion.Angle(Quaternion.identity, door.Visuals.Panel.localRotation), Is.EqualTo(BreachDoorVisuals.DefaultSwingDegrees).Within(0.01f));
+        }
+
         private bool BlockedThroughDoor()
         {
             return Physics.Raycast(new Vector3(0f, 1f, -1f), Vector3.forward, 2f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);

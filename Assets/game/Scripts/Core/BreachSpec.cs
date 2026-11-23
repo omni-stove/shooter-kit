@@ -38,7 +38,7 @@ namespace Shooter.Core
 
         public const float DefaultSlowMotionSeconds = 1.5f;
 
-        // 空なら品が無くても仕掛けられる。キットの在庫には突入用の爆薬が無いので、既定では品を求めない。
+        // 空なら品が無くても仕掛けられる。突入用の爆薬を拾える所に置かないマップでも仕掛けられるよう、既定では品を求めず、求めるドアはドアごとの JSON で Id を指す。
         public const string DefaultChargeItemId = "";
 
         // 蹴るつもりの短い押しが仕掛けに化けず、仕掛けるつもりの押しで待たされない長さにする。

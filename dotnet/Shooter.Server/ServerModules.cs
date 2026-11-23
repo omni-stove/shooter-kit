@@ -151,6 +151,10 @@ namespace Shooter.Server
             modules.Add(new ServerEmotes(rules, movement, signals, tuning.Emotes, tuning.EmotesPath));
             modules.Add(holster);
 
+            // ドアは破った向こうの人をよろけさせ、爆薬を持ち物から使い、爆発を戦闘に任せるので、よろけ (status)・持ち物・戦闘がこの tick を進めた後に見る。
+            // ドアの状態は自分で DoorStateMessage を配り、スナップショットには載せない
+            modules.Add(new ServerDoors(combat, status, inventories, tuning.Breach, tuning.BreachPath));
+
             // 箱は目的 (ルール) が書いた旗・爆弾・台車の後の空きに足し、拾い物は箱の後の空きに足すので、ルール・箱・拾い物の順。
             // 近接はルールが書いたダウンの欄にとどめの進み具合を書き足すので、ルールより後。
             // しまう・構えるは戦闘が書いた武器の欄に書き足すので、戦闘より後

@@ -8,7 +8,7 @@ namespace Shooter.Runtime
     // ドアの前は +Z。板は XY 面に立ち、足元が transform の位置。破った人のいない側の箱 (奥行き・幅・高さは BreachSpec) の中の敵を怯ませる。
     // プレイヤーの入力はここで読まず、Kick / BeginCharge / CancelCharge を外から呼ぶ。
     [DisallowMultipleComponent]
-    public sealed class BreachDoor : MonoBehaviour
+    public sealed class BreachDoor : MonoBehaviour, IBreachDoorSource
     {
         public const string LogTag = BreachLog.Tag;
 
@@ -55,6 +55,15 @@ namespace Shooter.Runtime
             get => _visuals;
             set => _visuals = value;
         }
+
+        // 書き出しは Edit Mode で読むので、板を作らずに今ある物だけを返す。板はシーンの生成が Bind で作っておく。
+        Transform IBreachDoorSource.Panel => _visuals != null ? _visuals.Panel : null;
+
+        Vector3 IBreachDoorSource.PanelCenter => _visuals != null ? _visuals.PanelCenter() : transform.position;
+
+        Vector3 IBreachDoorSource.PanelFacing => transform.forward;
+
+        Vector3 IBreachDoorSource.PanelSize => _visuals != null ? _visuals.WorldPanelSize : BreachDoorVisuals.DefaultPanelSize;
 
         public BreachSpec Spec => _spec;
 

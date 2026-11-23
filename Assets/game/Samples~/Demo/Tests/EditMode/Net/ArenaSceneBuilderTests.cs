@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Shooter.Core;
 using Shooter.Editor;
+using Shooter.NetV2;
 using Shooter.Runtime;
 using NUnit.Framework;
 using Unity.AI.Navigation;
@@ -425,6 +426,70 @@ namespace Shooter.Net.Tests
                 Assert.That(piece.GetComponent<MeshFilter>(), Is.Not.Null, piece.name + " is the placeholder cube");
                 Assert.That(piece.transform.Find(DestructiblePiece.VisualName), Is.Null, piece.name);
             }
+        }
+
+        [Test]
+        public void PopulatedSceneClosesTheWestBuildingsSouthDoorwayWithOneBreachDoor()
+        {
+            ArenaSceneBuilder.PopulateScene(_scene);
+
+            var doors = Components<BreachDoor>();
+            Assert.That(doors, Has.Length.EqualTo(1));
+            var door = doors[0];
+            Assert.That(door.name, Is.EqualTo(ArenaSceneBuilder.BreachDoorName));
+            Assert.That(door.Id, Is.EqualTo(ArenaSceneBuilder.BreachDoorId));
+            Assert.That(door.transform.parent.name, Is.EqualTo(ArenaSceneBuilder.BreachDoorsRootName));
+            Assert.That(door.transform.parent.parent, Is.Null, "doors are numbered in scene order like the export");
+            Assert.That(door.Tuning, Is.Null, "the server reads the same breach tuning as the game");
+            Assert.That(door.IsBound, Is.True, "the panel is built so it is saved with the scene");
+            Assert.That(door.Phase, Is.EqualTo(BreachDoorPhase.Closed));
+
+            var building = ArenaSceneBuilder.Buildings[0].GroundCenter;
+            Assert.That(Near(door.transform.position, building + new Vector3(0f, 0f, -((ArenaSceneBuilder.BuildingDepth - 1) * ArenaSceneBuilder.PieceSize / 2f))), Is.True);
+            Assert.That(Near(door.transform.forward, Vector3.back), Is.True, "the door faces out of the building");
+            Assert.That(door.Visuals.PanelSize, Is.EqualTo(ArenaSceneBuilder.BreachDoorPanelSize));
+            Assert.That(ArenaSceneBuilder.BreachDoorPanelSize.x, Is.LessThan(ArenaSceneBuilder.DoorWidth * ArenaSceneBuilder.PieceSize));
+            Assert.That(ArenaSceneBuilder.BreachDoorPanelSize.y, Is.LessThan(ArenaSceneBuilder.DoorHeight * ArenaSceneBuilder.PieceSize));
+            Assert.That(ArenaSceneBuilder.BreachDoorPanelSize.y, Is.GreaterThan(NetSceneBuilder.PlayerHeight), "a closed door blocks a standing player");
+        }
+
+        [Test]
+        public void TheBreachDoorPanelFillsTheDoorwayWithoutTouchingTheBuildingPieces()
+        {
+            ArenaSceneBuilder.PopulateScene(_scene);
+            Physics.SyncTransforms();
+
+            var door = Components<BreachDoor>().Single();
+            var panels = door.Visuals.PanelColliders();
+            Assert.That(panels, Has.Length.EqualTo(1));
+            var panel = panels[0].bounds;
+            foreach (var piece in Components<DestructiblePiece>())
+            {
+                Assert.That(piece.Collider.bounds.Intersects(panel), Is.False, piece.name + " overlaps the door panel");
+            }
+
+            // 北の出入口は開けたままなので、ドアを破らなくても建物に入れる
+            var north = ArenaSceneBuilder.Buildings[0].GroundCenter + new Vector3(0f, 1f, (ArenaSceneBuilder.BuildingDepth - 1) * ArenaSceneBuilder.PieceSize / 2f);
+            Assert.That(Physics.CheckSphere(north, 0.4f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore), Is.False);
+        }
+
+        [Test]
+        public void TheBreachDoorIsExportedAsTheFirstDoorWithItsPanelAsTheDoorsColliderGroup()
+        {
+            ArenaSceneBuilder.PopulateScene(_scene);
+
+            var door = Components<BreachDoor>().Single();
+            var exported = MapCollisionExporter.CollectDoors(_scene.GetRootGameObjects()).Doors.Single();
+            Assert.That(exported.ColliderGroup, Is.EqualTo(MapColliderGroups.Door(0)));
+            Assert.That(NetV2DoorsPart.DoorsIn(_scene.GetRootGameObjects()), Is.EqualTo(new[] { door }), "the client numbers the door like the export");
+
+            var size = ArenaSceneBuilder.BreachDoorPanelSize;
+            Assert.That(exported.PanelSize.X, Is.EqualTo(size.x).Within(Epsilon));
+            Assert.That(exported.PanelSize.Y, Is.EqualTo(size.y).Within(Epsilon));
+            Assert.That(exported.PanelSize.Z, Is.EqualTo(size.z).Within(Epsilon));
+            Assert.That(exported.Facing.Z, Is.EqualTo(-1f).Within(Epsilon));
+            var center = door.transform.position + (Vector3.up * (size.y / 2f));
+            Assert.That(Near(new Vector3(exported.Position.X, exported.Position.Y, exported.Position.Z), center), Is.True);
         }
 
         [Test]

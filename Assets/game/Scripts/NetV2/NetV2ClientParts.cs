@@ -112,6 +112,7 @@ namespace Shooter.NetV2
                 NetV2HordePart.Create,
                 NetV2HolsterPart.Create,
                 NetV2WeaponLightPart.Create,
+                NetV2DoorsPart.Create,
             };
 
         public static List<INetV2ClientPart> Create(NetV2ClientPartsContext context)
