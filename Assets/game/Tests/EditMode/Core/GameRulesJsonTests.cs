@@ -72,7 +72,8 @@ namespace Shooter.Core.Tests
     ""aimToFire"": ""On"",
     ""jump"": ""Off"",
     ""emote"": ""On"",
-    ""stamina"": ""On""
+    ""stamina"": ""On"",
+    ""jam"": ""On""
   },
   ""spawnProtectionSeconds"": 1.5,
   ""fallDamage"": ""On"",
