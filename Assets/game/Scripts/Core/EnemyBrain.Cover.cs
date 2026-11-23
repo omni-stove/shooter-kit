@@ -135,7 +135,7 @@ namespace Shooter.Core
         }
 
         // 遮蔽への移動中に撃つときの散らばりを足す口。後続で CoverMoveSpreadDegrees を使うまで、撃ち方を変えないよう 0 を返す。
-        private float CoverSpreadDegrees()
+        private static float CoverSpreadDegrees()
         {
             return 0f;
         }
