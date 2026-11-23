@@ -10,6 +10,15 @@ namespace Shooter.Core.Tests
     {
         private static readonly Vector3 _where = new Vector3(1f, 0f, 2f);
 
+        private static readonly string[] _expectedPhaseChangeLines =
+        {
+            "[SecurityCamera] camera=cam1 phase=Tracking from=Sweeping yaw=0.00 level=0.25",
+            "[SecurityCamera] camera=cam1 phase=Spotted from=Tracking at=(1.00, 0.00, 2.00) level=1.00",
+            "[SecurityCamera] camera=cam1 phase=Disabled from=Spotted seconds=30.00",
+            "[SecurityCamera] camera=cam1 phase=Sweeping from=Disabled yaw=20.00 level=1.00",
+            "[SecurityCamera] camera=cam1 phase=Destroyed from=Sweeping",
+        };
+
         private static SecurityCameraTarget Running(float bearing) =>
             new SecurityCameraTarget(true, 2f, bearing, _where, AwarenessPosture.Standing, 1f, AwarenessSpec.DefaultFullMotionSpeed);
 
@@ -73,17 +82,8 @@ namespace Shooter.Core.Tests
             camera.Tick(31f, SecurityCameraTarget.None);
             camera.Destroy();
 
-            Assert.That(lines, Is.EqualTo(ExpectedPhaseChangeLines));
+            Assert.That(lines, Is.EqualTo(_expectedPhaseChangeLines));
         }
-
-        private static readonly string[] ExpectedPhaseChangeLines =
-        {
-            "[SecurityCamera] camera=cam1 phase=Tracking from=Sweeping yaw=0.00 level=0.25",
-            "[SecurityCamera] camera=cam1 phase=Spotted from=Tracking at=(1.00, 0.00, 2.00) level=1.00",
-            "[SecurityCamera] camera=cam1 phase=Disabled from=Spotted seconds=30.00",
-            "[SecurityCamera] camera=cam1 phase=Sweeping from=Disabled yaw=20.00 level=1.00",
-            "[SecurityCamera] camera=cam1 phase=Destroyed from=Sweeping",
-        };
 
         [Test]
         public void ChangedNeedsACamera()
