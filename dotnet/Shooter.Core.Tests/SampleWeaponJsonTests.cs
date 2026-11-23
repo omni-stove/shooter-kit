@@ -111,8 +111,10 @@ namespace Shooter.Core.Tests
                 }
             }
 
-            Assert.That(jamming, Is.EquivalentTo(new[] { "Minigun.json", "Shotgun.json", "SlugCannon.json" }));
+            Assert.That(jamming, Is.EquivalentTo(JammingSamples));
         }
+
+        private static readonly string[] JammingSamples = { "Minigun.json", "Shotgun.json", "SlugCannon.json" };
 
         [Test]
         public void TheShotgunLoadsOneShellAtATime()
