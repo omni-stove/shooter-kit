@@ -158,6 +158,7 @@ namespace Shooter.Server.Tests
         public void TheAsymmetricRulesPrintTheirTuningAndAreRefusedUntilTheirRulesExist(MatchObjective objective, string tuningLine)
         {
             var name = objective.ToString();
+            TestMaps.Write(_data.Path, "NetTest", points: TestRules.Points());
             var settings = new NetMatchSettings(juggernaut: new JuggernautSpec(juggernautMaxHealth: 250, juggernautSpeedMultiplier: 1.2f));
             TestRules.Write(_data.Path, name, TestRules.File(GameRules.Default.WithObjective(objective), settings, name));
 
