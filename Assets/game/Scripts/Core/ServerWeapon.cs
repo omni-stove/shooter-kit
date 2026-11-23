@@ -16,6 +16,8 @@ namespace Shooter.Core
         // 連射間隔を 0 にした Spec。内側の Weapon はこれで作る
         private WeaponSpec _innerSpec;
         private readonly GameRules _rules;
+        // 武器を作り直しても同じ列から引き続けるよう 1 つを持ち回す (作り直すたびに同じ種からやり直すと、同じ発で詰まり続ける)
+        private readonly IJamRoll _jamRoll;
         private Weapon _weapon;
         private IAmmoPool _pool;
 
@@ -24,13 +26,21 @@ namespace Shooter.Core
         {
         }
 
-        public ServerWeapon(WeaponSpec spec, GameRules rules)
+        // jamRoll を省くと武器の Id から決めた種で作る。
+        public ServerWeapon(WeaponSpec spec, GameRules rules, IJamRoll jamRoll = null)
         {
             Spec = spec ?? throw new ArgumentNullException(nameof(spec));
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            _jamRoll = jamRoll ?? JamRoll.ForWeapon(spec.Id);
             _innerSpec = spec.WithFireInterval(0f);
             _weapon = CreateWeapon();
         }
+
+        public bool IsJammed => _weapon.IsJammed;
+
+        public bool IsClearingJam => _weapon.IsClearingJam;
+
+        public float JamClearRemainingSeconds => _weapon.JamClearRemainingSeconds;
 
         public WeaponSpec Spec { get; private set; }
 
@@ -74,6 +84,12 @@ namespace Shooter.Core
 
         public ShotRejection TryFire()
         {
+            // 空より先に見るのは、最後の 1 発で詰まったときに自動リロードを始めず、詰まりを理由に断るため。
+            if (_weapon.IsJammed)
+            {
+                return ShotRejection.Jammed;
+            }
+
             // リロード中かどうかだけで弾かないのは、1 発ずつ込める弾薬 (PerRoundReload) が込めた弾で撃ってリロードを止めるため。
             if (_weapon.IsReloading && !_weapon.Ammo.CanFire)
             {
@@ -93,7 +109,7 @@ namespace Shooter.Core
 
             if (!_weapon.TryFire())
             {
-                // 連射間隔は 0 なので、リロード中でも空でもオーバーヒート中でもなければ必ず撃てる
+                // 連射間隔は 0 なので、詰まりでもリロード中でも空でもオーバーヒート中でもなければ必ず撃てる
                 throw new InvalidOperationException("the inner weapon refused a shot with ammo and no reload");
             }
 
@@ -150,9 +166,44 @@ namespace Shooter.Core
             Changed?.Invoke();
         }
 
+        public bool TryStartClearJam()
+        {
+            if (!_weapon.TryStartClearJam())
+            {
+                return false;
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
+        public bool CancelClearJam()
+        {
+            if (!_weapon.CancelClearJam())
+            {
+                return false;
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
         public void Tick(float deltaSeconds)
         {
+            var wasJammed = _weapon.IsJammed;
             _weapon.Tick(deltaSeconds);
+            if (!wasJammed || _weapon.IsJammed)
+            {
+                return;
+            }
+
+            Changed?.Invoke();
+
+            // 最後の 1 発で詰まると、撃ったときの自動リロードは詰まりで断られているので、解除し終えたここで始める。
+            if (_weapon.AmmoInMagazine == 0)
+            {
+                ReloadIfAuto();
+            }
         }
 
         public void Refill()
@@ -197,7 +248,7 @@ namespace Shooter.Core
             var ammoType = _weapon.AmmoTypes.Index;
             _weapon.Reloaded -= HandleReloaded;
             _weapon.UseAmmoPool(null);
-            _weapon = new Weapon(_innerSpec, Math.Min(ammoInMagazine, Spec.MagazineSize), reserveAmmo, _rules);
+            _weapon = new Weapon(_innerSpec, Math.Min(ammoInMagazine, Spec.MagazineSize), reserveAmmo, _rules, _jamRoll);
             _weapon.Reloaded += HandleReloaded;
             if (_pool != null)
             {
@@ -244,7 +295,7 @@ namespace Shooter.Core
             _weapon.UseAmmoPool(null);
             Spec = spec;
             _innerSpec = spec.WithFireInterval(0f);
-            _weapon = new Weapon(_innerSpec, magazine, reserve, _rules);
+            _weapon = new Weapon(_innerSpec, magazine, reserve, _rules, _jamRoll);
             _weapon.Reloaded += HandleReloaded;
             if (_pool != null)
             {
@@ -287,7 +338,7 @@ namespace Shooter.Core
 
         private Weapon CreateWeapon()
         {
-            var weapon = new Weapon(_innerSpec, _rules);
+            var weapon = new Weapon(_innerSpec, _rules, _jamRoll);
             weapon.Reloaded += HandleReloaded;
             if (_pool != null)
             {
