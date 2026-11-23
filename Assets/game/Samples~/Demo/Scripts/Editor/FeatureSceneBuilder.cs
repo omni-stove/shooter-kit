@@ -83,6 +83,9 @@ namespace Shooter.Editor
                 FeatureStation.InPlace(new SuppressionRangeFixture()),
                 FeatureStation.InPlace(new PingRangeFixture()),
                 FeatureStation.InPlace(new GrappleWallFixture()),
+
+                // 射撃場では smoke の番まで眠らせて置くが、Playground は手で試す場なので始めから動かす。
+                FeatureStation.InPlace(new SecurityCameraRangeFixture(startsAwake: true)),
             };
 
             var nearestZ = float.MaxValue;
