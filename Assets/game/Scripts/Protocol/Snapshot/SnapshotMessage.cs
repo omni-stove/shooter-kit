@@ -8,7 +8,7 @@ namespace Shooter.Protocol
     // 壊れた建物の部品のように滅多に変わらず大きい状態は、毎 tick の差分に載せずに StructureStateMessage で送る。
     public sealed class SnapshotMessage : IMessage
     {
-        public const byte CurrentVersion = 30;
+        public const byte CurrentVersion = 31;
 
         public const int NoBaseline = -1;
 
@@ -93,6 +93,7 @@ namespace Shooter.Protocol
             _owner.SuppressionLevel = 0f;
             _owner.Suppressed = false;
             _owner.HordeOffer = null;
+            _owner.WeaponFreeZone = Shooter.Core.WeaponFreeZoneStatus.Outside;
             _owner.Grenades.Clear();
             _owner.EquippedWeaponIds.Clear();
             _owner.Present = OwnerFields.All;

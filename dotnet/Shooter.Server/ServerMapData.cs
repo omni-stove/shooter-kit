@@ -24,8 +24,10 @@ namespace Shooter.Server
             NetMapVehicles vehicles = null,
             NetMapWater water = null,
             NetMapPickups pickups = null,
-            NetMapZiplines ziplines = null)
+            NetMapZiplines ziplines = null,
+            NetMapWeaponFreeZones weaponFreeZones = null)
         {
+            WeaponFreeZones = weaponFreeZones ?? NetMapWeaponFreeZones.None;
             Pickups = pickups ?? NetMapPickups.None;
             Ziplines = ziplines ?? NetMapZiplines.None;
             Vehicles = vehicles ?? NetMapVehicles.None;
@@ -79,6 +81,9 @@ namespace Shooter.Server
         // はしごと同じく、書き出す前のマップでも掴めないだけで動けるよう、ファイルが無ければ空にする。
         public NetMapZiplines Ziplines { get; }
 
+        // はしごと同じく、書き出す前のマップでも武器を出せる場所がどこにも無いだけで動けるよう、ファイルが無ければ空にする。
+        public NetMapWeaponFreeZones WeaponFreeZones { get; }
+
         public string LogLine => ServerProgram.LogTag + " map " + Name
             + " colliders=" + ColliderCount.ToString(CultureInfo.InvariantCulture)
             + " navTriangles=" + NavMesh.Triangles.Count.ToString(CultureInfo.InvariantCulture)
@@ -90,6 +95,7 @@ namespace Shooter.Server
             + " vehicles=" + Vehicles.Vehicles.Count.ToString(CultureInfo.InvariantCulture)
             + " water=" + Water.Water.Count.ToString(CultureInfo.InvariantCulture)
             + " ziplines=" + Ziplines.Ziplines.Count.ToString(CultureInfo.InvariantCulture)
+            + " weaponFreeZones=" + WeaponFreeZones.Zones.Count.ToString(CultureInfo.InvariantCulture)
             + " from=" + Directory;
 
         // 作業ディレクトリを先に見るのは、リポジトリのルートから dotnet run したときにコミットした server-data をそのまま使うため。
@@ -325,9 +331,24 @@ namespace Shooter.Server
                 }
             }
 
+            NetMapWeaponFreeZones weaponFreeZones = null;
+            var weaponFreeZonesPath = Path.Combine(directory, map + NetMapWeaponFreeZones.Extension);
+            if (File.Exists(weaponFreeZonesPath))
+            {
+                try
+                {
+                    weaponFreeZones = NetMapWeaponFreeZones.Parse(File.ReadAllText(weaponFreeZonesPath), weaponFreeZonesPath);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ServerDataJsonException)
+                {
+                    error = "cannot read " + weaponFreeZonesPath + ": " + e.Message;
+                    return false;
+                }
+            }
+
             try
             {
-                data = new ServerMapData(map, world, navMesh, directory, points, structures, ladders, vehicles, water, pickups, ziplines);
+                data = new ServerMapData(map, world, navMesh, directory, points, structures, ladders, vehicles, water, pickups, ziplines, weaponFreeZones);
             }
             catch (ArgumentException e)
             {
