@@ -17,3 +17,4 @@ MonoBehaviour:
   _openPoints: 2
   _openAfterSeconds: 30
   _keepCarriedOnDeath: 0
+  _botsBringLoadout: 1

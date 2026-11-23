@@ -34,6 +34,31 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void ReadsTheCoverItems()
+        {
+            var brain = TuningJson.ParseBots(
+                "{\"coverOnHitMaxDistance\": 7.5, \"coverMoveSpreadDegrees\": 6, \"coverMaxPeeks\": 2,"
+                + " \"coverPeekReactionSeconds\": 0.45, \"coverCooldownSeconds\": 8}",
+                "bots.json").Brain;
+
+            Assert.That(brain.CoverOnHitMaxDistance, Is.EqualTo(7.5f));
+            Assert.That(brain.CoverMoveSpreadDegrees, Is.EqualTo(6f));
+            Assert.That(brain.CoverMaxPeeks, Is.EqualTo(2));
+            Assert.That(brain.CoverPeekReactionSeconds, Is.EqualTo(0.45f));
+            Assert.That(brain.CoverCooldownSeconds, Is.EqualTo(8f));
+        }
+
+        [Test]
+        public void TheCoverItemsAreKnownBotItems()
+        {
+            Assert.That(TuningJson.BotItemNames, Does.Contain("coverOnHitMaxDistance"));
+            Assert.That(TuningJson.BotItemNames, Does.Contain("coverMoveSpreadDegrees"));
+            Assert.That(TuningJson.BotItemNames, Does.Contain("coverMaxPeeks"));
+            Assert.That(TuningJson.BotItemNames, Does.Contain("coverPeekReactionSeconds"));
+            Assert.That(TuningJson.BotItemNames, Does.Contain("coverCooldownSeconds"));
+        }
+
+        [Test]
         public void TheAimToleranceAndTheFacingToleranceAreSeparateItems()
         {
             var spec = TuningJson.ParseBots("{\"fireToleranceDegrees\": 1}", "bots.json");
@@ -71,6 +96,11 @@ namespace Shooter.Core.Tests
             Assert.That(brain.SprintRatio, Is.EqualTo(1.6f));
             Assert.That(brain.CrouchRatio, Is.EqualTo(0.5f));
             Assert.That(brain.RecoilControl, Is.EqualTo(0.75f));
+            Assert.That(brain.CoverOnHitMaxDistance, Is.EqualTo(5f));
+            Assert.That(brain.CoverMoveSpreadDegrees, Is.EqualTo(4f));
+            Assert.That(brain.CoverMaxPeeks, Is.EqualTo(3));
+            Assert.That(brain.CoverPeekReactionSeconds, Is.EqualTo(0.3f));
+            Assert.That(brain.CoverCooldownSeconds, Is.EqualTo(5f));
         }
 
         [Test]
@@ -124,6 +154,11 @@ namespace Shooter.Core.Tests
             Assert.That(spec.Brain.SprintRatio, Is.EqualTo(expected.Brain.SprintRatio));
             Assert.That(spec.Brain.CrouchRatio, Is.EqualTo(expected.Brain.CrouchRatio));
             Assert.That(spec.Brain.RecoilControl, Is.EqualTo(expected.Brain.RecoilControl));
+            Assert.That(spec.Brain.CoverOnHitMaxDistance, Is.EqualTo(expected.Brain.CoverOnHitMaxDistance));
+            Assert.That(spec.Brain.CoverMoveSpreadDegrees, Is.EqualTo(expected.Brain.CoverMoveSpreadDegrees));
+            Assert.That(spec.Brain.CoverMaxPeeks, Is.EqualTo(expected.Brain.CoverMaxPeeks));
+            Assert.That(spec.Brain.CoverPeekReactionSeconds, Is.EqualTo(expected.Brain.CoverPeekReactionSeconds));
+            Assert.That(spec.Brain.CoverCooldownSeconds, Is.EqualTo(expected.Brain.CoverCooldownSeconds));
             Assert.That(spec.Input.MaxTurnDegreesPerSecond, Is.EqualTo(expected.Input.MaxTurnDegreesPerSecond));
             Assert.That(spec.Input.AimErrorPerMeter, Is.EqualTo(expected.Input.AimErrorPerMeter));
             Assert.That(spec.Input.AimErrorRefreshSeconds, Is.EqualTo(expected.Input.AimErrorRefreshSeconds));
@@ -150,6 +185,12 @@ namespace Shooter.Core.Tests
         [TestCase("{\"staggerResistance\": null}", "staggerResistance")]
         [TestCase("{\"arrivalDistance\": 0}", "arrivalDistance")]
         [TestCase("{\"recoilControl\": 1.5}", "recoilControl")]
+        [TestCase("{\"coverOnHitMaxDistance\": -1}", "coverOnHitMaxDistance")]
+        [TestCase("{\"coverMoveSpreadDegrees\": -1}", "coverMoveSpreadDegrees")]
+        [TestCase("{\"coverMaxPeeks\": 0}", "coverMaxPeeks")]
+        [TestCase("{\"coverMaxPeeks\": 1.5}", "coverMaxPeeks")]
+        [TestCase("{\"coverPeekReactionSeconds\": -1}", "coverPeekReactionSeconds")]
+        [TestCase("{\"coverCooldownSeconds\": -1}", "coverCooldownSeconds")]
         [TestCase("{\"archetype\": \"Tank\"}", "archetype")]
         [TestCase("{\"archetype\": \"1\"}", "archetype")]
         [TestCase("{\"archetype\": 1}", "archetype")]

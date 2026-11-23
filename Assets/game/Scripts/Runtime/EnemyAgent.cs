@@ -139,6 +139,21 @@ namespace Shooter.Runtime
         [SerializeField, Range(0f, 1f), Tooltip("体力の割合がこれを下回ったら、撃たれていなくても遮蔽点へ移る。0 なら体力では移らない")]
         private float _coverHealthFraction = EnemySpec.DefaultCoverHealthFraction;
 
+        [SerializeField, Min(0f), Tooltip("撃たれたとき、この距離 (m) 以内に遮蔽点があるときだけ移る")]
+        private float _coverOnHitMaxDistance = EnemySpec.DefaultCoverOnHitMaxDistance;
+
+        [SerializeField, Range(0f, EnemySpec.MaxSpreadDegrees), Tooltip("遮蔽点へ移りながら撃つときに散らばりへ足す半角 (度)")]
+        private float _coverMoveSpreadDegrees = EnemySpec.DefaultCoverMoveSpreadDegrees;
+
+        [SerializeField, Min(1), Tooltip("1 つの遮蔽点から覗く回数の上限")]
+        private int _coverMaxPeeks = EnemySpec.DefaultCoverMaxPeeks;
+
+        [SerializeField, Min(0f), Tooltip("遮蔽点から覗いてから撃つまでの時間 (秒)")]
+        private float _coverPeekReactionSeconds = EnemySpec.DefaultCoverPeekReactionSeconds;
+
+        [SerializeField, Min(0f), Tooltip("遮蔽点を離れてから、また遮蔽点へ移れるようになるまでの時間 (秒)")]
+        private float _coverCooldownSeconds = EnemySpec.DefaultCoverCooldownSeconds;
+
         [Header("Weapon")]
         [SerializeField, RequiredReference, Tooltip("撃つ武器の定義 (弾数・連射間隔・ダメージ・射程・距離減衰)。シーン生成スクリプトが配置ごとに武器の一覧から引いて配線する")]
         private WeaponDefinition _weaponDefinition;
@@ -444,7 +459,12 @@ namespace Shooter.Runtime
                 _arrivalDistance,
                 _sprintRatio,
                 _crouchRatio,
-                _recoilControl);
+                _recoilControl,
+                _coverOnHitMaxDistance,
+                _coverMoveSpreadDegrees,
+                _coverMaxPeeks,
+                _coverPeekReactionSeconds,
+                _coverCooldownSeconds);
         }
 
         public void ApplySpec(EnemySpec spec)
@@ -526,6 +546,11 @@ namespace Shooter.Runtime
             _coverHideSeconds = spec.CoverHideSeconds;
             _coverPeekSeconds = spec.CoverPeekSeconds;
             _coverHealthFraction = spec.CoverHealthFraction;
+            _coverOnHitMaxDistance = spec.CoverOnHitMaxDistance;
+            _coverMoveSpreadDegrees = spec.CoverMoveSpreadDegrees;
+            _coverMaxPeeks = spec.CoverMaxPeeks;
+            _coverPeekReactionSeconds = spec.CoverPeekReactionSeconds;
+            _coverCooldownSeconds = spec.CoverCooldownSeconds;
             _archetype = spec.Archetype;
             CopyArchetypeSpecs(spec);
             _staggerResistance = spec.StaggerResistance;

@@ -398,6 +398,23 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void ADeathBoxLeavesOutTheWithheldWeaponsAndKeepsTheOthers()
+        {
+            Start();
+            Join(1);
+            Join(2);
+            Step(0.2f);
+            MoveTo(1, new Vector3(0f, 1.6f, -10f));
+
+            var id = _loot.SpawnDeathBox(1, new[] { TestRules.HandgunId });
+
+            Assert.That(id, Is.Not.Null);
+            Assert.That(_loot.TryGetContents(id.Value, out var weapons, out _), Is.True);
+            Assert.That(weapons.Select(w => w.Id), Is.EqualTo(new[] { TestRules.RifleId }));
+            Assert.That(_combat.WeaponsOf(1).Items, Is.Empty);
+        }
+
+        [Test]
         public void APlayerWithoutABodyLeavesNoDeathBox()
         {
             Start();

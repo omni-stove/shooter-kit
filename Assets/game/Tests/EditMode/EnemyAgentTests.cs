@@ -77,6 +77,66 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ANewAgentHasTheCoverDefaults()
+        {
+            var spec = _agent.CreateSpec();
+
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(EnemySpec.DefaultCoverOnHitMaxDistance));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(EnemySpec.DefaultCoverMoveSpreadDegrees));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(EnemySpec.DefaultCoverMaxPeeks));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(EnemySpec.DefaultCoverPeekReactionSeconds));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(EnemySpec.DefaultCoverCooldownSeconds));
+        }
+
+        [Test]
+        public void TheCoverValuesAreInspectorFields()
+        {
+            var serialized = new SerializedObject(_agent);
+            serialized.FindProperty("_coverOnHitMaxDistance").floatValue = 6f;
+            serialized.FindProperty("_coverMoveSpreadDegrees").floatValue = 3f;
+            serialized.FindProperty("_coverMaxPeeks").intValue = 2;
+            serialized.FindProperty("_coverPeekReactionSeconds").floatValue = 0.5f;
+            serialized.FindProperty("_coverCooldownSeconds").floatValue = 7f;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var spec = _agent.CreateSpec();
+
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(6f));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(3f));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(2));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(0.5f));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(7f));
+        }
+
+        [Test]
+        public void AppliedCoverValuesComeBackFromCreateSpecAndReachTheBrain()
+        {
+            _agent.ApplySpec(new EnemySpec(
+                EnemySpec.DefaultSightRange,
+                EnemySpec.DefaultAttackRange,
+                EnemySpec.DefaultLoseSightSeconds,
+                EnemySpec.DefaultSearchSeconds,
+                EnemySpec.DefaultReactionSeconds,
+                coverOnHitMaxDistance: 9f,
+                coverMoveSpreadDegrees: 1.5f,
+                coverMaxPeeks: 6,
+                coverPeekReactionSeconds: 0.8f,
+                coverCooldownSeconds: 12f));
+
+            var spec = _agent.CreateSpec();
+
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(9f));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(1.5f));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(6));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(0.8f));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(12f));
+
+            Assert.That(_agent.TryInitialize(), Is.True);
+            Assert.That(_agent.Brain.Spec.CoverMaxPeeks, Is.EqualTo(6));
+            Assert.That(_agent.Brain.Spec.CoverCooldownSeconds, Is.EqualTo(12f));
+        }
+
+        [Test]
         public void WeaponIsBuiltFromTheDefinition()
         {
             Assert.That(_agent.TryInitialize(), Is.True);
