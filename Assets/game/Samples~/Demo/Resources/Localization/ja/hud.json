@@ -82,6 +82,8 @@
   "hud.magnification": "x{0}",
   "hud.lockOn": "ロックオン {0}%",
   "hud.lockedOn": "ロックオン完了",
+  "hud.jammed": "弾詰まり",
+  "hud.clearingJam": "解除中 残り {0}%",
   "hud.ability.withHint": "{0}  {1}",
   "hud.remoteCharge.detonate": "短く押して{0}を起爆 x{1}",
   "hud.wallet": "所持金 ${0}",
