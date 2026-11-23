@@ -97,6 +97,27 @@ namespace Shooter.Core
             return true;
         }
 
+        // 交戦まで上げないのは、警報は見つけた場所を知らせるだけで、伝わった敵が相手を見たわけではないため。
+        // 今の量が InvestigateLevel を超えていても下げずに場所だけを置き直す (Meter.Raise と同じ)。
+        public bool Investigate(Vector3 position)
+        {
+            if (!IsFinite(position))
+            {
+                throw new ArgumentOutOfRangeException(nameof(position), position, "position must be finite");
+            }
+
+            if (_rule != Stealth.On || Stage == AwarenessStage.Engaged)
+            {
+                return false;
+            }
+
+            LastSeen = position;
+            RaisedByAlarm = false;
+            Meter.Raise(Spec.InvestigateLevel);
+            Publish();
+            return true;
+        }
+
         // 交戦中は目の前の相手を追っているので、物音に気を取られて背を向けないよう聞き流す。
         public HearingOutcome Hear(EnemyBrain brain, Vector3 listener, SoundStimulus sound)
         {

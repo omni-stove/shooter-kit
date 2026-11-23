@@ -51,6 +51,19 @@ namespace Shooter.Core
             return $"{Prefix(cameraId)} stopped at={Point(at)}";
         }
 
+        // 敵の側の行は EnemyStealth.LogTag で始める。敵 1 人の動きを [Stealth] の行だけで追えるように。
+        public const string EnemyTag = "[Stealth]";
+
+        public static string ReceivedPrefix(string enemyId)
+        {
+            return $"{EnemyTag} id={Name(enemyId)} security-alarm ";
+        }
+
+        public static string Received(string enemyId, string cameraId, Vector3 at, HearingOutcome outcome, Stealth rule)
+        {
+            return $"{ReceivedPrefix(enemyId)}camera={Name(cameraId)} at={Point(at)} outcome={outcome} rule={rule}";
+        }
+
         private static string Point(Vector3 value)
         {
             return string.Format(CultureInfo.InvariantCulture, "({0:0.00}, {1:0.00}, {2:0.00})", value.X, value.Y, value.Z);

@@ -12,6 +12,7 @@ namespace Shooter.Core.Tests
         private static readonly Vector3 _ahead = new Vector3(0f, 0f, 15f);
         private static readonly Vector3 _elsewhere = new Vector3(8f, 0f, 15f);
         private static readonly float[] _fullAwareness = { 1f };
+        private static readonly AwarenessStage[] _alertedOnly = { AwarenessStage.Alerted };
 
         private static EnemySpec BrainSpec() => new EnemySpec(20f, 10f, 1f, 2f, 0.5f, 6f, 0f, 2);
 
@@ -271,6 +272,60 @@ namespace Shooter.Core.Tests
             var off = Create(Stealth.Off).Awareness;
             Assert.That(off.Alarm(spot), Is.False);
             Assert.That(off.Stage, Is.EqualTo(AwarenessStage.Unaware));
+        }
+
+        [Test]
+        public void InvestigatingRaisesTheMeterToTheInvestigateLevelAndSendsItToTheSpot()
+        {
+            var (brain, awareness, stages, _) = Create(Stealth.On);
+            var spot = new Vector3(3f, 0f, 4f);
+
+            Assert.That(awareness.Investigate(spot), Is.True);
+
+            Assert.That(awareness.Level, Is.EqualTo(AwarenessSpec.DefaultInvestigateLevel));
+            Assert.That(awareness.Stage, Is.EqualTo(AwarenessStage.Alerted));
+            Assert.That(awareness.LastSeen, Is.EqualTo(spot));
+            Assert.That(awareness.RaisedByAlarm, Is.False);
+            Assert.That(stages, Is.EqualTo(_alertedOnly), "it skips straight past noticed and never engages");
+
+            var decision = brain.Tick(0.1f, Hidden(_elsewhere));
+            Assert.That(decision.MoveTo, Is.EqualTo(spot), "it walks to where the alarm says, not toward the hidden target");
+            Assert.That(decision.Fire, Is.False);
+        }
+
+        [Test]
+        public void InvestigatingAgainMovesTheSpotWithoutLoweringTheMeter()
+        {
+            var spec = new AwarenessSpec(investigateLevel: 0.7f);
+            var (_, awareness, _, _) = Create(Stealth.On, spec);
+            awareness.Witness(_ahead, 0.9f);
+
+            Assert.That(awareness.Investigate(_elsewhere), Is.True);
+
+            Assert.That(awareness.Level, Is.EqualTo(0.9f), "what it saw for itself is kept");
+            Assert.That(awareness.LastSeen, Is.EqualTo(_elsewhere));
+        }
+
+        [Test]
+        public void InvestigatingIsIgnoredWhenEngagedOrWithStealthOffAndRejectsABadSpot()
+        {
+            var (_, engaged, _, _) = Create(Stealth.On);
+            engaged.Alarm(_ahead);
+            Assert.That(engaged.Investigate(_elsewhere), Is.False);
+            Assert.That(engaged.Stage, Is.EqualTo(AwarenessStage.Engaged));
+            Assert.That(engaged.LastSeen, Is.EqualTo(_ahead), "an engaged enemy keeps chasing what it has");
+
+            var off = Create(Stealth.Off).Awareness;
+            Assert.That(off.Investigate(_ahead), Is.False);
+            Assert.That(off.Stage, Is.EqualTo(AwarenessStage.Unaware));
+            Assert.That(off.LastSeen, Is.Null);
+
+            var on = Create(Stealth.On).Awareness;
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => on.Investigate(new Vector3(float.NaN, 0f, 0f))).ParamName,
+                Is.EqualTo("position"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => on.Investigate(new Vector3(0f, float.PositiveInfinity, 0f)));
+            Assert.That(on.Stage, Is.EqualTo(AwarenessStage.Unaware));
         }
 
         [Test]
