@@ -1035,6 +1035,74 @@ namespace Shooter.Protocol.Tests
         }
 
         [Test]
+        public void FireRequestDefaultsToTheRightHand()
+        {
+            Assert.That(new FireRequestMessage().Hand, Is.EqualTo(AkimboHand.Right));
+            Assert.That(ToServer<FireRequestMessage>(new FireRequestMessage { WeaponId = "pistol" }).Hand, Is.EqualTo(AkimboHand.Right));
+        }
+
+        [Test]
+        public void FireRequestCarriesTheLeftHand()
+        {
+            var got = ToServer<FireRequestMessage>(new FireRequestMessage
+            {
+                WeaponId = "pistol",
+                Direction = new Vector3(0f, 0f, 1f),
+                ShotIndex = 3,
+                Hand = AkimboHand.Left,
+            });
+
+            Assert.That(FireRequestMessage.CurrentVersion, Is.EqualTo(4));
+            Assert.That(got.Hand, Is.EqualTo(AkimboHand.Left));
+            Assert.That(got.ShotIndex, Is.EqualTo(3));
+        }
+
+        // 3 の版は撃った手の 1 バイトを持たないので、最後の 1 バイトを落として版を 3 に書き換えた要求を読ませる
+        [Test]
+        public void AVersionThreeFireRequestIsReadAsTheRightHand()
+        {
+            var writer = new MessageWriter();
+            writer.WriteMessage(new FireRequestMessage
+            {
+                WeaponId = "pistol",
+                Direction = new Vector3(0f, 0f, 1f),
+                HasLockTarget = true,
+                LockTargetId = 4,
+                LockTargetKind = LockTargetKind.Vehicle,
+                Hand = AkimboHand.Left,
+            });
+            var bytes = writer.ToArray();
+            var older = new byte[bytes.Length - 1];
+            System.Array.Copy(bytes, older, older.Length);
+            older[2] = 3;
+
+            var got = (FireRequestMessage)_server.Read(new System.ArraySegment<byte>(older));
+
+            Assert.That(got.Hand, Is.EqualTo(AkimboHand.Right));
+            Assert.That(got.LockTargetKind, Is.EqualTo(LockTargetKind.Vehicle));
+            Assert.That(got.LockTargetId, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void FireRequestWithAnUnknownHandIsUnreadable()
+        {
+            var writer = new MessageWriter();
+            writer.WriteMessage(new FireRequestMessage { WeaponId = "pistol" });
+            var bytes = writer.ToArray();
+            bytes[bytes.Length - 1] = 2;
+
+            Assert.Throws<MessageReadException>(() => _server.Read(new System.ArraySegment<byte>(bytes)));
+        }
+
+        [Test]
+        public void FireRequestRejectsAnUnknownHand()
+        {
+            var request = new FireRequestMessage { WeaponId = "pistol", Hand = (AkimboHand)2 };
+
+            Assert.Throws<System.InvalidOperationException>(() => new MessageWriter().WriteMessage(request));
+        }
+
+        [Test]
         public void WeaponRequests()
         {
             Assert.That(

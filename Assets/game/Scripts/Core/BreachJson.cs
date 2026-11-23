@@ -63,26 +63,36 @@ namespace Shooter.Core
 
         public static BreachSpec Parse(string text, string sourceName)
         {
+            return Parse(text, sourceName, BreachSpec.Default);
+        }
+
+        public static BreachSpec Parse(string text, string sourceName, BreachSpec fallback)
+        {
+            if (fallback == null)
+            {
+                throw new ArgumentNullException(nameof(fallback));
+            }
+
             var source = ServerDataJson.SourceOf(sourceName, _kind);
             try
             {
                 var fields = new ServerDataJson.Fields(source, _kind, ServerDataJson.ParseDocument(text, source, _kind), string.Empty, ItemNames);
-                var kickSeconds = fields.ReadFloat(KickSecondsItem, BreachSpec.DefaultKickSeconds);
-                var plantSeconds = fields.ReadFloat(PlantSecondsItem, BreachSpec.DefaultPlantSeconds);
-                var fuseSeconds = fields.ReadFloat(FuseSecondsItem, BreachSpec.DefaultFuseSeconds);
-                var reach = fields.ReadFloat(ReachItem, BreachSpec.DefaultReach);
-                var roomDepth = fields.ReadFloat(RoomDepthItem, BreachSpec.DefaultRoomDepth);
-                var roomWidth = fields.ReadFloat(RoomWidthItem, BreachSpec.DefaultRoomWidth);
-                var roomHeight = fields.ReadFloat(RoomHeightItem, BreachSpec.DefaultRoomHeight);
-                var kickStaggerSeconds = fields.ReadFloat(KickStaggerSecondsItem, BreachSpec.DefaultKickStaggerSeconds);
-                var chargeStaggerSeconds = fields.ReadFloat(ChargeStaggerSecondsItem, BreachSpec.DefaultChargeStaggerSeconds);
-                var chargeDamage = fields.ReadInt(ChargeDamageItem, BreachSpec.DefaultChargeDamage);
-                var chargeRadius = fields.ReadFloat(ChargeRadiusItem, BreachSpec.DefaultChargeRadius);
-                var kickSoundRadius = fields.ReadFloat(KickSoundRadiusItem, BreachSpec.DefaultKickSoundRadius);
-                var chargeSoundRadius = fields.ReadFloat(ChargeSoundRadiusItem, BreachSpec.DefaultChargeSoundRadius);
-                var slowMotionScale = fields.ReadFloat(SlowMotionScaleItem, BreachSpec.DefaultSlowMotionScale);
-                var slowMotionSeconds = fields.ReadFloat(SlowMotionSecondsItem, BreachSpec.DefaultSlowMotionSeconds);
-                var chargeItemId = fields.ReadString(ChargeItemIdItem, BreachSpec.DefaultChargeItemId);
+                var kickSeconds = fields.ReadFloat(KickSecondsItem, fallback.KickSeconds);
+                var plantSeconds = fields.ReadFloat(PlantSecondsItem, fallback.PlantSeconds);
+                var fuseSeconds = fields.ReadFloat(FuseSecondsItem, fallback.FuseSeconds);
+                var reach = fields.ReadFloat(ReachItem, fallback.Reach);
+                var roomDepth = fields.ReadFloat(RoomDepthItem, fallback.RoomDepth);
+                var roomWidth = fields.ReadFloat(RoomWidthItem, fallback.RoomWidth);
+                var roomHeight = fields.ReadFloat(RoomHeightItem, fallback.RoomHeight);
+                var kickStaggerSeconds = fields.ReadFloat(KickStaggerSecondsItem, fallback.KickStaggerSeconds);
+                var chargeStaggerSeconds = fields.ReadFloat(ChargeStaggerSecondsItem, fallback.ChargeStaggerSeconds);
+                var chargeDamage = fields.ReadInt(ChargeDamageItem, fallback.ChargeDamage);
+                var chargeRadius = fields.ReadFloat(ChargeRadiusItem, fallback.ChargeRadius);
+                var kickSoundRadius = fields.ReadFloat(KickSoundRadiusItem, fallback.KickSoundRadius);
+                var chargeSoundRadius = fields.ReadFloat(ChargeSoundRadiusItem, fallback.ChargeSoundRadius);
+                var slowMotionScale = fields.ReadFloat(SlowMotionScaleItem, fallback.SlowMotionScale);
+                var slowMotionSeconds = fields.ReadFloat(SlowMotionSecondsItem, fallback.SlowMotionSeconds);
+                var chargeItemId = fields.ReadString(ChargeItemIdItem, fallback.ChargeItemId);
                 try
                 {
                     return new BreachSpec(

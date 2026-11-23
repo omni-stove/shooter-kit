@@ -85,6 +85,50 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheSecurityCameraPromptAsksToHoldForTheTunedSeconds()
+        {
+            Assert.That(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, Interact), "E"), Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisableKey, "E", "1.5")));
+            Assert.That(SecurityCameraPrompt.Describe(new SecurityCameraHint(2f, Interact), null), Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisableKey, string.Empty, "2.0")));
+            Assert.That(SecurityCameraPrompt.HoldSeconds(1.04f), Is.EqualTo("1.1"), "rounded up so the hold is never shown shorter than it is");
+
+            Assert.That(Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, Interact), "E")), Is.EqualTo("[E] を 1.5 秒長押しでカメラを止める"));
+            Localizer.Apply(GameLanguage.English);
+            try
+            {
+                Assert.That(Localizer.Resolve(SecurityCameraPrompt.Describe(new SecurityCameraHint(1.5f, Interact), "E")), Is.EqualTo("Hold [E] for 1.5 s to disable the camera"));
+            }
+            finally
+            {
+                Localizer.Apply(GameLanguage.Japanese);
+            }
+
+            foreach (var language in new[] { GameLanguage.English, GameLanguage.Japanese })
+            {
+                var table = Localizer.TableOf(language);
+                Assert.That(table.Contains(SecurityCameraPrompt.DisableKey), Is.True, $"{language} has {SecurityCameraPrompt.DisableKey}");
+                Assert.That(table.Get(SecurityCameraPrompt.DisableKey), Does.Contain("{0}").And.Contain("{1}"), $"{language} shows the key and the hold seconds");
+            }
+        }
+
+        [Test]
+        public void ABoundViewShowsThePublishedSecurityCameraHint()
+        {
+            var root = BindToLayout();
+            var source = new object();
+
+            GameSignals.InteractHint.Publish(new InteractHint(source, new SecurityCameraHint(1.5f, Interact)));
+
+            Assert.That(_view.IsShown, Is.True);
+            Assert.That(_view.Owner, Is.SameAs(source));
+            Assert.That(_view.Text, Is.EqualTo(Localizer.Resolve(new LocalizedText(SecurityCameraPrompt.DisableKey, _view.HintKeyLabel, "1.5"))));
+            Assert.That(root.Q<Label>(InteractPromptView.UxmlName).text, Is.EqualTo(_view.Text));
+
+            GameSignals.InteractHint.Clear();
+
+            Assert.That(_view.IsShown, Is.False);
+        }
+
+        [Test]
         public void EachHintDetailHasItsOwnText()
         {
             Assert.That(InteractPromptView.TryDescribe(new AmmoCrateHint(true, Interact), "E", out var crate), Is.True);
@@ -96,12 +140,16 @@ namespace Shooter.Tests.EditMode
             Assert.That(InteractPromptView.TryDescribe(new VehicleBoardHint(VehicleSeatRole.Gunner, Interact), "E", out var board), Is.True);
             Assert.That(board, Is.EqualTo(new LocalizedText(VehicleBoardPrompt.GunnerKey, "E")));
 
+            Assert.That(InteractPromptView.TryDescribe(new SecurityCameraHint(1.5f, Interact), "E", out var camera), Is.True);
+            Assert.That(camera, Is.EqualTo(new LocalizedText(SecurityCameraPrompt.DisableKey, "E", "1.5")));
+
             Assert.That(InteractPromptView.TryDescribe("unknown", "E", out var unknown), Is.False);
             Assert.That(unknown.IsEmpty, Is.True);
 
             Assert.That(InteractPromptView.InputActionPathOf(new PickupHint(PickupHintAction.Health, null, null, 0, Interact)), Is.EqualTo(Interact));
             Assert.That(InteractPromptView.InputActionPathOf(new AmmoCrateHint(false, "Player/Use")), Is.EqualTo("Player/Use"));
             Assert.That(InteractPromptView.InputActionPathOf(new VehicleBoardHint(VehicleSeatRole.Driver, "Player/Use")), Is.EqualTo("Player/Use"));
+            Assert.That(InteractPromptView.InputActionPathOf(new SecurityCameraHint(1.5f, "Player/Use")), Is.EqualTo("Player/Use"));
             Assert.That(InteractPromptView.InputActionPathOf(null), Is.Empty);
         }
 

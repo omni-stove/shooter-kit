@@ -26,6 +26,31 @@ namespace Shooter.Core
             return $"{Tag} speaker={Name(speakerId)} kind={kind} skipped reason={Name(reason)}";
         }
 
+        public static string Skipped(string speakerId, BarkKind kind, BarkVerdict verdict)
+        {
+            return Skipped(speakerId, kind, Reason(verdict));
+        }
+
+        // 列挙の名前を出さないのは、BarkVerdict の名前を変えてもログを拾う smoke の文字列が変わらないようにするため。
+        public static string Reason(BarkVerdict verdict)
+        {
+            switch (verdict)
+            {
+                case BarkVerdict.Allowed:
+                    return "allowed";
+                case BarkVerdict.KindCooldown:
+                    return "kind-cooldown";
+                case BarkVerdict.SpeakerCooldown:
+                    return "speaker-cooldown";
+                case BarkVerdict.GlobalInterval:
+                    return "global-interval";
+                case BarkVerdict.TooManyNearby:
+                    return "too-many-nearby";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(verdict), verdict, "verdict is not a BarkVerdict");
+            }
+        }
+
         public static string NoClip(BarkKind kind)
         {
             return $"{Tag} kind={kind} has no voice clip; nothing is played";
@@ -51,7 +76,7 @@ namespace Shooter.Core
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} spec kinds={1} speaker={2:0.00} interval={3:0.00} crowdRadius={4:0.00} crowdMax={5} hearing={6:0.00} grenadeWarning={7:0.00}",
+                "{0} spec kinds={1} speaker={2:0.00} interval={3:0.00} crowdRadius={4:0.00} crowdMax={5} hearing={6:0.00} grenadeWarning={7:0.00} speak={8:0.00}",
                 Tag,
                 cooldowns,
                 spec.SpeakerCooldownSeconds,
@@ -59,7 +84,8 @@ namespace Shooter.Core
                 spec.CrowdRadius,
                 spec.MaxSpeakersInCrowd,
                 spec.HearingDistance,
-                spec.GrenadeWarningRadius);
+                spec.GrenadeWarningRadius,
+                spec.SpeakSeconds);
         }
 
         private static string Name(string id)

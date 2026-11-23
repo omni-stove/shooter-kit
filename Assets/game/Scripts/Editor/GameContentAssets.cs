@@ -59,6 +59,7 @@ namespace Shooter.Editor
             new Slot("EmoteAnimations", typeof(EmoteCatalog), c => c.EmoteAnimations, (c, v) => c.EmoteAnimations = (EmoteCatalog)v),
             new Slot("VisionVisuals", typeof(VisionVisualCatalog), c => c.VisionVisuals, (c, v) => c.VisionVisuals = (VisionVisualCatalog)v),
             new Slot("Music", typeof(MusicCatalog), c => c.Music, (c, v) => c.Music = (MusicCatalog)v),
+            new Slot("WeaponLights", typeof(WeaponLightCatalog), c => c.WeaponLights, (c, v) => c.WeaponLights = (WeaponLightCatalog)v),
             new Slot("Barks", typeof(BarkCatalog), c => c.Barks, (c, v) => c.Barks = (BarkCatalog)v),
         };
 

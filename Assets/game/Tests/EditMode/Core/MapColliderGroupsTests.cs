@@ -46,6 +46,33 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => MapColliderGroups.Piece(MapColliderGroups.MaxStructures, 0));
             Assert.Throws<ArgumentOutOfRangeException>(() => MapColliderGroups.Piece(0, -1));
             Assert.Throws<ArgumentOutOfRangeException>(() => MapColliderGroups.Piece(0, MapColliderGroups.MaxPiecesPerStructure));
+            Assert.Throws<ArgumentOutOfRangeException>(() => MapColliderGroups.Door(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => MapColliderGroups.Door(MapColliderGroups.MaxDoors));
+        }
+
+        [Test]
+        public void DoorGroupsAreNegativeAndRoundTripTheirDoor()
+        {
+            Assert.That(MapColliderGroups.Door(0), Is.EqualTo(-1));
+            Assert.That(MapColliderGroups.Door(4), Is.EqualTo(-5));
+            Assert.That(MapColliderGroups.Door(MapColliderGroups.MaxDoors - 1), Is.EqualTo(-MapColliderGroups.MaxDoors));
+
+            foreach (var door in new[] { 0, 1, 37, MapColliderGroups.MaxDoors - 1 })
+            {
+                var group = MapColliderGroups.Door(door);
+                Assert.That(MapColliderGroups.IsDoor(group), Is.True);
+                Assert.That(MapColliderGroups.IsBody(group), Is.False);
+                Assert.That(MapColliderGroups.IsPiece(group), Is.False);
+                Assert.That(MapColliderGroups.TryGetDoor(group, out var index), Is.True);
+                Assert.That(index, Is.EqualTo(door));
+            }
+
+            Assert.That(MapColliderGroups.IsDoor(MapColliderGroups.Static), Is.False);
+            Assert.That(MapColliderGroups.IsDoor(MapColliderGroups.Body(0)), Is.False);
+            Assert.That(MapColliderGroups.IsDoor(MapColliderGroups.Piece(0, 0)), Is.False);
+            Assert.That(MapColliderGroups.IsDoor(-MapColliderGroups.MaxDoors - 1), Is.False);
+            Assert.That(MapColliderGroups.TryGetDoor(MapColliderGroups.Piece(0, 0), out var none), Is.False);
+            Assert.That(none, Is.EqualTo(-1));
         }
     }
 }
