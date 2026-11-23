@@ -430,6 +430,62 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void OnlyTheRangeAndTheTeamDeathmatchAssetJam()
+        {
+            var built = Build();
+
+            Assert.That(built[0].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.On), built[0].name);
+            Assert.That(built[1].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), built[1].name);
+            Assert.That(built[2].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), built[2].name);
+            Assert.That(built[3].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), built[3].name);
+            Assert.That(built[4].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.On), built[4].name);
+            Assert.That(built[TpsRangeIndex].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), built[TpsRangeIndex].name);
+            Assert.That(built[DominationIndex].ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), built[DominationIndex].name);
+
+            Assert.That(GameRulesAssetBuilder.RangeActions().Jam, Is.EqualTo(WeaponJam.On));
+            Assert.That(GameRulesAssetBuilder.TpsRangeActions().Jam, Is.EqualTo(WeaponJam.Off), "the tps range smoke steps fire without clearing jams");
+            Assert.That(GameRulesAssetBuilder.TeamDeathmatchActions().Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesAssetBuilder.TeamDeathmatchRules().Actions.Jam, Is.EqualTo(WeaponJam.Off), "the modes are built from it and stay off");
+            Assert.That(GameRulesAssetBuilder.CampaignActions().Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesAssetBuilder.FeatureBaseRules().Actions.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesAssetBuilder.PlaygroundRules().Actions.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesAssetBuilder.HighDropRules().Actions.Jam, Is.EqualTo(WeaponJam.Off));
+            foreach (var name in GameRulesAssetBuilder.ModeNames)
+            {
+                Assert.That(GameRulesAssetBuilder.ModeRules(name).Actions.Jam, Is.EqualTo(WeaponJam.Off), name);
+            }
+        }
+
+        [Test]
+        public void TheTeamDeathmatchAssetIsTheTeamDeathmatchWithJams()
+        {
+            var asset = GameRulesAssetBuilder.TeamDeathmatchAssetRules();
+
+            Assert.That(asset.Actions.Jam, Is.EqualTo(WeaponJam.On));
+            AssertActions(asset.Actions, _expectedActions[0], nameof(GameRulesAssetBuilder.TeamDeathmatchAssetRules));
+            Assert.That(asset.SpawnProtectionSeconds, Is.EqualTo(GameRulesAssetBuilder.TeamDeathmatchSpawnProtectionSeconds));
+            Assert.That(asset.IdleKickSeconds, Is.EqualTo(GameRulesAssetBuilder.OnlineIdleKickSeconds));
+            Assert.That(asset.Objective, Is.EqualTo(MatchObjective.None));
+        }
+
+        [Test]
+        public void TheRepositoryRangeAndTeamDeathmatchAssetsJam()
+        {
+            Assert.That(
+                GameRulesAssetBuilder.LoadRules(GameRulesAssetBuilder.RangePath).ToRules().Actions.Jam,
+                Is.EqualTo(WeaponJam.On),
+                GameRulesAssetBuilder.RangePath + $" (rerun {nameof(GameRulesAssetBuilder)}.Build)");
+            Assert.That(
+                GameRulesAssetBuilder.LoadRules(GameRulesAssetBuilder.TeamDeathmatchPath).ToRules().Actions.Jam,
+                Is.EqualTo(WeaponJam.On),
+                GameRulesAssetBuilder.TeamDeathmatchPath + $" (rerun {nameof(GameRulesAssetBuilder)}.Build)");
+            Assert.That(
+                GameRulesAssetBuilder.LoadRules(GameRulesAssetBuilder.TpsRangePath).ToRules().Actions.Jam,
+                Is.EqualTo(WeaponJam.Off),
+                GameRulesAssetBuilder.TpsRangePath);
+        }
+
+        [Test]
         public void OnlyTheTpsRangeSlides()
         {
             Assert.That(GameRulesAssetBuilder.RangeActions().Slide, Is.EqualTo(Slide.Off));

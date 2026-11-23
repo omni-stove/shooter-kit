@@ -13,7 +13,7 @@ namespace Shooter.Tests.EditMode
     {
         private static readonly Dictionary<string, Func<GameRules>> _samples = new Dictionary<string, Func<GameRules>>
         {
-            { "TeamDeathmatch", GameRulesAssetBuilder.TeamDeathmatchRules },
+            { "TeamDeathmatch", GameRulesAssetBuilder.TeamDeathmatchAssetRules },
             { "CampaignEasy", GameRulesAssetBuilder.CampaignEasyRules },
             { "CampaignNormal", GameRulesAssetBuilder.CampaignNormalRules },
             { "CampaignHard", GameRulesAssetBuilder.CampaignHardRules },
@@ -88,6 +88,20 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameRulesAssetBuilder.RangeRules().Actions.Stamina, Is.EqualTo(Stamina.On));
         }
 
+        [TestCase("Range", WeaponJam.On)]
+        [TestCase("TeamDeathmatch", WeaponJam.On)]
+        [TestCase("TpsRange", WeaponJam.Off)]
+        [TestCase("Domination", WeaponJam.Off)]
+        [TestCase("CampaignEasy", WeaponJam.Off)]
+        [TestCase("CampaignNormal", WeaponJam.Off)]
+        [TestCase("CampaignHard", WeaponJam.Off)]
+        public void OnlyTheRangeAndTeamDeathmatchSamplesJam(string name, WeaponJam expected)
+        {
+            var rules = GameRulesJsonImporter.ImportFrom(SamplesFolder + "/" + name + ".json", _folder)[0].ToRules();
+
+            Assert.That(rules.Actions.Jam, Is.EqualTo(expected), name);
+        }
+
         private static void AssertSameRules(GameRules actual, GameRules expected, string name)
         {
             Assert.That(actual.FriendlyFire, Is.EqualTo(expected.FriendlyFire), name + " friendlyFire");
@@ -142,6 +156,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(a.ReloadInterruptedBy, Is.EqualTo(b.ReloadInterruptedBy), name + " actions.reloadInterruptedBy");
             Assert.That(a.AimWhileReloading, Is.EqualTo(b.AimWhileReloading), name + " actions.aimWhileReloading");
             Assert.That(a.Takedown, Is.EqualTo(b.Takedown), name + " actions.takedown");
+            Assert.That(a.Jam, Is.EqualTo(b.Jam), name + " actions.jam");
         }
     }
 }
