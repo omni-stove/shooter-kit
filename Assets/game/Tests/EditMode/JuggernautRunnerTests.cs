@@ -329,11 +329,13 @@ namespace Shooter.Tests.EditMode
             _runner.Tick(StartDelaySeconds);
             var marker = _runner.Marker;
             var juggernaut = _runner.Juggernaut;
+            bot.Damageable.TakeDamage(20);
 
             _runner.Stop();
 
             Assert.That(_runner.Juggernaut, Is.Null);
             Assert.That(bot.Damageable.MaxHealth, Is.EqualTo(Damageable.DefaultMaxHealth));
+            Assert.That(bot.Damageable.Health.Max, Is.EqualTo(Damageable.DefaultMaxHealth));
             Assert.That(bot.Damageable.Health.Current, Is.EqualTo(Damageable.DefaultMaxHealth));
             Assert.That(agent.MoveSpeedMultiplier, Is.EqualTo(speed));
             Assert.That(agent.PerceptionContributors.OfType<JuggernautTargetPerception>(), Is.Empty);

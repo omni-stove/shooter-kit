@@ -316,9 +316,9 @@ namespace Shooter.Runtime
             if (damageable != null)
             {
                 damageable.MaxHealth = original.MaxHealth;
-                if (!damageable.IsDead && damageable.Health.Current > original.MaxHealth)
+                if (!damageable.IsDead)
                 {
-                    damageable.RestoreHealth(original.MaxHealth);
+                    damageable.RestoreHealth(Math.Min(damageable.Health.Current, original.MaxHealth));
                 }
             }
 
