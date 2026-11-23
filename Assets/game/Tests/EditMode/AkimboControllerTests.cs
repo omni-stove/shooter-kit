@@ -367,6 +367,30 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void DroppingAndPickingUpWithAnAmmoPoolKeepsTheLeftMagazineRounds()
+        {
+            _controller.Rules = GameRules.Default.WithReloadMode(ReloadMode.Manual);
+            var akimbo = Definition(Pistol(AkimboSpec.Default));
+            var plain = Definition(Pistol(null, PlainPistolId));
+            var pool = new FakePool(PistolId, 16, 100);
+            _controller.Initialize(_camera.transform, _attack, _reload, null, null, new[] { akimbo, plain });
+            _controller.UseAmmoPools(spec => spec.Id == PistolId ? pool : null);
+            _controller.PullTrigger(AkimboHand.Right, true, true);
+            _controller.PullTrigger(AkimboHand.Left, true, true);
+            Assert.That(pool.Count, Is.EqualTo(16));
+
+            Assert.That(_controller.DropWeapon(PistolId, out var dropped), Is.True);
+            Assert.That(dropped.Ammo.AmmoInMagazine, Is.EqualTo(7));
+            Assert.That(dropped.Ammo.ReserveAmmo, Is.EqualTo(0), "the left magazine's 7 rounds went back into the pool");
+            Assert.That(pool.Count, Is.EqualTo(23));
+
+            Assert.That(_controller.AddWeapon(akimbo, dropped.Ammo), Is.True);
+            Assert.That(_controller.Select(PistolId), Is.True);
+            _controller.Tick(1f);
+            Assert.That(pool.Count, Is.EqualTo(23), "picking it back up does not change the pool");
+        }
+
+        [Test]
         public void PickingUpAWeaponWithoutAmmoFillsBothHands()
         {
             var akimbo = Definition(Pistol(AkimboSpec.Default));
@@ -487,6 +511,42 @@ namespace Shooter.Tests.EditMode
             finally
             {
                 aim.Dispose();
+            }
+        }
+
+        private sealed class FakePool : IAmmoPool
+        {
+            private readonly int _max;
+
+            public FakePool(string id, int count, int max)
+            {
+                Id = id;
+                Count = count;
+                _max = max;
+            }
+
+            public event System.Action Changed;
+
+            public string Id { get; }
+
+            public int Count { get; private set; }
+
+            public int Room => _max - Count;
+
+            public int Take(int count)
+            {
+                var taken = System.Math.Min(count, Count);
+                Count -= taken;
+                Changed?.Invoke();
+                return taken;
+            }
+
+            public int Put(int count)
+            {
+                var put = System.Math.Min(count, Room);
+                Count += put;
+                Changed?.Invoke();
+                return put;
             }
         }
 

@@ -352,8 +352,15 @@ namespace Shooter.Runtime
             }
 
             hands.CancelReload();
-            var reserve = hands.AmmoPool != null ? 0 : hands.ReserveAmmo;
-            return new WeaponAmmo(weapon.Spec.Id, hands.Right.AmmoInMagazine, reserve + hands.Left.AmmoInMagazine);
+            var left = hands.Left.AmmoInMagazine;
+            if (hands.AmmoPool == null)
+            {
+                return new WeaponAmmo(weapon.Spec.Id, hands.Right.AmmoInMagazine, hands.ReserveAmmo + left);
+            }
+
+            // 拾い直すときの UsePool は受け皿より多い分しか足さないので、予備弾に載せても受け皿に入らず消える。先に受け皿へ戻し、入りきらない分だけ載せる。
+            var overflow = left - hands.AmmoPool.Put(left);
+            return new WeaponAmmo(weapon.Spec.Id, hands.Right.AmmoInMagazine, overflow);
         }
 
         private PickupWeaponState PickupStateOf(Weapon weapon)
