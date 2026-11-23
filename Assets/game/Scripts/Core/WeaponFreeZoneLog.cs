@@ -31,6 +31,11 @@ namespace Shooter.Core
                 spec.HostileAfterSeconds);
         }
 
+        public static string InvalidSetting(string zoneId, string message)
+        {
+            return $"{Tag} zone={Name(zoneId)} has an invalid setting: {message}";
+        }
+
         public static string Entered(string zoneId, string holderId, bool armed)
         {
             return $"{Tag} zone={Name(zoneId)} holder={Name(holderId)} entered armed={(armed ? "true" : "false")}";

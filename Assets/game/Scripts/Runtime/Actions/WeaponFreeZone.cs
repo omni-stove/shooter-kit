@@ -368,7 +368,7 @@ namespace Shooter.Runtime
             }
             catch (ArgumentException e)
             {
-                Debug.LogError($"{LogTag} zone={ZoneId} has an invalid setting: {e.Message}", this);
+                Debug.LogError(WeaponFreeZoneLog.InvalidSetting(ZoneId, e.Message), this);
                 return WeaponFreeZoneSpec.Default;
             }
         }
