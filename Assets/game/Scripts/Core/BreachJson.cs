@@ -39,6 +39,8 @@ namespace Shooter.Core
 
         public const string ChargeItemIdItem = "chargeItemId";
 
+        public const string HoldSecondsItem = "holdSeconds";
+
         private const string _kind = "breach JSON";
 
         public static IReadOnlyList<string> ItemNames { get; } = new[]
@@ -59,6 +61,7 @@ namespace Shooter.Core
             SlowMotionScaleItem,
             SlowMotionSecondsItem,
             ChargeItemIdItem,
+            HoldSecondsItem,
         };
 
         public static BreachSpec Parse(string text, string sourceName)
@@ -93,6 +96,7 @@ namespace Shooter.Core
                 var slowMotionScale = fields.ReadFloat(SlowMotionScaleItem, fallback.SlowMotionScale);
                 var slowMotionSeconds = fields.ReadFloat(SlowMotionSecondsItem, fallback.SlowMotionSeconds);
                 var chargeItemId = fields.ReadString(ChargeItemIdItem, fallback.ChargeItemId);
+                var holdSeconds = fields.ReadFloat(HoldSecondsItem, fallback.HoldSeconds);
                 try
                 {
                     return new BreachSpec(
@@ -111,7 +115,8 @@ namespace Shooter.Core
                         chargeSoundRadius,
                         slowMotionScale,
                         slowMotionSeconds,
-                        chargeItemId);
+                        chargeItemId,
+                        holdSeconds);
                 }
                 catch (ArgumentException e)
                 {
@@ -150,6 +155,7 @@ namespace Shooter.Core
             writer.Float(SlowMotionScaleItem, spec.SlowMotionScale);
             writer.Float(SlowMotionSecondsItem, spec.SlowMotionSeconds);
             writer.String(ChargeItemIdItem, spec.ChargeItemId);
+            writer.Float(HoldSecondsItem, spec.HoldSeconds);
             return writer.Finish();
         }
 
