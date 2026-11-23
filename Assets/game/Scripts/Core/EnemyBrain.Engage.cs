@@ -11,7 +11,8 @@ namespace Shooter.Core
 
             // 撃ちながら近づいて Attack に入ったときは構え直さない。入った途端に撃つのをやめると、近づくほど撃たなくなって見える。
             // FireRange の外で見続けていた間も構え時間に数える。FireRange に入ってから数え始めると、構え終わるまで撃たずに走る距離ができる。
-            if (_watching && (State == EnemyState.Attack || State == EnemyState.Chase))
+            // TakeCover で _watching が立つのは、覗いて構え終えたまま遮蔽をやめた tick だけ。
+            if (_watching && (State == EnemyState.Attack || State == EnemyState.Chase || State == EnemyState.TakeCover))
             {
                 _reactionElapsed += deltaSeconds;
             }

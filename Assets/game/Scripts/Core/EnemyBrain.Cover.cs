@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 
 namespace Shooter.Core
@@ -6,17 +7,28 @@ namespace Shooter.Core
     {
         private bool ShouldTakeCover(EnemyPerception p)
         {
-            return _cover != null && (p.WasHit || p.HealthFraction < _spec.CoverHealthFraction);
+            return _cover != null && _coverCooldown <= 0f && (p.WasHit || p.HealthFraction < _spec.CoverHealthFraction);
         }
 
-        private static Vector3? ThreatOf(EnemyPerception p)
+        // 遮蔽中に見えていない相手の今の位置を使うと、壁越しに回り込みを知って点を選び直してしまう。
+        private Vector3? CoverThreatOf(EnemyPerception p, bool seen)
         {
-            if (p.Target.HasValue)
+            if (seen)
             {
                 return p.Target.Value;
             }
 
-            return p.WasHit ? p.HitSource : null;
+            if (p.WasHit && p.HitSource.HasValue)
+            {
+                return p.HitSource.Value;
+            }
+
+            if (!p.Target.HasValue)
+            {
+                return null;
+            }
+
+            return State == EnemyState.TakeCover ? _coverThreat : p.Target.Value;
         }
 
         private bool TryCover(float deltaSeconds, EnemyPerception p, bool seen, out EnemyDecision decision)
@@ -27,7 +39,7 @@ namespace Shooter.Core
                 _lastSeen = p.Target.Value;
             }
 
-            var threat = ThreatOf(p);
+            var threat = CoverThreatOf(p, seen);
             if (_cover == null || !threat.HasValue || !CoverPoint.IsFinite(threat.Value) || !CoverPoint.IsFinite(p.Self))
             {
                 LeaveCover();
@@ -46,6 +58,7 @@ namespace Shooter.Core
             if (_coverIndex < 0)
             {
                 var keepAim = KeepsAimIntoCover();
+                var peekAimed = State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Peeking && seen && _reactionElapsed >= _spec.CoverPeekReactionSeconds;
                 var next = _cover.Select(p.Self, _coverThreat, this, _unreachableCover, CoverSearchDistance(p));
                 if (next < 0 || !_cover.TryClaim(next, this))
                 {
@@ -55,6 +68,12 @@ namespace Shooter.Core
 
                 _coverIndex = next;
                 CoverPhase = EnemyCoverPhase.Moving;
+                if (peekAimed)
+                {
+                    // 移動中に撃つかは交戦の構え時間 (ReactionSeconds) で決まるので、覗いて構え終えた銃口は済んだことにして撃ち続けさせる。
+                    _reactionElapsed = Math.Max(_reactionElapsed, _spec.ReactionSeconds);
+                }
+
                 if (!keepAim)
                 {
                     _reactionElapsed = 0f;
@@ -66,9 +85,23 @@ namespace Shooter.Core
             if (State != EnemyState.TakeCover)
             {
                 _lostElapsed = 0f;
+                _coverPeeks = 0;
             }
 
-            decision = CoverStep(deltaSeconds, p.Self, seen, freshAim);
+            if (!CoverStep(deltaSeconds, p.Self, seen, freshAim, p.IsSuppressed, out decision))
+            {
+                var aimed = CoverPhase == EnemyCoverPhase.Peeking && seen && _reactionElapsed >= _spec.CoverPeekReactionSeconds;
+                LeaveCover();
+                if (aimed)
+                {
+                    // 覗いて構え終えた銃口を出るときに下ろすと、出た途端に撃たなくなるので、交戦の構え時間も済んだことにする。
+                    _watching = true;
+                    _reactionElapsed = Math.Max(_reactionElapsed, _spec.ReactionSeconds);
+                }
+
+                decision = EnemyDecision.None;
+                return false;
+            }
 
             // 決定を作った後に移す。StateChanged の購読者が Kill() して点を放しても、ここでは点を読まない。
             SetState(EnemyState.TakeCover);
@@ -92,7 +125,9 @@ namespace Shooter.Core
             return IsAiming || (State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Moving);
         }
 
-        private EnemyDecision CoverStep(float deltaSeconds, Vector3 self, bool seen, bool freshAim)
+        // false を返したら遮蔽をやめる。覗き終えるたびに隠れ直すだけだと、相手が来ない限り遮蔽から出てこないので。
+        // 制圧されている間はやめない。撃ち込まれている所へ身をさらすことになり、制圧で釘付けにする遊びが成り立たない。
+        private bool CoverStep(float deltaSeconds, Vector3 self, bool seen, bool freshAim, bool suppressed, out EnemyDecision decision)
         {
             var point = _cover.Points[_coverIndex].Position;
             switch (CoverPhase)
@@ -100,33 +135,57 @@ namespace Shooter.Core
                 case EnemyCoverPhase.Moving:
                     if (Vector3.Distance(self, point) > _spec.ArrivalDistance)
                     {
-                        return MoveDecision(deltaSeconds, self, point, seen, freshAim);
+                        decision = MoveDecision(deltaSeconds, self, point, seen, freshAim);
+                        return true;
                     }
 
                     StartHiding();
-                    return HideDecision();
+                    decision = HideDecision();
+                    return true;
                 case EnemyCoverPhase.Hiding:
                     _coverElapsed += deltaSeconds;
                     if (_coverElapsed < _spec.CoverHideSeconds)
                     {
-                        return HideDecision();
+                        decision = HideDecision();
+                        return true;
+                    }
+
+                    // 届かない相手を覗いても撃てず、隠れては覗くだけになる。
+                    if (!suppressed && !InFireRange(self))
+                    {
+                        decision = EnemyDecision.None;
+                        return false;
                     }
 
                     CoverPhase = EnemyCoverPhase.Peeking;
                     _coverElapsed = 0f;
                     _reactionElapsed = 0f;
                     _shotsInAttack = 0;
-                    return PeekDecision(self, seen);
+                    if (_coverPeeks < int.MaxValue)
+                    {
+                        _coverPeeks++;
+                    }
+
+                    decision = PeekDecision(self, seen);
+                    return true;
                 default:
                     _coverElapsed += deltaSeconds;
                     if (_coverElapsed >= _spec.CoverPeekSeconds)
                     {
+                        if (!suppressed && _coverPeeks >= _spec.CoverMaxPeeks)
+                        {
+                            decision = EnemyDecision.None;
+                            return false;
+                        }
+
                         StartHiding();
-                        return HideDecision();
+                        decision = HideDecision();
+                        return true;
                     }
 
                     _reactionElapsed = _coverElapsed;
-                    return PeekDecision(self, seen);
+                    decision = PeekDecision(self, seen);
+                    return true;
             }
         }
 
@@ -154,14 +213,18 @@ namespace Shooter.Core
                 _reactionElapsed += deltaSeconds;
             }
 
-            var inRange = Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
-            return new EnemyDecision(point, _coverThreat, seen && inRange && _reactionElapsed >= _spec.ReactionSeconds, false);
+            return new EnemyDecision(point, _coverThreat, seen && InFireRange(self) && _reactionElapsed >= _spec.ReactionSeconds, false);
         }
 
+        // 覗くたびに交戦と同じ構え時間を待つと、覗いている間のほとんどを撃たずに過ごすので、短い構え時間を使う。
         private EnemyDecision PeekDecision(Vector3 self, bool seen)
         {
-            var inRange = Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
-            return new EnemyDecision(null, _coverThreat, seen && inRange && _reactionElapsed >= _spec.ReactionSeconds, false);
+            return new EnemyDecision(null, _coverThreat, seen && InFireRange(self) && _reactionElapsed >= _spec.CoverPeekReactionSeconds, false);
+        }
+
+        private bool InFireRange(Vector3 self)
+        {
+            return Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
         }
 
         private void LeaveCover()
@@ -170,15 +233,22 @@ namespace Shooter.Core
             {
                 _lastSeen = _coverThreat;
                 _lostElapsed = 0f;
+                _coverCooldown = _spec.CoverCooldownSeconds;
             }
 
             ReleaseCoverPoint();
             CoverPhase = EnemyCoverPhase.None;
+            _coverPeeks = 0;
         }
 
         private float CoverSpreadDegrees()
         {
             return State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Moving ? _spec.CoverMoveSpreadDegrees : 0f;
+        }
+
+        private float AimReactionSeconds()
+        {
+            return State == EnemyState.TakeCover && CoverPhase == EnemyCoverPhase.Peeking ? _spec.CoverPeekReactionSeconds : _spec.ReactionSeconds;
         }
     }
 }

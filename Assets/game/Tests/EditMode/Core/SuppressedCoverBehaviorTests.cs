@@ -11,7 +11,7 @@ namespace Shooter.Core.Tests
         private static readonly Vector3 _threat = new Vector3(0f, 0f, 10f);
 
         // 隠れて 1 秒、覗いて 2 秒、反応 0.1 秒。
-        private static EnemySpec Spec() => new EnemySpec(20f, 15f, 1f, 2f, 0.1f, 0f, 0f, 0, 1f, 2f, 0.5f);
+        private static EnemySpec Spec() => new EnemySpec(20f, 15f, 1f, 2f, 0.1f, 0f, 0f, 0, 1f, 2f, 0.5f, coverPeekReactionSeconds: 0.1f);
 
         private static EnemyPerception See(bool wasHit, bool suppressed) =>
             new EnemyPerception(
