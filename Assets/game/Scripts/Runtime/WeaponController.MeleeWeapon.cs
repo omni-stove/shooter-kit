@@ -21,7 +21,8 @@ namespace Shooter.Runtime
         public MeleeCharge MeleeCharge => Weapon?.MeleeCharge;
 
         // 持ち替え中・しまっている間に振れると、構えていない武器で振れてしまう。
-        public bool IsMeleeWeaponBlocked => IsShieldBashBlocked;
+        // modifier の BlocksFire も見るのは、しまう・構える間の HolsterController が FireBlocker ではなく modifier で止めているため。
+        public bool IsMeleeWeaponBlocked => IsShieldBashBlocked || IsFireBlockedByModifier;
 
         // 押した瞬間ではなく離した瞬間に振る。押した瞬間に振ると、長押しで溜めた振りと区別できない。
         private bool PullMeleeTrigger(Weapon weapon, bool isPressed, bool wasPressedThisFrame)

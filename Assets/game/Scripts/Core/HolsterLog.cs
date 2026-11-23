@@ -22,6 +22,11 @@ namespace Shooter.Core
             return $"{Tag} holder={Name(holderId)} reset=Drawn reason={Name(reason)}";
         }
 
+        public static string NoInput(string actionPath)
+        {
+            return $"{Tag} input action '{Name(actionPath)}' is missing; the holster key is not read";
+        }
+
         public static string Loaded(HolsterSpec spec)
         {
             if (spec == null)
