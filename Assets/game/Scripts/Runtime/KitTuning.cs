@@ -54,7 +54,7 @@ namespace Shooter.Runtime
 
         public const string GamepadLayoutsResourcePath = GamepadLayoutJson.ResourcePath;
         public const string HolsterResourcePath = HolsterJson.ResourcePath;
-
+        public const string BarksResourcePath = BarkJson.ResourcePath;
         public const string BreachResourcePath = BreachJson.ResourcePath;
 
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
@@ -116,6 +116,9 @@ namespace Shooter.Runtime
             Load(c => c.GamepadLayoutsTuning, GamepadLayoutsResourcePath, GamepadLayoutJson.Parse, GamepadLayoutSpec.Default);
         public static HolsterSpec Holster =>
             Load(c => c.HolsterTuning, HolsterResourcePath, HolsterJson.Parse, HolsterSpec.Default);
+
+        public static BarkSpec Barks =>
+            Load(c => c.BarkTuning, BarksResourcePath, BarkJson.Parse, BarkSpec.Default);
 
         public static BreachSpec Breach =>
             Load(c => c.BreachTuning, BreachResourcePath, BreachJson.Parse, BreachSpec.Default);
