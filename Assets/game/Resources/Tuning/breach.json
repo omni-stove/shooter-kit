@@ -1,0 +1,18 @@
+{
+  "kickSeconds": 0.6,
+  "plantSeconds": 2.5,
+  "fuseSeconds": 2,
+  "reach": 1.5,
+  "roomDepth": 5,
+  "roomWidth": 4,
+  "roomHeight": 2.5,
+  "kickStaggerSeconds": 1.5,
+  "chargeStaggerSeconds": 3,
+  "chargeDamage": 40,
+  "chargeRadius": 2.5,
+  "kickSoundRadius": 25,
+  "chargeSoundRadius": 60,
+  "slowMotionScale": 0.35,
+  "slowMotionSeconds": 1.5,
+  "chargeItemId": ""
+}

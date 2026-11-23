@@ -45,6 +45,9 @@ namespace Shooter.Runtime
         // 途中の段 (しまう途中・構える途中) は GameSignals.Holster で毎フレーム読めるので、ここはしまい切った・構え終えた瞬間だけを流す。
         public static event Action<HolsterChange> HolsterChanged;
 
+        // 仕掛けの途中は GameSignals.Breach で毎フレーム読めるので、ここは破れた瞬間だけを流す。
+        public static event Action<DoorBreach> DoorBreached;
+
         public static ShotAttribution? CurrentAttribution => _attribution;
 
         // ルートを辿らないのは、敵や標的が 1 つの親の下にまとめて置かれ、ルートでは全員が同じ Id になるため。
@@ -146,6 +149,11 @@ namespace Shooter.Runtime
             Invoke(HolsterChanged, new HolsterChange(holder, phase));
         }
 
+        public static void RaiseDoorBreached(GameObject door, BreachMethod method, GameObject breacher)
+        {
+            Invoke(DoorBreached, new DoorBreach(door, method, breacher));
+        }
+
         // 他のアセンブリの出来事に自前で呼ばせないのは、購読者の例外で戦闘の処理を止めない流し方をここの出来事と揃えるため。
         public static void Notify<T>(Action<T> handlers, T value)
         {
@@ -179,6 +187,7 @@ namespace Shooter.Runtime
             MatchFinished = null;
             PurchaseAnswered = null;
             HolsterChanged = null;
+            DoorBreached = null;
             _attribution = null;
             foreach (var clear in _clears)
             {
@@ -396,6 +405,30 @@ namespace Shooter.Runtime
 
             Holder = holder;
             Phase = phase;
+        }
+    }
+
+    public readonly struct DoorBreach
+    {
+        public GameObject Door { get; }
+
+        public BreachMethod Method { get; }
+
+        // null を断らないのは、ネット対戦の他の人や、仕掛けて消えた後に爆発したときは、破った人がこの端末に居ないため。
+        public GameObject Breacher { get; }
+
+        public BreachDoorPhase Phase => Method == BreachMethod.Kick ? BreachDoorPhase.Opened : BreachDoorPhase.Destroyed;
+
+        public DoorBreach(GameObject door, BreachMethod method, GameObject breacher)
+        {
+            if (!Enum.IsDefined(typeof(BreachMethod), method))
+            {
+                throw new ArgumentOutOfRangeException(nameof(method), method, "method is not a defined BreachMethod");
+            }
+
+            Door = door;
+            Method = method;
+            Breacher = breacher;
         }
     }
 

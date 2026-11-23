@@ -156,6 +156,8 @@ namespace Shooter.Runtime
         private TextAsset _gamepadLayoutsTuning;
         [SerializeField, Tooltip("武器をしまう動作 (しまっている間の移動速度の倍率・武装と数える状態) の JSON。空なら Resources/Tuning/holster")]
         private TextAsset _holsterTuning;
+        [SerializeField, Tooltip("ドアの突入 (蹴る・爆薬を仕掛ける秒数・届く距離・向こう側の怯み・爆発・音・スローモーション・爆薬の品) の JSON。空なら Resources/Tuning/breach")]
+        private TextAsset _breachTuning;
 
         [Header("武器・キャンペーン")]
         [SerializeField, Tooltip("使える武器の一覧")]
@@ -564,6 +566,12 @@ namespace Shooter.Runtime
         {
             get => _holsterTuning;
             set => _holsterTuning = value;
+        }
+
+        public TextAsset BreachTuning
+        {
+            get => _breachTuning;
+            set => _breachTuning = value;
         }
 
         public WeaponCatalogAsset WeaponCatalog

@@ -92,6 +92,18 @@ namespace Shooter.Runtime
             return shots.HasValue ? line + " shots=" + shots.Value.ToString(CultureInfo.InvariantCulture) : line;
         }
 
+        public static string FormatImposeLog(string id, StaggerKind kind, float seconds, string source)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} id={1} imposed kind={2} seconds={3:F2} source={4}",
+                LogTag,
+                id,
+                kind,
+                seconds,
+                string.IsNullOrEmpty(source) ? "-" : source);
+        }
+
         public StaggerSpec CreateSpec()
         {
             return new StaggerSpec(
@@ -188,6 +200,52 @@ namespace Shooter.Runtime
             {
                 Recover(ended);
             }
+        }
+
+        // ルール (ActiveRule) を見ないのは、ルールが決めるのは撃たれて怯むかどうかで、ドアの突入のように起こす側が秒数をデータに持ち 0 で止められるものまで止めないため。
+        public StaggerVerdict Impose(StaggerKind kind, float seconds, string source)
+        {
+            if (_judge == null)
+            {
+                throw new InvalidOperationException($"StaggerReaction '{name}' is not bound");
+            }
+
+            if (!Enum.IsDefined(typeof(StaggerKind), kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a defined StaggerKind");
+            }
+
+            if (!(seconds >= 0f) || float.IsInfinity(seconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "seconds must be non-negative and finite");
+            }
+
+            if (_self.IsDead)
+            {
+                return new StaggerVerdict(StaggerOutcome.NoReaction, kind, 0f, _judge.AccumulatedDamage, 0f);
+            }
+
+            var wasStaggered = _judge.IsStaggered;
+            var verdict = _judge.Impose(kind, seconds);
+            if (!verdict.Staggered)
+            {
+                return verdict;
+            }
+
+            if (_agent != null && _agent.IsInitialized)
+            {
+                // 怯みの途中で重ねたときは、怯み中の発砲を数え直さないよう最初の怯みの数を残す。
+                if (!wasStaggered)
+                {
+                    _shotsAtStart = _agent.ShotCount;
+                }
+
+                _agent.Interrupt(verdict.Seconds, InterruptReasonPrefix + verdict.Kind);
+            }
+
+            Debug.Log(FormatImposeLog(_self.Id, verdict.Kind, verdict.Seconds, source), this);
+            WriteAnimator(verdict.Kind);
+            return verdict;
         }
 
         private void Awake()
