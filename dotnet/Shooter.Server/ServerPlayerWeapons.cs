@@ -26,6 +26,11 @@ namespace Shooter.Server
         private IReadOnlyList<WeaponSpec> _baseSpecs = Array.Empty<WeaponSpec>();
         private readonly Dictionary<string, IReadOnlyList<string>> _attachments = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
 
+        // 二丁持ちの武器の左右の手。並びの武器ごとに持ち、しまっている間も弾数を覚えておく。
+        // 持ち替えるたびに作り直さないのは、作り直すと弾倉が満タンに戻り、持ち替えるだけでリロードを省けてしまうため。
+        // 二丁持ちの武器の ServerWeapon は Spec と並びの位置のためだけに持ち、弾を数えない (予備弾の受け皿にもつながない)
+        private readonly Dictionary<ServerWeapon, ServerAkimbo> _akimbo = new Dictionary<ServerWeapon, ServerAkimbo>();
+
         public ServerPlayerWeapons(int playerId, TextWriter log, Func<double> now)
         {
             _playerId = playerId;
@@ -70,7 +75,12 @@ namespace Shooter.Server
 
         public byte AmmoTypeIndex => _loadout == null ? (byte)0 : (byte)(CurrentAmmoType.Index + 1);
 
-        private AmmoTypeSelector CurrentAmmoType => _loadout.Current.AmmoTypes;
+        private AmmoTypeSelector CurrentAmmoType => CurrentAkimbo?.AmmoTypes ?? _loadout.Current.AmmoTypes;
+
+        // 今の武器が二丁持ちなら左右の手。1 丁で持つ武器や武器が無ければ null
+        private ServerAkimbo CurrentAkimbo => _loadout == null ? null : AkimboOf(_loadout.Current);
+
+        public bool HoldsAkimbo => CurrentAkimbo != null;
 
         public void Equip(IReadOnlyList<WeaponSpec> specs, float switchSeconds, GameRules rules)
         {
@@ -81,20 +91,25 @@ namespace Shooter.Server
                 throw new ArgumentException("specs must hold 1-" + OwnerSnapshot.MaxWeapons + " weapons", nameof(specs));
             }
 
+            // 作る途中で断ると二丁持ちの手だけが _akimbo に残るので、作り始める前に確かめる
+            foreach (var spec in specs)
+            {
+                if (spec == null)
+                {
+                    throw new ArgumentException("specs must not contain null", nameof(specs));
+                }
+            }
+
             // 前の並びの武器は受け皿 (持ち物) の Changed に購読が残るので、捨てる前に外す
             foreach (var old in Items)
             {
-                old.UseAmmoPool(null);
+                Release(old);
             }
 
             var weapons = new ServerWeapon[specs.Count];
             for (var i = 0; i < specs.Count; i++)
             {
-                weapons[i] = new ServerWeapon(specs[i] ?? throw new ArgumentException("specs must not contain null", nameof(specs)), rules);
-                if (_poolFor != null)
-                {
-                    weapons[i].UseAmmoPool(_poolFor(specs[i]));
-                }
+                weapons[i] = CreateWeapon(specs[i], rules);
             }
 
             _chargeFraction = 0f;
@@ -134,12 +149,7 @@ namespace Shooter.Server
                 return true;
             }
 
-            var weapon = new ServerWeapon(spec, rules);
-            if (_poolFor != null)
-            {
-                weapon.UseAmmoPool(_poolFor(spec));
-            }
-
+            var weapon = CreateWeapon(spec, rules);
             var weapons = new List<ServerWeapon>(items) { weapon };
             _baseSpecs = new List<WeaponSpec>(_baseSpecs) { spec }.AsReadOnly();
             SetLoadout(new Loadout<ServerWeapon>(weapons, switchSeconds, HolsterWeapon, DrawSeconds, HolsterSeconds, _loadout.CurrentIndex));
@@ -163,13 +173,8 @@ namespace Shooter.Server
 
             var items = _loadout.Items;
             var replaced = HeldAt(index);
-            items[index].UseAmmoPool(null);
-            var weapon = new ServerWeapon(spec, rules);
-            if (_poolFor != null)
-            {
-                weapon.UseAmmoPool(_poolFor(spec));
-            }
-
+            Release(items[index]);
+            var weapon = CreateWeapon(spec, rules);
             var weapons = new List<ServerWeapon>(items);
             weapons[index] = weapon;
             var bases = new List<WeaponSpec>(_baseSpecs);
@@ -187,11 +192,85 @@ namespace Shooter.Server
             return _loadout == null ? null : HeldAt(_loadout.CurrentIndex);
         }
 
-        // 持っている武器のうち weaponId のもの。無ければ null
+        // 持っている武器のうち weaponId のもの。無ければ null。
+        // 二丁持ちの武器の弾数はこの ServerWeapon ではなく左右の手にあるので、弾を足す・弾数を決めるのは AddReserveAmmo・SetAmmo を使う
         public ServerWeapon Find(string weaponId)
         {
             var index = IndexOf(weaponId);
             return index < 0 ? null : _loadout.Items[index];
+        }
+
+        // 拾った予備弾を weaponId の武器に足し、入った数を返す。持っていない・入らなければ 0
+        public int AddReserveAmmo(string weaponId, int amount)
+        {
+            var weapon = Find(weaponId);
+            if (weapon == null)
+            {
+                return 0;
+            }
+
+            var akimbo = AkimboOf(weapon);
+            return akimbo != null ? akimbo.AddReserveAmmo(amount) : weapon.AddReserveAmmo(amount);
+        }
+
+        // 落とした武器を拾い直したときの弾数で持たせる。持っていなければ false
+        public bool SetAmmo(string weaponId, int ammoInMagazine, int reserveAmmo)
+        {
+            var weapon = Find(weaponId);
+            if (weapon == null)
+            {
+                return false;
+            }
+
+            var akimbo = AkimboOf(weapon);
+            if (akimbo != null)
+            {
+                akimbo.SetAmmo(ammoInMagazine, reserveAmmo);
+            }
+            else
+            {
+                weapon.SetAmmo(ammoInMagazine, reserveAmmo);
+            }
+
+            return true;
+        }
+
+        // 拾い物の判定に渡す、持っている武器ごとの予備弾
+        public List<PickupWeaponState> PickupStates()
+        {
+            var items = Items;
+            var states = new List<PickupWeaponState>(items.Count);
+            foreach (var weapon in items)
+            {
+                var akimbo = AkimboOf(weapon);
+                states.Add(akimbo != null
+                    ? new PickupWeaponState(weapon.Spec.Id, akimbo.ReserveAmmo, akimbo.MaxReserveAmmo, akimbo.HasInfiniteReserve)
+                    : new PickupWeaponState(weapon.Spec.Id, weapon.ReserveAmmo, weapon.MaxReserveAmmo, weapon.HasInfiniteReserve));
+            }
+
+            return states;
+        }
+
+        // 弾薬箱の補給。持っている武器の予備弾をそれぞれ上限まで足し、入った数の合計を返す
+        public int TopUpReserveAmmo()
+        {
+            var added = 0;
+            foreach (var weapon in Items)
+            {
+                var akimbo = AkimboOf(weapon);
+                if (akimbo != null)
+                {
+                    var room = akimbo.HasInfiniteReserve ? 0 : Math.Max(0, akimbo.MaxReserveAmmo - akimbo.ReserveAmmo);
+                    added += room > 0 ? akimbo.AddReserveAmmo(room) : 0;
+                }
+                else
+                {
+                    var room = weapon.HasInfiniteReserve ? 0 : Math.Max(0, weapon.MaxReserveAmmo - weapon.ReserveAmmo);
+                    added += room > 0 ? weapon.AddReserveAmmo(room) : 0;
+                }
+            }
+
+            return added;
         }
 
         private int IndexOf(string weaponId)
@@ -216,6 +295,12 @@ namespace Shooter.Server
         private ServerHeldWeapon HeldAt(int index)
         {
             var weapon = _loadout.Items[index];
+            var akimbo = AkimboOf(weapon);
+            if (akimbo != null)
+            {
+                return new ServerHeldWeapon(_baseSpecs[index], AttachmentsOf(weapon.Spec.Id), akimbo.HeldAmmoInMagazine, akimbo.HeldReserveAmmo);
+            }
+
             return new ServerHeldWeapon(
                 _baseSpecs[index], AttachmentsOf(weapon.Spec.Id), weapon.AmmoInMagazine, weapon.HasAmmoPool ? 0 : weapon.ReserveAmmo);
         }
@@ -231,7 +316,7 @@ namespace Shooter.Server
             var count = _loadout.Count;
             foreach (var weapon in _loadout.Items)
             {
-                weapon.UseAmmoPool(null);
+                Release(weapon);
             }
 
             Unsubscribe();
@@ -281,7 +366,7 @@ namespace Shooter.Server
             var current = _loadout.CurrentIndex;
             var weapons = new List<ServerWeapon>(items);
             var baseSpecs = new List<WeaponSpec>(_baseSpecs);
-            weapons[index].UseAmmoPool(null);
+            Release(weapons[index]);
             weapons.RemoveAt(index);
             baseSpecs.RemoveAt(index);
             _baseSpecs = baseSpecs.AsReadOnly();
@@ -326,7 +411,11 @@ namespace Shooter.Server
                 }
 
                 var kept = WeaponAttachments.Keep(catalog, weaponId, attachments);
-                if (!items[i].ChangeSpec(WeaponAttachments.Apply(_baseSpecs[i], kept, catalog)))
+                var applied = WeaponAttachments.Apply(_baseSpecs[i], kept, catalog);
+                var akimbo = AkimboOf(items[i]);
+
+                // 二丁持ちの手を先に変えるのは、弾を数えているのが手の方で、手が断ったら ServerWeapon も変えずに残すため
+                if ((akimbo != null && !akimbo.ChangeSpec(applied)) || !items[i].ChangeSpec(applied))
                 {
                     _log.WriteLine("[Net] attachments player=" + Text(_playerId) + " weapon=" + weaponId + " attached=" + WeaponAttachments.Describe(kept)
                         + " rejected=NoRoomForAmmo");
@@ -350,7 +439,7 @@ namespace Shooter.Server
 
                 Specs = specs;
                 _log.WriteLine("[Net] attachments player=" + Text(_playerId) + " weapon=" + weaponId + " attached=" + WeaponAttachments.Describe(kept)
-                    + " magazine=" + Text(items[i].AmmoInMagazine) + "/" + Text(items[i].Spec.MagazineSize));
+                    + " magazine=" + Text(akimbo?.HeldAmmoInMagazine ?? items[i].AmmoInMagazine) + "/" + Text(items[i].Spec.MagazineSize));
                 return true;
             }
 
@@ -363,7 +452,16 @@ namespace Shooter.Server
             _poolFor = poolFor;
             foreach (var weapon in Items)
             {
-                weapon.UseAmmoPool(poolFor?.Invoke(weapon.Spec));
+                var pool = poolFor?.Invoke(weapon.Spec);
+                var akimbo = AkimboOf(weapon);
+                if (akimbo != null)
+                {
+                    akimbo.UseAmmoPool(pool);
+                }
+                else
+                {
+                    weapon.UseAmmoPool(pool);
+                }
             }
         }
 
@@ -373,9 +471,10 @@ namespace Shooter.Server
             var list = new List<(string WeaponId, int StartingReserveAmmo)>();
             foreach (var weapon in Items)
             {
-                if (weapon.HasAmmoPool)
+                var akimbo = AkimboOf(weapon);
+                if (akimbo != null ? akimbo.AmmoPool != null : weapon.HasAmmoPool)
                 {
-                    list.Add((weapon.Spec.Id, weapon.StartingReserveAmmo));
+                    list.Add((weapon.Spec.Id, akimbo?.StartingReserveAmmo ?? weapon.StartingReserveAmmo));
                 }
             }
 
@@ -392,6 +491,7 @@ namespace Shooter.Server
             foreach (var weapon in _loadout.Items)
             {
                 weapon.Refill();
+                AkimboOf(weapon)?.Refill();
             }
 
             // TrySelect(0) では持ち替えの待ちが始まるので、同じ武器で並びを作り直して待たずに 0 番を構える
@@ -410,28 +510,85 @@ namespace Shooter.Server
 
             _loadout.Tick(deltaSeconds);
             _loadout.Current.Tick(deltaSeconds);
+            CurrentAkimbo?.Tick(deltaSeconds);
         }
 
         public ShotRejection TryFire()
+        {
+            return TryFire(AkimboHand.Right);
+        }
+
+        // 二丁持ちの武器は hand の手の弾倉で撃つ。1 丁で持つ武器は右の手 (撃った手を運ばない前の版の要求と同じ) だけを受け付ける
+        public ShotRejection TryFire(AkimboHand hand)
         {
             if (_loadout == null)
             {
                 return ShotRejection.NoWeapon;
             }
 
-            return _loadout.IsSwitching ? ShotRejection.Switching
-                : HoldsShield ? ShotRejection.ShieldWeapon
-                : _loadout.Current.TryFire();
+            if (_loadout.IsSwitching)
+            {
+                return ShotRejection.Switching;
+            }
+
+            if (HoldsShield)
+            {
+                return ShotRejection.ShieldWeapon;
+            }
+
+            var akimbo = CurrentAkimbo;
+            if (akimbo != null)
+            {
+                return akimbo.TryFire(hand);
+            }
+
+            return hand == AkimboHand.Right ? _loadout.Current.TryFire() : ShotRejection.NotAkimbo;
         }
 
+        // ボットが次に撃つ手。二丁持ちでなければ右の手
+        public AkimboHand HandForBot()
+        {
+            return CurrentAkimbo?.HandForBot() ?? AkimboHand.Right;
+        }
+
+        // 二丁持ちの武器は、満タンでない手を両方込める
         public bool TryReload()
         {
-            return _loadout != null && !_loadout.IsSwitching && !HoldsShield && _loadout.Current.TryStartReload();
+            if (_loadout == null || _loadout.IsSwitching || HoldsShield)
+            {
+                return false;
+            }
+
+            var akimbo = CurrentAkimbo;
+            return akimbo != null ? akimbo.TryReload() : _loadout.Current.TryStartReload();
+        }
+
+        // ボットのリロード。二丁持ちの武器は撃ち切った手だけを込め、もう片方の手で撃ち続ける
+        public bool TryBotReload()
+        {
+            if (_loadout == null || _loadout.IsSwitching || HoldsShield)
+            {
+                return false;
+            }
+
+            var akimbo = CurrentAkimbo;
+            return akimbo != null ? akimbo.TryReloadEmpty() : _loadout.Current.TryStartReload();
         }
 
         public bool CancelReload()
         {
-            if (_loadout == null || !_loadout.Current.IsReloading)
+            if (_loadout == null)
+            {
+                return false;
+            }
+
+            var akimbo = CurrentAkimbo;
+            if (akimbo != null)
+            {
+                return akimbo.CancelReload();
+            }
+
+            if (!_loadout.Current.IsReloading)
             {
                 return false;
             }
@@ -442,7 +599,14 @@ namespace Shooter.Server
 
         public bool TryActiveReload()
         {
-            if (_loadout == null || _loadout.IsSwitching || HoldsShield || !_loadout.Current.TryActiveReload(out var result))
+            if (_loadout == null || _loadout.IsSwitching || HoldsShield)
+            {
+                return false;
+            }
+
+            var akimbo = CurrentAkimbo;
+            ActiveReloadResult result;
+            if (!(akimbo != null ? akimbo.TryActiveReload(out result) : _loadout.Current.TryActiveReload(out result)))
             {
                 return false;
             }
@@ -503,7 +667,13 @@ namespace Shooter.Server
 
         public bool TrySwitchAmmoType()
         {
-            if (_loadout == null || _loadout.IsSwitching || HoldsShield || !_loadout.Current.TrySwitchAmmoType())
+            if (_loadout == null || _loadout.IsSwitching || HoldsShield)
+            {
+                return false;
+            }
+
+            var akimbo = CurrentAkimbo;
+            if (!(akimbo != null ? akimbo.TrySwitchAmmoType() : _loadout.Current.TrySwitchAmmoType()))
             {
                 return false;
             }
@@ -544,7 +714,7 @@ namespace Shooter.Server
             var spec = weapon.Spec;
             var showsProgress = weapon.HasActiveReload && weapon.IsReloading;
             var windowOpen = showsProgress && !weapon.HasJudgedActiveReload;
-            return new WeaponSync
+            var sync = new WeaponSync
             {
                 AmmoInMagazine = weapon.AmmoInMagazine,
                 ReserveAmmo = weapon.ReserveAmmo,
@@ -561,6 +731,10 @@ namespace Shooter.Server
                 ChargeFraction = spec.Trigger.Charge != null ? _chargeFraction : 0f,
                 AmmoTypeIndex = AmmoTypeIndex,
             };
+
+            // 二丁持ちの武器の弾数とリロードは ServerWeapon ではなく左右の手から載せる
+            CurrentAkimbo?.Fill(ref sync);
+            return sync;
         }
 
         public void FillIds(ContentIdList ids)
@@ -611,9 +785,42 @@ namespace Shooter.Server
 
         private static float HolsterSeconds(ServerWeapon weapon) => weapon.Spec.HolsterSeconds;
 
-        private static void HolsterWeapon(ServerWeapon weapon)
+        private void HolsterWeapon(ServerWeapon weapon)
         {
             weapon.CancelReload();
+            AkimboOf(weapon)?.CancelReload();
+        }
+
+        private ServerAkimbo AkimboOf(ServerWeapon weapon)
+        {
+            return weapon != null && _akimbo.TryGetValue(weapon, out var akimbo) ? akimbo : null;
+        }
+
+        // 二丁持ちの武器は左右の手を作り、予備弾の受け皿は手につなぐ (ServerWeapon は弾を数えないので受け皿につながない)
+        private ServerWeapon CreateWeapon(WeaponSpec spec, GameRules rules)
+        {
+            var weapon = new ServerWeapon(spec, rules);
+            var pool = _poolFor?.Invoke(spec);
+            if (spec.IsAkimbo)
+            {
+                _akimbo.Add(weapon, new ServerAkimbo(_playerId, spec, rules, _log, _now, pool));
+            }
+            else if (_poolFor != null)
+            {
+                weapon.UseAmmoPool(pool);
+            }
+
+            return weapon;
+        }
+
+        // 手放す武器を予備弾の受け皿 (持ち物) から外す。受け皿の Changed に購読が残らないようにするため
+        private void Release(ServerWeapon weapon)
+        {
+            weapon.UseAmmoPool(null);
+            if (_akimbo.Remove(weapon, out var akimbo))
+            {
+                akimbo.Release();
+            }
         }
 
         private void HandleSwitched(int index)

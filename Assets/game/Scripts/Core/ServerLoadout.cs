@@ -7,6 +7,10 @@ namespace Shooter.Core
     public sealed class ServerLoadout
     {
         private readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>();
+
+        // 二丁持ちの左の手の連射の枠。右の手は 1 丁で持つときと同じ _entries を使う。
+        // 手ごとに分けるのは、左右を交互に撃って 1 丁の間隔より速く撃てるのが二丁持ちの持ち味で、1 つの枠ではそれを弾くため。
+        private readonly Dictionary<int, Entry> _offhandEntries = new Dictionary<int, Entry>();
         private readonly Dictionary<int, IReadOnlyList<WeaponSpec>> _choices = new Dictionary<int, IReadOnlyList<WeaponSpec>>();
         private readonly HashSet<string> _weaponIds = new HashSet<string>(StringComparer.Ordinal);
         private readonly int _burst;
@@ -105,13 +109,30 @@ namespace Shooter.Core
 
         public ShotRejection TryFire(int playerId, WeaponSpec held, string weaponId, double nowSeconds)
         {
+            return TryFire(playerId, held, weaponId, nowSeconds, AkimboHand.Right);
+        }
+
+        // 1 丁の武器への左の手は、枠を使わずに NotAkimbo で断る。
+        public ShotRejection TryFire(int playerId, WeaponSpec held, string weaponId, double nowSeconds, AkimboHand hand)
+        {
+            if (hand != AkimboHand.Right && hand != AkimboHand.Left)
+            {
+                throw new ArgumentOutOfRangeException(nameof(hand), hand, "hand is not a defined AkimboHand");
+            }
+
             var rejection = CheckWeapon(held, weaponId);
             if (rejection != ShotRejection.None)
             {
                 return rejection;
             }
 
-            if (!_entries.TryGetValue(playerId, out var entry) || !string.Equals(entry.WeaponId, held.Id, StringComparison.Ordinal))
+            if (hand == AkimboHand.Left && !held.IsAkimbo)
+            {
+                return ShotRejection.NotAkimbo;
+            }
+
+            var entries = hand == AkimboHand.Left ? _offhandEntries : _entries;
+            if (!entries.TryGetValue(playerId, out var entry) || !string.Equals(entry.WeaponId, held.Id, StringComparison.Ordinal))
             {
                 // ビームと火炎の撃ち方は照射を自分で数えて最短の間隔を 0 にしているので、それで作ると制限が外れる。照射の間隔で制限する。
                 var round = held.Round;
@@ -119,7 +140,7 @@ namespace Shooter.Core
                     : round.Delivery == RoundDelivery.Spray ? new ShotBudget(round.Spray.TickSeconds, _burst)
                     : new ShotBudget(TriggerModels.For(held), _burst);
                 entry = new Entry(held.Id, budget);
-                _entries[playerId] = entry;
+                entries[playerId] = entry;
             }
 
             return entry.Budget.TryConsume(nowSeconds) ? ShotRejection.None : ShotRejection.FireRateExceeded;
@@ -208,13 +229,15 @@ namespace Shooter.Core
         public bool Remove(int playerId)
         {
             var hadBudget = _entries.Remove(playerId);
+            var hadOffhandBudget = _offhandEntries.Remove(playerId);
             var hadChoice = _choices.Remove(playerId);
-            return hadBudget || hadChoice;
+            return hadBudget || hadOffhandBudget || hadChoice;
         }
 
         public void ResetBudgets()
         {
             _entries.Clear();
+            _offhandEntries.Clear();
         }
 
         private readonly struct Entry

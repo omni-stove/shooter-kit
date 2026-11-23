@@ -29,6 +29,31 @@ namespace Shooter.Server
                 + " weapon=" + (string.IsNullOrEmpty(weaponId) ? "none" : weaponId) + " dmg=" + Text(damage);
         }
 
+        public static string AkimboFire(int playerId, string weaponId, AkimboHand hand, int ammoInMagazine, int offhandAmmoInMagazine)
+        {
+            return ServerCombat.LogTag + " akimbo fire player=" + Text(playerId) + " weapon=" + weaponId + " hand=" + AkimboLog.HandName(hand)
+                + " right=" + Text(ammoInMagazine) + " left=" + Text(offhandAmmoInMagazine);
+        }
+
+        public static string AkimboReloadStart(int playerId, string weaponId, AkimboHand hand, bool automatic, int ammoInMagazine, int reserveAmmo)
+        {
+            return ServerCombat.LogTag + " akimbo reload start player=" + Text(playerId) + " weapon=" + weaponId + " hand=" + AkimboLog.HandName(hand)
+                + " auto=" + (automatic ? "true" : "false") + " ammo=" + Text(ammoInMagazine) + " reserve=" + Text(reserveAmmo);
+        }
+
+        public static string AkimboReloaded(int playerId, string weaponId, AkimboHand hand, int ammoInMagazine, int reserveAmmo)
+        {
+            return ServerCombat.LogTag + " akimbo reloaded player=" + Text(playerId) + " weapon=" + weaponId + " hand=" + AkimboLog.HandName(hand)
+                + " ammo=" + Text(ammoInMagazine) + " reserve=" + Text(reserveAmmo);
+        }
+
+        // 二丁持ちでない武器への左の手。weaponId は手に持っている武器で、送られてきた文字列は出さない
+        public static string NotAkimbo(int playerId, string weaponId, AkimboHand hand)
+        {
+            return ServerCombat.LogTag + " rejected shot player=" + Text(playerId) + " weapon=" + (string.IsNullOrEmpty(weaponId) ? "none" : weaponId)
+                + " hand=" + AkimboLog.HandName(hand) + " reason=" + ShotRejection.NotAkimbo;
+        }
+
         private static string Text(int value) => value.ToString(CultureInfo.InvariantCulture);
     }
 }

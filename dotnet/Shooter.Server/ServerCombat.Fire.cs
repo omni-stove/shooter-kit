@@ -70,8 +70,20 @@ namespace Shooter.Server
                 return false;
             }
 
+            // 連射の枠を使わないよう、ServerLoadout.TryFire より先に断る。手に持つ武器だけでなく座席の武器でも断る
+            if (request.Hand != AkimboHand.Right && spec != null && !spec.IsAkimbo)
+            {
+                _signals?.RaiseShotRejected(shooterId, ShotRejection.NotAkimbo);
+                if (CanWarn())
+                {
+                    _log.WriteLine(ServerCombatLog.NotAkimbo(shooterId, spec.Id, request.Hand));
+                }
+
+                return false;
+            }
+
             var weaponCheck = weapons == shooter.Weapons
-                ? _rules.Loadout.TryFire(shooterId, spec, request.WeaponId, _now)
+                ? _rules.Loadout.TryFire(shooterId, spec, request.WeaponId, _now, request.Hand)
                 : CheckMountFire(weapons, spec, request.WeaponId);
             if (weaponCheck != ShotRejection.None)
             {
@@ -108,7 +120,7 @@ namespace Shooter.Server
                 return false;
             }
 
-            var ammo = weapons.TryFire();
+            var ammo = weapons.TryFire(request.Hand);
             if (ammo != ShotRejection.None)
             {
                 WarnRejected(shooterId, ammo);
@@ -295,6 +307,7 @@ namespace Shooter.Server
             _botFire.LockTargetId = 0;
             _botFire.LockTargetKind = LockTargetKind.Player;
             _botFire.Trigger = TriggerEdge.None;
+            _botFire.Hand = weapons.HandForBot();
             return Fire(fighter, _botFire);
         }
 
@@ -404,7 +417,7 @@ namespace Shooter.Server
         public bool BotReload(int playerId)
         {
             return BotRoster.IsBotId(playerId) && _fighters.TryGetValue(playerId, out var fighter) && !IsReloadHeldOff(fighter)
-                && ActiveWeapons(fighter).TryReload();
+                && ActiveWeapons(fighter).TryBotReload();
         }
 
         // Bot が今撃つ武器。座席の武器を撃つ座席に乗っていればその武器 (TryGetWeapon は持っている武器だけを見る)
