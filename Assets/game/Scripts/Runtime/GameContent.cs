@@ -162,6 +162,8 @@ namespace Shooter.Runtime
         private TextAsset _gamepadLayoutsTuning;
         [SerializeField, Tooltip("武器をしまう動作 (しまっている間の移動速度の倍率・武装と数える状態) の JSON。空なら Resources/Tuning/holster")]
         private TextAsset _holsterTuning;
+        [SerializeField, Tooltip("敵の掛け声 (種類ごと・話し手ごと・全体の間隔、同時に話す数、聞こえる距離) の JSON。空なら Resources/Tuning/barks")]
+        private TextAsset _barkTuning;
         [SerializeField, Tooltip("ドアの突入 (蹴る・爆薬を仕掛ける秒数・届く距離・向こう側の怯み・爆発・音・スローモーション・爆薬の品) の JSON。空なら Resources/Tuning/breach")]
         private TextAsset _breachTuning;
 
@@ -258,6 +260,10 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("敵が気づいたときの印 (AwarenessIndicatorCatalog)")]
         private ScriptableObject _awarenessIndicator;
 
+        // 型を ScriptableObject にとどめるのは _awarenessIndicator と同じ理由。
+        [SerializeField, Tooltip("監視カメラの見た目と警報の音 (SecurityCameraCatalog)")]
+        private ScriptableObject _securityCamera;
+
         [SerializeField]
         private CameraShakeSettings _cameraShake;
 
@@ -296,6 +302,9 @@ namespace Shooter.Runtime
 
         [SerializeField, Tooltip("場面ごとの BGM (メニュー・試合中・勝ち・負け・試合の終わり)。空なら Resources/Presentation/MusicCatalog、それも無ければ BGM を流さない")]
         private MusicCatalog _music;
+
+        [SerializeField, Tooltip("掛け声の種類ごとの声。空なら Resources/Presentation/BarkCatalog、それも無ければ声を出さない")]
+        private BarkCatalog _barks;
 
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
         private static GameContent _override;
@@ -586,6 +595,12 @@ namespace Shooter.Runtime
             set => _holsterTuning = value;
         }
 
+        public TextAsset BarkTuning
+        {
+            get => _barkTuning;
+            set => _barkTuning = value;
+        }
+
         public TextAsset BreachTuning
         {
             get => _breachTuning;
@@ -766,6 +781,12 @@ namespace Shooter.Runtime
             set => _awarenessIndicator = value;
         }
 
+        public ScriptableObject SecurityCamera
+        {
+            get => _securityCamera;
+            set => _securityCamera = value;
+        }
+
         public CameraShakeSettings CameraShake
         {
             get => _cameraShake;
@@ -842,6 +863,12 @@ namespace Shooter.Runtime
         {
             get => _music;
             set => _music = value;
+        }
+
+        public BarkCatalog Barks
+        {
+            get => _barks;
+            set => _barks = value;
         }
 
         public static GameContent Current

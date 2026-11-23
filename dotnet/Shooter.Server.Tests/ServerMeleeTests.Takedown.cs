@@ -406,6 +406,28 @@ namespace Shooter.Server.Tests
             Assert.That(_log.ToString(), Does.Not.Contain("[ContextMelee] started"));
         }
 
+        // Takedown が Off でテイクダウンの登録が無くても、Spec を替えたら、残っているとどめの技の探す扇は新しい値に合う。
+        // 2 は 1 の正面 (東) から 60 度ずれた 1.5 m 先で、90 度の扇の外、150 度の扇の内
+        [Test]
+        public void WithTakedownOffReplacingTheSpecStillWidensTheFanTheExecutionSearches()
+        {
+            StartExecutionWithFour(takedown: Takedown.Off);
+            Assert.That(_rules.ApplyDamage(1, 2, NetMatchSettings.DefaultMaxHealth), Is.EqualTo(DamageOutcome.Downed), _log.ToString());
+            PlaceFacing(2, _alphaSpawn.X + 0.75f, 1.3f, _facingWest);
+            Face(1);
+
+            Press(1);
+            Assert.That(_melee.IsPerformingTakedown(1), Is.False, "outside the 90 degree fan: " + _log);
+            WaitOutTheSwing(1);
+
+            _melee.Spec = new MeleeSpec(
+                damage: 30, reach: 2f, arcDegrees: 150f, swingSeconds: 0.5f, cooldownSeconds: 0.4f, impactSeconds: 0.2f, lungeDistance: 0f);
+            Press(1);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.True, _log.ToString());
+            Assert.That(_log.ToString(), Does.Contain("[ContextMelee] started id=1 target=2 move=" + ContextMeleeMove.ExecuteId));
+        }
+
         private static GameRules RulesWith(Melee melee, Takedown takedown)
         {
             var rules = MeleeRules();
