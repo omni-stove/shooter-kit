@@ -34,6 +34,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("Emote", "エモート")]
         [TestCase("Countermeasure", "フレアを撒く")]
         [TestCase("Holster", "武器をしまう")]
+        [TestCase("WeaponLight", "ライト")]
         public void NewButtonsAreLabelledInJapanese(string actionName, string label)
         {
             Assert.That(InputActionLabels.LabelOf(actionName), Is.EqualTo(label));

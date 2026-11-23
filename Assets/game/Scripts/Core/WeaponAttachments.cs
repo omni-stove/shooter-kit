@@ -85,7 +85,8 @@ namespace Shooter.Core
                 ammo.ReloadStyle,
                 ammo.ReloadSecondsPerRound * reload,
                 ammo.Kind,
-                ammo.Heat);
+                ammo.Heat,
+                ammo.Jam);
 
             var ammoTypes = new List<AmmoTypeSpec>(spec.AmmoTypes.Count);
             foreach (var type in spec.AmmoTypes)

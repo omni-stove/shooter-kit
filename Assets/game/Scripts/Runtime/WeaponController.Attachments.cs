@@ -20,10 +20,50 @@ namespace Shooter.Runtime
 
         public event Action<IReadOnlyList<string>> AttachmentsReleased;
 
+        // 付いている物の一覧でなく武器の Id だけを渡すのは、外し切りや復元では何本もの武器が一度に変わり、受け手が今の武器のときだけ EquippedAttachmentSpecs で読み直せばよいため。
+        public event Action<string> AttachmentsChanged;
+
+        public IReadOnlyList<AttachmentSpec> EquippedAttachmentSpecs
+        {
+            get
+            {
+                var weapon = Weapon;
+                return weapon != null ? AttachmentSpecsOf(weapon.Spec.Id) : Array.Empty<AttachmentSpec>();
+            }
+        }
+
+        // 持ち物の表から外れた Id は付けたままでも効かないので、表に残っている物だけを返す。
+        public IReadOnlyList<AttachmentSpec> AttachmentSpecsOf(string weaponId)
+        {
+            var attached = AttachmentsOf(weaponId);
+            if (attached.Count == 0)
+            {
+                return Array.Empty<AttachmentSpec>();
+            }
+
+            var catalog = AttachmentCatalog;
+            var specs = new List<AttachmentSpec>(attached.Count);
+            foreach (var itemId in attached)
+            {
+                if (catalog.TryFindAttachment(itemId, out var item))
+                {
+                    specs.Add(item.Attachment);
+                }
+            }
+
+            return specs;
+        }
+
         // 作り直しで付けた物を黙って捨てると持ち物から物が消えるので、先に持ち主へ知らせる
         private void ReleaseAttachments()
         {
-            if (_attachments.Count > 0 && AttachmentsReleased != null)
+            if (_attachments.Count == 0)
+            {
+                return;
+            }
+
+            var before = CopyAttachments();
+            if (AttachmentsReleased != null)
             {
                 var released = new List<string>();
                 foreach (var attached in _attachments.Values)
@@ -35,6 +75,42 @@ namespace Shooter.Runtime
             }
 
             _attachments.Clear();
+            RaiseAttachmentsChanged(before);
+        }
+
+        private Dictionary<string, IReadOnlyList<string>> CopyAttachments()
+        {
+            return new Dictionary<string, IReadOnlyList<string>>(_attachments, StringComparer.Ordinal);
+        }
+
+        private void RaiseAttachmentsChanged(Dictionary<string, IReadOnlyList<string>> before)
+        {
+            if (AttachmentsChanged == null)
+            {
+                return;
+            }
+
+            var changed = new List<string>();
+            foreach (var pair in before)
+            {
+                if (!WeaponAttachments.SameAs(pair.Value, AttachmentsOf(pair.Key)))
+                {
+                    changed.Add(pair.Key);
+                }
+            }
+
+            foreach (var pair in _attachments)
+            {
+                if (!before.ContainsKey(pair.Key))
+                {
+                    changed.Add(pair.Key);
+                }
+            }
+
+            foreach (var weaponId in changed)
+            {
+                AttachmentsChanged(weaponId);
+            }
         }
 
         // 持ち物へ戻さずに外すのは、持ち物を最初の状態に戻した後 (出直し) に呼ばれ、付けた物が持ち物と武器の両方に残って増えるのを防ぐため。
@@ -46,10 +122,12 @@ namespace Shooter.Runtime
             }
 
             EnsureInitialized();
+            var before = CopyAttachments();
             _attachments.Clear();
             _specs = ToSpecs(_loadedDefinitions);
             if (_unarmed)
             {
+                RaiseAttachmentsChanged(before);
                 return;
             }
 
@@ -58,6 +136,7 @@ namespace Shooter.Runtime
             SetLoadout(loadout, _specs, _loadedDefinitions, _loadedRules);
             Debug.Log($"{AttachmentsLogPrefix} cleared weapon={Weapon.Spec.Id}", this);
             WeaponChanged?.Invoke(Weapon);
+            RaiseAttachmentsChanged(before);
         }
 
         public IReadOnlyList<string> AttachmentsOf(string weaponId)
@@ -120,6 +199,7 @@ namespace Shooter.Runtime
                 $"{AttachmentsLogPrefix} weapon={weaponId} attached={WeaponAttachments.Describe(kept)} magazine={magazine}/{spec.MagazineSize} weight={spec.Weight:0.###}",
                 this);
             WeaponChanged?.Invoke(Weapon);
+            AttachmentsChanged?.Invoke(weaponId);
             return true;
         }
 
@@ -128,6 +208,7 @@ namespace Shooter.Runtime
             EnsureInitialized();
             var catalog = AttachmentCatalog;
             var specs = new WeaponSpec[_loadedDefinitions.Length];
+            var before = CopyAttachments();
             _attachments.Clear();
             for (var i = 0; i < specs.Length; i++)
             {
@@ -155,6 +236,8 @@ namespace Shooter.Runtime
                     AttachmentsRestored(restored);
                 }
             }
+
+            RaiseAttachmentsChanged(before);
         }
 
         public event Action<IReadOnlyList<string>> AttachmentsRestored;

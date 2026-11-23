@@ -14,6 +14,11 @@ namespace Shooter.Tests.EditMode
 {
     public sealed class WeaponControllerTests
     {
+        private const string _rifleItemId = "39cb64db-b31c-478c-9784-9ecf8006a0f1";
+        private const string _handgunItemId = "b5b5df13-2868-4b0a-b2c0-fbe6a055a4fa";
+        private const string _lightItemId = "f3a7c2e9-58b1-4d06-9e4a-2c7b8d1f6a35";
+        private const string _suppressorItemId = "8d8c8546-59d4-4b4c-ba71-890664e5c260";
+
         private GameObject _camera;
         private WeaponController _controller;
         private WeaponDefinition _rifle;
@@ -83,6 +88,105 @@ namespace Shooter.Tests.EditMode
                 Assert.That(_controller.Weapon.Spec.Id, Is.EqualTo(TestWeapons.RifleId));
                 Assert.That(_controller.Definition, Is.SameAs(_rifle));
                 Assert.That(_controller.NextAction, Is.Null, "no switch input unless passed");
+            }
+            finally
+            {
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void TheHeldWeaponsAttachmentSpecsAreReadAndEveryChangeIsAnnounced()
+        {
+            var handgun = CreateHandgun();
+            try
+            {
+                _controller.AttachmentCatalog = LightCatalog();
+                InitializeWithRifleAndHandgun(handgun);
+                var changed = new System.Collections.Generic.List<string>();
+                _controller.AttachmentsChanged += changed.Add;
+
+                Assert.That(_controller.EquippedAttachmentSpecs, Is.Empty);
+                Assert.That(_controller.AttachmentSpecsOf(TestWeapons.RifleId), Is.Empty);
+
+                Assert.That(_controller.SetAttachments(TestWeapons.RifleId, new[] { _lightItemId, _suppressorItemId }), Is.True);
+
+                Assert.That(changed, Is.EqualTo(new[] { TestWeapons.RifleId }));
+                Assert.That(_controller.EquippedAttachmentSpecs.Select(a => a.Slot), Is.EquivalentTo(new[] { "light", "muzzle" }));
+                var light = _controller.EquippedAttachmentSpecs.Single(a => a.IsLight).Light;
+                Assert.That(light.Range, Is.EqualTo(30f));
+                Assert.That(light.SpotAngle, Is.EqualTo(40f));
+                Assert.That(light.VisualId, Is.EqualTo("testLight"));
+                Assert.That(_controller.EquippedAttachmentSpecs.Count(a => a.IsLight), Is.EqualTo(1), "the suppressor is not a light");
+
+                Assert.That(_controller.SetAttachments(TestWeapons.RifleId, new[] { _suppressorItemId, _lightItemId }), Is.True);
+                Assert.That(changed, Has.Count.EqualTo(1), "the same attachments in another order change nothing");
+
+                Assert.That(_controller.Select(TestWeapons.HandgunId), Is.True);
+                Assert.That(_controller.EquippedAttachmentSpecs, Is.Empty, "the handgun has nothing on it");
+                Assert.That(_controller.AttachmentSpecsOf(TestWeapons.RifleId).Count(a => a.IsLight), Is.EqualTo(1), "the rifle keeps its light");
+                Assert.That(changed, Has.Count.EqualTo(1), "switching weapons is not an attachment change");
+
+                Assert.That(_controller.SetAttachments(TestWeapons.RifleId, new[] { _suppressorItemId }), Is.True);
+                Assert.That(changed, Is.EqualTo(new[] { TestWeapons.RifleId, TestWeapons.RifleId }));
+                Assert.That(_controller.AttachmentSpecsOf(TestWeapons.RifleId).Any(a => a.IsLight), Is.False);
+
+                _controller.ClearAttachments();
+                Assert.That(changed, Is.EqualTo(new[] { TestWeapons.RifleId, TestWeapons.RifleId, TestWeapons.RifleId }));
+                Assert.That(_controller.AttachmentSpecsOf(TestWeapons.RifleId), Is.Empty);
+
+                _controller.ClearAttachments();
+                Assert.That(changed, Has.Count.EqualTo(3), "clearing nothing announces nothing");
+            }
+            finally
+            {
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void RestoringTheLoadoutAnnouncesTheWeaponsWhoseAttachmentsChanged()
+        {
+            var handgun = CreateHandgun();
+            try
+            {
+                _controller.AttachmentCatalog = LightCatalog();
+                InitializeWithRifleAndHandgun(handgun);
+                var changed = new System.Collections.Generic.List<string>();
+                _controller.AttachmentsChanged += changed.Add;
+                var saved = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IReadOnlyList<string>>
+                {
+                    { TestWeapons.RifleId, new[] { _lightItemId } },
+                };
+
+                _controller.RestoreLoadout(_controller.SnapshotAmmo(), TestWeapons.RifleId, saved);
+
+                Assert.That(changed, Is.EqualTo(new[] { TestWeapons.RifleId }));
+                Assert.That(_controller.EquippedAttachmentSpecs.Single().IsLight, Is.True);
+
+                _controller.RestoreLoadout(_controller.SnapshotAmmo(), TestWeapons.RifleId, saved);
+                Assert.That(changed, Has.Count.EqualTo(1), "restoring the same attachments changes nothing");
+            }
+            finally
+            {
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void AnAttachmentNoLongerInTheCatalogIsNotRead()
+        {
+            var handgun = CreateHandgun();
+            try
+            {
+                _controller.AttachmentCatalog = LightCatalog();
+                InitializeWithRifleAndHandgun(handgun);
+                Assert.That(_controller.SetAttachments(TestWeapons.RifleId, new[] { _lightItemId }), Is.True);
+
+                _controller.AttachmentCatalog = Shooter.Core.ItemCatalog.Empty;
+
+                Assert.That(_controller.AttachmentsOf(TestWeapons.RifleId), Is.EqualTo(new[] { _lightItemId }));
+                Assert.That(_controller.EquippedAttachmentSpecs, Is.Empty);
             }
             finally
             {
@@ -1850,6 +1954,25 @@ namespace Shooter.Tests.EditMode
                 Changed?.Invoke();
                 return put;
             }
+        }
+
+        // 小銃はライトと銃口、拳銃は何も付かない。ライトは 30 m・40 度・見た目 testLight
+        private static Shooter.Core.ItemCatalog LightCatalog()
+        {
+            return new Shooter.Core.ItemCatalog(
+                new[]
+                {
+                    new Shooter.Core.ItemSpec(
+                        _rifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, attachmentSlots: new[] { "muzzle", "light" }),
+                    new Shooter.Core.ItemSpec(_handgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId),
+                    new Shooter.Core.ItemSpec(
+                        _lightItemId,
+                        "item.weaponLight",
+                        attachment: new Shooter.Core.AttachmentSpec("light", light: new Shooter.Core.WeaponLightSpec(30f, 40f, 2f, "testLight"))),
+                    new Shooter.Core.ItemSpec(
+                        _suppressorItemId, "item.suppressor", attachment: new Shooter.Core.AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
+                },
+                Shooter.Core.InventoryRule.Default);
         }
 
         private WeaponDefinition CreateHandgun()

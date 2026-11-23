@@ -59,11 +59,18 @@ namespace Shooter.Core
         public const string ReloadStyleItem = "reloadStyle";
         public const string ReloadSecondsPerRoundItem = "reloadSecondsPerRound";
         public const string HeatItem = "heat";
+        public const string JamItem = "jam";
 
         public const string HeatPerShotItem = "heatPerShot";
         public const string CoolPerSecondItem = "coolPerSecond";
         public const string CoolDelaySecondsItem = "coolDelaySeconds";
         public const string OverheatSecondsItem = "overheatSeconds";
+
+        public const string ChancePerShotItem = "chancePerShot";
+        public const string ChancePerSustainedShotItem = "chancePerSustainedShot";
+        public const string SustainedResetSecondsItem = "sustainedResetSeconds";
+        public const string MaxChanceItem = "maxChance";
+        public const string ClearSecondsItem = "clearSeconds";
 
         public const string DeliveryItem = "delivery";
         public const string RangeItem = "range";
@@ -175,7 +182,7 @@ namespace Shooter.Core
         public static IReadOnlyList<string> AmmoItemNames { get; } = new[]
         {
             AmmoKindItem, MagazineSizeItem, ReserveAmmoItem, ReloadSecondsItem, ActiveReloadWindowStartItem, ActiveReloadWindowLengthItem,
-            ActiveReloadFailSecondsItem, ReloadStyleItem, ReloadSecondsPerRoundItem, HeatItem,
+            ActiveReloadFailSecondsItem, ReloadStyleItem, ReloadSecondsPerRoundItem, HeatItem, JamItem,
         };
 
         public static IReadOnlyList<string> RoundItemNames { get; } = new[]
@@ -214,6 +221,10 @@ namespace Shooter.Core
         private static readonly string[] _spinUpItems = { SpinUpSecondsItem, StartIntervalMultiplierItem, SpinDownSecondsItem };
         private static readonly string[] _cycleItems = { CycleSecondsItem, LeavesAdsItem };
         private static readonly string[] _heatItems = { HeatPerShotItem, CoolPerSecondItem, CoolDelaySecondsItem, OverheatSecondsItem };
+        private static readonly string[] _jamItems =
+        {
+            ChancePerShotItem, ChancePerSustainedShotItem, SustainedResetSecondsItem, MaxChanceItem, ClearSecondsItem,
+        };
         private static readonly string[] _penetrationItems = { MaxPenetrationsItem, DamageMultiplierPerPenetrationItem, MaxThicknessItem, MaterialsItem };
         private static readonly string[] _penetrationMaterialItems = { MaterialIdItem, PenetrabilityItem };
         private static readonly string[] _ricochetItems = { MaxBouncesItem, MaxGrazingAngleDegreesItem, DamageMultiplierPerBounceItem };
@@ -451,6 +462,12 @@ namespace Shooter.Core
         {
             var heat = ReadNested(part, HeatItem, _heatItems, p => new HeatSpec(
                 p.RequireFloat(HeatPerShotItem), p.RequireFloat(CoolPerSecondItem), p.RequireFloat(CoolDelaySecondsItem), p.RequireFloat(OverheatSecondsItem)));
+            var jam = ReadNested(part, JamItem, _jamItems, p => new JamSpec(
+                p.Float(ChancePerShotItem, JamSpec.DefaultChancePerShot),
+                p.Float(ChancePerSustainedShotItem, JamSpec.DefaultChancePerSustainedShot),
+                p.Float(SustainedResetSecondsItem, JamSpec.DefaultSustainedResetSeconds),
+                p.Float(MaxChanceItem, JamSpec.DefaultMaxChance),
+                p.Float(ClearSecondsItem, JamSpec.DefaultClearSeconds)));
 
             return part.Build(() => new AmmoSpec(
                 part.Int(MagazineSizeItem, AmmoSpec.DefaultMagazineSize),
@@ -462,7 +479,8 @@ namespace Shooter.Core
                 part.Enum(ReloadStyleItem, ReloadStyle.Whole),
                 part.Float(ReloadSecondsPerRoundItem, 0f),
                 part.Enum(AmmoKindItem, AmmoKind.Magazine),
-                heat));
+                heat,
+                jam));
         }
 
         private static void WriteAmmo(JsonWriter writer, AmmoSpec ammo)
@@ -483,6 +501,17 @@ namespace Shooter.Core
                 writer.Float(CoolPerSecondItem, ammo.Heat.CoolPerSecond);
                 writer.Float(CoolDelaySecondsItem, ammo.Heat.CoolDelaySeconds);
                 writer.Float(OverheatSecondsItem, ammo.Heat.OverheatSeconds);
+                writer.EndObject();
+            }
+
+            if (ammo.Jam != null)
+            {
+                writer.BeginObject(JamItem);
+                writer.Float(ChancePerShotItem, ammo.Jam.ChancePerShot);
+                writer.Float(ChancePerSustainedShotItem, ammo.Jam.ChancePerSustainedShot);
+                writer.Float(SustainedResetSecondsItem, ammo.Jam.SustainedResetSeconds);
+                writer.Float(MaxChanceItem, ammo.Jam.MaxChance);
+                writer.Float(ClearSecondsItem, ammo.Jam.ClearSeconds);
                 writer.EndObject();
             }
         }

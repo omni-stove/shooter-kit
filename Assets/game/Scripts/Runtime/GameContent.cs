@@ -303,6 +303,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("場面ごとの BGM (メニュー・試合中・勝ち・負け・試合の終わり)。空なら Resources/Presentation/MusicCatalog、それも無ければ BGM を流さない")]
         private MusicCatalog _music;
 
+        [SerializeField, Tooltip("ウェポンライトの見た目 (attachment.light.visualId ごとのプレハブ)。空なら Resources/Presentation/WeaponLightCatalog、それも無ければコードで Spot の Light を作る")]
+        private WeaponLightCatalog _weaponLights;
+
         [SerializeField, Tooltip("掛け声の種類ごとの声。空なら Resources/Presentation/BarkCatalog、それも無ければ声を出さない")]
         private BarkCatalog _barks;
 
@@ -863,6 +866,12 @@ namespace Shooter.Runtime
         {
             get => _music;
             set => _music = value;
+        }
+
+        public WeaponLightCatalog WeaponLights
+        {
+            get => _weaponLights;
+            set => _weaponLights = value;
         }
 
         public BarkCatalog Barks
