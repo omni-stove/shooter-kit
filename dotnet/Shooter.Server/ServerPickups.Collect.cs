@@ -88,16 +88,7 @@ namespace Shooter.Server
                 return Refuse(crate.ItemId, playerId, refusal, PickupRejection.None, true);
             }
 
-            var added = 0;
-            foreach (var weapon in _combat.WeaponsOf(playerId).Items)
-            {
-                var room = weapon.HasInfiniteReserve ? 0 : Math.Max(0, weapon.MaxReserveAmmo - weapon.ReserveAmmo);
-                if (room > 0)
-                {
-                    added += weapon.AddReserveAmmo(room);
-                }
-            }
-
+            var added = _combat.WeaponsOf(playerId).TopUpReserveAmmo();
             if (added <= 0)
             {
                 return Refuse(crate.ItemId, playerId, ServerPickupRefusal.NothingToRefill, PickupRejection.None, true);
@@ -157,8 +148,7 @@ namespace Shooter.Server
                     return TryGiveWeapon(playerId, spot, outcome, weapons, out failure);
                 case PickupKind.Weapon:
                 case PickupKind.ReserveAmmo:
-                    var held = weapons.Find(outcome.WeaponId);
-                    if (held == null || held.AddReserveAmmo(outcome.ReserveAmmo) <= 0)
+                    if (weapons.AddReserveAmmo(outcome.WeaponId, outcome.ReserveAmmo) <= 0)
                     {
                         failure = "could not add ammo to weapon " + outcome.WeaponId;
                         return false;
@@ -231,7 +221,7 @@ namespace Shooter.Server
                     weapons.SetAttachments(spec.Id, carried.Attachments, _items);
                 }
 
-                weapons.Find(spec.Id)?.SetAmmo(carried.AmmoInMagazine, carried.ReserveAmmo);
+                weapons.SetAmmo(spec.Id, carried.AmmoInMagazine, carried.ReserveAmmo);
             }
 
             // 持ち物の武器の写しを手の武器に揃える (ServerLoot と同じ)
@@ -269,11 +259,7 @@ namespace Shooter.Server
             var collector = new PickupCollector(Side.FromTeam(team), health, maxHealth);
 
             var weapons = _combat.WeaponsOf(playerId);
-            var states = new List<PickupWeaponState>(weapons.Items.Count);
-            foreach (var weapon in weapons.Items)
-            {
-                states.Add(new PickupWeaponState(weapon.Spec.Id, weapon.ReserveAmmo, weapon.MaxReserveAmmo, weapon.HasInfiniteReserve));
-            }
+            var states = weapons.PickupStates();
 
             // 持てる数はオフラインの WeaponController と同じくルールの MaxWeapons (0 なら上限なし)。一杯なら構えている武器と持ち替える
             collector = collector.WithWeapons(states, weapons.CurrentSpec?.Id, _rules.Rules?.MaxWeapons ?? 0);
