@@ -241,7 +241,7 @@ namespace Shooter.Runtime
             var plate = entry.Plate;
             if (entry.Label == null)
             {
-                entry.Label = new Label { pickingMode = PickingMode.Ignore };
+                entry.Label = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
                 entry.Label.AddToClassList(PlateClass);
                 parent.Add(entry.Label);
             }

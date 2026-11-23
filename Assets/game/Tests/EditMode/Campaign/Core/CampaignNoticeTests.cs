@@ -127,11 +127,32 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void ZeroSavedSecondsShowsNothingAndKeepsAShownNotice()
+        {
+            var notice = new CampaignNotice();
+            var changes = 0;
+            notice.Changed += _ => changes++;
+
+            notice.ShowSaved(0f);
+
+            Assert.That(notice.Notice, Is.EqualTo(HudNotice.None));
+            Assert.That(changes, Is.Zero);
+
+            notice.ShowSaved(1f);
+            notice.ShowSaved(0f);
+            notice.Tick(0.9f);
+            Assert.That(notice.Notice, Is.EqualTo(Saved), "zero seconds does not cut a shown notice short");
+            notice.Tick(0.1f);
+            Assert.That(notice.Notice, Is.EqualTo(HudNotice.None));
+            Assert.That(changes, Is.EqualTo(2));
+        }
+
+        [Test]
         public void RejectsInvalidSeconds()
         {
             var notice = new CampaignNotice();
 
-            Assert.Throws<ArgumentOutOfRangeException>(() => notice.ShowSaved(0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => notice.ShowSaved(-0.1f));
             Assert.Throws<ArgumentOutOfRangeException>(() => notice.ShowSaved(float.NaN));
             Assert.Throws<ArgumentOutOfRangeException>(() => notice.ShowSaved(float.PositiveInfinity));
             Assert.Throws<ArgumentOutOfRangeException>(() => notice.ShowRestartCountdown(float.NaN));

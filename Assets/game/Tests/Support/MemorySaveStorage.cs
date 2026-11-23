@@ -15,6 +15,8 @@ namespace Shooter.Tests.EditMode
 
         public bool FailWrites { get; set; }
 
+        public string FailWriteSlot { get; set; }
+
         public bool FailDeletes { get; set; }
 
         public int WriteCount { get; private set; }
@@ -36,7 +38,7 @@ namespace Shooter.Tests.EditMode
 
         public void Write(string slot, string text)
         {
-            if (FailWrites)
+            if (FailWrites || (FailWriteSlot != null && string.Equals(FailWriteSlot, slot, StringComparison.Ordinal)))
             {
                 throw new IOException(FailureMessage);
             }

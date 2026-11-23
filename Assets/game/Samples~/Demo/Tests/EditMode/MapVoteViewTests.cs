@@ -34,6 +34,25 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void AMapIdFromTheServerIsNotReadAsRichText()
+        {
+            var view = CreateView();
+            var candidates = new[] { new MapVoteCandidate("<size=900>A", 1), new MapVoteCandidate("NetTest", 0) };
+
+            GameSignals.MapVote.Publish(new MapVoteStatus(candidates, null, 10f, null));
+
+            Assert.That(Texts(view, MapVoteView.NameClass), Is.EqualTo(new[] { "<size=900>A", "テスト場" }));
+            Assert.That(view.CandidateButtons.All(button => !button.Q<Label>(className: MapVoteView.NameClass).enableRichText), Is.True);
+
+            GameSignals.MapVote.Publish(new MapVoteStatus(candidates, null, 0f, "<size=900>A"));
+
+            var title = view.Panel.Q<Label>(className: MapVoteView.TitleClass);
+            Assert.That(title.text, Is.EqualTo(view.TitleText));
+            Assert.That(title.text, Does.Contain("<size=900>A"));
+            Assert.That(title.enableRichText, Is.False);
+        }
+
+        [Test]
         public void TheStyleSheetIsInResources()
         {
             Assert.That(Resources.Load<StyleSheet>(MapVoteView.StyleSheetResourcePath), Is.Not.Null);

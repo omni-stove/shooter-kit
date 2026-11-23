@@ -6,6 +6,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class VehiclePoseHistoryTests
     {
+        // float は 2^24 より上の奇数も小数部も表せないので、そこを越えた奇数の tick で確かめる。
+        private const int _lateTick = (1 << 24) + 1;
+
         private static readonly Quaternion _quarter = Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI / 2f);
 
         [Test]
@@ -73,6 +76,19 @@ namespace Shooter.Core.Tests
             history.Record(1, Vector3.One, Quaternion.Identity);
             history.Clear();
             Assert.That(history.TrySample(1f, out _, out _), Is.False);
+        }
+
+        [Test]
+        public void ATickBetweenTwoRecordsIsInterpolatedPastTheFloatRange()
+        {
+            var history = new VehiclePoseHistory();
+            history.Record(_lateTick, Vector3.Zero, Quaternion.Identity);
+            history.Record(_lateTick + 1, new Vector3(4f, 0f, 0f), _quarter);
+
+            Assert.That(history.TrySample(_lateTick + 0.25d, out var position, out var rotation), Is.True);
+            Assert.That(position.X, Is.EqualTo(1f).Within(1e-5f));
+            var expected = Quaternion.Slerp(Quaternion.Identity, _quarter, 0.25f);
+            Assert.That(Quaternion.Dot(rotation, expected), Is.EqualTo(1f).Within(1e-5f));
         }
     }
 }

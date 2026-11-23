@@ -483,6 +483,36 @@ namespace Shooter.Server.Tests
             Assert.That(_log.ToString(), Does.Contain("reason=WeaponMismatch"));
         }
 
+        [TestCase(1e20f, 0f, 0f)]
+        [TestCase(3e38f, 3e38f, 3e38f)]
+        public void APassengerFiringInADirectionTooLongToNormalizeIsRejectedWithoutThrowing(float x, float y, float z)
+        {
+            StartWithTwoPlayers();
+            StandAt(1, new Vector3(1.5f, 0f, 0.3f));
+            _vehicles.Handle(1, VehicleAction.Board, 0, 1);
+            Tick();
+
+            Assert.DoesNotThrow(() => Fire(1, Body(1).EyePosition, new Vector3(x, y, z), Tick0(), TestRules.RifleId));
+
+            Assert.That(_log.ToString(), Does.Contain("[Net] rejected shot attacker=1 reason=InvalidDirection"));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Net] shot attacker=1"));
+        }
+
+        [TestCase(1e20f, 0f, 0f)]
+        [TestCase(3e38f, 3e38f, 3e38f)]
+        public void TheGunnerFiringInADirectionTooLongToNormalizeIsRejectedWithoutThrowing(float x, float y, float z)
+        {
+            StartWithTwoPlayers();
+            StandAt(1, new Vector3(0f, 0f, -2.5f));
+            _vehicles.Handle(1, VehicleAction.Board, 0, 2);
+            Tick();
+
+            Assert.DoesNotThrow(() => Fire(1, Body(1).EyePosition, new Vector3(x, y, z), Tick0(), _gunId));
+
+            Assert.That(_log.ToString(), Does.Contain("[Net] rejected shot attacker=1 reason=InvalidDirection"));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Net] shot attacker=1"));
+        }
+
         [Test]
         public void TheDriverCannotFire()
         {

@@ -38,6 +38,7 @@ namespace Shooter.Tests.EditMode
             _recorder.Uninstall();
             SkillBootstrap.Uninstall();
             CombatEvents.ClearSubscribers();
+            GameSignals.Participants.Clear();
             GameContent.Use(null);
             KitTuning.Reload();
             foreach (var created in _created)
@@ -324,6 +325,121 @@ namespace Shooter.Tests.EditMode
             CombatEvents.RaiseMatchFinished(new MatchResult(MatchOutcome.Lost, 0, 0, 0));
 
             Assert.That(new ProfileStore(_storage).Load(), Is.EqualTo(new PlayerProfile(500, 0, 0, 2, 0)));
+        }
+
+        [Test]
+        public void WhileARosterIsPublishedTheLocalPlayerIsDecidedByItAndNotByTheOfflineIds()
+        {
+            // サーバーの Id が手元の連番と重なった形にする。自分の Id はオフラインでは敵の物、相手の Id はオフラインでは自分の物に当たる。
+            var localId = CombatEvents.OfflineId(_enemy);
+            var remoteId = CombatEvents.OfflineId(_player);
+            var roster = new ParticipantTable();
+            roster.Set(new Participant(localId, "P" + localId, Team.Alpha, true));
+            roster.Set(new Participant(remoteId, "P" + remoteId, Team.Bravo, false));
+            var recorder = new ProgressionRecorder(_storage, ProgressionSpec.Default);
+            try
+            {
+                recorder.Install();
+                GameSignals.Participants.Publish(roster);
+
+                CombatEvents.RaiseKilled(new KillFeedEntry(localId, remoteId, WeaponId, headshot: true, friendly: false));
+
+                Assert.That(recorder.Profile, Is.EqualTo(new PlayerProfile(150, 1, 0, 0, 0)), "the kill of the roster's local player");
+
+                CombatEvents.RaiseKilled(new KillFeedEntry(remoteId, localId, WeaponId, headshot: false, friendly: false));
+                CombatEvents.RaiseKilled(new KillFeedEntry(int.MaxValue, remoteId, WeaponId, headshot: false, friendly: false));
+
+                Assert.That(recorder.Profile, Is.EqualTo(new PlayerProfile(150, 1, 0, 0, 0)), "kills by others, also under an id the offline table calls local");
+
+                CombatEvents.RaiseKilled(
+                    new KillFeedEntry(remoteId, int.MaxValue, WeaponId, headshot: false, friendly: false, assisterIds: new[] { localId }));
+                CombatEvents.RaiseKilled(
+                    new KillFeedEntry(int.MaxValue, localId, WeaponId, headshot: false, friendly: false, assisterIds: new[] { remoteId }));
+
+                Assert.That(recorder.Profile, Is.EqualTo(new PlayerProfile(200, 1, 0, 0, 0, 1)), "only the assist of the roster's local player");
+
+                GameSignals.Participants.Clear();
+                Kill(_enemy, _otherEnemy, headshot: false);
+                Kill(_player, _enemy, headshot: false);
+
+                Assert.That(recorder.Profile, Is.EqualTo(new PlayerProfile(300, 2, 0, 0, 0, 1)), "offline ids again once the roster is gone");
+            }
+            finally
+            {
+                recorder.Uninstall();
+            }
+        }
+
+        [Test]
+        public void WhatWasCountedSinceTheLastSaveIsSavedOnUninstall()
+        {
+            _recorder.Install();
+            Kill(_player, _enemy, headshot: true);
+            Kill(_enemy, _otherEnemy, false, _player);
+
+            Assert.That(_storage.Has(ProfileStore.Slot), Is.False);
+
+            _recorder.Uninstall();
+
+            var expected = new PlayerProfile(200, 1, 0, 0, 0, 1);
+            Assert.That(_storage.Text(ProfileStore.Slot), Is.EqualTo(expected.ToJson()));
+            Assert.That(_storage.WriteCount, Is.EqualTo(1));
+
+            _recorder.Install();
+            _recorder.Uninstall();
+
+            Assert.That(_recorder.Profile, Is.EqualTo(expected));
+            Assert.That(_storage.WriteCount, Is.EqualTo(1), "an unchanged profile is not written again");
+        }
+
+        [Test]
+        public void SaveIfChangedWritesOnlyWhatTheStorageDoesNotHaveYet()
+        {
+            new ProfileStore(_storage).Save(new PlayerProfile(100, 1, 0, 0, 0));
+            Assert.That(_recorder.SaveIfChanged(), Is.False, "not installed");
+
+            _recorder.Install();
+
+            Assert.That(_recorder.SaveIfChanged(), Is.False, "the profile just read");
+            Assert.That(_storage.WriteCount, Is.EqualTo(1));
+
+            Kill(_player, _enemy, headshot: false);
+            Kill(_player, _otherEnemy, headshot: false);
+
+            Assert.That(_storage.WriteCount, Is.EqualTo(1), "kills alone do not write");
+            Assert.That(_recorder.SaveIfChanged(), Is.True);
+            Assert.That(new ProfileStore(_storage).Load(), Is.EqualTo(new PlayerProfile(300, 3, 0, 0, 0)));
+            Assert.That(_storage.WriteCount, Is.EqualTo(2));
+            Assert.That(_recorder.SaveIfChanged(), Is.False);
+            Assert.That(_storage.WriteCount, Is.EqualTo(2));
+
+            CombatEvents.RaiseMatchFinished(new MatchResult(MatchOutcome.Lost, 2, 0, 20));
+
+            Assert.That(_storage.WriteCount, Is.EqualTo(3));
+            Assert.That(_recorder.SaveIfChanged(), Is.False, "the match end already saved");
+
+            new ProfileStore(_storage).Save(new PlayerProfile(900, 9, 0, 3, 0));
+            _recorder.Reload();
+
+            Assert.That(_recorder.SaveIfChanged(), Is.False, "the profile just read again");
+            Assert.That(_storage.WriteCount, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void AFailedSaveIsWrittenAtTheNextSaveIfChanged()
+        {
+            _recorder.Install();
+            Kill(_player, _enemy, headshot: false);
+            _storage.FailWrites = true;
+
+            LogAssert.Expect(LogType.Error, "[Progression] could not save the profile: disk full");
+            Assert.That(_recorder.SaveIfChanged(), Is.False);
+            Assert.That(_storage.Has(ProfileStore.Slot), Is.False);
+
+            _storage.FailWrites = false;
+
+            Assert.That(_recorder.SaveIfChanged(), Is.True);
+            Assert.That(new ProfileStore(_storage).Load(), Is.EqualTo(new PlayerProfile(100, 1, 0, 0, 0)));
         }
 
         [Test]

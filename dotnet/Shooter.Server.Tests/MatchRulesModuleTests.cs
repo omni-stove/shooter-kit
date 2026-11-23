@@ -239,6 +239,23 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void PingWithADirectionTooLongToNormalizeIsRefused()
+        {
+            Start(Plain(ping: true));
+            Join(1);
+            Place(1, new Vector3(0f, 1.5f, 0f));
+
+            Assert.That(_module.ServerPing(1, new Vector3(1e20f, 0f, 0f)), Is.EqualTo(PingRefusal.InvalidAim));
+            Assert.That(_module.ServerPing(1, new Vector3(0f, -1.5e19f, 1.5e19f)), Is.EqualTo(PingRefusal.InvalidAim));
+
+            Assert.That(_transport.Read<PingPlacedMessage>(1, Copy), Is.Empty);
+            Assert.That(_log.ToString(), Does.Contain("[Ping] net refused player=1 reason=InvalidAim"));
+
+            Assert.That(_module.ServerPing(1, new Vector3(0f, -1e19f, 1e19f)), Is.EqualTo(PingRefusal.None), "a long direction still places while it can be normalized");
+            Assert.That(_transport.Read<PingPlacedMessage>(1, Copy), Has.Count.EqualTo(1));
+        }
+
+        [Test]
         public void PingIsRefusedWhenTheRuleIsOff()
         {
             Start(Plain());

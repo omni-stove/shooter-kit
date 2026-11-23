@@ -18,7 +18,7 @@ namespace Shooter.Server
 
         private MapVote _mapVote;
         private float _mapVoteSendElapsed;
-        private float _nextMapVoteRefusalLogTime;
+        private double _nextMapVoteRefusalLogTime;
 
         internal MapVote CurrentMapVote => _mapVote;
 

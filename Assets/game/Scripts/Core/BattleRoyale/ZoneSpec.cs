@@ -9,6 +9,9 @@ namespace Shooter.Core
     {
         public const float DefaultDamageIntervalSeconds = 1f;
 
+        // 間隔の下限。これより短いと、1 tick の経過から間隔を引く float の減算が丸めで進まず、ダメージのループが終わらない
+        public const float MinDamageIntervalSeconds = 0.05f;
+
         public static IReadOnlyList<ZonePhase> DefaultPhases { get; } = new[]
         {
             new ZonePhase(30f, 20f, 35f, 1f),

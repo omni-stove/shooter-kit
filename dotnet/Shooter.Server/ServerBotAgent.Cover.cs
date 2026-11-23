@@ -13,7 +13,7 @@ namespace Shooter.Server
         private const float _minThreatOffsetSquared = 1e-6f;
 
         private readonly List<CoverPoint> _coverPoints = new List<CoverPoint>();
-        private float _nextCoverSearch;
+        private double _nextCoverSearch;
 
         public int CoverPointCount => _coverPoints.Count;
 

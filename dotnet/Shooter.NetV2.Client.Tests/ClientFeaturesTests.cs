@@ -11,6 +11,7 @@ namespace Shooter.NetV2.Tests
     {
         private const int _playerId = 3;
         private const float _ladderX = 3f;
+        private const float _doorZ = 3f;
         private static readonly Vector3 _spawn = new Vector3(0f, 1.1f, 0f);
 
         private FakeTransport _transport;
@@ -148,6 +149,98 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void ThePredictionStopsAtAClosedDoorAndWalksThroughOnceTheServerSaysItIsBreached()
+        {
+            var world = DoorWorld();
+            Assert.That(world.DoorCount, Is.EqualTo(2));
+            Assert.That(world.StructureCount, Is.Zero, "door panels are not structure pieces");
+
+            var blocked = WalkForward(world, 120);
+            Assert.That(blocked.Z, Is.LessThan(_doorZ), "the closed panel of door 0 stops the predicted body");
+            Assert.That(blocked.Z, Is.GreaterThan(_doorZ - 1f), "the body walked up to the panel");
+
+            var message = new DoorStateMessage();
+            message.Add(BreachDoorPhase.Opened, true);
+            message.Add(BreachDoorPhase.Closed, false);
+            Assert.That(world.Apply(message, out var changed), Is.True);
+            Assert.That(changed, Is.EqualTo(1));
+            Assert.That(world.IsDoorOpen(0), Is.True);
+            Assert.That(world.IsDoorOpen(1), Is.False);
+            Assert.That(world.OpenDoorCount, Is.EqualTo(1));
+            Assert.That(world.Collision.IsGroupEnabled(MapColliderGroups.Door(0)), Is.False);
+            Assert.That(world.Collision.IsGroupEnabled(MapColliderGroups.Door(1)), Is.True);
+
+            var through = WalkForward(world, 120);
+            Assert.That(through.Z, Is.GreaterThan(_doorZ + 1f), "a kicked door no longer blocks the prediction");
+
+            Assert.That(world.Apply(message, out changed), Is.True);
+            Assert.That(changed, Is.Zero, "the same state changes nothing");
+        }
+
+        [TestCase(BreachDoorPhase.Closed, false)]
+        [TestCase(BreachDoorPhase.Planting, false)]
+        [TestCase(BreachDoorPhase.Armed, false)]
+        [TestCase(BreachDoorPhase.Opened, true)]
+        [TestCase(BreachDoorPhase.Destroyed, true)]
+        public void OnlyABreachedDoorLeavesThePredictionsCollision(BreachDoorPhase phase, bool open)
+        {
+            var world = DoorWorld();
+            var message = new DoorStateMessage();
+            message.Add(phase, false);
+            message.Add(BreachDoorPhase.Closed, false);
+
+            Assert.That(world.Apply(message, out var changed), Is.True);
+
+            Assert.That(world.IsDoorOpen(0), Is.EqualTo(open));
+            Assert.That(changed, Is.EqualTo(open ? 1 : 0));
+            Assert.That(world.Collision.IsGroupEnabled(MapColliderGroups.Door(0)), Is.EqualTo(!open));
+        }
+
+        [Test]
+        public void ADoorTheStateLeavesOutIsClosedAndACountMismatchIsReported()
+        {
+            var world = DoorWorld();
+            var both = new DoorStateMessage();
+            both.Add(BreachDoorPhase.Destroyed, true);
+            both.Add(BreachDoorPhase.Opened, false);
+            Assert.That(world.Apply(both, out var changed), Is.True);
+            Assert.That(changed, Is.EqualTo(2));
+
+            var one = new DoorStateMessage();
+            one.Add(BreachDoorPhase.Destroyed, true);
+            Assert.That(world.Apply(one, out changed), Is.False, "the server knows fewer doors than the exported collision");
+            Assert.That(changed, Is.EqualTo(1));
+            Assert.That(world.IsDoorOpen(0), Is.True);
+            Assert.That(world.IsDoorOpen(1), Is.False, "a door the state does not list is treated as closed");
+
+            var three = new DoorStateMessage();
+            three.Add(BreachDoorPhase.Destroyed, true);
+            three.Add(BreachDoorPhase.Closed, false);
+            three.Add(BreachDoorPhase.Opened, false);
+            Assert.That(world.Apply(three, out changed), Is.False, "the server knows more doors than the exported collision");
+            Assert.That(changed, Is.Zero, "door 2 has no collision to remove");
+            Assert.That(world.OpenDoorCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AMapWithoutDoorsIgnoresTheDoorState()
+        {
+            var world = new ClientWorld(
+                "Test",
+                new WorldMap(new[]
+                {
+                    WorldCollider.Box(1, 0, WorldCollider.StaticGroup, new Vector3(0f, -0.5f, 0f), new Vector3(50f, 0.5f, 50f), Quaternion.Identity),
+                }),
+                NetMapLadders.None);
+
+            Assert.That(world.DoorCount, Is.Zero);
+            Assert.That(world.Apply(new DoorStateMessage(), out var changed), Is.True);
+            Assert.That(changed, Is.Zero);
+            Assert.That(world.LogLine, Does.Contain(" doors=0 "));
+            Assert.Throws<ArgumentNullException>(() => world.Apply((DoorStateMessage)null, out _));
+        }
+
+        [Test]
         public void ThePingsTheServerSendsArePlacedMovedLostAndRemoved()
         {
             var log = new List<string>();
@@ -210,6 +303,34 @@ namespace Shooter.NetV2.Tests
             {
                 match.TearDown();
             }
+        }
+
+        // 床の上、+Z へ歩いた先の z = 3 に、横に回り込めず上にも登れない板のドア 0 を置く。ドア 1 は離れた所に置く
+        private static ClientWorld DoorWorld()
+        {
+            return new ClientWorld(
+                "Test",
+                new WorldMap(new[]
+                {
+                    WorldCollider.Box(1, 0, WorldCollider.StaticGroup, new Vector3(0f, -0.5f, 0f), new Vector3(50f, 0.5f, 50f), Quaternion.Identity),
+                    WorldCollider.Box(2, 0, MapColliderGroups.Door(0), new Vector3(0f, 2f, _doorZ), new Vector3(50f, 2f, 0.05f), Quaternion.Identity),
+                    WorldCollider.Box(3, 0, MapColliderGroups.Door(1), new Vector3(0f, 2f, -20f), new Vector3(1f, 2f, 0.05f), Quaternion.Identity),
+                }),
+                NetMapLadders.None);
+        }
+
+        // 予測と同じシミュレーションで、立ったところから yaw 0 (+Z) へ歩かせた後の位置
+        private static Vector3 WalkForward(ClientWorld world, int ticks)
+        {
+            var simulation = world.CreateSimulation(NetMotorSettings.Default, 60, ConnectAcceptedMessage.DefaultKillPlaneY);
+            var state = new CharacterMotorState(_spawn, Vector3.Zero, false, false);
+            var rules = Rules();
+            for (var tick = 0; tick < ticks; tick++)
+            {
+                state = simulation.Step(state, SnapshotMotion.ToInput(new InputFrame(tick, new Vector2(0f, 1f), 0f, InputButtons.None), false, rules));
+            }
+
+            return state.Position;
         }
 
         private static SnapshotMessage Armed(int ammo, bool reloading = false, int health = 100)

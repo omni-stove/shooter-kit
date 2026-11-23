@@ -357,6 +357,66 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheDefinitionsZoneTuningIsUsedBeforeTheZonesOwnPhases()
+        {
+            var json = new TextAsset(
+                "{ \"damageIntervalSeconds\": 0.5, \"seed\": 7, \"phases\": ["
+                + " { \"waitSeconds\": 5, \"shrinkSeconds\": 4, \"radius\": 20, \"damagePerSecond\": 2 },"
+                + " { \"waitSeconds\": 3, \"shrinkSeconds\": 2, \"radius\": 12, \"damagePerSecond\": 6 } ] }")
+            {
+                name = "Zone",
+            };
+            _objects.Add(json);
+            var definition = ScriptableObject.CreateInstance<BattleRoyaleDefinition>();
+            _objects.Add(definition);
+            definition.ZoneTuning = json;
+            _runner.Definition = definition;
+            var zone = Zone(30f, new ShrinkingZone.PhaseSettings(60f, 10f, 10f, 1f));
+            _runner.Zone = zone;
+            var player = Member("Player", 0, ZeroSpawn);
+            var enemy = Member("Bot-1-1", 1, OneSpawn);
+
+            Begin(new[] { player, enemy }, player);
+
+            Assert.That(zone.IsRunning, Is.True);
+            Assert.That(zone.Schedule.PhaseCount, Is.EqualTo(2));
+            Assert.That(zone.Schedule.Phases[0].WaitSeconds, Is.EqualTo(5f));
+            Assert.That(zone.Schedule.Phases[0].ShrinkSeconds, Is.EqualTo(4f));
+            Assert.That(zone.Schedule.Phases[0].Radius, Is.EqualTo(20f));
+            Assert.That(zone.Schedule.Phases[0].DamagePerSecond, Is.EqualTo(2f));
+            Assert.That(zone.Schedule.Phases[1].Radius, Is.EqualTo(12f));
+            Assert.That(zone.Schedule.Phases[1].DamagePerSecond, Is.EqualTo(6f));
+            Assert.That(zone.Schedule.Seed, Is.EqualTo(7));
+            Assert.That(zone.ActiveDamageIntervalSeconds, Is.EqualTo(0.5f));
+            Assert.That(zone.PhaseSettingsList[0].Radius, Is.EqualTo(10f), "the zone's own phases are left as they were");
+
+            Assert.That(definition.ReadZone().Phases.Count, Is.EqualTo(2));
+            definition.ZoneTuning = null;
+            Assert.That(definition.ReadZone(), Is.Null);
+        }
+
+        [Test]
+        public void WithoutZoneTuningTheZoneRunsItsOwnPhases()
+        {
+            var definition = ScriptableObject.CreateInstance<BattleRoyaleDefinition>();
+            _objects.Add(definition);
+            _runner.Definition = definition;
+            var zone = Zone(30f, new ShrinkingZone.PhaseSettings(60f, 10f, 10f, 1f));
+            zone.DamageIntervalSeconds = 2f;
+            _runner.Zone = zone;
+            var player = Member("Player", 0, ZeroSpawn);
+            var enemy = Member("Bot-1-1", 1, OneSpawn);
+
+            Begin(new[] { player, enemy }, player);
+
+            Assert.That(zone.ActiveSpec, Is.Null);
+            Assert.That(zone.Schedule.PhaseCount, Is.EqualTo(1));
+            Assert.That(zone.Schedule.Phases[0].WaitSeconds, Is.EqualTo(60f));
+            Assert.That(zone.Schedule.Phases[0].Radius, Is.EqualTo(10f));
+            Assert.That(zone.ActiveDamageIntervalSeconds, Is.EqualTo(2f));
+        }
+
+        [Test]
         public void ABledOutPlayerWaitsThenRedeploysByParachuteFromTheDropHeight()
         {
             _runner.DropHeight = 30f;

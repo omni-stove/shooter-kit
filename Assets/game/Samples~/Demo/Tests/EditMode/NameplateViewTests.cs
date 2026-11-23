@@ -63,6 +63,23 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ThePlayersNameIsNotReadAsRichText()
+        {
+            _view.Targets = new FakeTargets(
+                new FakeParticipants(new Participant(5, "<alpha=#00>x", Team.Alpha, false)),
+                new NameplateTarget(5, _eye + Vector3.forward * 10f, TeamRelation.Friendly, true, false));
+
+            LogAssert.Expect(LogType.Log, "[Nameplate] view=NameplateView friendlyRange=60.0 enemyRange=35.0");
+            LogAssert.Expect(LogType.Log, "[Nameplate] shown id=5 relation=Friendly distance=10.0");
+            _view.Bind(CloneLayout());
+
+            var labels = _view.Element.Query<Label>(className: NameplateView.PlateClass).ToList();
+            Assert.That(labels, Has.Count.EqualTo(1));
+            Assert.That(labels[0].text, Is.EqualTo("<alpha=#00>x"));
+            Assert.That(labels[0].enableRichText, Is.False);
+        }
+
+        [Test]
         public void AnAllyBehindAWallIsNamedButAnEnemyBehindAWallIsNot()
         {
             var ally = Spawn("Ally", 0, new Vector3(-1f, 0f, 20f));

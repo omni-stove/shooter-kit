@@ -373,10 +373,17 @@ namespace Shooter.NetV2
             return value;
         }
 
-        private static RoundSpec RoundFor(WeaponSpec spec, int ammoTypeIndex)
+        // 番号をそのまま AmmoTypes の添字にしないのは、届く番号が 0 = 武器そのものの弾、1 以降 = AmmoTypes の添字 + 1 だから
+        // (サーバーの ServerPlayerWeapons.AmmoTypeIndex)。ビームと火炎もここを引き、弾種で届け方が変わる武器の扱いを揃える。
+        public static RoundSpec RoundFor(WeaponSpec spec, int ammoTypeIndex)
         {
+            if (spec == null)
+            {
+                throw new ArgumentNullException(nameof(spec));
+            }
+
             var types = spec.AmmoTypes;
-            return ammoTypeIndex < types.Count ? types[ammoTypeIndex].RoundOr(spec.Round) : spec.Round;
+            return ammoTypeIndex > 0 && ammoTypeIndex <= types.Count ? types[ammoTypeIndex - 1].RoundOr(spec.Round) : spec.Round;
         }
 
         private static Vector3 SafeDirection(Vector3 direction)

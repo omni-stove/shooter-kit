@@ -16,6 +16,7 @@ namespace Shooter.NetV2.Tests
         private const float _wallZ = 20f;
         private const string _laserId = "739a532a-1faa-498e-b9e1-20de68186e40";
         private const string _rifleId = "3a7f5e4d-6b8c-4d9e-9f0a-2b3c4d5e6f70";
+        private const string _ammoTypeId = "6d0c8b7a-9e1f-4a2b-8c3d-5e6f708192a3";
 
         private static readonly Vector3 _eye = new Vector3(0f, 1.6f, 0f);
 
@@ -112,6 +113,27 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void AnAmmoTypeThatTurnsTheRoundIntoABeamDrawsTheLineUnderItsNumber()
+        {
+            _beams.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ, ammoTypeIndex: 1), BeamAmmoRifle());
+
+            Assert.That(_beams.IsLocalFiring, Is.True);
+            Assert.That(_drawn.Single().ShooterId, Is.EqualTo(_me));
+            Assert.That(_drawn.Single().WeaponId, Is.EqualTo(_rifleId));
+            Assert.That(_drawn.Single().TickSeconds, Is.EqualTo(_tickSeconds));
+        }
+
+        [TestCase(0)]
+        [TestCase(2)]
+        public void TheWeaponsOwnRoundAndANumberPastTheLastAmmoTypeDrawNoLine(int ammoTypeIndex)
+        {
+            _beams.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ, (byte)ammoTypeIndex), BeamAmmoRifle());
+
+            Assert.That(_beams.IsLocalFiring, Is.False);
+            Assert.That(_drawn, Is.Empty);
+        }
+
+        [Test]
         public void AWeaponThatIsNotABeamDrawsNoLine()
         {
             _beams.LocalTrigger(Request(TriggerEdge.Pressed, Vector3.UnitZ), Rifle());
@@ -165,9 +187,25 @@ namespace Shooter.NetV2.Tests
             return new WeaponSpec(_rifleId, "weapon.rifle", WeaponCategory.AssaultRifle);
         }
 
-        private static FireRequestMessage Request(TriggerEdge edge, Vector3 direction)
+        private static WeaponSpec BeamAmmoRifle()
         {
-            return new FireRequestMessage { WeaponId = _laserId, Origin = _eye, Direction = direction, Trigger = edge };
+            return new WeaponSpec(
+                _rifleId,
+                "weapon.rifle",
+                WeaponCategory.AssaultRifle,
+                ammoTypes: new[] { new AmmoTypeSpec(_ammoTypeId, "items.ammo.special", new RoundSpec(RoundDelivery.Beam, _range, beam: new BeamSpec(_tickSeconds))) });
+        }
+
+        private static FireRequestMessage Request(TriggerEdge edge, Vector3 direction, byte ammoTypeIndex = 0)
+        {
+            return new FireRequestMessage
+            {
+                WeaponId = _laserId,
+                Origin = _eye,
+                Direction = direction,
+                Trigger = edge,
+                AmmoTypeIndex = ammoTypeIndex,
+            };
         }
 
         private static BeamStateMessage State(int shooterId, string weaponId, Vector3 start, Vector3 end, bool active)

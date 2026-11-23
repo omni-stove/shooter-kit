@@ -23,7 +23,7 @@ namespace Shooter.Core
                 return ShotRejection.InvalidOrigin;
             }
 
-            if (!IsFinite(direction) || direction.LengthSquared() < _minDirectionLengthSquared)
+            if (!TryNormalizeDirection(direction, _minDirectionLengthSquared, out _))
             {
                 return ShotRejection.InvalidDirection;
             }
@@ -41,6 +41,32 @@ namespace Shooter.Core
             }
 
             return ShotRejection.None;
+        }
+
+        public static bool TryNormalizeDirection(Vector3 direction, float minLengthSquared, out Vector3 unit)
+        {
+            unit = default;
+            if (!IsFinite(direction))
+            {
+                return false;
+            }
+
+            // 成分が有限でも 2 乗の和は float で +∞ にあふれ、そのまま割ると零ベクトルや NaN になるので、長さの 2 乗も有限か見る。
+            // 下限は「以上でなければ断る」と書く。「未満なら断る」では NaN の下限や長さが比較を偽にして通ってしまう
+            var lengthSquared = direction.LengthSquared();
+            if (!IsFinite(lengthSquared) || !(lengthSquared > 0f) || !(lengthSquared >= minLengthSquared))
+            {
+                return false;
+            }
+
+            var normalized = direction / (float)Math.Sqrt(lengthSquared);
+            if (!IsFinite(normalized))
+            {
+                return false;
+            }
+
+            unit = normalized;
+            return true;
         }
 
         private static bool IsFinite(Vector3 v)
