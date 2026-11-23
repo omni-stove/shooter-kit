@@ -16,6 +16,8 @@ namespace Shooter.NetV2
         private readonly Func<string, WeaponSpec> _findWeapon;
         private readonly ClientMelee _melee;
         private bool _canSwing;
+        // 持ち替えでは止めず、倒れたときなどだけ止める (サーバーの ServerMelee.Tick と同じ)
+        private bool _canContinue;
         private bool _disposed;
 
         // 調整値はオフラインと同じ melee の JSON (MeleeActionInstaller.Tuning) を使い、サーバーの server-data/tuning/melee.json と揃える。
@@ -54,10 +56,12 @@ namespace Shooter.NetV2
             }
 
             var canSwing = snapshot.Match.State == GameModeState.Playing;
+            var canContinue = canSwing;
             var own = snapshot.Players.IndexOf(_client.PlayerId);
             if (own < 0)
             {
                 canSwing = false;
+                canContinue = false;
             }
             else
             {
@@ -69,9 +73,11 @@ namespace Shooter.NetV2
                     _melee.Reset();
                 }
 
-                canSwing &= alive && ClientMelee.IsAllowed(snapshot.Match.Rules.Melee, _findWeapon(row.WeaponId));
+                canContinue = canSwing && alive;
+                canSwing = canContinue && ClientMelee.IsAllowed(snapshot.Match.Rules.Melee, _findWeapon(row.WeaponId));
             }
 
+            _canContinue = canContinue;
             _canSwing = canSwing;
         }
 
@@ -84,7 +90,7 @@ namespace Shooter.NetV2
 
             var local = _localPlayer();
             var seconds = float.IsNaN(deltaSeconds) || float.IsInfinity(deltaSeconds) ? 0f : Mathf.Max(0f, deltaSeconds);
-            _melee.Update(local != null && local.IsMeleeSent, _canSwing && local != null, seconds);
+            _melee.Update(local != null && local.IsMeleeSent, _canSwing && local != null, _canContinue && local != null, seconds);
         }
 
         public void Dispose()

@@ -156,9 +156,31 @@ namespace Shooter.NetV2.Tests
             Assert.That(_started, Is.Empty);
         }
 
-        private static WeaponSpec Rifle() => new WeaponSpec("rifle", "weapon.rifle", WeaponCategory.AssaultRifle);
+        [Test]
+        public void ASwingContinuesWhenOnlyStartingIsNoLongerAllowed()
+        {
+            _melee.Update(true, true, true, _frame);
 
-        private static WeaponSpec Knife() => new WeaponSpec("knife", "weapon.knife", WeaponCategory.Melee, melee: new MeleeWeaponSpec(_spec));
+            _melee.Update(true, false, true, _frame);
+
+            Assert.That(_melee.IsSwinging, Is.True);
+            Assert.That(_cancelled, Is.Zero);
+        }
+
+        [Test]
+        public void ASwingStopsWhenContinuingIsNotAllowed()
+        {
+            _melee.Update(true, true, true, _frame);
+
+            _melee.Update(true, false, false, _frame);
+
+            Assert.That(_melee.IsSwinging, Is.False);
+            Assert.That(_cancelled, Is.EqualTo(1));
+        }
+
+        private static WeaponSpec Rifle() => new WeaponSpec("6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83", "weapon.rifle", WeaponCategory.AssaultRifle);
+
+        private static WeaponSpec Knife() => new WeaponSpec("0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", "weapon.knife", WeaponCategory.Melee, melee: new MeleeWeaponSpec(_spec));
 
         private void Frames(bool held, bool canSwing, float seconds)
         {

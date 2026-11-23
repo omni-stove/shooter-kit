@@ -46,6 +46,13 @@ namespace Shooter.NetV2
         // サーバーと同じく押し始めた瞬間だけ振り、押し続けても振り直さない。振り始めたら true
         public bool Update(bool held, bool canSwing, float deltaSeconds)
         {
+            return Update(held, canSwing, canSwing, deltaSeconds);
+        }
+
+        // 振り始めてよいか (canStart) と、振っている途中で続けてよいか (canContinue) を分ける。
+        // サーバーは持ち替えでは振りを止めず、倒れたときなどだけ止めるので、持ち替えで手元の振りを消さないため
+        public bool Update(bool held, bool canStart, bool canContinue, float deltaSeconds)
+        {
             if (!(deltaSeconds >= 0f) || float.IsInfinity(deltaSeconds))
             {
                 throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "deltaSeconds must be a non-negative finite number");
@@ -53,14 +60,14 @@ namespace Shooter.NetV2
 
             var pressed = held && !_held;
             _held = held;
-            if (_swing.IsSwinging && !canSwing)
+            if (_swing.IsSwinging && !canContinue)
             {
                 _swing.Cancel();
                 SwingCancelled?.Invoke();
             }
 
             _swing.Tick(deltaSeconds);
-            if (!pressed || !canSwing || !_swing.TryStart())
+            if (!pressed || !canStart || !_swing.TryStart())
             {
                 return false;
             }
