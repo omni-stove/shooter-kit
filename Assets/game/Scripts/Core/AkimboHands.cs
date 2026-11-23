@@ -53,7 +53,7 @@ namespace Shooter.Core
         // 左右で同じ予備弾を使うので、右の手の知らせだけを流す。両手から流すと 1 度の変化が 2 度届く。
         public event Action ReserveAmmoChanged;
 
-        // 二丁持ちの部品を持つ元の武器。手ごとの Weapon.Spec は、リロードの秒数に倍率を掛けたもの。
+        // 二丁持ちの部品を持つ元の武器。手ごとの Weapon.Spec は、二丁持ちの部品を外してリロードの秒数に倍率を掛けたもの。
         public WeaponSpec Spec { get; }
 
         public AkimboSpec Akimbo => Spec.Akimbo;
@@ -198,16 +198,18 @@ namespace Shooter.Core
             return spec;
         }
 
+        // 手の Spec から二丁持ちの部品を外すのは、掛けたあとの秒数に WeaponSpec が倍率をもう一度掛けて確かめ、JSON で通った武器を弾いてしまうため。
         private static WeaponSpec HandSpec(WeaponSpec spec)
         {
             var multiplier = spec.Akimbo.ReloadSecondsMultiplier;
+            var single = spec.WithoutAkimbo();
             if (multiplier == 1f)
             {
-                return spec;
+                return single;
             }
 
             var ammo = spec.Ammo;
-            return spec.WithAmmo(new AmmoSpec(
+            return single.WithAmmo(new AmmoSpec(
                 ammo.MagazineSize,
                 ammo.ReserveAmmo,
                 ammo.ReloadSeconds * multiplier,

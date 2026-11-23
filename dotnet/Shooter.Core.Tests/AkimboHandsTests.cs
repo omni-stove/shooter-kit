@@ -6,18 +6,18 @@ namespace Shooter.Core.Tests
 {
     public sealed class AkimboHandsTests
     {
-        private const string Id = "9a4e1c7b-2d5f-4b8a-9e3c-6f1d0a2b7c58";
-        private const float FireInterval = 0.25f;
-        private const float ReloadSeconds = 1.5f;
+        private const string _id = "9a4e1c7b-2d5f-4b8a-9e3c-6f1d0a2b7c58";
+        private const float _fireInterval = 0.25f;
+        private const float _reloadSeconds = 1.5f;
 
         private static WeaponSpec Pistol(int reserveAmmo = 24, AkimboSpec akimbo = null, ReloadStyle style = ReloadStyle.Whole, float perRound = 0f)
         {
             return new WeaponSpec(
-                Id,
+                _id,
                 null,
                 WeaponCategory.Handgun,
-                new TriggerSpec(FireMode.Semi, FireInterval),
-                new AmmoSpec(8, reserveAmmo, ReloadSeconds, reloadStyle: style, reloadSecondsPerRound: perRound),
+                new TriggerSpec(FireMode.Semi, _fireInterval),
+                new AmmoSpec(8, reserveAmmo, _reloadSeconds, reloadStyle: style, reloadSecondsPerRound: perRound),
                 akimbo: akimbo ?? AkimboSpec.Default);
         }
 
@@ -27,7 +27,7 @@ namespace Shooter.Core.Tests
             for (var i = 0; i < times; i++)
             {
                 Assert.That(hands.TryFire(hand), Is.True, hand + " shot " + (i + 1));
-                hands.Tick(FireInterval);
+                hands.Tick(_fireInterval);
             }
         }
 
@@ -77,7 +77,7 @@ namespace Shooter.Core.Tests
             Assert.That(hands.IsHandReloading(AkimboHand.Right), Is.True);
             Assert.That(hands.IsHandReloading(AkimboHand.Left), Is.True);
 
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(8));
             Assert.That(hands.AmmoInMagazine(AkimboHand.Left), Is.EqualTo(8));
@@ -126,7 +126,7 @@ namespace Shooter.Core.Tests
             var hands = new AkimboHands(Pistol());
             Fire(hands, AkimboHand.Right, 8);
             hands.TryStartReload(AkimboHand.Right);
-            hands.Tick(FireInterval);
+            hands.Tick(_fireInterval);
 
             Assert.That(hands.TryFire(AkimboHand.Right), Is.False);
             Assert.That(hands.TryFire(AkimboHand.Left), Is.True);
@@ -151,7 +151,7 @@ namespace Shooter.Core.Tests
             hands.TryStartReload();
 
             Assert.That(hands.ReloadSeconds, Is.EqualTo(3f));
-            Assert.That(hands.Spec.ReloadSeconds, Is.EqualTo(ReloadSeconds));
+            Assert.That(hands.Spec.ReloadSeconds, Is.EqualTo(_reloadSeconds));
 
             hands.Tick(1.5f);
             Assert.That(hands.IsHandReloading(AkimboHand.Right), Is.True);
@@ -172,6 +172,33 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void AWeaponWhoseMultipliedReloadIsFiniteCanBeHeldInBothHands()
+        {
+            var spec = Pistol(akimbo: new AkimboSpec(reloadSecondsMultiplier: 1e20f));
+
+            var hands = new AkimboHands(spec);
+
+            Assert.That(hands.ReloadSeconds, Is.EqualTo(1.5e20f).Within(1e15f));
+            Assert.That(hands.Right.Spec.IsAkimbo, Is.False);
+            Assert.That(hands.Left.Spec.IsAkimbo, Is.False);
+            Assert.That(hands.Spec.IsAkimbo, Is.True);
+        }
+
+        [Test]
+        public void WithoutAkimboDropsOnlyTheAkimboPart()
+        {
+            var spec = Pistol(akimbo: AkimboSpec.Default);
+
+            var single = spec.WithoutAkimbo();
+
+            Assert.That(single.Akimbo, Is.Null);
+            Assert.That(single.Id, Is.EqualTo(_id));
+            Assert.That(single.Ammo, Is.SameAs(spec.Ammo));
+            Assert.That(single.Trigger, Is.SameAs(spec.Trigger));
+            Assert.That(Pistol().WithoutAkimbo().Akimbo, Is.Null);
+        }
+
+        [Test]
         public void TheFirstHandToFinishTakesWhatIsLeftOfTheReserve()
         {
             var hands = new AkimboHands(Pistol(reserveAmmo: 5));
@@ -179,7 +206,7 @@ namespace Shooter.Core.Tests
             Fire(hands, AkimboHand.Left, 8);
 
             Assert.That(hands.TryStartReload(), Is.True);
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             // Tick は右の手から進めるので、右の手が先に込め終える。
             Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(5));
@@ -219,7 +246,7 @@ namespace Shooter.Core.Tests
             var hands = new AkimboHands(Pistol());
             Fire(hands, AkimboHand.Right, 3);
             hands.TryStartReload();
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(hands.ReserveAmmoRoom, Is.EqualTo(3));
             Assert.That(hands.AddReserveAmmo(10), Is.EqualTo(3));
@@ -240,7 +267,7 @@ namespace Shooter.Core.Tests
             Fire(hands, AkimboHand.Right, 2);
             Fire(hands, AkimboHand.Left, 3);
             hands.TryStartReload();
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(pool.Count, Is.EqualTo(19));
             Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(8));
@@ -279,7 +306,7 @@ namespace Shooter.Core.Tests
             Fire(hands, AkimboHand.Right, 1);
             hands.TryStartReload();
 
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(changes, Is.EqualTo(1));
         }
@@ -292,7 +319,7 @@ namespace Shooter.Core.Tests
             Fire(hands, AkimboHand.Left, 8);
 
             hands.TryStartReload();
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(hands.HasInfiniteReserve, Is.True);
             Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(8));
@@ -316,7 +343,7 @@ namespace Shooter.Core.Tests
             hands.CancelReload();
             hands.TryStartReload(AkimboHand.Left);
             hands.TryStartReload();
-            hands.Tick(ReloadSeconds);
+            hands.Tick(_reloadSeconds);
 
             Assert.That(fired, Is.EqualTo(new[] { AkimboHand.Left, AkimboHand.Right, AkimboHand.Right }));
             Assert.That(reloaded, Is.EqualTo(new[] { AkimboHand.Right, AkimboHand.Left }));
@@ -340,7 +367,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void AWeaponWithoutAkimboIsRejected()
         {
-            var single = new WeaponSpec(Id, null, WeaponCategory.Handgun);
+            var single = new WeaponSpec(_id, null, WeaponCategory.Handgun);
 
             Assert.Throws<ArgumentException>(() => new AkimboHands(single));
             Assert.Throws<ArgumentNullException>(() => new AkimboHands(null));
@@ -370,7 +397,7 @@ namespace Shooter.Core.Tests
         public void AShieldOrMeleeWeaponCannotBeAkimbo()
         {
             Assert.Throws<ArgumentException>(
-                () => new WeaponSpec(Id, null, WeaponCategory.Handgun, shield: RiotShieldSpec.Default, akimbo: AkimboSpec.Default));
+                () => new WeaponSpec(_id, null, WeaponCategory.Handgun, shield: RiotShieldSpec.Default, akimbo: AkimboSpec.Default));
         }
 
         [Test]

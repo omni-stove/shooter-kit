@@ -282,6 +282,13 @@ namespace Shooter.Core
                 : new WeaponSpec(Id, NameKey, Category, Trigger, ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, Akimbo);
         }
 
+        public WeaponSpec WithoutAkimbo()
+        {
+            return Akimbo == null
+                ? this
+                : new WeaponSpec(Id, NameKey, Category, Trigger, Ammo, Round, Impact, Aim, AmmoTypes, ShotNoiseRadius, Weight, MoveSpeedMultiplier, Description, DrawSeconds, HolsterSeconds, Shield, Melee, null);
+        }
+
         // 二丁持ちの手を作るとき (AkimboHands) でなくここで確かめるのは、掛けた秒数が無限になる武器を JSON を読んだときに弾くため。
         private static void RequireAkimboReloadFinite(AmmoSpec ammo, AkimboSpec akimbo)
         {

@@ -5,11 +5,11 @@ namespace Shooter.Core.Tests
 {
     public sealed class AkimboSpecJsonTests
     {
-        private const string Id = "5d2c8a1e-7b3f-4e9a-8c6d-1f0e2b4a9c37";
+        private const string _id = "5d2c8a1e-7b3f-4e9a-8c6d-1f0e2b4a9c37";
 
         private static string Pistol(string extra)
         {
-            return "{ \"id\": \"" + Id + "\", \"category\": \"Handgun\", \"ammo\": { \"magazineSize\": 8, \"reserveAmmo\": 24, \"reloadSeconds\": 1.5 }"
+            return "{ \"id\": \"" + _id + "\", \"category\": \"Handgun\", \"ammo\": { \"magazineSize\": 8, \"reserveAmmo\": 24, \"reloadSeconds\": 1.5 }"
                 + (extra.Length == 0 ? string.Empty : ", " + extra)
                 + " }";
         }
@@ -140,7 +140,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void WithFireIntervalAndWithAmmoKeepTheAkimboPart()
         {
-            var spec = new WeaponSpec(Id, null, WeaponCategory.Handgun, new TriggerSpec(FireMode.Semi, 0.2f), akimbo: AkimboSpec.Default);
+            var spec = new WeaponSpec(_id, null, WeaponCategory.Handgun, new TriggerSpec(FireMode.Semi, 0.2f), akimbo: AkimboSpec.Default);
 
             Assert.That(spec.WithFireInterval(0f).Akimbo, Is.SameAs(AkimboSpec.Default));
             Assert.That(spec.WithAmmo(new AmmoSpec(6, 12, 2f)).Akimbo, Is.SameAs(AkimboSpec.Default));

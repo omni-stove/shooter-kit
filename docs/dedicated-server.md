@@ -18,7 +18,7 @@ make export-server-rules    # ルールと調整値 → server-data/rules/、ser
 
 | ファイル | 正 | 作り方 |
 | --- | --- | --- |
-| `ping`・`grenade`・`inventory`・`knockback`・`bots`・`assist`・`loot`・`melee`・`streaks`・`extraction`・`stash` (`.json`) | `Assets/game/Resources/Tuning/` (入口 `GameContent` の欄があればそちら) | `make export-server-rules` で写す |
+| `ping`・`grenade`・`inventory`・`knockback`・`bots`・`assist`・`loot`・`melee`・`streaks`・`extraction`・`stash`・`holster` (`.json`) | `Assets/game/Resources/Tuning/` (入口 `GameContent` の欄があればそちら) | `make export-server-rules` で写す |
 | `economy.json` | `server-data` | 手で書く。オンラインのルールの武器の一覧 (`catalog`) にある武器だけを、買える品と値段として置く。財布の額は試合の設定 (`match.economy`) から読む |
 | `chat-words.json` | `server-data` | 手で書く。チャットはオンラインだけなので、伏せる語はサーバーの分を置く |
 | `anticheat`・`deployables`・`battle-royale` (`.json`) | `server-data` | 手で書く。クライアントに同じ名前のファイルは無い |
@@ -51,6 +51,7 @@ docker compose -f docker/server/compose.yaml up -d
 - `Payload` の道筋は `NetArena01` に、`BattleRoyale`・`Extraction` のエリアと脱出地点は `NetBattleRoyale` にだけある。
 - `NetBattleRoyale` の箱の表はキットの `loot.json` に無いので、ゲームが表を足すまで箱は空で開く。
 - 地面の拾い物 (`PickupSpawnPoint`) と弾薬箱 (`AmmoCrate`) は `make export-server-data` がマップごとの `<マップ>.pickups.json` に書き出す。書き出す前のマップでは拾い物が無いだけで動く。サーバーには防具が無いので、防具の拾い物は拾えない。
+- 武器を出してはいけない場所 (`WeaponFreeZone`) は `make export-server-rules` がマップごとの `<マップ>.weapon-free-zones.json` に、軸にそろえた箱で書き出す。サーバーは「自動でしまう」と「構えられない」を判定し、「警告してしばらくで敵対」は警告だけにする (オンラインに中立の警備は無い)。Bot には効かない。
 - Bot は人が 1 人もいないと置かれない。試すときはクライアントを 1 人つなぐ。
 - ルールの `actions` は、`stealth` のほかはオフラインと同じくサーバーでも効く。`stealth` を `On` にしたルールで起動すると、サーバーは `[Rules] warning: actions stealth ...` を出してそれを無視する。
 - スタミナの調整値は `server-data/tuning/stamina.json` を置いたときだけ読み、無ければ Core の `StaminaSpec` の既定で動く (Unity にも JSON は無い)。

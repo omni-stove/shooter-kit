@@ -22,7 +22,8 @@ namespace Shooter.Protocol
         Stagger = 1 << 10,
         Suppression = 1 << 11,
         HordeOffer = 1 << 12,
+        WeaponFreeZone = 1 << 13,
         All = Weapon | Loadout | Grenades | CarrySpeed | Knockback | Respawn | Money | Redeploy | Extraction | Stamina | Stagger | Suppression
-            | HordeOffer,
+            | HordeOffer | WeaponFreeZone,
     }
 }

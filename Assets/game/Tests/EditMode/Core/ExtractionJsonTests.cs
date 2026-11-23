@@ -10,14 +10,14 @@ namespace Shooter.Core.Tests
 
         private static readonly string[] _expectedItemNames =
         {
-            "raidSeconds", "extractHoldSeconds", "openPoints", "openAfterSeconds", "keepCarriedOnDeath",
+            "raidSeconds", "extractHoldSeconds", "openPoints", "openAfterSeconds", "keepCarriedOnDeath", "botsBringLoadout",
         };
 
         [Test]
         public void ReadsEveryItem()
         {
             var spec = ExtractionJson.Parse(
-                "{\"raidSeconds\": 600, \"extractHoldSeconds\": 5, \"openPoints\": 3, \"openAfterSeconds\": 120, \"keepCarriedOnDeath\": true}",
+                "{\"raidSeconds\": 600, \"extractHoldSeconds\": 5, \"openPoints\": 3, \"openAfterSeconds\": 120, \"keepCarriedOnDeath\": true, \"botsBringLoadout\": false}",
                 _source);
 
             Assert.That(spec.RaidSeconds, Is.EqualTo(600f));
@@ -25,6 +25,7 @@ namespace Shooter.Core.Tests
             Assert.That(spec.OpenPoints, Is.EqualTo(3));
             Assert.That(spec.OpenAfterSeconds, Is.EqualTo(120f));
             Assert.That(spec.KeepCarriedOnDeath, Is.True);
+            Assert.That(spec.BotsBringLoadout, Is.False);
         }
 
         [Test]
@@ -37,6 +38,7 @@ namespace Shooter.Core.Tests
             Assert.That(spec.OpenPoints, Is.EqualTo(2));
             Assert.That(spec.OpenAfterSeconds, Is.EqualTo(0f));
             Assert.That(spec.KeepCarriedOnDeath, Is.False);
+            Assert.That(spec.BotsBringLoadout, Is.True);
         }
 
         [Test]
@@ -54,6 +56,7 @@ namespace Shooter.Core.Tests
             var points = Reject("{\"openPoints\": 0}");
             var tooLate = Reject("{\"raidSeconds\": 100, \"openAfterSeconds\": 95, \"extractHoldSeconds\": 5}");
             var flag = Reject("{\"keepCarriedOnDeath\": \"yes\"}");
+            var bots = Reject("{\"botsBringLoadout\": 1}");
 
             Assert.That(raid.Item, Is.EqualTo("raidSeconds"));
             Assert.That(raid.InnerException, Is.InstanceOf<ArgumentOutOfRangeException>());
@@ -62,6 +65,7 @@ namespace Shooter.Core.Tests
             Assert.That(tooLate.Item, Is.EqualTo("openAfterSeconds"));
             Assert.That(tooLate.Message, Does.Contain("shorter than raidSeconds (100)"));
             Assert.That(flag.Item, Is.EqualTo("keepCarriedOnDeath"));
+            Assert.That(bots.Item, Is.EqualTo("botsBringLoadout"));
         }
 
         private static TuningJsonException Reject(string json)

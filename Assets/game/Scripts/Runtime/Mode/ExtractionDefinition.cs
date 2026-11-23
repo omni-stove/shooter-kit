@@ -23,6 +23,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("倒されても持っていた物を持ち物庫に入れるか")]
         private bool _keepCarriedOnDeath = ExtractionSpec.DefaultKeepCarriedOnDeath;
 
+        [SerializeField, Tooltip("専用サーバーの Bot が、持ち物庫に無くても選んだ装備の武器を持って出撃するか")]
+        private bool _botsBringLoadout = ExtractionSpec.DefaultBotsBringLoadout;
+
         public float RaidSeconds
         {
             get => _raidSeconds;
@@ -53,11 +56,17 @@ namespace Shooter.Runtime
             set => _keepCarriedOnDeath = value;
         }
 
+        public bool BotsBringLoadout
+        {
+            get => _botsBringLoadout;
+            set => _botsBringLoadout = value;
+        }
+
         public ExtractionSpec ToSpec()
         {
             try
             {
-                return new ExtractionSpec(_raidSeconds, _extractHoldSeconds, _openPoints, _openAfterSeconds, _keepCarriedOnDeath);
+                return new ExtractionSpec(_raidSeconds, _extractHoldSeconds, _openPoints, _openAfterSeconds, _keepCarriedOnDeath, _botsBringLoadout);
             }
             catch (ArgumentOutOfRangeException e)
             {
@@ -77,6 +86,7 @@ namespace Shooter.Runtime
             _openPoints = spec.OpenPoints;
             _openAfterSeconds = spec.OpenAfterSeconds;
             _keepCarriedOnDeath = spec.KeepCarriedOnDeath;
+            _botsBringLoadout = spec.BotsBringLoadout;
         }
 
         private string SourceName => string.IsNullOrEmpty(name) ? "(unnamed extraction definition)" : name;
