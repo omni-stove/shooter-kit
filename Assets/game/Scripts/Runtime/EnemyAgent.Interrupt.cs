@@ -15,7 +15,6 @@ namespace Shooter.Runtime
 
         public float InterruptSecondsRemaining => _interruption.SecondsRemaining;
 
-        // 止めている間も知覚に渡す撃たれた記録は捨てない。怯みが解けた直後に、撃たれた方へ隠れたり向かったりできるように。
         public bool Interrupt(float seconds, string reason)
         {
             EnemyInterruption.Validate(seconds, reason);
@@ -42,7 +41,7 @@ namespace Shooter.Runtime
             }
 
             Debug.Log(FormatResumeLog(Id, reason), this);
-            _interruption.Clear();
+            EndInterruption();
             return true;
         }
 
@@ -56,6 +55,18 @@ namespace Shooter.Runtime
             return $"{LogTag} id={id} resumed reason={reason}";
         }
 
+        // 怯みの間にたまった撃たれた記録は、解けたら捨てる。残すと怯ませた弾のせいで撃ち返さずに遮蔽へ退いてしまう。
+        // 撃たれた方向 (物音) は残し、解けた後に振り向けるようにする。背後からの近接など怯み以外で止めた分は、解けた後に隠れられるよう残す。
+        private void EndInterruption()
+        {
+            var staggered = _interruption.Reason.StartsWith(StaggerReaction.InterruptReasonPrefix, StringComparison.Ordinal);
+            _interruption.Clear();
+            if (staggered)
+            {
+                DropPendingHit();
+            }
+        }
+
         // 止まっている間は判断を進めない。進めると見失いや捜索の時間だけが経ち、解けたときに状態が飛ぶ。
         private bool HoldWhileInterrupted(float deltaSeconds)
         {
@@ -67,7 +78,7 @@ namespace Shooter.Runtime
             if (_interruption.Tick(deltaSeconds))
             {
                 Debug.Log(FormatResumeLog(Id, _interruption.Reason), this);
-                _interruption.Clear();
+                EndInterruption();
                 return false;
             }
 

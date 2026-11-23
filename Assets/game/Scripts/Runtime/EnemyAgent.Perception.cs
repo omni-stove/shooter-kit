@@ -133,6 +133,11 @@ namespace Shooter.Runtime
         private void ClearPendingPerception()
         {
             _pendingNoise = null;
+            DropPendingHit();
+        }
+
+        private void DropPendingHit()
+        {
             _pendingHit = false;
             _pendingHitSource = null;
         }
