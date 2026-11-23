@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace Shooter.Core
 {
-    public sealed class EnemyBrain
+    public sealed partial class EnemyBrain
     {
         public event Action<EnemyState, EnemyState> StateChanged;
 
@@ -41,7 +41,7 @@ namespace Shooter.Core
 
         public int ShotsInAttack => _shotsInAttack;
 
-        public float NextShotSpreadDegrees => _spec.SpreadDegreesForShot(_shotsInAttack);
+        public float NextShotSpreadDegrees => _spec.SpreadDegreesForShot(_shotsInAttack) + CoverSpreadDegrees();
 
         // Fire の決定でも弾切れや連射間隔で撃てないことがあるので、撃てたかどうかは呼び出し側が伝える。
         public void RecordShot()
@@ -343,172 +343,6 @@ namespace Shooter.Core
             return Routine(p.Self);
         }
 
-        private EnemyDecision Engage(float deltaSeconds, Vector3 self, Vector3 target)
-        {
-            _lostElapsed = 0f;
-            _lastSeen = target;
-
-            var distance = Vector3.Distance(self, target);
-            if (distance > _spec.FireRange)
-            {
-                _engaging = false;
-                SetState(EnemyState.Chase);
-                return new EnemyDecision(target, target, false);
-            }
-
-            // 撃ちながら近づいて Attack に入ったときは構え直さない。入った途端に撃つのをやめると、近づくほど撃たなくなって見える。
-            if (_engaging && (State == EnemyState.Attack || State == EnemyState.Chase))
-            {
-                _reactionElapsed += deltaSeconds;
-            }
-            else
-            {
-                _reactionElapsed = 0f;
-                _shotsInAttack = 0;
-            }
-
-            _engaging = true;
-            var ready = _reactionElapsed >= _spec.ReactionSeconds;
-            if (distance <= _spec.AttackRange)
-            {
-                SetState(EnemyState.Attack);
-                return new EnemyDecision(null, target, ready);
-            }
-
-            SetState(EnemyState.Chase);
-            return new EnemyDecision(ready ? target : (Vector3?)null, target, ready);
-        }
-
-        private bool ShouldTakeCover(EnemyPerception p)
-        {
-            return _cover != null && (p.WasHit || p.HealthFraction < _spec.CoverHealthFraction);
-        }
-
-        private static Vector3? ThreatOf(EnemyPerception p)
-        {
-            if (p.Target.HasValue)
-            {
-                return p.Target.Value;
-            }
-
-            return p.WasHit ? p.HitSource : null;
-        }
-
-        private bool TryCover(float deltaSeconds, EnemyPerception p, bool seen, out EnemyDecision decision)
-        {
-            decision = EnemyDecision.None;
-            if (seen)
-            {
-                _lastSeen = p.Target.Value;
-            }
-
-            var threat = ThreatOf(p);
-            if (_cover == null || !threat.HasValue || !CoverPoint.IsFinite(threat.Value) || !CoverPoint.IsFinite(p.Self))
-            {
-                LeaveCover();
-                return false;
-            }
-
-            _coverThreat = threat.Value;
-
-            // 回り込まれて今の点が脅威の方向を遮らなくなったら、放して選び直す。
-            if (_coverIndex >= 0 && !_cover.Protects(_coverIndex, _coverThreat))
-            {
-                ReleaseCoverPoint();
-            }
-
-            if (_coverIndex < 0)
-            {
-                var next = _cover.Select(p.Self, _coverThreat, this, _unreachableCover);
-                if (next < 0 || !_cover.TryClaim(next, this))
-                {
-                    LeaveCover();
-                    return false;
-                }
-
-                _coverIndex = next;
-                CoverPhase = EnemyCoverPhase.Moving;
-            }
-
-            if (State != EnemyState.TakeCover)
-            {
-                _lostElapsed = 0f;
-            }
-
-            decision = CoverStep(deltaSeconds, p.Self, seen);
-
-            // 決定を作った後に移す。StateChanged の購読者が Kill() して点を放しても、ここでは点を読まない。
-            SetState(EnemyState.TakeCover);
-            return true;
-        }
-
-        private EnemyDecision CoverStep(float deltaSeconds, Vector3 self, bool seen)
-        {
-            var point = _cover.Points[_coverIndex].Position;
-            switch (CoverPhase)
-            {
-                case EnemyCoverPhase.Moving:
-                    if (Vector3.Distance(self, point) > _spec.ArrivalDistance)
-                    {
-                        return new EnemyDecision(point, _coverThreat, false, false);
-                    }
-
-                    StartHiding();
-                    return HideDecision();
-                case EnemyCoverPhase.Hiding:
-                    _coverElapsed += deltaSeconds;
-                    if (_coverElapsed < _spec.CoverHideSeconds)
-                    {
-                        return HideDecision();
-                    }
-
-                    CoverPhase = EnemyCoverPhase.Peeking;
-                    _coverElapsed = 0f;
-                    _reactionElapsed = 0f;
-                    _shotsInAttack = 0;
-                    return PeekDecision(self, seen);
-                default:
-                    _coverElapsed += deltaSeconds;
-                    if (_coverElapsed >= _spec.CoverPeekSeconds)
-                    {
-                        StartHiding();
-                        return HideDecision();
-                    }
-
-                    _reactionElapsed = _coverElapsed;
-                    return PeekDecision(self, seen);
-            }
-        }
-
-        private void StartHiding()
-        {
-            CoverPhase = EnemyCoverPhase.Hiding;
-            _coverElapsed = 0f;
-        }
-
-        private EnemyDecision HideDecision()
-        {
-            return new EnemyDecision(null, _coverThreat, false, true);
-        }
-
-        private EnemyDecision PeekDecision(Vector3 self, bool seen)
-        {
-            var inRange = Vector3.Distance(self, _coverThreat) <= _spec.FireRange;
-            return new EnemyDecision(null, _coverThreat, seen && inRange && _reactionElapsed >= _spec.ReactionSeconds, false);
-        }
-
-        private void LeaveCover()
-        {
-            if (State == EnemyState.TakeCover)
-            {
-                _lastSeen = _coverThreat;
-                _lostElapsed = 0f;
-            }
-
-            ReleaseCoverPoint();
-            CoverPhase = EnemyCoverPhase.None;
-        }
-
         private void ReleaseCoverPoint()
         {
             _cover?.Release(this);
@@ -530,20 +364,6 @@ namespace Shooter.Core
             _unreachableCover.Clear();
             CoverPhase = EnemyCoverPhase.None;
             SetState(_route.Length > 0 ? EnemyState.Patrol : EnemyState.Idle);
-        }
-
-        private EnemyDecision Pursue(float deltaSeconds)
-        {
-            _engaging = false;
-            _lostElapsed += deltaSeconds;
-            if (_lostElapsed >= _spec.LoseSightSeconds)
-            {
-                StartSearch(_lastSeen);
-                return SearchDecision();
-            }
-
-            SetState(EnemyState.Chase);
-            return new EnemyDecision(_lastSeen, _lastSeen, false);
         }
 
         private void StartSearch(Vector3 point)

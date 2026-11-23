@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Shooter.Net.Tests
@@ -99,6 +101,7 @@ namespace Shooter.Net.Tests
                 Path.Combine(_directory, "stagger.json"),
                 Path.Combine(_directory, "suppression.json"),
                 Path.Combine(_directory, "emotes.json"),
+                Path.Combine(_directory, "holster.json"),
             }));
             Assert.That(File.ReadAllText(Path.Combine(_directory, "knockback.json")), Is.EqualTo(knockback));
             Assert.That(File.ReadAllText(Path.Combine(_directory, "bots.json")), Is.EqualTo(bots));
@@ -148,6 +151,7 @@ namespace Shooter.Net.Tests
         [TestCase("stash.json", StashJson.ResourcePath)]
         [TestCase("stagger.json", StaggerActionInstaller.TuningResourcePath)]
         [TestCase("suppression.json", KitTuning.SuppressionResourcePath)]
+        [TestCase("holster.json", KitTuning.HolsterResourcePath)]
         public void WithoutGameContentTheServerReadTuningOfResourcesIsWritten(string fileName, string resourcePath)
         {
             ServerRulesExporter.ExportTuning(_directory);
@@ -175,6 +179,109 @@ namespace Shooter.Net.Tests
 
             Assert.That(File.ReadAllText(output), Is.EqualTo(emotes));
             Assert.That(EmoteJson.Parse(emotes, "emotes.json")[0].DurationSeconds, Is.EqualTo(2f));
+        }
+
+        [Test]
+        public void TheHolsterOfGameContentIsWrittenForTheServer()
+        {
+            const string holster = "{ \"armedPhases\": [\"Drawn\"] }";
+            var content = Create<GameContent>("Game");
+            content.HolsterTuning = Text("GameHolster", holster);
+            GameContent.Use(content);
+
+            ServerRulesExporter.ExportTuning(_directory);
+
+            Assert.That(File.ReadAllText(Path.Combine(_directory, "holster.json")), Is.EqualTo(holster));
+            Assert.That(HolsterJson.Parse(holster, "holster.json").IsArmedPhase(HolsterPhase.Drawing), Is.False);
+        }
+
+        [Test]
+        public void AZoneWithoutAColliderIsWrittenAsTheBoxItBuildsWhenPlayed()
+        {
+            var zone = Zone("Shop", new Vector3(10f, 0f, 5f));
+            zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.BlockDraw));
+
+            var zones = ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { zone });
+
+            Assert.That(zones.Zones, Has.Count.EqualTo(1));
+            var written = zones.Zones[0];
+            Assert.That(written.Id, Is.EqualTo("Shop"));
+            Assert.That(written.Reaction, Is.EqualTo(WeaponFreeZoneReaction.BlockDraw));
+            AssertNear(written.Min, 6f, 0f, 1f);
+            AssertNear(written.Max, 14f, 3f, 9f);
+        }
+
+        [Test]
+        public void AZoneWithABoxColliderIsWrittenAsThatBoxInTheWorld()
+        {
+            var zone = Zone("Gate", Vector3.zero);
+            zone.transform.localScale = new Vector3(2f, 1f, 1f);
+            var box = zone.gameObject.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, 1f, 0f);
+            box.size = new Vector3(2f, 2f, 2f);
+
+            var written = ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { zone }).Zones[0];
+
+            Assert.That(written.Reaction, Is.EqualTo(WeaponFreeZoneSpec.DefaultReaction));
+            Assert.That(written.Spec.HostileAfterSeconds, Is.EqualTo(WeaponFreeZoneSpec.DefaultHostileAfterSeconds));
+            AssertNear(written.Min, -2f, 0f, -1f);
+            AssertNear(written.Max, 2f, 2f, 1f);
+        }
+
+        [Test]
+        public void ADisabledZoneIsLeftOutAndTheOthersKeepTheirOrder()
+        {
+            var first = Zone("First", Vector3.zero);
+            var disabled = Zone("Off", new Vector3(20f, 0f, 0f));
+            disabled.enabled = false;
+            var last = Zone("Last", new Vector3(-20f, 0f, 0f));
+
+            var zones = ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { first, disabled, last });
+
+            Assert.That(zones.Zones, Has.Count.EqualTo(2));
+            Assert.That(zones.Zones[0].Id, Is.EqualTo("First"));
+            Assert.That(zones.Zones[1].Id, Is.EqualTo("Last"));
+        }
+
+        [Test]
+        public void TwoZonesWithTheSameIdAreRefused()
+        {
+            var a = Zone("Shop", Vector3.zero);
+            var b = Zone("Shop", new Vector3(20f, 0f, 0f));
+
+            var e = Assert.Throws<InvalidOperationException>(() => ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { a, b }));
+
+            Assert.That(e.Message, Does.Contain("share the zone id 'Shop'").And.Contain("Test.unity"));
+        }
+
+        [Test]
+        public void ARotatedZoneIsWrittenAsTheBoxAroundItWithAWarning()
+        {
+            var zone = Zone("Turned", Vector3.zero);
+            zone.Size = new Vector3(2f, 2f, 2f);
+            zone.transform.rotation = Quaternion.Euler(0f, 45f, 0f);
+            LogAssert.Expect(LogType.Warning, new Regex("WeaponFreeZone 'Turned' in Test.unity is rotated"));
+
+            var written = ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { zone }).Zones[0];
+
+            var reach = Mathf.Sqrt(2f);
+            AssertNear(written.Min, -reach, 0f, -reach);
+            AssertNear(written.Max, reach, 2f, reach);
+        }
+
+        [Test]
+        public void WrittenZonesReadBackForTheServer()
+        {
+            var zone = Zone("Shop", new Vector3(10f, 0f, 5f));
+            zone.Configure(new WeaponFreeZoneSpec(WeaponFreeZoneReaction.AutoHolster));
+
+            var text = NetMapWeaponFreeZones.Write(ServerRulesExporter.ToWeaponFreeZones("Test.unity", new[] { zone }));
+            var read = NetMapWeaponFreeZones.Parse(text, "Test" + NetMapWeaponFreeZones.Extension);
+
+            Assert.That(read.Zones[0].Id, Is.EqualTo("Shop"));
+            Assert.That(read.Zones[0].Reaction, Is.EqualTo(WeaponFreeZoneReaction.AutoHolster));
+            Assert.That(read.Zones[0].Contains(new System.Numerics.Vector3(10f, 1f, 5f)), Is.True);
+            Assert.That(ServerRulesExporter.ToWeaponFreeZones("Test.unity", Array.Empty<WeaponFreeZone>()).Zones, Is.Empty);
         }
 
         [Test]
@@ -300,6 +407,24 @@ namespace Shooter.Net.Tests
             var asset = new TextAsset(text) { name = assetName };
             _created.Add(asset);
             return asset;
+        }
+
+        // Edit Mode では Awake が走らないので、Collider も印もまだ無いシーンのゾーンと同じになる
+        private WeaponFreeZone Zone(string zoneId, Vector3 position)
+        {
+            var go = new GameObject(zoneId);
+            _created.Add(go);
+            go.transform.position = position;
+            var zone = go.AddComponent<WeaponFreeZone>();
+            zone.ZoneId = zoneId;
+            return zone;
+        }
+
+        private static void AssertNear(System.Numerics.Vector3 actual, float x, float y, float z)
+        {
+            Assert.That(actual.X, Is.EqualTo(x).Within(1e-4f), "x");
+            Assert.That(actual.Y, Is.EqualTo(y).Within(1e-4f), "y");
+            Assert.That(actual.Z, Is.EqualTo(z).Within(1e-4f), "z");
         }
     }
 }

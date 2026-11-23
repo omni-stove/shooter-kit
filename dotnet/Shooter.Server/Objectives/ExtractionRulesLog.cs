@@ -89,6 +89,11 @@ namespace Shooter.Server
             return Tag + " player=" + Text(playerId) + " weapon=" + weaponId + " is not in the stash; left behind";
         }
 
+        public static string BotBringsLoadout(int playerId, string weaponId)
+        {
+            return Tag + " player=" + Text(playerId) + " weapon=" + weaponId + " is not in the bot's stash; carried without taking it from the stash";
+        }
+
         public static string NotAnItem(int playerId, string weaponId)
         {
             return Tag + " player=" + Text(playerId) + " weapon=" + weaponId + " is not in inventory.json, so the stash cannot hold it; left behind";
