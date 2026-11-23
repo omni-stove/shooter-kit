@@ -64,6 +64,9 @@ namespace Shooter.Runtime
         [SerializeField, Min(0f), Tooltip("相手が武器を出しているときの係数。1 で今までどおり、2 で倍の速さでたまる。stealth.json の armedGainFactor があればそちらを使う")]
         private float _armedGainFactor = AwarenessSpec.DefaultArmedGainFactor;
 
+        [SerializeField, Min(0f), Tooltip("相手がウェポンライトを点けているときの係数。1 で今までどおり、2 で倍の速さでたまる。武器を出しているときの係数と掛け合わせる。stealth.json の litGainFactor があればそちらを使う")]
+        private float _litGainFactor = AwarenessSpec.DefaultLitGainFactor;
+
         public AwarenessSpec ToSpec()
         {
             return new AwarenessSpec(
@@ -85,7 +88,8 @@ namespace Shooter.Runtime
                 _gunshotGain,
                 _footstepGain,
                 _investigateLevel,
-                _armedGainFactor);
+                _armedGainFactor,
+                _litGainFactor);
         }
 
         public void CopyFrom(AwarenessSpec spec)
@@ -114,6 +118,7 @@ namespace Shooter.Runtime
             _footstepGain = spec.FootstepGain;
             _investigateLevel = spec.InvestigateLevel;
             _armedGainFactor = spec.ArmedGainFactor;
+            _litGainFactor = spec.LitGainFactor;
         }
     }
 }

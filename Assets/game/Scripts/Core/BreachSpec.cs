@@ -41,6 +41,9 @@ namespace Shooter.Core
         // 空なら品が無くても仕掛けられる。キットの在庫には突入用の爆薬が無いので、既定では品を求めない。
         public const string DefaultChargeItemId = "";
 
+        // 蹴るつもりの短い押しが仕掛けに化けず、仕掛けるつもりの押しで待たされない長さにする。
+        public const float DefaultHoldSeconds = 0.35f;
+
         public static BreachSpec Default { get; } = new BreachSpec();
 
         public BreachSpec(
@@ -59,7 +62,8 @@ namespace Shooter.Core
             float chargeSoundRadius = DefaultChargeSoundRadius,
             float slowMotionScale = DefaultSlowMotionScale,
             float slowMotionSeconds = DefaultSlowMotionSeconds,
-            string chargeItemId = DefaultChargeItemId)
+            string chargeItemId = DefaultChargeItemId,
+            float holdSeconds = DefaultHoldSeconds)
         {
             KickSeconds = SpecGuard.NonNegativeFinite(kickSeconds, nameof(kickSeconds));
             PlantSeconds = SpecGuard.NonNegativeFinite(plantSeconds, nameof(plantSeconds));
@@ -85,6 +89,7 @@ namespace Shooter.Core
             SlowMotionSeconds = SpecGuard.NonNegativeFinite(slowMotionSeconds, nameof(slowMotionSeconds));
             var itemId = SpecGuard.ReferenceId(chargeItemId);
             ChargeItemId = itemId.Length == 0 ? string.Empty : SpecGuard.LowercaseUuid(itemId, nameof(chargeItemId));
+            HoldSeconds = SpecGuard.PositiveFinite(holdSeconds, nameof(holdSeconds));
         }
 
         public float KickSeconds { get; }
@@ -118,6 +123,8 @@ namespace Shooter.Core
         public float SlowMotionSeconds { get; }
 
         public string ChargeItemId { get; }
+
+        public float HoldSeconds { get; }
 
         public bool NeedsChargeItem => ChargeItemId.Length > 0;
 

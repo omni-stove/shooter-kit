@@ -70,6 +70,13 @@ namespace Shooter.Server
                 return false;
             }
 
+            // 弾の出ない射撃で連射の枠を使わないよう、ServerLoadout.TryFire より先に断る
+            if (weapons.IsJammed)
+            {
+                WarnRejected(shooterId, ShotRejection.Jammed);
+                return false;
+            }
+
             var weaponCheck = weapons == shooter.Weapons
                 ? _rules.Loadout.TryFire(shooterId, spec, request.WeaponId, _now)
                 : CheckMountFire(weapons, spec, request.WeaponId);

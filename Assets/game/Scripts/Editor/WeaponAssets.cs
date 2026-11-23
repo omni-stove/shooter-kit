@@ -135,6 +135,7 @@ namespace Shooter.Editor
             definition.ReloadStyle = ammo.ReloadStyle;
             definition.ReloadSecondsPerRound = ammo.ReloadSecondsPerRound;
             definition.Heat.Set(ammo.Heat);
+            definition.Jam.Set(ammo.Jam);
 
             var round = spec.Round;
             definition.Delivery = round.Delivery;

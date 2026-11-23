@@ -47,6 +47,13 @@
   "hud.vehicleBoard.driver": "[{0}] Drive",
   "hud.vehicleBoard.passenger": "[{0}] Ride as passenger",
   "hud.vehicleBoard.gunner": "[{0}] Man the gun",
+  "hud.breach.kickOrPlant": "[{0}] Kick open / Hold [{0}] Plant charge",
+  "hud.breach.kick": "[{0}] Kick open",
+  "hud.breach.plant": "Hold [{0}] Plant charge",
+  "hud.breach.kickNoCharge": "[{0}] Kick open / Need {1} to plant a charge",
+  "hud.breach.noCharge": "Need {0} to plant a charge",
+  "hud.breach.planting": "Planting charge {0}%",
+  "hud.breach.armed": "Charge blows in {0} s",
   "hud.pickup.weapon": "[{0}] Pick up {1}",
   "hud.pickup.weaponSwap": "[{0}] Swap for {1}",
   "hud.pickup.weaponAmmo": "[{0}] Take ammo for {1}",
@@ -75,6 +82,8 @@
   "hud.magnification": "x{0}",
   "hud.lockOn": "Lock {0}%",
   "hud.lockedOn": "Locked",
+  "hud.jammed": "Jammed",
+  "hud.clearingJam": "Clearing jam: {0}% left",
   "hud.ability.withHint": "{0}  {1}",
   "hud.remoteCharge.detonate": "Tap to detonate {0} x{1}",
   "hud.wallet": "${0}",
@@ -86,5 +95,9 @@
   "hud.weaponFree.warn": "Weapons are not allowed here. Holster your weapon",
   "hud.weaponFree.warnThenHostile": "Holster your weapon: hostile in {0} s",
   "hud.weaponFree.autoHolster": "Weapons are not allowed here. Holstering",
-  "hud.weaponFree.blockDraw": "Weapons cannot be drawn here"
+  "hud.weaponFree.blockDraw": "Weapons cannot be drawn here",
+  "hud.weaponLight.on": "Light ON",
+  "hud.weaponLight.off": "Light OFF",
+  "hud.securityAlarm.ringing": "Alarm! Spotted by a camera: {0} s left",
+  "hud.securityCamera.disable": "Hold [{0}] for {1} s to disable the camera"
 }

@@ -56,7 +56,7 @@ namespace Shooter.Tests.EditMode
         {
             var entries = AttachmentModelCatalogAssetStep.Entries();
 
-            Assert.That(entries.Count(), Is.EqualTo(8));
+            Assert.That(entries.Count(), Is.EqualTo(9));
             Assert.That(entries.Select(e => e.ItemId), Is.Unique);
             foreach (var entry in entries)
             {
@@ -123,6 +123,28 @@ namespace Shooter.Tests.EditMode
             Assert.That(entry.Anchor, Is.EqualTo(AttachmentAnchor.Top));
             Assert.That(KitTuning.Items.TryFindAttachment(entry.ItemId, out var item), Is.True);
             Assert.That(item.Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
+        }
+
+        [Test]
+        public void TheWeaponLightHangsUnderTheBarrelWithItsLensForward()
+        {
+            var shape = AttachmentModelCatalogAssetStep.ShapeFor(AttachmentModelCatalogAssetStep.WeaponLightId);
+            var entry = AttachmentModelCatalogAssetStep.Entries().Single(e => e.ItemId == AttachmentModelCatalogAssetStep.WeaponLightId);
+
+            Assert.That(AttachmentModelCatalogAssetStep.PrefabName(AttachmentModelCatalogAssetStep.WeaponLightId), Is.EqualTo("Attachment_WeaponLight"));
+            Assert.That(entry.Anchor, Is.EqualTo(AttachmentAnchor.Bottom));
+            Assert.That(shape.SocketName, Is.Null, "the beam comes from the WeaponLightCatalog visual, not a socket on the body");
+            Assert.That(shape.HasPart("LightBody"), Is.True);
+            Assert.That(shape.HasPart("LightLens"), Is.True);
+            var lens = shape.Parts.Single(p => p.Name == "LightLens");
+            foreach (var part in shape.Parts)
+            {
+                Assert.That(part.Center.y, Is.LessThan(0f), part.Name + " hangs below the mount point");
+                Assert.That(lens.Center.z, Is.GreaterThanOrEqualTo(part.Center.z), part.Name);
+            }
+
+            Assert.That(KitTuning.Items.TryFindAttachment(entry.ItemId, out var item), Is.True);
+            Assert.That(item.Attachment.IsLight, Is.True);
         }
 
         [TestCase(AttachmentModelCatalogAssetStep.RedDotId)]

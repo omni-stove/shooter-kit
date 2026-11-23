@@ -28,7 +28,8 @@ namespace Shooter.Core
             ReloadStyle reloadStyle = ReloadStyle.Whole,
             float reloadSecondsPerRound = 0f,
             AmmoKind kind = AmmoKind.Magazine,
-            HeatSpec heat = null)
+            HeatSpec heat = null,
+            JamSpec jam = null)
         {
             if (magazineSize <= 0)
             {
@@ -74,6 +75,12 @@ namespace Shooter.Core
                 throw new ArgumentException("heat must be null unless kind is Heat", nameof(heat));
             }
 
+            // 熱で撃つ武器には送り込む弾が無く、詰まる物が無い。
+            if (kind == AmmoKind.Heat && jam != null)
+            {
+                throw new ArgumentException("jam must be null when kind is Heat", nameof(jam));
+            }
+
             MagazineSize = magazineSize;
             ReserveAmmo = reserveAmmo;
             ReloadSeconds = reloadSeconds;
@@ -84,6 +91,7 @@ namespace Shooter.Core
             ReloadSecondsPerRound = reloadSecondsPerRound;
             Kind = kind;
             Heat = heat;
+            Jam = jam;
         }
 
         public AmmoKind Kind { get; }
@@ -105,5 +113,7 @@ namespace Shooter.Core
         public float ReloadSecondsPerRound { get; }
 
         public HeatSpec Heat { get; }
+
+        public JamSpec Jam { get; }
     }
 }

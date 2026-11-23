@@ -397,7 +397,7 @@ namespace Shooter.Server.Tests
 
         private static GameRules MeleeRules()
         {
-            var actions = ActionRules.Default.WithDowned(Downed.Off).WithMelee(Melee.On);
+            var actions = ActionRules.Default.WithDowned(Downed.Off).WithMelee(Melee.On).WithTakedown(Takedown.On);
             return GameRules.Default.WithActions(actions).WithSpawnProtectionSeconds(0f).WithIdleKickSeconds(0f).WithRegenPerSecond(0f);
         }
 

@@ -18,7 +18,7 @@ namespace Shooter.Tests.EditMode
 
         private static readonly string[] StartsWithoutAGamepadButton =
         {
-            "Melee", "Prone", "Ability1", "Ability2", "SquadCommand", "SwitchAmmoType", "CycleMagnification", "HoldBreath", "SwitchGrenade", "SwitchStreak", "Inventory", "Previous", "Holster",
+            "Melee", "Prone", "Ability1", "Ability2", "SquadCommand", "SwitchAmmoType", "CycleMagnification", "HoldBreath", "SwitchGrenade", "SwitchStreak", "Inventory", "Previous", "Holster", "WeaponLight",
         };
 
         private InputActionAsset _asset;
@@ -138,6 +138,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("Emote", "<Keyboard>/j")]
         [TestCase("Countermeasure", "<Keyboard>/f")]
         [TestCase("Holster", "<Keyboard>/o")]
+        [TestCase("WeaponLight", "<Keyboard>/l")]
         public void LeanChatAndVoiceStartOnTheirKeys(string actionName, string path)
         {
             var slot = new RebindSlot(actionName, InputDeviceKind.KeyboardMouse);

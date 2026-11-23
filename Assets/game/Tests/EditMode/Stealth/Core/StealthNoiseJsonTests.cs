@@ -12,6 +12,7 @@ namespace Shooter.Core.Tests
         {
             "footstepNoiseRadius", "walkStride", "sprintStride", "crouchStride", "walkVolume", "sprintVolume", "crouchVolume",
             "minLandingFallSpeed", "hardLandingFallSpeed", "minLandingVolume", "armedGainFactor",
+            "litGainFactor",
         };
 
         [Test]
@@ -103,6 +104,45 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void ReadsTheLitGainFactor()
+        {
+            var tuning = StealthNoiseJson.ParseTuning("{\"litGainFactor\": 1.5, \"armedGainFactor\": 2}", "stealth.json");
+
+            Assert.That(tuning.LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(tuning.ArmedGainFactor, Is.EqualTo(2f));
+            var applied = tuning.ApplyTo(AwarenessSpec.Default);
+            Assert.That(applied.LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(applied.ArmedGainFactor, Is.EqualTo(2f), "both factors are applied together");
+            Assert.That(
+                StealthNoiseJson.Parse("{\"litGainFactor\": 1.5}", "stealth.json").FootstepNoiseRadius,
+                Is.EqualTo(StealthNoiseSpec.DefaultFootstepNoiseRadius),
+                "the noise reader accepts the awareness item");
+            Assert.That(StealthNoiseJson.ParseTuning("{\"litGainFactor\": 0}", "stealth.json").LitGainFactor, Is.Zero);
+        }
+
+        [Test]
+        public void AnOmittedLitGainFactorKeepsTheEnemysOwnValue()
+        {
+            var own = new AwarenessSpec(armedGainFactor: 2f, litGainFactor: 3f);
+
+            Assert.That(StealthNoiseJson.ParseTuning("{}", "stealth.json").LitGainFactor, Is.Null);
+            Assert.That(StealthTuningSpec.Default.LitGainFactor, Is.Null);
+
+            var armedOnly = StealthNoiseJson.ParseTuning("{\"armedGainFactor\": 4}", "stealth.json").ApplyTo(own);
+            Assert.That(armedOnly.ArmedGainFactor, Is.EqualTo(4f));
+            Assert.That(armedOnly.LitGainFactor, Is.EqualTo(3f), "the enemy keeps its own lit factor");
+
+            var litOnly = StealthNoiseJson.ParseTuning("{\"litGainFactor\": 1.5}", "stealth.json").ApplyTo(own);
+            Assert.That(litOnly.LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(litOnly.ArmedGainFactor, Is.EqualTo(2f), "the enemy keeps its own armed factor");
+
+            Assert.That(new StealthTuningSpec(StealthNoiseSpec.Default, null, 1.5f).LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new StealthTuningSpec(StealthNoiseSpec.Default, null, -1f)).ParamName,
+                Is.EqualTo("litGainFactor"));
+        }
+
+        [Test]
         public void ARadiusOfZeroIsSilent()
         {
             Assert.That(StealthNoiseJson.Parse("{\"footstepNoiseRadius\": 0}", "stealth.json").FootstepNoiseRadius, Is.Zero);
@@ -120,6 +160,9 @@ namespace Shooter.Core.Tests
         [TestCase("{\"armedGainFactor\": -1}", "armedGainFactor")]
         [TestCase("{\"armedGainFactor\": \"high\"}", "armedGainFactor")]
         [TestCase("{\"armedGainFactor\": null}", "armedGainFactor")]
+        [TestCase("{\"litGainFactor\": -1}", "litGainFactor")]
+        [TestCase("{\"litGainFactor\": \"bright\"}", "litGainFactor")]
+        [TestCase("{\"litGainFactor\": null}", "litGainFactor")]
         public void InvalidItemsAreNamed(string json, string item)
         {
             var e = Assert.Throws<TuningJsonException>(() => StealthNoiseJson.Parse(json, "stealth.json"));

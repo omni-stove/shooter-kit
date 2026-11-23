@@ -12,6 +12,8 @@ namespace Shooter.Runtime
 
         public const string AwarenessIndicatorSlotName = "AwarenessIndicator";
 
+        public const string SecurityCameraSlotName = "SecurityCamera";
+
         public static StealthTuningSpec Tuning =>
             KitTuning.Load(c => c.StealthTuning, TuningResourcePath, StealthNoiseJson.ParseTuning, StealthTuningSpec.Default);
 
@@ -34,6 +36,11 @@ namespace Shooter.Runtime
                 typeof(AwarenessIndicatorCatalog),
                 c => c.AwarenessIndicator as AwarenessIndicatorCatalog,
                 (c, v) => c.AwarenessIndicator = (AwarenessIndicatorCatalog)v);
+            GameContentSlots.Register(
+                SecurityCameraSlotName,
+                typeof(SecurityCameraCatalog),
+                c => c.SecurityCamera as SecurityCameraCatalog,
+                (c, v) => c.SecurityCamera = (SecurityCameraCatalog)v);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

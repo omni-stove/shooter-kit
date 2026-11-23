@@ -283,6 +283,73 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheWeaponLightCatalogComesFromTheEntryAndFallsBackToResources()
+        {
+            var content = Content("A");
+            GameContent.Use(content);
+            Assert.That(content.WeaponLights, Is.Null);
+            Assert.That(WeaponLightCatalog.ResourcePath, Is.EqualTo("Presentation/WeaponLightCatalog"));
+            Assert.That(WeaponLightCatalog.Load(), Is.SameAs(Resources.Load<WeaponLightCatalog>(WeaponLightCatalog.ResourcePath)));
+
+            content.WeaponLights = Track(ScriptableObject.CreateInstance<WeaponLightCatalog>());
+            Assert.That(WeaponLightCatalog.Load(), Is.SameAs(content.WeaponLights));
+
+            content.WeaponLights = null;
+            Assert.That(WeaponLightCatalog.Load(), Is.SameAs(Resources.Load<WeaponLightCatalog>(WeaponLightCatalog.ResourcePath)));
+
+            var left = GameContentAssets.FillEmpty(
+                Track(ScriptableObject.CreateInstance<GameContent>()), _ => new Object[0], _ => new TextAsset[0]);
+            Assert.That(left, Does.Contain("WeaponLights"), "the entry lists the weapon lights as a slot to fill");
+
+            var lights = Track(ScriptableObject.CreateInstance<WeaponLightCatalog>());
+            var filled = Track(ScriptableObject.CreateInstance<GameContent>());
+            left = GameContentAssets.FillEmpty(
+                filled, t => t == typeof(WeaponLightCatalog) ? new Object[] { lights } : new Object[0], _ => new TextAsset[0]);
+            Assert.That(filled.WeaponLights, Is.SameAs(lights));
+            Assert.That(left, Does.Not.Contain("WeaponLights"));
+        }
+
+        [Test]
+        public void AWeaponLightCatalogFindsAPrefabByVisualIdAndLeavesTheRestToCode()
+        {
+            var prefab = Track(new GameObject("WeaponLightTestPrefab"));
+            var catalog = Track(ScriptableObject.CreateInstance<WeaponLightCatalog>());
+            catalog.SetLights(new[]
+            {
+                new WeaponLightEntry("weaponLight", prefab),
+                new WeaponLightEntry("empty", null),
+            });
+
+            Assert.That(WeaponLightCatalog.PrefabFor(catalog, "weaponLight"), Is.SameAs(prefab));
+            Assert.That(WeaponLightCatalog.PrefabFor(catalog, "empty"), Is.Null, "an entry without a prefab is built in code");
+            Assert.That(WeaponLightCatalog.PrefabFor(catalog, "missing"), Is.Null);
+            Assert.That(WeaponLightCatalog.PrefabFor(catalog, ""), Is.Null);
+            Assert.That(WeaponLightCatalog.PrefabFor(null, "weaponLight"), Is.Null);
+            Assert.That(catalog.TryGet("empty", out var entry), Is.True);
+            Assert.That(entry.Id, Is.EqualTo("empty"));
+        }
+
+        [Test]
+        public void TheBarkCatalogComesFromTheEntryAndFallsBackToResources()
+        {
+            var content = Content("A");
+            GameContent.Use(content);
+            Assert.That(content.Barks, Is.Null);
+            Assert.That(BarkCatalog.Load(), Is.SameAs(Resources.Load<BarkCatalog>(BarkCatalog.ResourcePath)));
+
+            content.Barks = Track(ScriptableObject.CreateInstance<BarkCatalog>());
+            Assert.That(BarkCatalog.Load(), Is.SameAs(content.Barks));
+
+            content.Barks = null;
+            Assert.That(BarkCatalog.Load(), Is.SameAs(Resources.Load<BarkCatalog>(BarkCatalog.ResourcePath)));
+
+            var left = GameContentAssets.FillEmpty(
+                Track(ScriptableObject.CreateInstance<GameContent>()), _ => new Object[0], _ => new TextAsset[0]);
+            Assert.That(left, Does.Contain("Barks"), "the entry lists the bark voices as a slot to fill");
+            Assert.That(left, Does.Not.Contain("BarkTuning"), "a tuning slot with no file falls back to Resources/Tuning");
+        }
+
+        [Test]
         public void WithoutAVisionCatalogTheDefaultColorsAreUsed()
         {
             Assert.That(VisionVisualCatalog.ColorFor(null, VisionMode.Night), Is.EqualTo(VisionVisualCatalog.DefaultNightColor));
@@ -305,6 +372,8 @@ namespace Shooter.Tests.EditMode
 
         [TestCase("_visionVisuals", "Resources/Presentation/VisionVisualsCatalog")]
         [TestCase("_music", "Resources/Presentation/MusicCatalog")]
+        [TestCase("_weaponLights", "Resources/Presentation/WeaponLightCatalog")]
+        [TestCase("_barks", "Resources/Presentation/BarkCatalog")]
         [TestCase("_emoteAnimations", "Resources/Presentation/EmoteCatalog")]
         [TestCase("_cosmeticVisuals", "Resources/Presentation/CosmeticVisualCatalog")]
         [TestCase("_streakIcons", "Resources/Presentation/StreakIconCatalog")]
@@ -395,6 +464,7 @@ namespace Shooter.Tests.EditMode
                 (() => content.GraphicsTuning, v => content.GraphicsTuning = v),
                 (() => content.GamepadLayoutsTuning, v => content.GamepadLayoutsTuning = v),
                 (() => content.HolsterTuning, v => content.HolsterTuning = v),
+                (() => content.BarkTuning, v => content.BarkTuning = v),
                 (() => content.BreachTuning, v => content.BreachTuning = v),
             };
 
@@ -484,6 +554,7 @@ namespace Shooter.Tests.EditMode
         [TestCase("_graphicsTuning", "Resources/Tuning/graphics")]
         [TestCase("_gamepadLayoutsTuning", "Resources/Tuning/gamepad-layouts")]
         [TestCase("_holsterTuning", "Resources/Tuning/holster")]
+        [TestCase("_barkTuning", "Resources/Tuning/barks")]
         public void TheTuningFieldsNameTheirResourceFallback(string field, string resourcePath)
         {
             var info = typeof(GameContent).GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -649,8 +720,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("graphics"));
             Assert.That(asked, Does.Contain("gamepad-layouts"));
             Assert.That(asked, Does.Contain("holster"));
+            Assert.That(asked, Does.Contain("barks"));
             Assert.That(asked, Does.Contain("juggernaut").And.Contain("vip"));
-            Assert.That(asked, Has.Count.EqualTo(44));
+            Assert.That(asked, Has.Count.EqualTo(45));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]

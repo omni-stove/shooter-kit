@@ -17,7 +17,7 @@
   "coverCooldownSeconds": 5,
   "archetype": "Rifleman",
   "staggerResistance": 0,
-  "fireRange": 25,
+  "fireRange": 40,
   "facingToleranceDegrees": 180,
   "rangeSpreadDegrees": 0,
   "sprintRatio": 1.6,

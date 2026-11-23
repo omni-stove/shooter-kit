@@ -271,6 +271,56 @@ namespace Shooter.Runtime
     }
 
     [Serializable]
+    public sealed class JamSettings
+    {
+        [SerializeField, Tooltip("撃つと詰まることがある (ルールの Jam が On のときだけ効く)。弾薬の種類が Heat の武器では使わない")]
+        private bool _enabled;
+
+        [SerializeField, UnityEngine.Range(0f, 1f), Tooltip("1 発撃つごとに詰まる確率")]
+        private float _chancePerShot = JamSpec.DefaultChancePerShot;
+
+        [SerializeField, UnityEngine.Range(0f, 1f), Tooltip("撃ち続けている間、1 発ごとに足していく確率")]
+        private float _chancePerSustainedShot = JamSpec.DefaultChancePerSustainedShot;
+
+        [SerializeField, Min(0f), Tooltip("撃ち止めてからこの秒数が経つと、撃ち続けで足した確率を戻す")]
+        private float _sustainedResetSeconds = JamSpec.DefaultSustainedResetSeconds;
+
+        [SerializeField, UnityEngine.Range(0f, 1f), Tooltip("撃ち続けても超えない確率の上限 (1 発ごとの確率以上)")]
+        private float _maxChance = JamSpec.DefaultMaxChance;
+
+        [SerializeField, Min(0.01f), Tooltip("詰まりを直すのにかかる秒数")]
+        private float _clearSeconds = JamSpec.DefaultClearSeconds;
+
+        public bool Enabled { get => _enabled; set => _enabled = value; }
+
+        public float ChancePerShot { get => _chancePerShot; set => _chancePerShot = value; }
+
+        public float ChancePerSustainedShot { get => _chancePerSustainedShot; set => _chancePerSustainedShot = value; }
+
+        public float SustainedResetSeconds { get => _sustainedResetSeconds; set => _sustainedResetSeconds = value; }
+
+        public float MaxChance { get => _maxChance; set => _maxChance = value; }
+
+        public float ClearSeconds { get => _clearSeconds; set => _clearSeconds = value; }
+
+        public JamSpec ToSpec() =>
+            _enabled ? new JamSpec(_chancePerShot, _chancePerSustainedShot, _sustainedResetSeconds, _maxChance, _clearSeconds) : null;
+
+        public void Set(JamSpec spec)
+        {
+            _enabled = spec != null;
+            if (spec != null)
+            {
+                _chancePerShot = spec.ChancePerShot;
+                _chancePerSustainedShot = spec.ChancePerSustainedShot;
+                _sustainedResetSeconds = spec.SustainedResetSeconds;
+                _maxChance = spec.MaxChance;
+                _clearSeconds = spec.ClearSeconds;
+            }
+        }
+    }
+
+    [Serializable]
     public sealed class PenetrationSettings
     {
         [SerializeField, Tooltip("当たった物を抜けて先へ進む")]
