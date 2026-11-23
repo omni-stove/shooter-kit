@@ -96,17 +96,23 @@ namespace Shooter.Runtime
                 ResetHold();
                 _hint?.Clear();
 
-                var oldVisual = _head != null ? _head.Find(VisualName) : null;
-                if (oldVisual != null)
+                // Body と Lens も外す。残すと、箱と筒の有無が新しいカタログと食い違う。
+                foreach (var partName in new[] { VisualName, LensName, BodyName })
                 {
-                    oldVisual.SetParent(null, false);
+                    var oldPart = _head != null ? _head.Find(partName) : null;
+                    if (oldPart == null)
+                    {
+                        continue;
+                    }
+
+                    oldPart.SetParent(null, false);
                     if (Application.isPlaying)
                     {
-                        Destroy(oldVisual.gameObject);
+                        Destroy(oldPart.gameObject);
                     }
                     else
                     {
-                        DestroyImmediate(oldVisual.gameObject);
+                        DestroyImmediate(oldPart.gameObject);
                     }
                 }
             }

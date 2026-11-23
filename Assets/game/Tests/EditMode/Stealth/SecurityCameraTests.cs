@@ -450,7 +450,10 @@ namespace Shooter.Tests.EditMode
         {
             var camera = Place();
 
-            Assert.Throws<System.InvalidOperationException>(() => camera.Initialize(CameraId, SecurityCameraSpec.Default, null));
+            camera.Initialize("Rebuilt", SecurityCameraSpec.Default, null);
+            Assert.That(camera.Id, Is.EqualTo("Rebuilt"), "a second Initialize rebuilds with the new id");
+            Assert.That(camera.transform.Find(SecurityCamera.HeadName).Find(SecurityCamera.BodyName), Is.Not.Null);
+            Assert.That(camera.transform.Find(SecurityCamera.HeadName).Find(SecurityCamera.LensName), Is.Not.Null);
             Assert.Throws<System.ArgumentOutOfRangeException>(() => camera.Tick(-1f, false));
             Assert.Throws<System.ArgumentOutOfRangeException>(() => camera.Tick(float.NaN, false));
 
