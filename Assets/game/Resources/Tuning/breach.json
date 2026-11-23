@@ -14,5 +14,6 @@
   "chargeSoundRadius": 60,
   "slowMotionScale": 0.35,
   "slowMotionSeconds": 1.5,
-  "chargeItemId": ""
+  "chargeItemId": "",
+  "holdSeconds": 0.35
 }

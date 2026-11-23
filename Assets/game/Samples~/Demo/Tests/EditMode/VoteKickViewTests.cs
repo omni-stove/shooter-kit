@@ -44,6 +44,24 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ThePlayersNamesInTheTitleAreNotReadAsRichText()
+        {
+            GameSignals.Scoreboard.Publish(new[]
+            {
+                new ScoreboardEntry(_localId, ScoreboardName.Player(_localId), Team.Alpha, 0, 0, 0, ScoreboardConnection.Connected, true),
+                new ScoreboardEntry(_callerId, ScoreboardName.Literal("<color=red>B"), Team.Alpha, 0, 0, 0, ScoreboardConnection.Connected, false),
+                new ScoreboardEntry(_targetId, ScoreboardName.Literal("<size=900>A"), Team.Bravo, 0, 0, 0, ScoreboardConnection.Connected, false),
+            });
+
+            GameSignals.VoteKick.Publish(new VoteKickStatus(_targetId, _callerId, 1, 3, 12.3f));
+
+            Assert.That(_view.TitleText, Is.EqualTo("<color=red>B が <size=900>A のキックの投票を始めた"));
+            var title = _view.Element.Q<Label>(className: VoteKickView.TitleClass);
+            Assert.That(title.text, Is.EqualTo(_view.TitleText));
+            Assert.That(title.enableRichText, Is.False);
+        }
+
+        [Test]
         public void TheStyleSheetIsInResources()
         {
             Assert.That(Resources.Load<StyleSheet>(VoteKickView.StyleSheetResourcePath), Is.Not.Null);

@@ -43,6 +43,9 @@ namespace Shooter.Server.Tests
             Assert.That(spec.CoverBackHoldSeconds, Is.EqualTo(0.2f));
             Assert.That(spec.CoverPeekSlideSeconds, Is.EqualTo(0.15f));
             Assert.That(spec.CoverMinWallHeight, Is.EqualTo(0f));
+            Assert.That(spec.CoverProbeHeight, Is.EqualTo(0.5f));
+            Assert.That(spec.CoverUpperProbeHeight, Is.EqualTo(0.9f));
+            Assert.That(spec.CoverTopProbeHeight, Is.EqualTo(3f));
             Assert.That(spec.LadderTopEntryDepth, Is.EqualTo(0.3f));
             Assert.That(spec.LadderMinApproachDot, Is.EqualTo(0.5f));
             Assert.That(spec.LadderMinApproachSpeed, Is.EqualTo(0.5f));
@@ -61,6 +64,14 @@ namespace Shooter.Server.Tests
         [TestCase("coverPeekSlideSeconds", 0f)]
         [TestCase("coverMinWallHeight", -0.1f)]
         [TestCase("coverMinWallHeight", float.NaN)]
+        [TestCase("coverProbeHeight", -0.1f)]
+        [TestCase("coverProbeHeight", float.PositiveInfinity)]
+        [TestCase("coverUpperProbeHeight", -0.1f)]
+        [TestCase("coverUpperProbeHeight", float.NaN)]
+        [TestCase("coverTopProbeHeight", 0f)]
+        [TestCase("coverTopProbeHeight", 0.8f)]
+        [TestCase("coverTopProbeHeight", float.NaN)]
+        [TestCase("coverTopProbeHeight", float.PositiveInfinity)]
         [TestCase("ladderTopEntryDepth", -0.1f)]
         [TestCase("ladderMinApproachDot", -1.1f)]
         [TestCase("ladderMinApproachDot", 1.1f)]
@@ -70,6 +81,35 @@ namespace Shooter.Server.Tests
             var e = Assert.Throws<ArgumentOutOfRangeException>(() => SpecWith(name, value));
 
             Assert.That(e.ParamName, Is.EqualTo(name));
+        }
+
+        // 上端を測る Ray の始点 (既定 3 m) より高い所から壁を探す設定は、上端の側の値の誤りとして断る。
+        [TestCase("coverProbeHeight", 3.5f)]
+        [TestCase("coverUpperProbeHeight", 3.5f)]
+        public void AWallRayAboveTheTopRayNamesTheTopRay(string name, float value)
+        {
+            var e = Assert.Throws<ArgumentOutOfRangeException>(() => SpecWith(name, value));
+
+            Assert.That(e.ParamName, Is.EqualTo("coverTopProbeHeight"));
+        }
+
+        [Test]
+        public void TheRayHeightsMayAllBeTheSame()
+        {
+            var spec = new MotorSpec(
+                MotorSpec.DefaultWalkSpeed,
+                MotorSpec.DefaultSprintSpeed,
+                MotorSpec.DefaultJumpHeight,
+                MotorSpec.DefaultGravity,
+                MotorSpec.DefaultAirControl,
+                MotorSpec.DefaultCrouchSpeed,
+                coverProbeHeight: 1f,
+                coverUpperProbeHeight: 1f,
+                coverTopProbeHeight: 1f);
+
+            Assert.That(spec.CoverProbeHeight, Is.EqualTo(1f));
+            Assert.That(spec.CoverUpperProbeHeight, Is.EqualTo(1f));
+            Assert.That(spec.CoverTopProbeHeight, Is.EqualTo(1f));
         }
 
         [Test]
@@ -83,6 +123,9 @@ namespace Shooter.Server.Tests
             Assert.That(text, Does.Contain("\"ladderMinApproachSpeed\": 1.5"));
             Assert.That(text, Does.Contain("\"coverEnterSpeed\": 3"));
             Assert.That(text, Does.Contain("\"coverMinWallHeight\": 0.7"));
+            Assert.That(text, Does.Contain("\"coverProbeHeight\": 0.3"));
+            Assert.That(text, Does.Contain("\"coverUpperProbeHeight\": 0.8"));
+            Assert.That(text, Does.Contain("\"coverTopProbeHeight\": 4"));
             AssertTuned(read);
         }
 
@@ -105,6 +148,9 @@ namespace Shooter.Server.Tests
             Assert.That(read.CoverBackHoldSeconds, Is.EqualTo(MotorSpec.DefaultCoverBackHoldSeconds));
             Assert.That(read.CoverPeekSlideSeconds, Is.EqualTo(MotorSpec.DefaultCoverPeekSlideSeconds));
             Assert.That(read.CoverMinWallHeight, Is.EqualTo(MotorSpec.DefaultCoverMinWallHeight));
+            Assert.That(read.CoverProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverProbeHeight));
+            Assert.That(read.CoverUpperProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverUpperProbeHeight));
+            Assert.That(read.CoverTopProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverTopProbeHeight));
             Assert.That(read.LadderTopEntryDepth, Is.EqualTo(MotorSpec.DefaultLadderTopEntryDepth));
             Assert.That(read.LadderMinApproachDot, Is.EqualTo(MotorSpec.DefaultLadderMinApproachDot));
             Assert.That(read.LadderMinApproachSpeed, Is.EqualTo(MotorSpec.DefaultLadderMinApproachSpeed));
@@ -118,6 +164,10 @@ namespace Shooter.Server.Tests
         [TestCase("{\"motor\": {\"ladderMinApproachDot\": 2}}", "motor.ladderMinApproachDot")]
         [TestCase("{\"motor\": {\"ladderTopEntryDepth\": -1}}", "motor.ladderTopEntryDepth")]
         [TestCase("{\"motor\": {\"coverMinWallHeight\": -1}}", "motor.coverMinWallHeight")]
+        [TestCase("{\"motor\": {\"coverProbeHeight\": -1}}", "motor.coverProbeHeight")]
+        [TestCase("{\"motor\": {\"coverUpperProbeHeight\": -1}}", "motor.coverUpperProbeHeight")]
+        [TestCase("{\"motor\": {\"coverTopProbeHeight\": 0}}", "motor.coverTopProbeHeight")]
+        [TestCase("{\"motor\": {\"coverProbeHeight\": 3.5}}", "motor.coverTopProbeHeight")]
         public void BadValuesInTheRulesFileNameTheItem(string text, string item)
         {
             var e = Assert.Throws<ServerDataJsonException>(() => NetMatchFile.Parse(text, "bad.json"));
@@ -202,6 +252,46 @@ namespace Shooter.Server.Tests
             AddBox(new Vector3(0f, 1f, 1f + 0.2f), new Vector3(2f, 1f, 0.2f));
 
             Assert.That(PressCover(SpecWith("coverMinWallHeight", minHeight)).Cover.IsInCover, Is.EqualTo(enters));
+        }
+
+        // 壁の上端は床から 0.4 m。体は床から外皮の分だけ浮くので、足元から 0.5 m・0.9 m の既定の 2 本の Ray はどちらも上を越える。
+        // 上端は世界の高さで返る。
+        [TestCase(MotorSpec.DefaultCoverProbeHeight, false)]
+        [TestCase(0.3f, true)]
+        public void TheSimulationEntersA40CentimeterWallOnlyWithALowerProbeHeight(float probeHeight, bool enters)
+        {
+            AddFloor();
+            AddBox(new Vector3(0f, 0.2f, 1f + 0.2f), new Vector3(2f, 0.2f, 0.2f));
+
+            var state = PressCover(SpecWith("coverProbeHeight", probeHeight));
+
+            Assert.That(state.Cover.IsInCover, Is.EqualTo(enters));
+            Assert.That(state.Cover.TopY, Is.EqualTo(enters ? 0.4f : 0f).Within(0.01f));
+        }
+
+        // 車体の底は床から 0.7 m、上端は 1.5 m。足元は外皮の分だけ床より高いので、足元から 0.55 m の Ray は底の下を通る。
+        [TestCase(MotorSpec.DefaultCoverUpperProbeHeight, true)]
+        [TestCase(0.55f, false)]
+        public void TheSimulationEntersARaisedBodyOnlyWhenTheUpperProbeHeightReachesIt(float upperProbeHeight, bool enters)
+        {
+            AddFloor();
+            AddBox(new Vector3(0f, 1.1f, 1f + 0.2f), new Vector3(2f, 0.4f, 0.2f));
+
+            Assert.That(PressCover(SpecWith("coverUpperProbeHeight", upperProbeHeight)).Cover.IsInCover, Is.EqualTo(enters));
+        }
+
+        // 壁の上端は床から 3.5 m。上端を測る Ray が届かなければ、足元から Ray の高さまでが上端になる。
+        [TestCase(MotorSpec.DefaultCoverTopProbeHeight, true)]
+        [TestCase(4f, false)]
+        public void TheSimulationMeasuresATallWallUpToTheTopProbeHeight(float topProbeHeight, bool capped)
+        {
+            AddFloor();
+            AddBox(new Vector3(0f, 1.75f, 1f + 0.2f), new Vector3(2f, 1.75f, 0.2f));
+
+            var state = PressCover(SpecWith("coverTopProbeHeight", topProbeHeight));
+
+            Assert.That(state.Cover.IsInCover, Is.True);
+            Assert.That(state.Cover.TopY, Is.EqualTo(capped ? FeetY(state) + topProbeHeight : 3.5f).Within(0.01f));
         }
 
         [Test]
@@ -350,7 +440,10 @@ namespace Shooter.Server.Tests
                 ladderTopEntryDepth: 0.6f,
                 ladderMinApproachDot: 0.75f,
                 ladderMinApproachSpeed: 1.5f,
-                coverMinWallHeight: 0.7f);
+                coverMinWallHeight: 0.7f,
+                coverProbeHeight: 0.3f,
+                coverUpperProbeHeight: 0.8f,
+                coverTopProbeHeight: 4f);
         }
 
         private static void AssertTuned(MotorSpec read)
@@ -364,6 +457,9 @@ namespace Shooter.Server.Tests
             Assert.That(read.CoverBackHoldSeconds, Is.EqualTo(0.7f));
             Assert.That(read.CoverPeekSlideSeconds, Is.EqualTo(0.25f));
             Assert.That(read.CoverMinWallHeight, Is.EqualTo(0.7f));
+            Assert.That(read.CoverProbeHeight, Is.EqualTo(0.3f));
+            Assert.That(read.CoverUpperProbeHeight, Is.EqualTo(0.8f));
+            Assert.That(read.CoverTopProbeHeight, Is.EqualTo(4f));
             Assert.That(read.LadderTopEntryDepth, Is.EqualTo(0.6f));
             Assert.That(read.LadderMinApproachDot, Is.EqualTo(0.75f));
             Assert.That(read.LadderMinApproachSpeed, Is.EqualTo(1.5f));
@@ -390,7 +486,10 @@ namespace Shooter.Server.Tests
                 ladderTopEntryDepth: Pick("ladderTopEntryDepth", MotorSpec.DefaultLadderTopEntryDepth),
                 ladderMinApproachDot: Pick("ladderMinApproachDot", MotorSpec.DefaultLadderMinApproachDot),
                 ladderMinApproachSpeed: Pick("ladderMinApproachSpeed", MotorSpec.DefaultLadderMinApproachSpeed),
-                coverMinWallHeight: Pick("coverMinWallHeight", MotorSpec.DefaultCoverMinWallHeight));
+                coverMinWallHeight: Pick("coverMinWallHeight", MotorSpec.DefaultCoverMinWallHeight),
+                coverProbeHeight: Pick("coverProbeHeight", MotorSpec.DefaultCoverProbeHeight),
+                coverUpperProbeHeight: Pick("coverUpperProbeHeight", MotorSpec.DefaultCoverUpperProbeHeight),
+                coverTopProbeHeight: Pick("coverTopProbeHeight", MotorSpec.DefaultCoverTopProbeHeight));
         }
 
         private static NetMotorSettings Settings(MotorSpec spec)
@@ -409,6 +508,12 @@ namespace Shooter.Server.Tests
         private static CharacterMotorInput Input(bool cover = false, bool aim = false, float yaw = 0f)
         {
             return new CharacterMotorInput(Vector2.Zero, yaw, false, false, false, false, cover, aim, false, false);
+        }
+
+        // 立っている体は床から外皮の分だけ浮くので、上端は床ではなく足元から測る。
+        private static float FeetY(CharacterMotorState state)
+        {
+            return state.Position.Y + _stance.Standing.CenterY - (_stance.Standing.Height * 0.5f);
         }
 
         private CharacterMotorState PressCover(MotorSpec spec)

@@ -140,6 +140,37 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void UninstallSavesTheKillsAndAchievementsCountedWithoutAMatchEnd()
+        {
+            const int localId = 7;
+            var roster = new ParticipantTable();
+            roster.Set(new Participant(localId, "P7", null, true));
+            var storage = new MemorySaveStorage();
+            var recorder = new ProgressionRecorder(storage, _spec);
+            var achievements = new AchievementSpec(new[] { new AchievementDefinition("first-blood", "a.first-blood", "a.first-blood.text", PlayerStat.Kills, 1) });
+            ProgressionBootstrap.Install(new AchievementRecorder(recorder, achievements, () => 0d));
+            GameSignals.Participants.Publish(roster);
+            try
+            {
+                CombatEvents.RaiseKilled(new KillFeedEntry(localId, 8, "rifle", headshot: false, friendly: false));
+
+                Assert.That(storage.Has(ProfileStore.Slot), Is.False, "a kill alone does not write");
+
+                ProgressionBootstrap.Uninstall();
+
+                var saved = new ProfileStore(storage).Load();
+                Assert.That(saved.Xp, Is.EqualTo(100));
+                Assert.That(saved.Kills, Is.EqualTo(1));
+                Assert.That(saved.Achievements, Is.EqualTo(new[] { "first-blood" }));
+                Assert.That(storage.WriteCount, Is.EqualTo(1));
+            }
+            finally
+            {
+                GameSignals.Participants.Clear();
+            }
+        }
+
+        [Test]
         public void TheAchievementsAreRecordedWithTheProgression()
         {
             var storage = new MemorySaveStorage();

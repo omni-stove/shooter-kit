@@ -79,7 +79,7 @@ namespace Shooter.Server
         }
 
         // 撃った人は少し前の乗り物を見て捉えているので、射撃の当たりと同じく見ていた tick の姿で車体の中ほどを出す。
-        public bool TryRewindCenter(int vehicle, float tick, out Vector3 center)
+        public bool TryRewindCenter(int vehicle, double tick, out Vector3 center)
         {
             if (!IsLockable(vehicle))
             {

@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Shooter.Core;
 
@@ -8,10 +9,10 @@ namespace Shooter.Server
     internal sealed partial class ServerDeployables
     {
         // 新しく置いた物ほど前線に近いとみなし、使える中でいちばん後に置いた物を選ぶ (オフラインの SpawnBeacon.TryFindFor と同じ)
-        public bool TryUseBeacon(int playerId, out Vector3 position, out float yaw)
+        public bool TryUseBeacon(int playerId, out Vector3 position, out float yawRadians)
         {
             position = default;
-            yaw = 0f;
+            yawRadians = 0f;
             for (var i = _beacons.Count - 1; i >= 0; i--)
             {
                 var placed = _beacons[i];
@@ -26,7 +27,8 @@ namespace Shooter.Server
                 }
 
                 position = BeaconSpawnPosition(placed);
-                yaw = placed.Yaw;
+                // 置いた物の yaw (度) をそのまま返さないのは、受け取る側が体の yaw (ラジアン) として置くため
+                yawRadians = placed.Yaw * (MathF.PI / 180f);
                 _log.WriteLine(BeaconLog.Used(
                     ServerDeployableLog.Owner(placed.OwnerId),
                     placed.Type.Id,

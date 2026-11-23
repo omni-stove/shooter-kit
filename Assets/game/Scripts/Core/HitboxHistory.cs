@@ -76,16 +76,16 @@ namespace Shooter.Core
             _leans[index] = lean;
         }
 
-        public bool TrySample(float tick, out Vector3 position)
+        public bool TrySample(double tick, out Vector3 position)
         {
             return TrySample(tick, out position, out _);
         }
 
-        public bool TrySample(float tick, out Vector3 position, out Vector3 lean)
+        public bool TrySample(double tick, out Vector3 position, out Vector3 lean)
         {
             position = default;
             lean = default;
-            if (Count == 0 || float.IsNaN(tick))
+            if (Count == 0 || double.IsNaN(tick))
             {
                 return false;
             }
@@ -120,7 +120,7 @@ namespace Shooter.Core
             }
 
             var after = IndexOf(lo + 1);
-            var t = (float)((tick - (double)_ticks[before]) / ((double)_ticks[after] - _ticks[before]));
+            var t = (float)((tick - _ticks[before]) / ((double)_ticks[after] - _ticks[before]));
             position = Vector3.Lerp(_positions[before], _positions[after], t);
             lean = Vector3.Lerp(_leans[before], _leans[after], t);
             return true;

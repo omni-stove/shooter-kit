@@ -39,10 +39,16 @@ namespace Shooter.Server
         private ServerMatch _match;
         private ServerBodies _bodies;
         private Streaks _rule = Streaks.Off;
-        private float _now;
-        private float _nextTrackTime;
-        private float _nextRefusalLogTime = float.NegativeInfinity;
+        private double _now;
+        private double _nextTrackTime;
+        private double _nextRefusalLogTime = double.NegativeInfinity;
         private int _nextMarkId = FirstMarkId;
+
+        internal double ClockSeconds
+        {
+            get => _now;
+            set => _now = value;
+        }
 
         // 調整値は Unity と同じ streaks の JSON から読んだものを受け取る。渡されなければ Core の既定で動かす
         public ServerStreaks(MatchRulesModule rules, ServerCombat combat, StreakSpec spec = null, Random random = null)
@@ -485,7 +491,7 @@ namespace Shooter.Server
 
         private bool FillPlaced(UavMark mark, Vector3 position)
         {
-            var remaining = mark.ExpiresAt - _now;
+            var remaining = (float)(mark.ExpiresAt - _now);
             if (!(remaining > 0f))
             {
                 return false;
@@ -582,7 +588,7 @@ namespace Shooter.Server
 
         private readonly struct UavMark
         {
-            public UavMark(int id, Team team, int targetId, float expiresAt)
+            public UavMark(int id, Team team, int targetId, double expiresAt)
             {
                 Id = id;
                 Team = team;
@@ -596,12 +602,12 @@ namespace Shooter.Server
 
             public int TargetId { get; }
 
-            public float ExpiresAt { get; }
+            public double ExpiresAt { get; }
         }
 
         private readonly struct Shell
         {
-            public Shell(float at, Vector3 point, int index, int count, int callerId)
+            public Shell(double at, Vector3 point, int index, int count, int callerId)
             {
                 At = at;
                 Point = point;
@@ -610,7 +616,7 @@ namespace Shooter.Server
                 CallerId = callerId;
             }
 
-            public float At { get; }
+            public double At { get; }
 
             public Vector3 Point { get; }
 

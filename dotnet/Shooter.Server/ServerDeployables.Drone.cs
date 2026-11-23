@@ -173,7 +173,7 @@ namespace Shooter.Server
 
             public float Climb { get; set; }
 
-            public float InputAt { get; set; }
+            public double InputAt { get; set; }
 
             public bool HasInput => Move != Vector2.Zero || Climb != 0f;
 

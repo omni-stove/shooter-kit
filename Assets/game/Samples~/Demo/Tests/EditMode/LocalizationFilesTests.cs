@@ -260,6 +260,24 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheJamTextsAreReadFromTheHudTableOfEveryLanguage()
+        {
+            var english = LayerOf(GameLanguage.English, "hud.json");
+            var japanese = LayerOf(GameLanguage.Japanese, "hud.json");
+
+            foreach (var key in new[] { HudView.JammedKey, HudView.ClearingJamKey })
+            {
+                Assert.That(english.Keys, Does.Contain(key), "en/hud.json " + key);
+                Assert.That(japanese.Keys, Does.Contain(key), "ja/hud.json " + key);
+            }
+
+            Assert.That(english.Get(HudView.JammedKey), Is.EqualTo("Jammed"));
+            Assert.That(japanese.Get(HudView.JammedKey), Is.EqualTo("弾詰まり"));
+            Assert.That(english.Format(HudView.ClearingJamKey, 40), Is.EqualTo("Clearing jam: 40% left"));
+            Assert.That(japanese.Format(HudView.ClearingJamKey, 40), Is.EqualTo("解除中 残り 40%"));
+        }
+
+        [Test]
         public void TheNetBattleRoyaleMapAndTheUnopenedBoxAreNamedInEveryLanguage()
         {
             foreach (var language in GameLanguages.All)

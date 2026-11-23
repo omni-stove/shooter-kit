@@ -30,6 +30,20 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheKillersNameInTheCaptionIsNotReadAsRichText()
+        {
+            var view = CreateHudView(out var element);
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[KillCam\] showing the frame "".*<size=900>A.*""$"));
+            GameSignals.KillCam.Publish(new KillCamStatus("<size=900>A", "rifle", 4f, 0f, 1f));
+
+            var caption = element.Q<Label>(KillCamView.CaptionName);
+            Assert.That(caption.text, Is.EqualTo(view.Caption));
+            Assert.That(caption.text, Does.Contain("<size=900>A"));
+            Assert.That(caption.enableRichText, Is.False);
+        }
+
+        [Test]
         public void CaptionNamesTheKiller()
         {
             var caption = KillCamText.Caption(LocalizedText.Literal("Enemy-1"));

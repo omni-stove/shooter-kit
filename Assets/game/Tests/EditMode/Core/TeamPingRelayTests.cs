@@ -164,6 +164,27 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => relay.Expire(float.NaN, _changes));
         }
 
+        // サーバーを何日も動かした後の時刻 (float の刻みが 1 tick より粗い) でも、間隔と消える時刻を 1 tick (1/60 秒) の細かさで数える
+        [Test]
+        public void TheIntervalAndLifetimeKeepTickPrecisionAfterALongUptime()
+        {
+            const double start = 1_000_000d;
+            const double tick = 1d / 60d;
+            var relay = new TeamPingRelay(new PingSpec(lifetimeSeconds: 2f, minIntervalSeconds: 0.5f));
+
+            Assert.That(relay.TryPlace(_alice, Team.Alpha, PingHit.Location(_here), null, start + tick, _changes, out var placed), Is.EqualTo(PingRefusal.None));
+            _changes.Clear();
+
+            Assert.That(placed.Marker.PlacedAt, Is.EqualTo(start + tick).Within(1e-9d));
+            Assert.That(placed.Marker.ExpiresAt, Is.EqualTo(start + tick + 2d).Within(1e-9d));
+            Assert.That(placed.Marker.RemainingSeconds(start + (2d * tick)), Is.EqualTo(2f - (1f / 60f)).Within(1e-5f));
+            Assert.That(relay.CheckInterval(_alice, start + (30d * tick)), Is.EqualTo(PingRefusal.TooSoon), "29 ticks after the attempt is short of half a second");
+            Assert.That(relay.CheckInterval(_alice, start + (32d * tick)), Is.EqualTo(PingRefusal.None));
+            Assert.That(relay.Expire(start + (120d * tick), _changes), Is.EqualTo(0), "one tick short of the lifetime");
+            Assert.That(relay.Expire(start + (122d * tick), _changes), Is.EqualTo(1));
+            Assert.That(_changes[0].Removal, Is.EqualTo(PingRemoval.Expired));
+        }
+
         [Test]
         public void ALeavingPlayerTakesTheirPingsAndIntervalAlong()
         {

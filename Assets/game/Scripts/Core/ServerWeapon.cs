@@ -42,6 +42,11 @@ namespace Shooter.Core
 
         public float JamClearRemainingSeconds => _weapon.JamClearRemainingSeconds;
 
+        // 詰まった発のログに、その発を撃つ前の値を載せるため、撃つ前に読めるようにする (撃った後は 1 発分進んでいる)。
+        public int JamSustainedShots => _weapon.Jam?.SustainedShots ?? 0;
+
+        public float JamNextShotChance => _weapon.Jam?.NextShotChance ?? 0f;
+
         public WeaponSpec Spec { get; private set; }
 
         public int AmmoInMagazine => _weapon.AmmoInMagazine;

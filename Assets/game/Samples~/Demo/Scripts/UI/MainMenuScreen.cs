@@ -382,6 +382,8 @@ namespace Shooter.Runtime
             }
 
             _notice = root.Q<Label>(NoticeName) ?? throw new InvalidOperationException($"the menu layout has no Label named '{NoticeName}'");
+            // オンラインの失敗の詳細はサービスやサーバーから来た文字列を含むので、タグを書式として読ませない。
+            _notice.enableRichText = false;
             _settingsSlot = root.Q<VisualElement>(SettingsSlotName)
                 ?? throw new InvalidOperationException($"the menu layout has no element named '{SettingsSlotName}'");
             _loadoutSlot = root.Q<VisualElement>(LoadoutSlotName)

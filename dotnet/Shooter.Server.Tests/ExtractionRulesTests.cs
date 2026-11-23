@@ -301,6 +301,30 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void TheRaidClockKeepsEveryTickFarIntoAVeryLongRaid()
+        {
+            // float の時計では 524288 秒を超えると 1/60 秒を足しても変わらなかった
+            const double farIn = 2_000_000d;
+            Start(new ExtractionSpec(raidSeconds: 4_000_000f, extractHoldSeconds: _holdSeconds, openPoints: 1, openAfterSeconds: 0f));
+            Join(1);
+            Join(2);
+            Step(0.2f);
+            Assert.That(_rules.Session.State, Is.EqualTo(GameModeState.Playing), _log.ToString());
+            _extraction.ClockSeconds = farIn;
+
+            Step(_tickSeconds);
+            Assert.That(_extraction.ClockSeconds, Is.EqualTo(farIn + _tickSeconds).Within(1e-9d));
+
+            for (var i = 0; i < 59; i++)
+            {
+                Step(_tickSeconds);
+            }
+
+            Assert.That(_extraction.ClockSeconds, Is.EqualTo(farIn + 1d).Within(1e-6d), "sixty ticks are one second");
+            Assert.That(_extraction.RemainingSeconds, Is.EqualTo(1_999_999f));
+        }
+
+        [Test]
         public void PointsOpenOnlyAfterTheOpeningTime()
         {
             Start(new ExtractionSpec(raidSeconds: 60f, extractHoldSeconds: _holdSeconds, openPoints: 2, openAfterSeconds: 5f));

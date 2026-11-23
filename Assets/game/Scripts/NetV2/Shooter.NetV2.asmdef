@@ -16,6 +16,7 @@
         "Shooter.Protocol",
         "Shooter.NetV2.Client",
         "Shooter.Runtime",
+        "Shooter.Interaction",
         "Shooter.Services",
         "Shooter.Vision",
         "Unity.InputSystem"

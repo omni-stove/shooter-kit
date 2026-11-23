@@ -36,7 +36,7 @@ namespace Shooter.Server
         private ItemCatalog _items = ItemCatalog.Empty;
         private NetMapExtractionPoint[] _points;
         private IReadOnlyList<string> _openPointIds = _noPoints;
-        private float _elapsed;
+        private double _elapsed;
         private int _raidsThisMatch;
         private bool _started;
         private bool _loggedAllOver;
@@ -62,9 +62,15 @@ namespace Shooter.Server
 
         public bool HoldsFire => false;
 
-        public float? RemainingSeconds => _points != null ? Math.Max(0f, _spec.RaidSeconds - _elapsed) : (float?)null;
+        public float? RemainingSeconds => _points != null ? (float)Math.Max(0d, _spec.RaidSeconds - _elapsed) : (float?)null;
 
-        public float ElapsedSeconds => _elapsed;
+        public float ElapsedSeconds => (float)_elapsed;
+
+        internal double ClockSeconds
+        {
+            get => _elapsed;
+            set => _elapsed = value;
+        }
 
         public bool PointsOpen => _elapsed >= _spec.OpenAfterSeconds;
 
@@ -257,7 +263,7 @@ namespace Shooter.Server
             if (_elapsed >= _spec.RaidSeconds)
             {
                 raider.Allowed.Clear();
-                _host.Log.WriteLine(ExtractionRulesLog.NoRaid(playerId, _elapsed));
+                _host.Log.WriteLine(ExtractionRulesLog.NoRaid(playerId, (float)_elapsed));
                 return;
             }
 
@@ -273,7 +279,7 @@ namespace Shooter.Server
             // 時計を試合と揃える。途中から入った人の地点も、試合の時間で開く
             if (_elapsed > 0f)
             {
-                session.Tick(_elapsed, null);
+                session.Tick((float)_elapsed, null);
             }
 
             _raidsThisMatch++;

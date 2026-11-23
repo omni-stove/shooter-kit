@@ -178,7 +178,7 @@ namespace Shooter.Server
         }
 
         // 照射 1 回。今の向きで当たり直し、当たりを着弾に渡して、当てた所までの線を全員に送る
-        private void Emit(HeldFire beam, ServerBody body, float tick)
+        private void Emit(HeldFire beam, ServerBody body, double tick)
         {
             beam.Pose(body, out var origin, out var direction);
 
@@ -244,10 +244,10 @@ namespace Shooter.Server
                 reason));
         }
 
-        private float LastRecordedTick()
+        private double LastRecordedTick()
         {
             var hitboxes = Combat.Hitboxes;
-            return hitboxes.HasHistory ? hitboxes.LastRecordedTick : float.NaN;
+            return hitboxes.HasHistory ? hitboxes.LastRecordedTick : double.NaN;
         }
     }
 }

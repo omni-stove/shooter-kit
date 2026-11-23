@@ -44,6 +44,12 @@ namespace Shooter.Protocol
 
         public double OffhandReloadStartedAt { get; set; }
 
+        public bool IsJammed { get; set; }
+
+        // 解除中でなければ 0。残りの秒数でなく時刻で送るのは、解除の間ずっと同じ値になり、差分に載せずに済むため。
+        // リロードの時刻と同じく持ち主の画面が描くのにだけ使うので、有限かどうかを読むときに確かめない。
+        public double JamClearEndsAt { get; set; }
+
         public bool SameAs(in WeaponSync other)
         {
             return AmmoInMagazine == other.AmmoInMagazine
@@ -63,7 +69,9 @@ namespace Shooter.Protocol
                 && Same.Bits(SpinUpFraction, other.SpinUpFraction)
                 && OffhandAmmoInMagazine == other.OffhandAmmoInMagazine
                 && IsOffhandReloading == other.IsOffhandReloading
-                && Same.Bits(OffhandReloadStartedAt, other.OffhandReloadStartedAt);
+                && Same.Bits(OffhandReloadStartedAt, other.OffhandReloadStartedAt)
+                && IsJammed == other.IsJammed
+                && Same.Bits(JamClearEndsAt, other.JamClearEndsAt);
         }
 
         internal void Write(MessageWriter writer)
@@ -86,6 +94,8 @@ namespace Shooter.Protocol
             writer.WriteInt32(OffhandAmmoInMagazine);
             writer.WriteBool(IsOffhandReloading);
             writer.WriteDouble(OffhandReloadStartedAt);
+            writer.WriteBool(IsJammed);
+            writer.WriteDouble(JamClearEndsAt);
         }
 
         internal static WeaponSync Read(MessageReader reader)
@@ -110,6 +120,8 @@ namespace Shooter.Protocol
                 OffhandAmmoInMagazine = reader.ReadInt32AtLeast(0, "offhand ammo in magazine"),
                 IsOffhandReloading = reader.ReadBool(),
                 OffhandReloadStartedAt = reader.ReadDouble(),
+                IsJammed = reader.ReadBool(),
+                JamClearEndsAt = reader.ReadDouble(),
             };
         }
     }

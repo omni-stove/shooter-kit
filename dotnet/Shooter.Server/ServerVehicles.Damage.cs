@@ -100,7 +100,7 @@ namespace Shooter.Server
 
         // 座席から撃つ弾が自分の車体に当たらないよう、撃った人の乗っている乗り物には当てない。
         public bool Raycast(
-            Vector3 origin, Vector3 unit, float maxDistance, float tick, int shooterId, out int vehicle, out float distance, out Vector3 normal,
+            Vector3 origin, Vector3 unit, float maxDistance, double tick, int shooterId, out int vehicle, out float distance, out Vector3 normal,
             out float damageMultiplier, out string partId)
         {
             vehicle = -1;
@@ -169,7 +169,7 @@ namespace Shooter.Server
         }
 
         // 車体は .fpsmap に入っていないので、爆風と火炎の遮りは世界の当たりとは別にここで見る (Unity では車体のコライダーが遮る)
-        public bool BlocksLine(Vector3 from, Vector3 to, float tick, int shooterId)
+        public bool BlocksLine(Vector3 from, Vector3 to, double tick, int shooterId)
         {
             var offset = to - from;
             var length = offset.Length();

@@ -83,10 +83,12 @@ namespace Shooter.Server
 
         // ダウン中・倒れている人の射撃は戦闘が理由を出さずに捨て、ここへは届かないので、理由だけで回避・乗り越えの最中を除く。
         // 構える途中も除くのは、クライアントは要求を送った時から構え始め、サーバーは届いた時から構え始めるので、
-        // 揺れで正直な最初の弾が構え終える前に届くことがあるため
+        // 揺れで正直な最初の弾が構え終える前に届くことがあるため。
+        // 詰まりも除くのは、詰まるかはサーバーが引いて決め、クライアントはスナップショットが届くまで知らずに撃ち続けるため
         internal static bool IsCounted(ShotRejection reason)
         {
-            return reason != ShotRejection.Dodging && reason != ShotRejection.Vaulting && reason != ShotRejection.Holstered;
+            return reason != ShotRejection.Dodging && reason != ShotRejection.Vaulting && reason != ShotRejection.Holstered
+                && reason != ShotRejection.Jammed;
         }
 
         private void HandleShotRejected(int playerId, ShotRejection reason)

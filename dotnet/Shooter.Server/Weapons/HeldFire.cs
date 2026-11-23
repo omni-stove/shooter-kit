@@ -10,7 +10,7 @@ namespace Shooter.Server
         private Vector3 _offset;
         private Vector3 _direction;
         private float _yaw;
-        private float _lagTicks;
+        private double _lagTicks;
 
         public HeldFire(int shooterId, BeamState state)
         {
@@ -33,13 +33,13 @@ namespace Shooter.Server
         public Vector3 LastEnd { get; set; }
 
         // 押したときの始点と向きをそのまま使わないのは、押している間に動いたり振り向いたりしても照射や噴射を体に付いてこさせるため
-        public void Aim(in ServerShot shot, PlannedRound planned, ServerBody body, float lastRecordedTick)
+        public void Aim(in ServerShot shot, PlannedRound planned, ServerBody body, double lastRecordedTick)
         {
             Shot = shot;
             _offset = planned.Origin - body.EyePosition;
             _direction = Vector3.Normalize(planned.Direction);
             _yaw = body.Yaw;
-            _lagTicks = float.IsNaN(lastRecordedTick) ? 0f : Math.Max(0f, lastRecordedTick - shot.Tick);
+            _lagTicks = double.IsNaN(lastRecordedTick) ? 0d : Math.Max(0d, lastRecordedTick - shot.Tick);
         }
 
         public void Pose(ServerBody body, out Vector3 origin, out Vector3 direction)
@@ -49,9 +49,9 @@ namespace Shooter.Server
             direction = RotateYaw(_direction, turn);
         }
 
-        public float ViewTick(float lastRecordedTick)
+        public double ViewTick(double lastRecordedTick)
         {
-            return float.IsNaN(lastRecordedTick) ? Shot.Tick : Math.Max(0f, lastRecordedTick - _lagTicks);
+            return double.IsNaN(lastRecordedTick) ? Shot.Tick : Math.Max(0d, lastRecordedTick - _lagTicks);
         }
 
         // Unity の左手系で Y 軸まわりに回す (PlayerMotor.ToWorld と同じ向き)
