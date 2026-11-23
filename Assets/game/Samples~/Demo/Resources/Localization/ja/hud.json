@@ -82,5 +82,9 @@
   "hud.vision.thermal": "サーマル",
   "hud.drone.battery": "電池 {0}%",
   "hud.drone.outOfRange": "範囲外: 電波が届かない",
-  "hud.drone.recall": "[{0}] ドローンを戻す"
+  "hud.drone.recall": "[{0}] ドローンを戻す",
+  "hud.weaponFree.warn": "ここでは武器を出してはいけない 武器をしまえ",
+  "hud.weaponFree.warnThenHostile": "武器をしまえ あと {0} 秒で敵対される",
+  "hud.weaponFree.autoHolster": "ここでは武器を出してはいけない 武器をしまう",
+  "hud.weaponFree.blockDraw": "ここでは武器を構えられない"
 }
