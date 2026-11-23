@@ -273,7 +273,7 @@ namespace Shooter.Core
             }
         }
 
-        private static IReadOnlyList<string> Concat(IReadOnlyList<string> names, params string[] more)
+        private static string[] Concat(IReadOnlyList<string> names, params string[] more)
         {
             var all = new string[names.Count + more.Length];
             for (var i = 0; i < names.Count; i++)

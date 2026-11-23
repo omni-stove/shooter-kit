@@ -1,5 +1,3 @@
-using System;
-
 namespace Shooter.Core
 {
     public sealed class SecurityAlarmSpec
