@@ -82,5 +82,9 @@
   "hud.vision.thermal": "Thermal",
   "hud.drone.battery": "Battery {0}%",
   "hud.drone.outOfRange": "Out of range: signal lost",
-  "hud.drone.recall": "[{0}] Recall drone"
+  "hud.drone.recall": "[{0}] Recall drone",
+  "hud.weaponFree.warn": "Weapons are not allowed here. Holster your weapon",
+  "hud.weaponFree.warnThenHostile": "Holster your weapon: hostile in {0} s",
+  "hud.weaponFree.autoHolster": "Weapons are not allowed here. Holstering",
+  "hud.weaponFree.blockDraw": "Weapons cannot be drawn here"
 }

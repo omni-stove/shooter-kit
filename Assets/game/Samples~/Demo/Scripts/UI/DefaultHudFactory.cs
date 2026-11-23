@@ -110,6 +110,7 @@ namespace Shooter.Runtime
             AddView<StaminaView>(hud);
             AddView<LockOnWarningView>(hud);
             AddView<EmoteWheelView>(hud);
+            AddView<WeaponFreeZoneView>(hud);
         }
 
         // 警告の元を HUD でなくプレイヤーに付けるのは、HUD を作り直しても、同じプレイヤーが狙われている間は値を出し続けるため。
