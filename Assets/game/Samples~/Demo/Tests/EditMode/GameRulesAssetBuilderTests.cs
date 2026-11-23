@@ -927,6 +927,7 @@ namespace Shooter.Tests.EditMode
         {
             Assert.That(GameRulesAssetBuilder.BattleRoyaleRules().Objective, Is.EqualTo(MatchObjective.BattleRoyale));
             Assert.That(GameRulesAssetBuilder.ExtractionRules().Objective, Is.EqualTo(MatchObjective.Extraction));
+            Assert.That(GameRulesAssetBuilder.ExtractionRules().FriendlyFire, Is.EqualTo(FriendlyFire.On), "every raider is an enemy");
             Assert.That(
                 GameRulesAssetBuilder.ModeRules(GameRulesAssetBuilder.BattleRoyaleName).Objective, Is.EqualTo(MatchObjective.BattleRoyale));
             Assert.That(GameRulesAssetBuilder.ModeRules(GameRulesAssetBuilder.ExtractionName).Objective, Is.EqualTo(MatchObjective.Extraction));

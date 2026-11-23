@@ -1,7 +1,7 @@
 {
   "name": "Extraction",
   "rules": {
-    "friendlyFire": "Off",
+    "friendlyFire": "On",
     "respawnMode": "None",
     "waveIntervalSeconds": 10,
     "regenDelaySeconds": 4,

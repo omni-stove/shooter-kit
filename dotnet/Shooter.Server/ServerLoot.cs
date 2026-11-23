@@ -203,9 +203,19 @@ namespace Shooter.Server
         }
 
         // 倒れた人の武器と持ち物を取り出して、その人の居た所に箱を置く。体の無い人 (抜けた人) なら置かずに null
-        internal int? SpawnDeathBox(int playerId)
+        // withheldWeaponIds の武器は、どこからも取っていない物なので、箱に入れず持ち主から外すだけにする
+        internal int? SpawnDeathBox(int playerId, IEnumerable<string> withheldWeaponIds = null)
         {
             RequireStarted();
+            if (withheldWeaponIds != null)
+            {
+                var weaponsOfPlayer = _combat.WeaponsOf(playerId);
+                foreach (var weaponId in withheldWeaponIds)
+                {
+                    weaponsOfPlayer.Drop(weaponId, out _);
+                }
+            }
+
             if (!_context.Bodies.TryGet(playerId, out var body))
             {
                 _log.WriteLine(ServerLootLog.NoDeathBox(playerId));

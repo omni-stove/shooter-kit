@@ -176,6 +176,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(extraction.OpenPoints, Is.EqualTo(ExtractionSpec.DefaultOpenPoints));
             Assert.That(extraction.OpenAfterSeconds, Is.EqualTo(ExtractionSpec.DefaultOpenAfterSeconds));
             Assert.That(extraction.KeepCarriedOnDeath, Is.EqualTo(ExtractionSpec.DefaultKeepCarriedOnDeath));
+            Assert.That(extraction.BotsBringLoadout, Is.EqualTo(ExtractionSpec.DefaultBotsBringLoadout));
         }
 
         [Test]
