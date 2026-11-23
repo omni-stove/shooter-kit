@@ -134,6 +134,17 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void OpeningThePauseMidPressDoesNotKick()
+        {
+            _controller.Tick(true, 0.1f);
+            _controller.DiscardPress();
+            _controller.Tick(false, 0.1f);
+
+            Assert.That(_controller.IsKicking, Is.False, "a press dropped by the pause is not a release");
+            Assert.That(_door.Phase, Is.EqualTo(BreachDoorPhase.Closed));
+        }
+
+        [Test]
         public void HoldingPlantsTheChargeWithTheWeaponDown()
         {
             _controller.Tick(true, 0.1f);

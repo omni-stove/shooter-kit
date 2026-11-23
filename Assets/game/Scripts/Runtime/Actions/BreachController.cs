@@ -181,8 +181,21 @@ namespace Shooter.Runtime
             }
 
             // ポーズ画面のボタンを押したつもりで蹴らないよう、開いている間は押していないことにする。
-            var down = !GameUi.IsPauseOpen && KeySharing.IsPressed(_interactAction);
+            // 離したと見なされて蹴りが始まらないよう、押下そのものを捨てる。
+            var paused = GameUi.IsPauseOpen;
+            if (paused)
+            {
+                DiscardPress();
+            }
+
+            var down = !paused && KeySharing.IsPressed(_interactAction);
             Tick(down, Time.deltaTime);
+        }
+
+        public void DiscardPress()
+        {
+            DropPress();
+            _wasDown = false;
         }
 
         private void TickPlant(string blocked)
