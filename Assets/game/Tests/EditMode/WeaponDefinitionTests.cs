@@ -233,6 +233,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.Trigger.Cycle, Is.Null);
             Assert.That(spec.Ammo.Kind, Is.EqualTo(AmmoKind.Magazine));
             Assert.That(spec.Ammo.Heat, Is.Null);
+            Assert.That(spec.Ammo.Jam, Is.Null);
             Assert.That(spec.Ammo.ReloadStyle, Is.EqualTo(ReloadStyle.Whole));
             Assert.That(spec.Round.Delivery, Is.EqualTo(RoundDelivery.Hitscan));
             Assert.That(spec.Round.PelletCount, Is.EqualTo(1));
@@ -547,6 +548,89 @@ namespace Shooter.Tests.EditMode
             var e = Assert.Throws<WeaponDefinitionException>(() => definition.ToSpec());
 
             Assert.That(e.Message, Does.Contain("BadBurst").And.Contain("roundsPerBurst"));
+        }
+
+        [Test]
+        public void TheJamSettingsBecomeTheAmmoJam()
+        {
+            var definition = NewDefinition("Jamming");
+            definition.Jam.Enabled = true;
+            definition.Jam.ChancePerShot = 0.02f;
+            definition.Jam.ChancePerSustainedShot = 0.01f;
+            definition.Jam.SustainedResetSeconds = 0.75f;
+            definition.Jam.MaxChance = 0.25f;
+            definition.Jam.ClearSeconds = 1.5f;
+
+            var jam = definition.ToSpec().Ammo.Jam;
+
+            Assert.That(jam, Is.Not.Null);
+            Assert.That(jam.ChancePerShot, Is.EqualTo(0.02f));
+            Assert.That(jam.ChancePerSustainedShot, Is.EqualTo(0.01f));
+            Assert.That(jam.SustainedResetSeconds, Is.EqualTo(0.75f));
+            Assert.That(jam.MaxChance, Is.EqualTo(0.25f));
+            Assert.That(jam.ClearSeconds, Is.EqualTo(1.5f));
+        }
+
+        [Test]
+        public void NewJamSettingsAreOffAndHoldTheJamSpecDefaults()
+        {
+            var definition = NewDefinition("FreshJam");
+
+            Assert.That(definition.Jam.Enabled, Is.False);
+            Assert.That(definition.Jam.ChancePerShot, Is.EqualTo(0.01f));
+            Assert.That(definition.Jam.ChancePerSustainedShot, Is.EqualTo(0.005f));
+            Assert.That(definition.Jam.SustainedResetSeconds, Is.EqualTo(0.5f));
+            Assert.That(definition.Jam.MaxChance, Is.EqualTo(0.15f));
+            Assert.That(definition.Jam.ClearSeconds, Is.EqualTo(1.2f));
+            Assert.That(definition.ToSpec().Ammo.Jam, Is.Null);
+        }
+
+        [Test]
+        public void AHeatWeaponLeavesTheJamOut()
+        {
+            var definition = NewDefinition("HotJam");
+            definition.AmmoKind = AmmoKind.Heat;
+            definition.Jam.Enabled = true;
+
+            var ammo = definition.ToSpec().Ammo;
+
+            Assert.That(ammo.Kind, Is.EqualTo(AmmoKind.Heat));
+            Assert.That(ammo.Jam, Is.Null);
+        }
+
+        [Test]
+        public void AnInvalidJamNamesTheAssetAndTheValue()
+        {
+            var definition = NewDefinition("BadJam");
+            definition.Jam.Enabled = true;
+            definition.Jam.ChancePerShot = 0.2f;
+            definition.Jam.MaxChance = 0.1f;
+
+            var e = Assert.Throws<WeaponDefinitionException>(() => definition.ToSpec());
+
+            Assert.That(e.Message, Does.Contain("BadJam").And.Contain("maxChance"));
+        }
+
+        [Test]
+        public void ImportingAJsonJamFillsTheJamSettings()
+        {
+            const string json = "{\"id\": \"" + _rifleId + "\", \"category\": \"AssaultRifle\", \"ammo\": {\"jam\": {"
+                + "\"chancePerShot\": 0.02, \"chancePerSustainedShot\": 0.01, \"sustainedResetSeconds\": 0.75, \"maxChance\": 0.25, \"clearSeconds\": 1.5}}}";
+            var definition = NewDefinition("ImportedJam");
+
+            WeaponAssets.Configure(definition, WeaponSpecJson.Parse(json, "Jam.json"));
+
+            Assert.That(definition.Jam.Enabled, Is.True);
+            Assert.That(definition.Jam.ChancePerShot, Is.EqualTo(0.02f));
+            Assert.That(definition.Jam.ChancePerSustainedShot, Is.EqualTo(0.01f));
+            Assert.That(definition.Jam.SustainedResetSeconds, Is.EqualTo(0.75f));
+            Assert.That(definition.Jam.MaxChance, Is.EqualTo(0.25f));
+            Assert.That(definition.Jam.ClearSeconds, Is.EqualTo(1.5f));
+            Assert.That(definition.ToSpec().Ammo.Jam.MaxChance, Is.EqualTo(0.25f));
+
+            WeaponAssets.Configure(definition, WeaponSpecJson.Parse("{\"id\": \"" + _rifleId + "\", \"category\": \"AssaultRifle\"}", "Plain.json"));
+
+            Assert.That(definition.Jam.Enabled, Is.False, "a weapon without a jam turns it off again");
         }
 
         [Test]

@@ -9,6 +9,7 @@
   "debug.rules.field.Cover": "カバー",
   "debug.rules.field.BlindFire": "ブラインドファイア",
   "debug.rules.field.ActiveReload": "アクティブリロード",
+  "debug.rules.field.Jam": "弾詰まり",
   "debug.rules.field.Dodge": "回避",
   "debug.rules.field.Vault": "乗り越え",
   "debug.rules.field.Grenade": "グレネード",

@@ -1,0 +1,15 @@
+{
+  "bark.line": "{0}: {1}",
+  "bark.speaker.Rifleman": "Enemy",
+  "bark.speaker.Shield": "Shield trooper",
+  "bark.speaker.Sniper": "Sniper",
+  "bark.speaker.Charger": "Charger",
+  "bark.speaker.Bomber": "Bomber",
+  "bark.Spotted": "Contact! Over there!",
+  "bark.LostTarget": "Lost them, spread out!",
+  "bark.Reloading": "Reloading, cover me!",
+  "bark.Grenade": "Grenade! Get down!",
+  "bark.TakingFire": "Taking fire!",
+  "bark.MovingToCover": "Moving to cover!",
+  "bark.AllyDown": "Man down!"
+}

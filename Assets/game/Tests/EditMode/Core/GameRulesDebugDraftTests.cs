@@ -9,6 +9,7 @@ namespace Shooter.Core.Tests
         private static readonly string[] _offOn = { "Off", "On" };
 
         private static readonly string[] _jumpTurnedOff = { "Jump: On -> Off" };
+        private static readonly string[] _jamTurnedOn = { "Jam: Off -> On" };
         private static readonly string[] _friendlyFireOptions = { "Off", "On", "Reflect" };
         private static readonly string[] _respawnModeOptions = { "Individual", "Wave", "None" };
         private static readonly string[] _deathCameraOptions = { "None", "Killer", "Ally", "Free", "KillCam", "Fallen" };
@@ -56,7 +57,7 @@ namespace Shooter.Core.Tests
 #pragma warning restore CA2263
 
             Assert.That(GameRulesDebugDraft.Fields, Is.EqualTo(defined));
-            Assert.That(defined.Length, Is.EqualTo(33));
+            Assert.That(defined.Length, Is.EqualTo(34));
             Assert.That((int)GameRulesDebugField.Takedown, Is.EqualTo((int)GameRulesDebugField.Melee + 1), "takedowns sit next to the melee in the panel");
         }
 
@@ -107,6 +108,27 @@ namespace Shooter.Core.Tests
 
             Assert.That(built.Actions.Jump, Is.EqualTo(Jump.Off));
             Assert.That(GameRulesDebugDraft.Changes(GameRules.Default, built), Is.EqualTo(_jumpTurnedOff));
+        }
+
+        [Test]
+        public void JamStartsOffComesAfterActiveReloadAndTurningItOnChangesOnlyIt()
+        {
+            var draft = new GameRulesDebugDraft(GameRules.Default);
+            Assert.That(draft.Get(GameRulesDebugField.Jam), Is.EqualTo((int)WeaponJam.Off));
+            Assert.That(GameRulesDebugDraft.Options(GameRulesDebugField.Jam), Is.EqualTo(_offOn));
+            Assert.That(GameRulesDebugDraft.IsToggle(GameRulesDebugField.Jam), Is.True);
+            Assert.That((int)GameRulesDebugField.Jam, Is.EqualTo((int)GameRulesDebugField.ActiveReload + 1));
+
+            draft.Set(GameRulesDebugField.Jam, (int)WeaponJam.On);
+            var built = draft.Build();
+
+            Assert.That(built.Actions.Jam, Is.EqualTo(WeaponJam.On));
+            Assert.That(GameRulesDebugDraft.Changes(GameRules.Default, built), Is.EqualTo(_jamTurnedOn));
+
+            var back = new GameRulesDebugDraft(built);
+            Assert.That(back.Get(GameRulesDebugField.Jam), Is.EqualTo((int)WeaponJam.On));
+            back.Set(GameRulesDebugField.Jam, (int)WeaponJam.Off);
+            Assert.That(back.Build().Actions.Jam, Is.EqualTo(WeaponJam.Off));
         }
 
         [Test]
@@ -220,6 +242,7 @@ namespace Shooter.Core.Tests
                 GameRulesDebugField.Cover,
                 GameRulesDebugField.BlindFire,
                 GameRulesDebugField.ActiveReload,
+                GameRulesDebugField.Jam,
                 GameRulesDebugField.Dodge,
                 GameRulesDebugField.Vault,
                 GameRulesDebugField.Grenade,
