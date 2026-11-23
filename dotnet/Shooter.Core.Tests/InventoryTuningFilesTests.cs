@@ -24,6 +24,11 @@ namespace Shooter.Core.Tests
             "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
         };
         private static readonly string[] _usableNameKeys = { "item.bandage", "item.medkit", "item.armorPlate" };
+        private static readonly string[] _lightNameKeys = { "item.weaponLight" };
+        private static readonly string[] _gunNameKeys =
+        {
+            "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun",
+        };
 
         [Test]
         public void TheServerReadsTheSameItemsAsUnity()
@@ -149,7 +154,7 @@ namespace Shooter.Core.Tests
             foreach (var catalog in new[] { unity, server })
             {
                 var lights = catalog.Items.Where(i => i.IsAttachment && i.Attachment.IsLight).ToList();
-                Assert.That(lights.Select(i => i.NameKey), Is.EqualTo(new[] { "item.weaponLight" }));
+                Assert.That(lights.Select(i => i.NameKey), Is.EqualTo(_lightNameKeys));
 
                 var light = lights.Single();
                 Assert.That(light.Id, Is.EqualTo("f3a7c2e9-58b1-4d06-9e4a-2c7b8d1f6a35"));
@@ -162,7 +167,7 @@ namespace Shooter.Core.Tests
                 Assert.That(light.Attachment.Light.VisualId, Is.EqualTo("weaponLight"));
                 Assert.That(
                     catalog.Items.Where(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, light.Id)).Select(w => w.NameKey),
-                    Is.EqualTo(new[] { "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun" }),
+                    Is.EqualTo(_gunNameKeys),
                     "every gun takes the light and no melee weapon does");
             }
         }

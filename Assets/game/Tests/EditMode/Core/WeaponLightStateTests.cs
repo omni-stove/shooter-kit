@@ -141,7 +141,9 @@ namespace Shooter.Core.Tests
             Assert.That(WeaponLightStatus.None.IsOn, Is.False);
             Assert.That(new WeaponLightStatus(true, true) == new WeaponLightStatus(true, true), Is.True);
             Assert.That(new WeaponLightStatus(true, true) != new WeaponLightStatus(true, false), Is.True);
-            Assert.That(new WeaponLightStatus(true, false).GetHashCode(), Is.EqualTo(new WeaponLightStatus(true, false).GetHashCode()));
+            var held = new WeaponLightStatus(true, false);
+            var sameHeld = new WeaponLightStatus(true, false);
+            Assert.That(held.GetHashCode(), Is.EqualTo(sameHeld.GetHashCode()));
         }
 
         [Test]
