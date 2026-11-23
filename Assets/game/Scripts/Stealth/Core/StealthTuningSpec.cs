@@ -8,8 +8,16 @@ namespace Shooter.Core
         public static StealthTuningSpec Default { get; } = new StealthTuningSpec(StealthNoiseSpec.Default, null);
 
         public StealthTuningSpec(StealthNoiseSpec noise, float? armedGainFactor)
+            : this(noise, armedGainFactor, null, null)
+        {
+        }
+
+        // カメラと警報を省いたら既定値にするのは、stealth.json にその項目を書かないゲームでも同じ値で動かすため。
+        public StealthTuningSpec(StealthNoiseSpec noise, float? armedGainFactor, SecurityCameraSpec camera, SecurityAlarmSpec alarm)
         {
             Noise = noise ?? throw new ArgumentNullException(nameof(noise));
+            Camera = camera ?? SecurityCameraSpec.Default;
+            Alarm = alarm ?? SecurityAlarmSpec.Default;
             if (armedGainFactor.HasValue)
             {
                 // 値の検査を AwarenessSpec と 1 か所にそろえる。
@@ -23,6 +31,10 @@ namespace Shooter.Core
 
         // 書かれていないときは null にして、敵ごとの設定 (EnemyAwarenessSettings) をそのまま使わせる。
         public float? ArmedGainFactor { get; }
+
+        public SecurityCameraSpec Camera { get; }
+
+        public SecurityAlarmSpec Alarm { get; }
 
         public AwarenessSpec ApplyTo(AwarenessSpec spec)
         {
