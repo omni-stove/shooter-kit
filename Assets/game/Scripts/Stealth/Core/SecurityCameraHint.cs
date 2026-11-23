@@ -8,19 +8,36 @@ namespace Shooter.Core
         private readonly string _inputActionPath;
 
         public SecurityCameraHint(float holdSeconds, string inputActionPath)
+            : this(holdSeconds, 0f, true, inputActionPath)
+        {
+        }
+
+        public SecurityCameraHint(float holdSeconds, float progress, bool canDisable, string inputActionPath)
         {
             SpecGuard.PositiveFinite(holdSeconds, nameof(holdSeconds));
+            SpecGuard.Fraction(progress, nameof(progress));
             HoldSeconds = holdSeconds;
+            Progress = progress;
+            CanDisable = canDisable;
             _inputActionPath = inputActionPath ?? string.Empty;
         }
 
         public float HoldSeconds { get; }
 
+        // 押し始めからの 0〜1。秒でなく割合で持つのは、UI が輪や棒の満ち具合にそのまま使うため。
+        public float Progress { get; }
+
+        // 止まっている間も案内を消さずに出すのは、近づいたプレイヤーに止めたカメラだと分からせるため。
+        public bool CanDisable { get; }
+
         public string InputActionPath => _inputActionPath ?? string.Empty;
 
         public bool Equals(SecurityCameraHint other)
         {
-            return HoldSeconds.Equals(other.HoldSeconds) && string.Equals(InputActionPath, other.InputActionPath, StringComparison.Ordinal);
+            return HoldSeconds.Equals(other.HoldSeconds)
+                && Progress.Equals(other.Progress)
+                && CanDisable == other.CanDisable
+                && string.Equals(InputActionPath, other.InputActionPath, StringComparison.Ordinal);
         }
 
         public override bool Equals(object obj)
@@ -40,12 +57,12 @@ namespace Shooter.Core
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(HoldSeconds, InputActionPath);
+            return HashCode.Combine(HoldSeconds, Progress, CanDisable, InputActionPath);
         }
 
         public override string ToString()
         {
-            return $"securityCamera hold={HoldSeconds} input={InputActionPath}";
+            return $"securityCamera hold={HoldSeconds} progress={Progress} canDisable={CanDisable} input={InputActionPath}";
         }
     }
 }

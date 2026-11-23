@@ -21,6 +21,12 @@ namespace Shooter.Core
 
         public const float DefaultDisabledSeconds = 30f;
 
+        // 小銃の胴撃ち 2 発で壊れる量。1 発で壊れると撃てば済み、近づいて長押しで止める方を選ぶ理由が無くなる。
+        public const int DefaultMaxHealth = 50;
+
+        // 天井近くに付けたカメラの真下に立てば届く距離。目 (レンズ) からプレイヤーの体の中心までで測る。
+        public const float DefaultDisableRadius = 2.5f;
+
         public static SecurityCameraSpec Default { get; } = new SecurityCameraSpec();
 
         // 気づきの視野を別に持たないのは、AwarenessMeter が視野の内外を Awareness.FieldOfViewDegrees で決めるので、2 つの値が食い違うとカメラの見える範囲が 1 つに決まらないため。
@@ -32,7 +38,9 @@ namespace Shooter.Core
             float fieldOfViewDegrees = DefaultFieldOfViewDegrees,
             AwarenessSpec awareness = null,
             float disableHoldSeconds = DefaultDisableHoldSeconds,
-            float disabledSeconds = DefaultDisabledSeconds)
+            float disabledSeconds = DefaultDisabledSeconds,
+            int maxHealth = DefaultMaxHealth,
+            float disableRadius = DefaultDisableRadius)
         {
             if (!(sweepDegrees >= 0f) || sweepDegrees > 360f)
             {
@@ -56,6 +64,8 @@ namespace Shooter.Core
 
             SpecGuard.PositiveFinite(disableHoldSeconds, nameof(disableHoldSeconds));
             SpecGuard.PositiveFinite(disabledSeconds, nameof(disabledSeconds));
+            SpecGuard.AtLeast(maxHealth, 1, nameof(maxHealth));
+            SpecGuard.PositiveFinite(disableRadius, nameof(disableRadius));
 
             SweepDegrees = sweepDegrees;
             SweepDegreesPerSecond = sweepDegreesPerSecond;
@@ -65,6 +75,8 @@ namespace Shooter.Core
             Awareness = awareness ?? new AwarenessSpec(fieldOfViewDegrees: fieldOfViewDegrees);
             DisableHoldSeconds = disableHoldSeconds;
             DisabledSeconds = disabledSeconds;
+            MaxHealth = maxHealth;
+            DisableRadius = disableRadius;
         }
 
         public float SweepDegrees { get; }
@@ -75,5 +87,7 @@ namespace Shooter.Core
         public AwarenessSpec Awareness { get; }
         public float DisableHoldSeconds { get; }
         public float DisabledSeconds { get; }
+        public int MaxHealth { get; }
+        public float DisableRadius { get; }
     }
 }

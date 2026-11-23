@@ -11,7 +11,7 @@ namespace Shooter.Runtime
         // PresentationCatalog.CatalogResourcePath(CatalogName) と同じ値。メソッドを呼ばず const にして、ログの文字列にも使えるようにする。
         public const string ResourcePath = PresentationCatalog.ResourceFolder + "/" + CatalogName + PresentationCatalog.CatalogSuffix;
 
-        [SerializeField, Tooltip("監視カメラの見た目のプレハブ")]
+        [SerializeField, Tooltip("監視カメラの首の見た目のプレハブ。首振りで丸ごと回る。原点が首の箱の中心で +Z が正面。当たり判定は外して、撃たれるのはキットの箱で受ける")]
         private GameObject _cameraPrefab;
 
         [SerializeField, Tooltip("警報の音")]
