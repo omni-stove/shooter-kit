@@ -18,6 +18,7 @@ namespace Shooter.Core.Tests
 
         private static readonly int[] _expectedFirstPick = { _bravoOne };
         private static readonly int[] _expectedLastPick = { _bravoTwo };
+        private static readonly int[] _expectedPickCounts = { 2 };
         private static readonly int[] _expectedRepick = { _bravoOne, _bravoTwo };
         private static readonly int[] _expectedRepickStanding = { _bravoOne, _bravoThree };
         private static readonly int[] _expectedDownedVipThenNextRound = { _bravoOne, _alphaOne };
@@ -102,7 +103,7 @@ namespace Shooter.Core.Tests
 
             game.Start();
 
-            Assert.That(counts, Is.EqualTo(new[] { 2 }));
+            Assert.That(counts, Is.EqualTo(_expectedPickCounts));
             Assert.That(game.VipId, Is.EqualTo(_bravoTwo));
             Assert.That(chosen, Is.EqualTo(_expectedLastPick));
         }
