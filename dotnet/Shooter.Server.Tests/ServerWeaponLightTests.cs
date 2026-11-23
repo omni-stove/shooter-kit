@@ -353,14 +353,13 @@ namespace Shooter.Server.Tests
         // 小銃にだけ light の取り付け口があり、射程 30 m のライトが付く。拳銃には付かない
         private static ItemCatalog Items()
         {
-            return new ItemCatalog(
-                new[]
-                {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _lightSlots),
-                    new ItemSpec(_handgunItemId, "weapon.handgun", weaponId: TestRules.HandgunId),
-                    new ItemSpec(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 30f))),
-                },
-                InventoryRule.Default);
+            var specs = new List<ItemSpec>
+            {
+                new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _lightSlots),
+                new ItemSpec(_handgunItemId, "weapon.handgun", weaponId: TestRules.HandgunId),
+                new ItemSpec(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 30f))),
+            };
+            return new ItemCatalog(specs, InventoryRule.Default);
         }
 
         // 1 にだけ小銃のライトを付ける。2 は同じ小銃でもライトが無い
