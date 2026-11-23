@@ -4,13 +4,8 @@ namespace Shooter.Core
 {
     public enum WeaponJamPhase
     {
-        // 詰まっていない。詰まらない武器・ルールもこれ。
         None,
-
-        // 詰まっていて、解除を始めていない。
         Jammed,
-
-        // 解除している。ClearRemainingSeconds が経つとまた撃てる。
         Clearing,
     }
 
@@ -50,10 +45,8 @@ namespace Shooter.Core
 
         public float ClearRemainingSeconds { get; }
 
-        // 解除にかかる全体の秒数 (武器の ammo.jam.clearSeconds)。詰まらない武器は 0。
         public float ClearSeconds { get; }
 
-        // 0 から 1 へ進む解除の割合。解除中でなければ 0。
         public float ClearFraction => IsClearing && ClearSeconds > 0f ? 1f - (ClearRemainingSeconds / ClearSeconds) : 0f;
 
         public static WeaponJamStatus Of(Weapon weapon)
