@@ -298,6 +298,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.FootstepGain, Is.EqualTo(expected.FootstepGain));
             Assert.That(spec.InvestigateLevel, Is.EqualTo(expected.InvestigateLevel));
             Assert.That(spec.ArmedGainFactor, Is.EqualTo(expected.ArmedGainFactor));
+            Assert.That(spec.LitGainFactor, Is.EqualTo(expected.LitGainFactor));
         }
 
         [Test]
@@ -374,6 +375,69 @@ namespace Shooter.Tests.EditMode
                 Assert.That(_stealth.TryInitialize(), Is.True);
 
                 Assert.That(_stealth.Awareness.Spec.ArmedGainFactor, Is.EqualTo(3f));
+            }
+            finally
+            {
+                GameContent.Use(null);
+                Object.DestroyImmediate(text);
+                Object.DestroyImmediate(content);
+            }
+        }
+
+        [Test]
+        public void TheLitGainFactorRoundTripsThroughTheSettings()
+        {
+            Assert.That(_stealth.CreateSpec().LitGainFactor, Is.EqualTo(AwarenessSpec.DefaultLitGainFactor));
+
+            _stealth.Settings.CopyFrom(new AwarenessSpec(armedGainFactor: 2f, litGainFactor: 1.5f));
+
+            var spec = _stealth.CreateSpec();
+            Assert.That(spec.LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(spec.ArmedGainFactor, Is.EqualTo(2f));
+        }
+
+        [Test]
+        public void TheEntryLitGainFactorWinsOverTheSettings()
+        {
+            var content = ScriptableObject.CreateInstance<GameContent>();
+            content.name = "Lit";
+            var text = new TextAsset("{ \"litGainFactor\": 1.5 }") { name = "LitStealth" };
+            content.StealthTuning = text;
+            try
+            {
+                GameContent.Use(content);
+                _stealth.Settings.CopyFrom(new AwarenessSpec(armedGainFactor: 2f, litGainFactor: 3f));
+
+                Assert.That(_stealth.TryInitialize(), Is.True);
+
+                Assert.That(_stealth.Awareness.Spec.LitGainFactor, Is.EqualTo(1.5f), "the entry wins, as the armed factor does");
+                Assert.That(_stealth.Awareness.Spec.ArmedGainFactor, Is.EqualTo(2f), "an entry without the armed factor keeps the settings' one");
+                Assert.That(_stealth.CreateSpec().LitGainFactor, Is.EqualTo(3f), "the settings themselves are left alone");
+            }
+            finally
+            {
+                GameContent.Use(null);
+                Object.DestroyImmediate(text);
+                Object.DestroyImmediate(content);
+            }
+        }
+
+        [Test]
+        public void WithoutTheEntryItemTheSettingsLitGainFactorIsUsed()
+        {
+            var content = ScriptableObject.CreateInstance<GameContent>();
+            content.name = "Dark";
+            var text = new TextAsset("{ \"armedGainFactor\": 2 }") { name = "DarkStealth" };
+            content.StealthTuning = text;
+            try
+            {
+                GameContent.Use(content);
+                _stealth.Settings.CopyFrom(new AwarenessSpec(litGainFactor: 3f));
+
+                Assert.That(_stealth.TryInitialize(), Is.True);
+
+                Assert.That(_stealth.Awareness.Spec.LitGainFactor, Is.EqualTo(3f));
+                Assert.That(_stealth.Awareness.Spec.ArmedGainFactor, Is.EqualTo(2f));
             }
             finally
             {
