@@ -44,9 +44,16 @@ namespace Shooter.Tests.EditMode
         private InputAction _reload;
         private InputAction _meleeAction;
 
-        private static GameRules Rules(Melee melee)
+        // テイクダウンの技の筋書きが多いので、Takedown は指定しなければ On にする。
+        private static GameRules Rules(Melee melee, Takedown takedown = Takedown.On)
         {
-            return GameRules.Default.WithActions(ActionRules.Default.WithMelee(melee));
+            return GameRules.Default.WithActions(ActionRules.Default.WithMelee(melee).WithTakedown(takedown));
+        }
+
+        private void ConfigureBoth(Melee melee, Takedown takedown)
+        {
+            _melee.Configure(Rules(melee, takedown));
+            _context.Configure(Rules(melee, takedown));
         }
 
         [SetUp]
@@ -305,9 +312,9 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void WithTheRuleOffNoMoveStarts()
+        public void WithBothRulesOffNoMoveStarts()
         {
-            _context.Configure(Rules(Melee.Off));
+            _context.Configure(Rules(Melee.Off, Takedown.Off));
             Stagger();
             Assert.That(_context.enabled, Is.False);
             Assert.That(_context.TryBegin(), Is.False);
@@ -315,15 +322,143 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
-        public void TurningTheRuleOffMidMoveCancelsIt()
+        public void TurningMeleeOffMidFinisherCancelsItEvenWithTakedownsOn()
         {
             Stagger();
             Assert.That(_melee.TryMelee(), Is.True);
 
             LogAssert.Expect(LogType.Log, "[ContextMelee] interrupted id=Body target=enemy-1 move=finisher reason=Cancelled");
-            _context.Configure(Rules(Melee.Off));
+            _context.Configure(Rules(Melee.Off, Takedown.On));
+            Assert.That(_context.enabled, Is.True, "the takedown still needs the action");
             Assert.That(_context.IsPerforming, Is.False);
             Assert.That(_player.IsControlHandedOff, Is.False);
+        }
+
+        [Test]
+        public void TurningMeleeOffMidTakedownKeepsItGoing()
+        {
+            TurnEnemyAway();
+            Assert.That(_melee.TryMelee(), Is.True);
+            Assert.That(_context.Run.Move.Id, Is.EqualTo(ContextMeleeMove.TakedownId));
+
+            _context.Configure(Rules(Melee.Off, Takedown.On));
+            Assert.That(_context.IsPerforming, Is.True);
+        }
+
+        [Test]
+        public void TurningTakedownOffMidTakedownCancelsIt()
+        {
+            TurnEnemyAway();
+            Assert.That(_melee.TryMelee(), Is.True);
+
+            LogAssert.Expect(LogType.Log, "[ContextMelee] interrupted id=Body target=enemy-1 move=takedown reason=Cancelled");
+            _context.Configure(Rules(Melee.On, Takedown.Off));
+            Assert.That(_context.enabled, Is.True, "the finisher still needs the action");
+            Assert.That(_context.IsPerforming, Is.False);
+            Assert.That(_player.IsControlHandedOff, Is.False);
+        }
+
+        [Test]
+        public void EachRuleRegistersOnlyItsOwnMove()
+        {
+            _context.Configure(Rules(Melee.Off, Takedown.On));
+            Assert.That(_context.Selector.Find(ContextMeleeMove.TakedownId), Is.Not.Null);
+            Assert.That(_context.Selector.Find(ContextMeleeMove.FinisherId), Is.Null);
+            Assert.That(_context.TakedownRule, Is.EqualTo(Takedown.On));
+            Assert.That(_context.Rule, Is.EqualTo(Melee.Off));
+
+            _context.Configure(Rules(Melee.On, Takedown.Off));
+            Assert.That(_context.Selector.Find(ContextMeleeMove.TakedownId), Is.Null);
+            Assert.That(_context.Selector.Find(ContextMeleeMove.FinisherId), Is.Not.Null);
+
+            _context.Configure(Rules(Melee.On, Takedown.On));
+            Assert.That(_context.Selector.Find(ContextMeleeMove.TakedownId), Is.Not.Null);
+            Assert.That(_context.Selector.Find(ContextMeleeMove.FinisherId), Is.Not.Null);
+        }
+
+        // 確認方法の筋書き: Melee Off・Takedown On で、気づいていない敵の背後で近接のボタンを押すとテイクダウンになる
+        [Test]
+        public void WithMeleeOffAndTakedownOnAnUnawareEnemyFromBehindIsTakenDown()
+        {
+            ConfigureBoth(Melee.Off, Takedown.On);
+            Assert.That(_context.enabled, Is.True);
+            Assert.That(_melee.CheckSwing(), Is.EqualTo(MeleeRefusal.Off), "the gun swing stays off");
+            TurnEnemyAway();
+
+            LogAssert.Expect(LogType.Log, "[ContextMelee] started id=Body target=enemy-1 move=takedown");
+            Assert.That(_melee.TryMelee(), Is.True);
+            Assert.That(_context.IsPerforming, Is.True);
+            Assert.That(_context.Run.Move.Id, Is.EqualTo(ContextMeleeMove.TakedownId));
+            Assert.That(_melee.IsSwinging, Is.False);
+
+            LogAssert.Expect(LogType.Log, $"[ContextMelee] resolved id=Body target=enemy-1 move=takedown outcome=Kill dmg={_enemy.Health.Current} killed=true");
+            _context.Tick(_context.Run.Move.TotalSeconds + 1f);
+            Assert.That(_enemy.IsDead, Is.True);
+        }
+
+        // 確認方法の筋書き: 同じルールで敵の正面から押しても銃で殴らない
+        [Test]
+        public void WithMeleeOffAndTakedownOnTheGunIsNotSwungAtAFacingEnemy()
+        {
+            ConfigureBoth(Melee.Off, Takedown.On);
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[ContextMelee\] none id=Body target=enemy-1 conditions=\S+$"));
+            LogAssert.Expect(LogType.Log, MeleeLog.Refused("Body", MeleeRefusal.Off));
+            Assert.That(_melee.TryMelee(), Is.False);
+            Assert.That(_context.IsPerforming, Is.False);
+            Assert.That(_melee.IsSwinging, Is.False);
+            Assert.That(_enemy.Health.Current, Is.EqualTo(_enemyHealth));
+        }
+
+        [Test]
+        public void WithMeleeOffAndTakedownOnAStaggeredEnemyIsNotFinished()
+        {
+            ConfigureBoth(Melee.Off, Takedown.On);
+            Stagger();
+            var health = _enemy.Health.Current;
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[ContextMelee\] none id=Body target=enemy-1 conditions=\S+$"));
+            LogAssert.Expect(LogType.Log, MeleeLog.Refused("Body", MeleeRefusal.Off));
+            Assert.That(_melee.TryMelee(), Is.False);
+            Assert.That(_context.IsPerforming, Is.False);
+            Assert.That(_enemy.Health.Current, Is.EqualTo(health));
+        }
+
+        // 確認方法の筋書き: Takedown を Off にすると背後でもテイクダウンにならない
+        [Test]
+        public void WithMeleeOnAndTakedownOffAnUnawareEnemyFromBehindGetsThePlainMelee()
+        {
+            ConfigureBoth(Melee.On, Takedown.Off);
+            TurnEnemyAway();
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[ContextMelee\] none id=Body target=enemy-1 conditions=\S*TargetBehind\S*$"));
+            LogAssert.Expect(LogType.Log, "[Melee] swing id=Body");
+            Assert.That(_melee.TryMelee(), Is.True);
+            Assert.That(_context.IsPerforming, Is.False);
+            Assert.That(_melee.IsSwinging, Is.True);
+        }
+
+        [Test]
+        public void WithMeleeOnAndTakedownOffAStaggeredEnemyIsStillFinished()
+        {
+            ConfigureBoth(Melee.On, Takedown.Off);
+            Stagger();
+
+            LogAssert.Expect(LogType.Log, "[ContextMelee] started id=Body target=enemy-1 move=finisher");
+            Assert.That(_melee.TryMelee(), Is.True);
+            Assert.That(_context.Run.Move.Id, Is.EqualTo(ContextMeleeMove.FinisherId));
+        }
+
+        [Test]
+        public void WithBothRulesOffTheMeleeButtonDoesNotReachTheAction()
+        {
+            ConfigureBoth(Melee.Off, Takedown.Off);
+            TurnEnemyAway();
+
+            LogAssert.Expect(LogType.Log, MeleeLog.Refused("Body", MeleeRefusal.Off));
+            Assert.That(_melee.TryMelee(), Is.False);
+            Assert.That(_context.IsPerforming, Is.False);
+            Assert.That(_enemy.Health.Current, Is.EqualTo(_enemyHealth));
         }
 
         [Test]
@@ -338,7 +473,10 @@ namespace Shooter.Tests.EditMode
             Assert.That(_body.GetComponents<ContextMeleeCameraPresenter>(), Has.Length.EqualTo(1));
             Assert.That(_body.GetComponent<ContextMeleeAction>().enabled, Is.True);
 
-            installer.Install(_body, Rules(Melee.Off));
+            installer.Install(_body, Rules(Melee.Off, Takedown.On));
+            Assert.That(_body.GetComponent<ContextMeleeAction>().enabled, Is.True, "takedowns reach the action while the melee is off");
+
+            installer.Install(_body, Rules(Melee.Off, Takedown.Off));
             Assert.That(_body.GetComponent<ContextMeleeAction>().enabled, Is.False);
         }
 

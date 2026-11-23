@@ -220,7 +220,7 @@ namespace Shooter.Core.Tests
             }
         }
 
-        // 警報と監視カメラの長押しの案内を HUD に足したので、片方の言語だけに足したキーが画面に出ないよう、hud.json のキーをそろえる。
+        // 警報と監視カメラの長押しの案内とウェポンライトの印の文を HUD に足したので、片方の言語だけに足したキーが画面に出ないよう、hud.json のキーをそろえる。
         [Test]
         public void TheHudFileHasTheSameKeysInEnglishAndJapanese()
         {
@@ -234,6 +234,18 @@ namespace Shooter.Core.Tests
             {
                 Assert.That(StringTable.PlaceholdersOf(english.Get(key)), Is.EqualTo(StringTable.PlaceholdersOf(japanese.Get(key))), "hud.json " + key);
             }
+
+            foreach (var key in WeaponLightText.Keys)
+            {
+                Assert.That(english.Contains(key), Is.True, "en/hud.json " + key);
+                Assert.That(japanese.Contains(key), Is.True, "ja/hud.json " + key);
+                Assert.That(StringTable.PlaceholdersOf(japanese.Get(key)), Is.Empty, key + " takes no arguments");
+            }
+
+            Assert.That(english.Get(WeaponLightText.OnKey), Is.EqualTo("Light ON"));
+            Assert.That(english.Get(WeaponLightText.OffKey), Is.EqualTo("Light OFF"));
+            Assert.That(japanese.Get(WeaponLightText.OnKey), Is.EqualTo("ライト 点灯"));
+            Assert.That(japanese.Get(WeaponLightText.OffKey), Is.EqualTo("ライト 消灯"));
 
             foreach (var key in new[] { SecurityAlarmText.RingingKey, SecurityCameraPrompt.DisableKey })
             {
