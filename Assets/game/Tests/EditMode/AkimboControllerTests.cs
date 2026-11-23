@@ -15,6 +15,8 @@ namespace Shooter.Tests.EditMode
     {
         private const string PistolId = "3d6f1a2b-7c84-4e59-9a10-5b2c8e4f7d61";
         private const string PlainPistolId = "8a2e5c71-4b39-4d06-8f1a-6c9d2e7b3a54";
+        private const string PistolItemId = "c41e7d92-5a36-4f80-b2d9-7e0a1c6b5f38";
+        private const string MagazineItemId = "6f2b9a04-d7e1-4c53-8a6f-3b9e2d1c7a05";
         private const int Magazine = 8;
         private const int Reserve = 16;
         private const float FireInterval = 0.2f;
@@ -341,6 +343,68 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void PickingTheDroppedWeaponBackUpStartsTheLeftHandEmpty()
+        {
+            _controller.Rules = GameRules.Default.WithReloadMode(ReloadMode.Manual);
+            var akimbo = Definition(Pistol(AkimboSpec.Default));
+            var plain = Definition(Pistol(null, PlainPistolId));
+            _controller.Initialize(_camera.transform, _attack, _reload, null, null, new[] { akimbo, plain });
+            _controller.PullTrigger(AkimboHand.Right, true, true);
+            _controller.PullTrigger(AkimboHand.Left, true, true);
+
+            Assert.That(_controller.DropWeapon(PistolId, out var dropped), Is.True);
+            Assert.That(dropped.Ammo.AmmoInMagazine, Is.EqualTo(7));
+            Assert.That(dropped.Ammo.ReserveAmmo, Is.EqualTo(23), "the left magazine's 7 rounds went into the reserve");
+
+            Assert.That(_controller.AddWeapon(akimbo, dropped.Ammo), Is.True);
+            Assert.That(_controller.Select(PistolId), Is.True);
+            _controller.Tick(1f);
+            var hands = _controller.Akimbo;
+            Assert.That(hands, Is.Not.Null);
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(7));
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Left), Is.EqualTo(0), "the left rounds are already in the reserve, so they are not counted twice");
+            Assert.That(hands.ReserveAmmo, Is.EqualTo(23));
+        }
+
+        [Test]
+        public void PickingUpAWeaponWithoutAmmoFillsBothHands()
+        {
+            var akimbo = Definition(Pistol(AkimboSpec.Default));
+            var plain = Definition(Pistol(null, PlainPistolId));
+            _controller.Initialize(_camera.transform, _attack, _reload, null, null, new[] { plain });
+
+            Assert.That(_controller.AddWeapon(akimbo), Is.True);
+            Assert.That(_controller.Select(PistolId), Is.True);
+            _controller.Tick(1f);
+            var hands = _controller.Akimbo;
+            Assert.That(hands, Is.Not.Null);
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(Magazine));
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Left), Is.EqualTo(Magazine));
+            Assert.That(hands.ReserveAmmo, Is.EqualTo(Reserve));
+        }
+
+        [Test]
+        public void ShrinkingTheMagazineMovesBothHandsExcessIntoTheReserve()
+        {
+            _controller.Rules = GameRules.Default.WithReloadMode(ReloadMode.Manual);
+            _controller.AttachmentCatalog = MagazineCatalog();
+            Hold(Pistol(AkimboSpec.Default));
+            var attached = new Dictionary<string, IReadOnlyList<string>> { [PistolId] = new[] { MagazineItemId } };
+            _controller.RestoreLoadout(new[] { new WeaponAmmo(PistolId, 12, Reserve) }, PistolId, attached);
+            var before = _controller.Akimbo;
+            Assert.That(before.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(12));
+            Assert.That(before.AmmoInMagazine(AkimboHand.Left), Is.EqualTo(12));
+
+            Assert.That(_controller.SetAttachments(PistolId, new string[0]), Is.True);
+
+            var hands = _controller.Akimbo;
+            Assert.That(hands.Spec.MagazineSize, Is.EqualTo(Magazine));
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Right), Is.EqualTo(8));
+            Assert.That(hands.AmmoInMagazine(AkimboHand.Left), Is.EqualTo(8));
+            Assert.That(hands.ReserveAmmo, Is.EqualTo(24), "4 rounds from each hand go back into the reserve of 16");
+        }
+
+        [Test]
         public void TheAkimboSpreadMultiplierWidensTheCone()
         {
             var akimbo = Definition(Pistol(new AkimboSpec(spreadMultiplier: 1.5f)));
@@ -424,6 +488,13 @@ namespace Shooter.Tests.EditMode
             {
                 aim.Dispose();
             }
+        }
+
+        private static ItemCatalog MagazineCatalog()
+        {
+            var pistolItem = new ItemSpec(PistolItemId, "weapon.pistol", weaponId: PistolId, attachmentSlots: new[] { "magazine" });
+            var magazine = new ItemSpec(MagazineItemId, "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 4));
+            return new ItemCatalog(new[] { pistolItem, magazine }, InventoryRule.Default);
         }
 
         private void Hold(WeaponSpec spec)
