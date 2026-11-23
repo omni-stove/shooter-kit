@@ -536,7 +536,7 @@ namespace Shooter.Runtime
             {
                 "Jump", "Sprint", "Crouch", "Prone", "Attack", "Aim", "Reload", "SwitchAmmoType", "CycleMagnification", "HoldBreath", "Melee", "Interact", "Next", "Previous", "Cover", "SwapShoulder",
                 "Dodge", "Grenade", "SwitchGrenade", "Ability1", "Ability2", "Ping", "SquadCommand", "Scoreboard", "NetStats", "Inventory", "UseStreak", "SwitchStreak",
-                "LeanLeft", "LeanRight", "Chat", "TeamChat", "PushToTalk", "Emote", "Countermeasure", "Holster",
+                "LeanLeft", "LeanRight", "Chat", "TeamChat", "PushToTalk", "Emote", "Countermeasure", "Holster", "WeaponLight",
             };
 
             foreach (var action in buttons)
