@@ -283,6 +283,8 @@ namespace Shooter.Core.Tests
         [TestCase(MatchObjective.Infected, "infected")]
         [TestCase(MatchObjective.Guardian, "guardian")]
         [TestCase(MatchObjective.Execution, "execution")]
+        [TestCase(MatchObjective.Juggernaut, "juggernaut")]
+        [TestCase(MatchObjective.Vip, "vip")]
         public void ModeNameGivesEachObjectiveItsLobbyKey(MatchObjective objective, string expected)
         {
             Assert.That(ServerLobby.ModeName(objective), Is.EqualTo(expected));
@@ -300,6 +302,8 @@ namespace Shooter.Core.Tests
             {
                 Assert.That(names.Add(ServerLobby.ModeName(objective)), Is.True, objective.ToString());
             }
+
+            Assert.That(names.Count, Is.EqualTo(18));
 
             Assert.That(ServerLobby.ModeName(MatchObjective.None), Is.EqualTo(ServerLobby.TeamDeathmatchMode));
             Assert.Throws<ArgumentOutOfRangeException>(() => ServerLobby.ModeName((MatchObjective)999));

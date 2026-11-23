@@ -14,7 +14,7 @@ namespace Shooter.Tests.EditMode
     public sealed class PlayerActionsTests
     {
         private const string NewActionsOff =
-            " melee=Off stagger=Off slide=Off mantle=Off prone=Off ladder=Off zipline=Off parachute=Off stealth=Off suppression=Off ping=Off abilities=Off slowMotion=Off aimToFire=Off jump=On";
+            " melee=Off takedown=Off stagger=Off slide=Off mantle=Off prone=Off ladder=Off zipline=Off parachute=Off stealth=Off suppression=Off ping=Off abilities=Off slowMotion=Off aimToFire=Off jump=On";
 
         private static readonly List<string> _calls = new List<string>();
 
@@ -168,7 +168,29 @@ namespace Shooter.Tests.EditMode
             Assert.That(
                 PlayerActions.FormatLog(actions),
                 Is.EqualTo("[Actions] cover=Off blindFire=Off activeReload=Off downed=Off dodge=Off vault=Off"
-                    + " melee=Off stagger=Off slide=On mantle=Off prone=Off ladder=Off zipline=Off parachute=Off stealth=Off suppression=Off ping=Off abilities=Off slowMotion=On aimToFire=Off jump=On"));
+                    + " melee=Off takedown=Off stagger=Off slide=On mantle=Off prone=Off ladder=Off zipline=Off parachute=Off stealth=Off suppression=Off ping=Off abilities=Off slowMotion=On aimToFire=Off jump=On"));
+        }
+
+        [Test]
+        public void TheLogShowsTheTakedownRuleAfterTheMelee()
+        {
+            var actions = ActionRules.Default.WithTakedown(Takedown.On);
+
+            Assert.That(
+                PlayerActions.FormatLog(actions),
+                Is.EqualTo("[Actions] cover=Off blindFire=Off activeReload=Off downed=Off dodge=Off vault=Off"
+                    + NewActionsOff.Replace("takedown=Off", "takedown=On")));
+        }
+
+        [Test]
+        public void AttachingAPlayerLogsTheTakedownRule()
+        {
+            LogAssert.Expect(
+                LogType.Log,
+                "[Actions] cover=Off blindFire=Off activeReload=Off downed=Off dodge=Off vault=Off"
+                    + NewActionsOff.Replace("melee=Off takedown=Off", "melee=On takedown=On"));
+
+            PlayerActions.Attach(_player, GameRules.Default.WithActions(ActionRules.Default.WithMelee(Melee.On).WithTakedown(Takedown.On)));
         }
 
         [Test]

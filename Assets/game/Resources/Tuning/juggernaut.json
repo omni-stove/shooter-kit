@@ -1,0 +1,9 @@
+{
+  "juggernautMaxHealth": 300,
+  "juggernautSpeedMultiplier": 1.1,
+  "scorePerKillAsJuggernaut": 1,
+  "scorePerJuggernautKill": 3,
+  "scoreLimit": 15,
+  "timeLimitSeconds": 600,
+  "startDelaySeconds": 5
+}

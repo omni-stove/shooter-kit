@@ -75,10 +75,17 @@ namespace Shooter.Core
             return ProtectsUnchecked(_points[index], threat);
         }
 
-        public int Select(Vector3 self, Vector3 threat, object owner = null, ICollection<int> excluded = null)
+        // MaxDistance より大きな maxDistance を渡しても MaxDistance で切る。点の一覧を作った側が決めた範囲の外へは行かせない。
+        public int Select(Vector3 self, Vector3 threat, object owner = null, ICollection<int> excluded = null, float? maxDistance = null)
         {
             RequireFinite(self, nameof(self));
             RequireFinite(threat, nameof(threat));
+            if (maxDistance.HasValue && (!(maxDistance.Value >= 0f) || float.IsInfinity(maxDistance.Value)))
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxDistance), maxDistance, "maxDistance must be non-negative and finite");
+            }
+
+            var limit = maxDistance.HasValue ? Math.Min(maxDistance.Value, MaxDistance) : MaxDistance;
 
             var best = -1;
             var bestDistance = float.MaxValue;
@@ -96,7 +103,7 @@ namespace Shooter.Core
                 }
 
                 var distance = Vector3.Distance(self, _points[i].Position);
-                if (distance > MaxDistance || distance >= bestDistance)
+                if (distance > limit || distance >= bestDistance)
                 {
                     continue;
                 }

@@ -37,6 +37,8 @@ namespace Shooter.Editor
         public const string InfectedName = "Infected";
         public const string ExtractionName = "Extraction";
         public const string PayloadName = "Payload";
+        public const string JuggernautName = "Juggernaut";
+        public const string VipName = "Vip";
 
         public static string FreeForAllPath => Folder + "/" + FreeForAllName + ".asset";
         public static string KillConfirmedPath => Folder + "/" + KillConfirmedName + ".asset";
@@ -51,6 +53,8 @@ namespace Shooter.Editor
         public static string InfectedPath => Folder + "/" + InfectedName + ".asset";
         public static string ExtractionPath => Folder + "/" + ExtractionName + ".asset";
         public static string PayloadPath => Folder + "/" + PayloadName + ".asset";
+        public static string JuggernautPath => Folder + "/" + JuggernautName + ".asset";
+        public static string VipPath => Folder + "/" + VipName + ".asset";
 
         public const float HordeWaveIntervalSeconds = 30f;
 
@@ -75,6 +79,8 @@ namespace Shooter.Editor
             InfectedName,
             ExtractionName,
             PayloadName,
+            JuggernautName,
+            VipName,
         };
 
         public const int TpsRangeGrenadeCount = 3;
@@ -198,6 +204,7 @@ namespace Shooter.Editor
             GameRulesDebugField.Vault,
             GameRulesDebugField.Grenade,
             GameRulesDebugField.Melee,
+            GameRulesDebugField.Takedown,
             GameRulesDebugField.Stagger,
             GameRulesDebugField.Slide,
             GameRulesDebugField.Mantle,
@@ -219,6 +226,7 @@ namespace Shooter.Editor
             GameRulesDebugField.Ladder,
             GameRulesDebugField.Jump,
             GameRulesDebugField.Melee,
+            GameRulesDebugField.Takedown,
         };
 
         // GameRulesDebugDraft を通すのは、ブラインドファイアはカバーも、グレネードは数も一緒に入れるため。
@@ -383,6 +391,24 @@ namespace Shooter.Editor
                 .WithActions(ExtractionActions());
         }
 
+        // 全員の撃ち合いの上で 1 人だけが強くなるので、並びと戻り方は FreeForAll のまま、目的だけをサーバーのルール (server-data/rules/Juggernaut.json) と同じ Juggernaut にする。
+        // 体力の上限・速さ・点・時間は JuggernautSpec (juggernaut.json) から読むので、ルールには持たせない。
+        public static GameRules JuggernautRules()
+        {
+            return FreeForAllRules().WithObjective(MatchObjective.Juggernaut);
+        }
+
+        // VIP が倒れたらそのラウンドは決まるので、ラウンド中は戻さず (RespawnMode.None)、出現直後の無敵も無くし、起こしてもらうダウンも使わない。
+        // ラウンドの秒・勝ち数・攻守の入れ替えは VipSpec (vip.json) から読む。
+        public static GameRules VipRules()
+        {
+            return TeamDeathmatchRules()
+                .WithObjective(MatchObjective.Vip)
+                .WithRespawnMode(RespawnMode.None)
+                .WithSpawnProtectionSeconds(0f)
+                .WithActions(VipActions());
+        }
+
         public static GameRules ModeRules(string name)
         {
             switch (name)
@@ -413,6 +439,10 @@ namespace Shooter.Editor
                     return ExtractionRules();
                 case PayloadName:
                     return PayloadRules();
+                case JuggernautName:
+                    return JuggernautRules();
+                case VipName:
+                    return VipRules();
                 default:
                     throw new ArgumentException($"'{name}' is not one of the mode names ({string.Join(", ", ModeNames)})", nameof(name));
             }
@@ -451,8 +481,14 @@ namespace Shooter.Editor
             return TeamDeathmatchActions().WithDowned(Downed.Off);
         }
 
+        public static ActionRules VipActions()
+        {
+            return TeamDeathmatchActions().WithDowned(Downed.Off);
+        }
+
         // ジャンプを切っても、段差は乗り越えと崖のぼりで上がれる。
         // 近接は射撃場 (RangeActions) から受け継がずに Off にする。近接の smoke の手順 (MeleeSmokeStep・ContextMeleeSmokeStep) が Off で振れないことを確かめてから、自分の間だけ On にするため。
+        // テイクダウンを射撃場から受け継ぐだけにせず書いておくのは、射撃場の値を後で変えても TPS 射撃場では近接が Off のままテイクダウンを On に保つため。
         public static ActionRules TpsRangeActions()
         {
             return RangeActions()
@@ -469,7 +505,8 @@ namespace Shooter.Editor
                 .WithStealth(Stealth.On)
                 .WithSuppression(Suppression.On)
                 .WithJump(Jump.Off)
-                .WithMelee(Melee.Off);
+                .WithMelee(Melee.Off)
+                .WithTakedown(Takedown.On);
         }
 
         // カバーとブラインドファイアはオンラインのプレイヤーが対応していないので使わない。
@@ -478,14 +515,16 @@ namespace Shooter.Editor
             return WithDefaultDownedTimings(Downed.Revive, Cover.Off, BlindFire.Off, ActiveReload.On)
                 .WithGrenade(Grenade.On)
                 .WithGrenadeCount(TeamDeathmatchGrenadeCount)
-                .WithMelee(Melee.On);
+                .WithMelee(Melee.On)
+                .WithTakedown(Takedown.On);
         }
 
         // 一人称では壁に張り付いても視界が壁で埋まるだけなので、カバーと (カバー中にだけ撃てる) ブラインドファイアを使わない。
         public static ActionRules CampaignActions()
         {
             return WithDefaultDownedTimings(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On)
-                .WithMelee(Melee.On);
+                .WithMelee(Melee.On)
+                .WithTakedown(Takedown.On);
         }
 
         // 一人称なのでカバーを使わない (CampaignActions と同じ理由)。
@@ -494,7 +533,8 @@ namespace Shooter.Editor
             return WithDefaultDownedTimings(Downed.Off, Cover.Off, BlindFire.Off, ActiveReload.On)
                 .WithEmote(Emote.On)
                 .WithStamina(Stamina.On)
-                .WithMelee(Melee.On);
+                .WithMelee(Melee.On)
+                .WithTakedown(Takedown.On);
         }
 
         public static GameRulesDefinition LoadRules(string path)

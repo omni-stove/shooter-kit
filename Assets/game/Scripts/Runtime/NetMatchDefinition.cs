@@ -458,7 +458,20 @@ namespace Shooter.Runtime
                     _economyMaxLossReward),
                 _maxDisplayNameLength,
                 ToInfected(),
-                ToExecution());
+                ToExecution(),
+                juggernaut: ToJuggernaut(),
+                vip: ToVip());
+        }
+
+        // 定義アセットの欄がまだ無いので、オフラインのランナーと同じ調整値の JSON (GameContent の欄か Resources/Tuning) を読む
+        private static JuggernautSpec ToJuggernaut()
+        {
+            return KitTuning.Juggernaut;
+        }
+
+        private static VipSpec ToVip()
+        {
+            return KitTuning.Vip;
         }
 
         private ExecutionSpec ToExecution()

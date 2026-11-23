@@ -1,0 +1,17 @@
+{
+  "kindCooldownSeconds": {
+    "spotted": 6,
+    "lostTarget": 8,
+    "reloading": 4,
+    "grenade": 3,
+    "takingFire": 5,
+    "movingToCover": 6,
+    "allyDown": 8
+  },
+  "speakerCooldownSeconds": 3,
+  "minIntervalSeconds": 0.75,
+  "crowdRadius": 12,
+  "maxSpeakersInCrowd": 2,
+  "hearingDistance": 30,
+  "grenadeWarningRadius": 8
+}

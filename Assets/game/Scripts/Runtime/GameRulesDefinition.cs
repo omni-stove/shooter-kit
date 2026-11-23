@@ -81,6 +81,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("持っている銃で殴る近接攻撃と、テイクダウンなどの近接の技を使えるか。近接武器と盾の攻撃は Off でも使える")]
         private Melee _melee = Melee.Off;
 
+        [SerializeField, Tooltip("気づかれていない敵の背後から近づいて一撃で倒すテイクダウンを使えるか")]
+        private Takedown _takedown = Takedown.Off;
+
         [SerializeField, Tooltip("被弾したときに怯むか")]
         private Stagger _stagger = Stagger.Off;
 
@@ -337,6 +340,12 @@ namespace Shooter.Runtime
         {
             get => _melee;
             set => _melee = value;
+        }
+
+        public Takedown Takedown
+        {
+            get => _takedown;
+            set => _takedown = value;
         }
 
         public Stagger Stagger
@@ -608,7 +617,8 @@ namespace Shooter.Runtime
                         _emote,
                         _stamina,
                         _reloadInterruptedBy ?? Array.Empty<ReloadInterrupt>(),
-                        _aimWhileReloading),
+                        _aimWhileReloading,
+                        _takedown),
                     _spawnProtectionSeconds,
                     _fallDamage,
                     _hudDensity,
@@ -733,6 +743,7 @@ namespace Shooter.Runtime
             }
 
             _aimWhileReloading = actions.AimWhileReloading;
+            _takedown = actions.Takedown;
         }
 
         private string SourceName => string.IsNullOrEmpty(name) ? "(unnamed game rules)" : name;
