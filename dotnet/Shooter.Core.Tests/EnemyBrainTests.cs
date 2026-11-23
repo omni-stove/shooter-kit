@@ -237,16 +237,15 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void FiresReactionSecondsAfterEnteringAttackFromChase()
+        public void FiresReactionSecondsAfterFirstSeenEvenIfItEntersAttackFromChase()
         {
             var brain = PatrollingBrain(out _);
-            var far = new Vector3(0f, 0f, 15f);
+            var far = new Vector3(0f, 0f, 25f);
             var near = new Vector3(0f, 0f, 5f);
             brain.Tick(1f, Sees(Vector3.Zero, far));
 
             Assert.That(brain.Tick(0.25f, Sees(Vector3.Zero, near)).Fire, Is.False, "Attack に入った tick");
-            Assert.That(brain.Tick(0.25f, Sees(Vector3.Zero, near)).Fire, Is.False, "0.25 秒後");
-            Assert.That(brain.Tick(0.25f, Sees(Vector3.Zero, near)).Fire, Is.True, "0.5 秒後");
+            Assert.That(brain.Tick(0.25f, Sees(Vector3.Zero, near)).Fire, Is.True, "見続けた時間が構え時間に達した");
         }
 
         [Test]
