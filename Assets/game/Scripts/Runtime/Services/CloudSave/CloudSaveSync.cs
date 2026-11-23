@@ -246,12 +246,25 @@ namespace Shooter.Runtime
 
             var key = AccountKey(account);
             var changed = new List<string>();
+            var previousStamps = _stamps;
+            var previousOwner = _stamps.Account;
             if (_stamps.Account == null)
             {
                 // 持ち主の決まっていない手元 (持ち主を書く前の版の記録・サインインせずに遊んだ分) は、最初にサインインしたアカウントのものにする。
                 // 取り置くと、これまで同期していた利用者の進行が手元から消えて見える。
-                _stamps.Account = key;
-                SaveStamps();
+                try
+                {
+                    _stamps.Account = key;
+                    SaveStamps(true);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    // 持ち主が書けていないのに進むと、次の起動で別のアカウントのものとして扱われうるので、待ってやり直す。
+                    _stamps.Account = previousOwner;
+                    _accountRetryAt = _now + RetrySeconds;
+                    Debug.LogError(CloudSaveLog.AccountChangeFailed(e.Message, RetrySeconds));
+                    return;
+                }
             }
             else if (!string.Equals(_stamps.Account, key, StringComparison.Ordinal))
             {
@@ -274,6 +287,7 @@ namespace Shooter.Runtime
                 {
                     // 取り置けないまま進めると、前のアカウントの手元が今のアカウントのクラウドへ上がるので、サインインしていない扱いで待つ。
                     // 読み込み済みの側へも知らせない。空で読み直させると、その空の進行が前のアカウントの新しいセーブとして残る。
+                    _stamps = previousStamps;
                     _accountRetryAt = _now + RetrySeconds;
                     Debug.LogError(CloudSaveLog.AccountChangeFailed(e.Message, RetrySeconds));
                     return;
@@ -353,7 +367,7 @@ namespace Shooter.Runtime
             var arriving = LoadAccountStamps(key);
             arriving.Account = key;
             _stamps = arriving;
-            SaveStamps();
+            SaveStamps(true);
 
             var restored = new List<string>();
             foreach (var slot in arriving.Slots)
@@ -683,11 +697,16 @@ namespace Shooter.Runtime
             SaveStamps();
         }
 
-        private void SaveStamps()
+        private void SaveStamps(bool throwOnFailure = false)
         {
             try
             {
                 _local.Write(StampsSlot, _stamps.ToJson());
+            }
+            catch (Exception) when (throwOnFailure)
+            {
+                // 記録が書けないまま手元を入れ替えると「別アカウントの記録と中身」の組が残るので、呼び出し側で止めさせる。
+                throw;
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
