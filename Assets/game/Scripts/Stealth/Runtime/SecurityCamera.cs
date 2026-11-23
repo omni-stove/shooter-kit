@@ -84,9 +84,31 @@ namespace Shooter.Runtime
                 throw new ArgumentNullException(nameof(spec));
             }
 
+            // Awake が既定値で先に組み立てるので、直後にゲームが渡す Id・Spec・カタログで作り直せるようにする (TargetDummy と同じ)。
             if (_sweep != null)
             {
-                throw new InvalidOperationException($"security camera '{name}' is already initialized");
+                _sweep.PhaseChanged -= OnPhaseChanged;
+                if (_damageable != null)
+                {
+                    _damageable.Died -= OnDied;
+                }
+
+                ResetHold();
+                _hint?.Clear();
+
+                var oldVisual = _head != null ? _head.Find(VisualName) : null;
+                if (oldVisual != null)
+                {
+                    oldVisual.SetParent(null, false);
+                    if (Application.isPlaying)
+                    {
+                        Destroy(oldVisual.gameObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(oldVisual.gameObject);
+                    }
+                }
             }
 
             if (id != null)
