@@ -52,6 +52,7 @@ namespace Shooter.Tests.EditMode
         [TestCase(InputActionPaths.Emote)]
         [TestCase(InputActionPaths.Countermeasure)]
         [TestCase(InputActionPaths.Holster)]
+        [TestCase(InputActionPaths.WeaponLight)]
         public void EveryPathExistsInTheProjectWideActions(string path)
         {
             Find(path);
@@ -127,6 +128,7 @@ namespace Shooter.Tests.EditMode
         [TestCase(InputActionPaths.HoldBreath, "<Keyboard>/leftCtrl", true)]
         [TestCase(InputActionPaths.SwitchStreak, "<Keyboard>/3", true)]
         [TestCase(InputActionPaths.Holster, "<Keyboard>/o", true)]
+        [TestCase(InputActionPaths.WeaponLight, "<Keyboard>/l", true)]
         [TestCase(InputActionPaths.LeanLeft, "<Mouse>/backButton", false)]
         [TestCase(InputActionPaths.LeanRight, "<Mouse>/forwardButton", false)]
         [TestCase(InputActionPaths.Chat, "<Keyboard>/enter", false)]
@@ -214,6 +216,23 @@ namespace Shooter.Tests.EditMode
                 if (other != holster)
                 {
                     Assert.That(other.bindings, Has.None.Matches<InputBinding>(b => b.path == "<Keyboard>/o"), other.name);
+                }
+            }
+        }
+
+        [Test]
+        public void WeaponLightIsTheOnlyPlayerActionOnL()
+        {
+            Assert.That(InputActionPaths.WeaponLight, Is.EqualTo("Player/WeaponLight"));
+            var light = Find(InputActionPaths.WeaponLight);
+
+            Assert.That(light.type, Is.EqualTo(InputActionType.Button));
+            Assert.That(light.bindings, Has.Exactly(1).Matches<InputBinding>(b => b.path == "<Keyboard>/l"));
+            foreach (var other in light.actionMap.actions)
+            {
+                if (other != light)
+                {
+                    Assert.That(other.bindings, Has.None.Matches<InputBinding>(b => b.path == "<Keyboard>/l"), other.name);
                 }
             }
         }
