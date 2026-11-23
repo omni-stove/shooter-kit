@@ -21,8 +21,8 @@
       "activeReload": "On",
       "dodge": "Off",
       "vault": "Off",
-      "grenade": "Off",
-      "grenadeCount": 0,
+      "grenade": "On",
+      "grenadeCount": 2,
       "melee": "On",
       "stagger": "Off",
       "slide": "Off",
@@ -45,12 +45,12 @@
       "aimWhileReloading": "On",
       "takedown": "On"
     },
-    "spawnProtectionSeconds": 2,
+    "spawnProtectionSeconds": 0,
     "fallDamage": "Off",
     "hudDensity": "Full",
     "objective": "Execution",
     "minPlayers": 0,
-    "idleKickSeconds": 0,
+    "idleKickSeconds": 120,
     "idleWarningSeconds": 15,
     "maxWeapons": 2,
     "reloadMode": "Auto",
@@ -264,7 +264,8 @@
       ["AssaultRifle", "SubmachineGun", "Shotgun", "MarksmanRifle", "SniperRifle", "LightMachineGun", "Launcher", "Melee"],
       ["Handgun"]
     ],
-    "weapons": ["e1920316-c182-4151-9273-26f94c3adaf9", "343b6024-75f2-4d68-8ac6-d31fad86aa47"]
+    "weapons": ["e1920316-c182-4151-9273-26f94c3adaf9", "343b6024-75f2-4d68-8ac6-d31fad86aa47"],
+    "abilities": ["deploy-beacon"]
   },
   "catalog": {
     "name": "WeaponCatalog",

@@ -1,0 +1,50 @@
+# scripts/server-tuning.sh が読む一覧。1 行に「種類 ファイル名」を書く。# から行末までは読まない。
+# ここに無い名前は server-data/tuning と Assets/game/Resources/Tuning の両方にあって、同じ中身でないと照合が落ちる。
+# 足すときは docs/dedicated-server.md の表にも理由を書く。
+
+# server-owned: 両方にあるが、サーバー用に別の中身を持つ。
+# economy.json: 財布の額は試合の設定 (match.economy) から読み、品はオンラインのルールの武器の一覧にある武器だけを置く。
+server-owned economy.json
+# chat-words.json: チャットはオンラインだけなので、伏せる語はサーバーの分だけを持つ。
+server-owned chat-words.json
+
+# server-only: サーバーだけが読む。Resources/Tuning に同じ名前のファイルは無い。
+server-only anticheat.json
+server-only battle-royale.json
+server-only deployables.json
+# emotes.json: 正は入口 GameContent の EmotesTuning で、キットの Resources/Tuning には無い。
+server-only emotes.json
+server-only grapple.json
+server-only pickup-drops.json
+
+# resources-only: サーバーへ写さない。
+# サーバーが読まない、クライアントとオフラインの調整値。
+resources-only achievements.json
+resources-only aim-assist.json
+resources-only breach.json
+resources-only cosmetics.json
+resources-only gamepad-layouts.json
+resources-only graphics.json
+resources-only key-sharing.json
+resources-only loadout-presets.json
+resources-only minimap.json
+resources-only nameplates.json
+resources-only palettes.json
+resources-only playlists.json
+resources-only progression.json
+resources-only replay.json
+resources-only rumble.json
+resources-only skill.json
+resources-only squad.json
+resources-only stealth.json
+resources-only traversal.json
+resources-only weather.json
+# サーバーはルールのファイルの match.infected・match.juggernaut・match.vip・match.payload から読む。
+resources-only infected.json
+resources-only juggernaut.json
+resources-only payload.json
+resources-only vip.json
+# サーバーは置いてあれば読む。使うゲームだけが手で写す。
+resources-only leaderboards.json
+resources-only mutators.json
+resources-only telemetry.json
