@@ -23,6 +23,31 @@ namespace Shooter.Core
             return LogTag + " signed out; saving locally until the next sign-in";
         }
 
+        public static string AccountChanged(int setAside, int restored)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} another account signed in; set aside {1} local slot(s) of the previous account and restored {2} of this one",
+                LogTag,
+                setAside,
+                restored);
+        }
+
+        public static string AccountChangeFailed(string problem, double retrySeconds)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} could not set aside the previous account's local saves: {1}; staying local and retrying in {2:0.#}s",
+                LogTag,
+                Require(problem, nameof(problem)),
+                retrySeconds);
+        }
+
+        public static string AccountSlotNotRestored(string slot, string problem)
+        {
+            return LogTag + " could not restore this account's local copy of slot=" + Require(slot, nameof(slot)) + ": " + Require(problem, nameof(problem));
+        }
+
         public static string Uploaded(string slot, CloudSaveStamp stamp)
         {
             return LogTag + " uploaded slot=" + Require(slot, nameof(slot)) + " " + stamp;
