@@ -14,7 +14,7 @@ namespace Shooter.Server
         private const float _aimStepDegrees = 1f;
         private const float _minAimDistance = 1e-3f;
 
-        private float _nextGrenadeAt;
+        private double _nextGrenadeAt;
 
         public bool CanThrowGrenade => UsesTactics && Clock >= _nextGrenadeAt;
 

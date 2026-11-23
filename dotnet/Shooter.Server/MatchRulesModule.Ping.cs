@@ -32,8 +32,8 @@ namespace Shooter.Server
         private readonly PingRemovedMessage _pingRemoved = new PingRemovedMessage();
 
         private TeamPingRelay _pingRelay;
-        private float _nextPingTrackTime;
-        private float _nextPingRefusalLogTime;
+        private double _nextPingTrackTime;
+        private double _nextPingRefusalLogTime;
 
         // 射撃と同じく、参加していない人と試合の無いときは断る理由も出さずに捨てる。
         internal PingRefusal? ServerPing(int playerId, Vector3 direction)

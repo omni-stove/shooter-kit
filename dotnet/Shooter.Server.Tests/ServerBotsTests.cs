@@ -82,6 +82,25 @@ namespace Shooter.Server.Tests
             }
         }
 
+        // 約 11.6 日。float では刻みが 0.0625 秒になり、1 tick を足しても時計が進まない
+        [Test]
+        public void ABotsClockKeepsEveryTickAfterALongUptime()
+        {
+            Start(BotTestMaps.Flat(FlatPoints()), Rules(), bots: 2);
+            Join(1);
+            Tick();
+            var botId = _bots.BotIds.First();
+            Assert.That(_bots.TryGetAgent(botId, out var agent), Is.True);
+            agent.Clock = 1_000_000d;
+
+            for (var i = 0; i < 60; i++)
+            {
+                Tick();
+            }
+
+            Assert.That(agent.Clock, Is.EqualTo(1_000_001d).Within(1e-6d), "sixty ticks are one second");
+        }
+
         [Test]
         public void MinPlayersFillsWithoutTheBotsFlag()
         {

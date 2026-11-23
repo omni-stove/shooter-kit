@@ -442,6 +442,24 @@ namespace Shooter.Server.Tests
                 dropHeight: dropHeight);
         }
 
+        [Test]
+        public void TheClockKeepsEveryTickAfterALongUptime()
+        {
+            // 約 11.6 日。float の時計では刻みが 0.0625 秒になり、1/60 秒を足しても変わらなかった
+            const double longUptime = 1_000_000d;
+            const float tickSeconds = 1f / 60f;
+            Begin(Spec());
+            JoinFour();
+            _host.Steps(1);
+            _rules.ClockSeconds = longUptime;
+
+            _host.Steps(1);
+            Assert.That(_rules.ClockSeconds, Is.EqualTo(longUptime + tickSeconds).Within(1e-9d), _log.ToString());
+
+            _host.Steps(59);
+            Assert.That(_rules.ClockSeconds, Is.EqualTo(longUptime + 1d).Within(1e-6d), "sixty ticks are one second");
+        }
+
         private static GameRules Plain()
         {
             return GameRules.Default
