@@ -20,7 +20,7 @@ namespace Shooter.Protocol.Tests
                 LockTargetKind = LockTargetKind.Vehicle,
             });
 
-            Assert.That(FireRequestMessage.CurrentVersion, Is.EqualTo(3));
+            Assert.That(FireRequestMessage.CurrentVersion, Is.EqualTo(4));
             Assert.That(got.HasLockTarget, Is.True);
             Assert.That(got.LockTargetId, Is.EqualTo(2));
             Assert.That(got.LockTargetKind, Is.EqualTo(LockTargetKind.Vehicle));
@@ -40,7 +40,7 @@ namespace Shooter.Protocol.Tests
             Assert.That(got.LockTargetKind, Is.EqualTo(LockTargetKind.Player));
         }
 
-        // 前の版 (2) は種類の 1 バイトを持たないので、最後の 1 バイトを落として版を 2 に書き換えた要求を読ませる
+        // 前の版 (2) は種類の 1 バイトと撃った手の 1 バイトを持たないので、最後の 2 バイトを落として版を 2 に書き換えた要求を読ませる
         [Test]
         public void AVersionTwoFireRequestIsReadWithAPlayerLock()
         {
@@ -55,7 +55,7 @@ namespace Shooter.Protocol.Tests
                 Trigger = TriggerEdge.Pressed,
             });
             var segment = writer.AsSegment();
-            var bytes = new byte[segment.Count - 1];
+            var bytes = new byte[segment.Count - 2];
             Array.Copy(segment.Array, segment.Offset, bytes, 0, bytes.Length);
             bytes[2] = 2;
 
@@ -75,7 +75,8 @@ namespace Shooter.Protocol.Tests
             var segment = writer.AsSegment();
             var bytes = new byte[segment.Count];
             Array.Copy(segment.Array, segment.Offset, bytes, 0, bytes.Length);
-            bytes[bytes.Length - 1] = 9;
+            // 最後の 1 バイトは撃った手なので、その前の種類の 1 バイトを書き換える
+            bytes[bytes.Length - 2] = 9;
 
             Assert.Throws<MessageReadException>(() => MatchMessages.CreateServerTable().Read(new ArraySegment<byte>(bytes)));
         }

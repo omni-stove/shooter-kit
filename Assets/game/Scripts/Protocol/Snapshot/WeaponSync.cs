@@ -36,6 +36,14 @@ namespace Shooter.Protocol
 
         public float SpinUpFraction { get; set; }
 
+        // 二丁持ちの左の手。右の手は AmmoInMagazine・IsReloading・ReloadStartedAt を使い、予備弾 (ReserveAmmo) は左右で分け合うので 1 つだけ送る。
+        // 1 丁で持つ武器では 0 と false のまま送る。
+        public int OffhandAmmoInMagazine { get; set; }
+
+        public bool IsOffhandReloading { get; set; }
+
+        public double OffhandReloadStartedAt { get; set; }
+
         public bool SameAs(in WeaponSync other)
         {
             return AmmoInMagazine == other.AmmoInMagazine
@@ -52,7 +60,10 @@ namespace Shooter.Protocol
                 && IsOverheated == other.IsOverheated
                 && Same.Bits(ChargeFraction, other.ChargeFraction)
                 && AmmoTypeIndex == other.AmmoTypeIndex
-                && Same.Bits(SpinUpFraction, other.SpinUpFraction);
+                && Same.Bits(SpinUpFraction, other.SpinUpFraction)
+                && OffhandAmmoInMagazine == other.OffhandAmmoInMagazine
+                && IsOffhandReloading == other.IsOffhandReloading
+                && Same.Bits(OffhandReloadStartedAt, other.OffhandReloadStartedAt);
         }
 
         internal void Write(MessageWriter writer)
@@ -72,6 +83,9 @@ namespace Shooter.Protocol
             writer.WriteSingle(ChargeFraction);
             writer.WriteByte(AmmoTypeIndex);
             writer.WriteSingle(SpinUpFraction);
+            writer.WriteInt32(OffhandAmmoInMagazine);
+            writer.WriteBool(IsOffhandReloading);
+            writer.WriteDouble(OffhandReloadStartedAt);
         }
 
         internal static WeaponSync Read(MessageReader reader)
@@ -93,6 +107,9 @@ namespace Shooter.Protocol
                 ChargeFraction = reader.ReadFiniteSingleBetween(0f, 1f, "charge fraction"),
                 AmmoTypeIndex = reader.ReadByte(),
                 SpinUpFraction = reader.ReadFiniteSingleBetween(0f, 1f, "spin-up fraction"),
+                OffhandAmmoInMagazine = reader.ReadInt32AtLeast(0, "offhand ammo in magazine"),
+                IsOffhandReloading = reader.ReadBool(),
+                OffhandReloadStartedAt = reader.ReadDouble(),
             };
         }
     }

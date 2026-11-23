@@ -5,7 +5,7 @@ namespace Shooter.Protocol
 {
     public sealed class FireRequestMessage : IMessage, IReadsOlderVersions
     {
-        public const byte CurrentVersion = 3;
+        public const byte CurrentVersion = 4;
 
         // 乗り物を狙えない前の版のクライアントの射撃も受け付けられるよう、ロックの相手を人として読む
         public const byte OldestVersion = 2;
@@ -44,11 +44,19 @@ namespace Shooter.Protocol
         // ビームや火炎のように押している間ずっと出る撃ち方で、押しっぱなしの間に 1 発ずつ要求を送らずに済むよう、押した・離した知らせを運ぶ。
         public TriggerEdge Trigger { get; set; }
 
+        // 二丁持ちでどちらの手で撃ったか。3 以前の版は手を運ばないので、1 丁で持つときと同じ Right として読む。
+        public Shooter.Core.AkimboHand Hand { get; set; } = Shooter.Core.AkimboHand.Right;
+
         public void Write(MessageWriter writer)
         {
             if (HasLockTarget && LockTargetId < 0)
             {
                 throw new InvalidOperationException("lock target id must not be negative");
+            }
+
+            if (!IsHand(Hand))
+            {
+                throw new InvalidOperationException("hand " + Hand + " is not a defined AkimboHand");
             }
 
             writer.WriteString(WeaponId, MatchProtocol.MaxContentIdBytes);
@@ -63,6 +71,7 @@ namespace Shooter.Protocol
             writer.WriteInt32(HasLockTarget ? LockTargetId : PlayerIds.None);
             writer.WriteByte((byte)Trigger);
             writer.WriteByte((byte)(HasLockTarget ? LockTargetKind : LockTargetKind.Player));
+            writer.WriteByte((byte)Hand);
         }
 
         public void Read(MessageReader reader)
@@ -89,6 +98,14 @@ namespace Shooter.Protocol
                 ? (LockTargetKind)reader.ReadByteBelow(EnumRange<LockTargetKind>.Count, "lock target kind")
                 : LockTargetKind.Player;
             LockTargetKind = HasLockTarget ? kind : LockTargetKind.Player;
+            Hand = version >= 4
+                ? (Shooter.Core.AkimboHand)reader.ReadByteBelow(EnumRange<Shooter.Core.AkimboHand>.Count, "akimbo hand")
+                : Shooter.Core.AkimboHand.Right;
+        }
+
+        private static bool IsHand(Shooter.Core.AkimboHand hand)
+        {
+            return (int)hand >= 0 && (int)hand < EnumRange<Shooter.Core.AkimboHand>.Count;
         }
     }
 }
