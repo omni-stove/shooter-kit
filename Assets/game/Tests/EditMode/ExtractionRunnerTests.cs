@@ -235,6 +235,7 @@ namespace Shooter.Tests.EditMode
             definition.OpenPoints = 2;
             definition.OpenAfterSeconds = 30f;
             definition.KeepCarriedOnDeath = true;
+            definition.BotsBringLoadout = false;
             _runner.Spec = null;
             _runner.Definition = definition;
 
@@ -245,6 +246,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.OpenPoints, Is.EqualTo(2));
             Assert.That(spec.OpenAfterSeconds, Is.EqualTo(30f));
             Assert.That(spec.KeepCarriedOnDeath, Is.True);
+            Assert.That(spec.BotsBringLoadout, Is.False);
         }
 
         [Test]
@@ -258,14 +260,16 @@ namespace Shooter.Tests.EditMode
             Assert.That(definition.OpenPoints, Is.EqualTo(ExtractionSpec.DefaultOpenPoints));
             Assert.That(definition.OpenAfterSeconds, Is.EqualTo(ExtractionSpec.DefaultOpenAfterSeconds));
             Assert.That(definition.KeepCarriedOnDeath, Is.EqualTo(ExtractionSpec.DefaultKeepCarriedOnDeath));
+            Assert.That(definition.BotsBringLoadout, Is.EqualTo(ExtractionSpec.DefaultBotsBringLoadout));
 
-            definition.CopyFrom(new ExtractionSpec(200f, 4f, 3, 20f, true));
+            definition.CopyFrom(new ExtractionSpec(200f, 4f, 3, 20f, true, false));
             var spec = definition.ToSpec();
             Assert.That(spec.RaidSeconds, Is.EqualTo(200f));
             Assert.That(spec.ExtractHoldSeconds, Is.EqualTo(4f));
             Assert.That(spec.OpenPoints, Is.EqualTo(3));
             Assert.That(spec.OpenAfterSeconds, Is.EqualTo(20f));
             Assert.That(spec.KeepCarriedOnDeath, Is.True);
+            Assert.That(spec.BotsBringLoadout, Is.False);
 
             definition.OpenAfterSeconds = 199f;
             Assert.Throws<InvalidOperationException>(() => definition.ToSpec(), "the exit would open too late to hold it before the raid ends");

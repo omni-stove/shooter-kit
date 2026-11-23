@@ -64,6 +64,64 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.Charger.ChargeSpeed, Is.EqualTo(expected.Charger.ChargeSpeed));
             Assert.That(spec.Bomber.FuseSeconds, Is.EqualTo(expected.Bomber.FuseSeconds));
             Assert.That(spec.Shield.HoldDistance, Is.EqualTo(expected.Shield.HoldDistance));
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(expected.CoverOnHitMaxDistance));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(expected.CoverMoveSpreadDegrees));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(expected.CoverMaxPeeks));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(expected.CoverPeekReactionSeconds));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(expected.CoverCooldownSeconds));
+        }
+
+        [Test]
+        public void NewDefinitionHasTheCoverDefaults()
+        {
+            Assert.That(_definition.CoverOnHitMaxDistance, Is.EqualTo(5f));
+            Assert.That(_definition.CoverMoveSpreadDegrees, Is.EqualTo(4f));
+            Assert.That(_definition.CoverMaxPeeks, Is.EqualTo(3));
+            Assert.That(_definition.CoverPeekReactionSeconds, Is.EqualTo(0.3f));
+            Assert.That(_definition.CoverCooldownSeconds, Is.EqualTo(5f));
+        }
+
+        [Test]
+        public void CopyFromThenToSpecKeepsTheCoverValues()
+        {
+            var source = new EnemySpec(
+                35f,
+                30f,
+                1.5f,
+                4f,
+                0.25f,
+                coverOnHitMaxDistance: 9f,
+                coverMoveSpreadDegrees: 1.5f,
+                coverMaxPeeks: 6,
+                coverPeekReactionSeconds: 0.8f,
+                coverCooldownSeconds: 12f);
+
+            _definition.CopyFrom(source);
+
+            Assert.That(_definition.CoverOnHitMaxDistance, Is.EqualTo(9f));
+            Assert.That(_definition.CoverMoveSpreadDegrees, Is.EqualTo(1.5f));
+            Assert.That(_definition.CoverMaxPeeks, Is.EqualTo(6));
+            Assert.That(_definition.CoverPeekReactionSeconds, Is.EqualTo(0.8f));
+            Assert.That(_definition.CoverCooldownSeconds, Is.EqualTo(12f));
+
+            var spec = _definition.ToSpec();
+
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(9f));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(1.5f));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(6));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(0.8f));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(12f));
+        }
+
+        [Test]
+        public void AnInvalidCoverValueIsReportedWithTheAssetName()
+        {
+            _definition.CoverMaxPeeks = 0;
+
+            var e = Assert.Throws<EnemyDefinitionException>(() => _definition.ToSpec());
+
+            Assert.That(e.Message, Does.Contain("Grunt"));
+            Assert.That(((ArgumentOutOfRangeException)e.InnerException).ParamName, Is.EqualTo("coverMaxPeeks"));
         }
 
         [Test]
@@ -78,6 +136,11 @@ namespace Shooter.Tests.EditMode
             Assert.That(fromDefinition.OpeningSpreadDegrees, Is.EqualTo(fromAgent.OpeningSpreadDegrees));
             Assert.That(fromDefinition.OpeningShots, Is.EqualTo(fromAgent.OpeningShots));
             Assert.That(fromDefinition.CoverHealthFraction, Is.EqualTo(fromAgent.CoverHealthFraction));
+            Assert.That(fromDefinition.CoverOnHitMaxDistance, Is.EqualTo(fromAgent.CoverOnHitMaxDistance));
+            Assert.That(fromDefinition.CoverMoveSpreadDegrees, Is.EqualTo(fromAgent.CoverMoveSpreadDegrees));
+            Assert.That(fromDefinition.CoverMaxPeeks, Is.EqualTo(fromAgent.CoverMaxPeeks));
+            Assert.That(fromDefinition.CoverPeekReactionSeconds, Is.EqualTo(fromAgent.CoverPeekReactionSeconds));
+            Assert.That(fromDefinition.CoverCooldownSeconds, Is.EqualTo(fromAgent.CoverCooldownSeconds));
         }
 
         [Test]

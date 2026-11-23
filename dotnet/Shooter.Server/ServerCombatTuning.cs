@@ -15,6 +15,9 @@ namespace Shooter.Server
         public const string StreaksFileName = "streaks.json";
         public const string AntiCheatFileName = "anticheat.json";
 
+        // 武器を出してはいけない場所 (ServerWeaponFreeZones) が、どの状態を武装と数えるかをオフラインの Tuning/holster と同じ値で決めるために読む
+        public const string HolsterFileName = "holster.json";
+
         public ServerCombatTuning(
             MeleeSpec melee = null,
             string meleePath = null,
@@ -26,8 +29,12 @@ namespace Shooter.Server
             string antiCheatPath = null,
             ServerPlayerStatusTuning playerStatus = null,
             IReadOnlyList<EmoteSpec> emotes = null,
-            string emotesPath = null)
+            string emotesPath = null,
+            HolsterSpec holster = null,
+            string holsterPath = null)
         {
+            Holster = holster ?? HolsterSpec.Default;
+            HolsterPath = holsterPath;
             Melee = melee ?? MeleeSpec.Default;
             MeleePath = meleePath;
             Streaks = streaks ?? StreakSpec.Default;
@@ -65,10 +72,15 @@ namespace Shooter.Server
 
         public string EmotesPath { get; }
 
+        public HolsterSpec Holster { get; }
+
+        public string HolsterPath { get; }
+
         public string LogLine => ServerProgram.LogTag + " combat tuning"
             + " melee=" + (MeleePath ?? "default")
             + " streaks=" + (StreaksPath ?? "default")
             + " deployables=" + (DeployablesPath ?? "none")
+            + " holster=" + (HolsterPath ?? "default")
             + " anticheat=" + (AntiCheatPath ?? "default");
 
         // ルールのファイルと同じく、探す場所を前から順に見て最初に見つかったファイルを使う。読めないファイルは既定値にせず止める
@@ -81,13 +93,15 @@ namespace Shooter.Server
                 || !ServerDeployables.TryLoadCatalog(searchRoots, out var deployables, out var deployablesPath, out error)
                 || !TryRead(searchRoots, AntiCheatFileName, "anticheat", AntiCheatTuningJson.Parse, out var antiCheat, out var antiCheatPath, out error)
                 || !ServerPlayerStatusTuning.TryLoad(searchRoots, out var playerStatus, out error)
-                || !ServerEmotes.TryLoadEmotes(searchRoots, out var emotes, out var emotesPath, out error))
+                || !ServerEmotes.TryLoadEmotes(searchRoots, out var emotes, out var emotesPath, out error)
+                || !TryRead(searchRoots, HolsterFileName, "holster", HolsterJson.Parse, out var holster, out var holsterPath, out error))
             {
                 return false;
             }
 
             tuning = new ServerCombatTuning(
-                melee, meleePath, streaks, streaksPath, deployables, deployablesPath, antiCheat, antiCheatPath, playerStatus, emotes, emotesPath);
+                melee, meleePath, streaks, streaksPath, deployables, deployablesPath, antiCheat, antiCheatPath, playerStatus, emotes, emotesPath,
+                holster, holsterPath);
             return true;
         }
 

@@ -66,6 +66,11 @@ namespace Shooter.Core
         public const string CoverHideSecondsItem = "coverHideSeconds";
         public const string CoverPeekSecondsItem = "coverPeekSeconds";
         public const string CoverHealthFractionItem = "coverHealthFraction";
+        public const string CoverOnHitMaxDistanceItem = "coverOnHitMaxDistance";
+        public const string CoverMoveSpreadDegreesItem = "coverMoveSpreadDegrees";
+        public const string CoverMaxPeeksItem = "coverMaxPeeks";
+        public const string CoverPeekReactionSecondsItem = "coverPeekReactionSeconds";
+        public const string CoverCooldownSecondsItem = "coverCooldownSeconds";
         public const string ArchetypeItem = "archetype";
         public const string StaggerResistanceItem = "staggerResistance";
         public const string SprintRatioItem = "sprintRatio";
@@ -181,6 +186,11 @@ namespace Shooter.Core
             CoverHideSecondsItem,
             CoverPeekSecondsItem,
             CoverHealthFractionItem,
+            CoverOnHitMaxDistanceItem,
+            CoverMoveSpreadDegreesItem,
+            CoverMaxPeeksItem,
+            CoverPeekReactionSecondsItem,
+            CoverCooldownSecondsItem,
             ArchetypeItem,
             StaggerResistanceItem,
             FireRangeItem,
@@ -390,7 +400,12 @@ namespace Shooter.Core
                     arrivalDistance: arrivalDistance,
                     sprintRatio: fields.ReadFloat(SprintRatioItem, brain.SprintRatio),
                     crouchRatio: fields.ReadFloat(CrouchRatioItem, brain.CrouchRatio),
-                    recoilControl: fields.ReadFloat(RecoilControlItem, brain.RecoilControl));
+                    recoilControl: fields.ReadFloat(RecoilControlItem, brain.RecoilControl),
+                    coverOnHitMaxDistance: fields.ReadFloat(CoverOnHitMaxDistanceItem, brain.CoverOnHitMaxDistance),
+                    coverMoveSpreadDegrees: fields.ReadFloat(CoverMoveSpreadDegreesItem, brain.CoverMoveSpreadDegrees),
+                    coverMaxPeeks: fields.ReadInt(CoverMaxPeeksItem, brain.CoverMaxPeeks),
+                    coverPeekReactionSeconds: fields.ReadFloat(CoverPeekReactionSecondsItem, brain.CoverPeekReactionSeconds),
+                    coverCooldownSeconds: fields.ReadFloat(CoverCooldownSecondsItem, brain.CoverCooldownSeconds));
             }
             catch (ArgumentException e) when (e.ParamName == FireToleranceDegreesItem)
             {
