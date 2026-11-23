@@ -10,10 +10,13 @@ namespace Shooter.NetV2
 {
     // 部品を指す番号は書き出し (MapCollisionExporter) が付けた形の組 (MapColliderGroups.Piece) で、サーバーも同じ番号で送る。
     // 次の試合で建物が直るので、壊れていないと届いた部品は当たりに戻す。
+    // ドアの板も書き出しが付けた組 (MapColliderGroups.Door) で指し、破れたと届いたドアの板を当たりから外す。
     public sealed class ClientWorld
     {
         private readonly Dictionary<int, List<int>> _pieces = new Dictionary<int, List<int>>();
         private readonly HashSet<int> _broken = new HashSet<int>();
+        private readonly HashSet<int> _doors = new HashSet<int>();
+        private readonly HashSet<int> _openDoors = new HashSet<int>();
         private readonly Dictionary<int, GrenadeTrack> _grenades = new Dictionary<int, GrenadeTrack>();
         private readonly List<int> _goneGrenades = new List<int>();
 
@@ -31,6 +34,12 @@ namespace Shooter.NetV2
             Collision = new BvhWorldCollision(world);
             foreach (var collider in world.Colliders)
             {
+                if (MapColliderGroups.TryGetDoor(collider.Group, out var door))
+                {
+                    _doors.Add(door);
+                    continue;
+                }
+
                 if (!MapColliderGroups.TryGetPiece(collider.Group, out var structure, out var piece))
                 {
                     continue;
@@ -65,11 +74,17 @@ namespace Shooter.NetV2
 
         public int BrokenPieceCount => _broken.Count;
 
+        // 板に当たりのあるドアの数。書き出しはどのドアの板にも当たりがあることを確かめるので、.doors.json のドアの数と同じになる
+        public int DoorCount => _doors.Count;
+
+        public int OpenDoorCount => _openDoors.Count;
+
         public IEnumerable<int> GrenadeIds => _grenades.Keys;
 
         public string LogLine => "[Net] map collision " + Map
             + " colliders=" + ColliderCount.ToString(CultureInfo.InvariantCulture)
             + " structures=" + StructureCount.ToString(CultureInfo.InvariantCulture)
+            + " doors=" + DoorCount.ToString(CultureInfo.InvariantCulture)
             + " ladders=" + Ladders.Ladders.Count.ToString(CultureInfo.InvariantCulture)
             + " water=" + Water.Water.Count.ToString(CultureInfo.InvariantCulture);
 
@@ -209,6 +224,34 @@ namespace Shooter.NetV2
             return true;
         }
 
+        // サーバーは全ドアを 1 通に載せて送るので、載っていないドアは閉じているものとして板の当たりを戻す。
+        // ドアの数が当たりの数と食い違う (書き出しの古いマップ) ときも分かる分だけ写し、false を返して呼ぶ側に知らせる
+        public bool Apply(DoorStateMessage message, out int changed)
+        {
+            if (message == null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            changed = 0;
+            foreach (var door in _doors)
+            {
+                var open = door < message.DoorCount && IsBreached(message[door].Phase);
+                if (open ? _openDoors.Add(door) : _openDoors.Remove(door))
+                {
+                    Collision.SetGroupEnabled(MapColliderGroups.Door(door), !open);
+                    changed++;
+                }
+            }
+
+            return message.DoorCount == _doors.Count;
+        }
+
+        public bool IsDoorOpen(int door)
+        {
+            return _openDoors.Contains(door);
+        }
+
         public void ApplyGrenades(SnapshotMessage snapshot, ICollection<int> removed)
         {
             if (snapshot == null)
@@ -295,6 +338,11 @@ namespace Shooter.NetV2
         public void ClearGrenades()
         {
             _grenades.Clear();
+        }
+
+        private static bool IsBreached(BreachDoorPhase phase)
+        {
+            return phase == BreachDoorPhase.Opened || phase == BreachDoorPhase.Destroyed;
         }
 
         private sealed class GrenadeTrack

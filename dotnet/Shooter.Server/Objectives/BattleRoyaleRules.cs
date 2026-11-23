@@ -519,7 +519,7 @@ namespace Shooter.Server
         // オフラインの ShrinkingZone と同じく、間隔ごとにその段階の毎秒のダメージを間隔の分だけ与え、1 に満たない端数は人ごとに持ち越す
         private void DamageOutside(float deltaSeconds)
         {
-            var interval = _spec.Zone.DamageIntervalSeconds;
+            var interval = Math.Max(_spec.Zone.DamageIntervalSeconds, ZoneSpec.MinDamageIntervalSeconds);
             _damageTimer += deltaSeconds;
             while (_damageTimer >= interval && _battleRoyale.IsLive)
             {

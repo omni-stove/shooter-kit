@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Shooter.Runtime
 {
     // 味方を起こせる距離と秒数はルール (ActionRules) にあるので持たない。
-    // 武器を手放させるか・縮むエリア・地面と上空のどちらから始めるかはシーンの組み方なので Runner の側に置く。
+    // 武器を手放させるか・縮むエリアの最初の円・地面と上空のどちらから始めるかはシーンの組み方なので Runner とシーンの側に置く。
     [CreateAssetMenu(fileName = "BattleRoyale", menuName = "Shooter/Modes/Battle Royale")]
     public sealed class BattleRoyaleDefinition : ScriptableObject
     {
@@ -26,6 +26,9 @@ namespace Shooter.Runtime
 
         [SerializeField, Min(0f), Tooltip("パラシュートで降ろすとき、出現点からどれだけ上に出すか (m)")]
         private float _dropHeight = BattleRoyaleRunner.DefaultDropHeight;
+
+        [SerializeField, Tooltip("縮むエリアの段階とダメージの間隔の JSON (battle-royale.json の zone の節と同じ形)。空ならシーンの ShrinkingZone の設定を使う")]
+        private TextAsset _zoneTuning;
 
         [SerializeField, Tooltip("補給の投下の調整値の JSON (supply-drops.json の形)。空なら SupplyDropper の設定を使う")]
         private TextAsset _supplyDropTuning;
@@ -69,6 +72,12 @@ namespace Shooter.Runtime
             set => _dropHeight = value;
         }
 
+        public TextAsset ZoneTuning
+        {
+            get => _zoneTuning;
+            set => _zoneTuning = value;
+        }
+
         public TextAsset SupplyDropTuning
         {
             get => _supplyDropTuning;
@@ -86,6 +95,14 @@ namespace Shooter.Runtime
         {
             return _redeployTuning != null
                 ? KitTuning.Read(_redeployTuning.text, $"TextAsset '{_redeployTuning.name}'", RedeployJson.Parse, RedeploySpec.Default)
+                : null;
+        }
+
+        // 空なら null を返し、シーンの ShrinkingZone の設定を使わせる。
+        public ZoneSpec ReadZone()
+        {
+            return _zoneTuning != null
+                ? KitTuning.Read(_zoneTuning.text, $"TextAsset '{_zoneTuning.name}'", ZoneJson.Parse, ZoneSpec.Default)
                 : null;
         }
 
