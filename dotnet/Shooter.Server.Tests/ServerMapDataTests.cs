@@ -36,8 +36,9 @@ namespace Shooter.Server.Tests
             Assert.That(data.World.Raycast(new Vector3(0f, 5f, 0f), -Vector3.UnitY, 10f, ~0, out var hit), Is.True);
             Assert.That(hit.Point.Y, Is.EqualTo(0.5f).Within(1e-4f));
             Assert.That(data.Navigation.SamplePosition(new Vector3(0.2f, 0.5f, 0.2f), 1f, ~0, out _), Is.True);
-            Assert.That(data.LogLine, Does.StartWith("[Server] map NetArena01 colliders=1 navTriangles=1 navLinks=0 spawnPoints=none controlPoints=none structures=none ladders=0 vehicles=0 water=0 ziplines=0 from="));
+            Assert.That(data.LogLine, Does.StartWith("[Server] map NetArena01 colliders=1 navTriangles=1 navLinks=0 spawnPoints=none controlPoints=none structures=none ladders=0 vehicles=0 water=0 ziplines=0 weaponFreeZones=0 from="));
             Assert.That(data.Ziplines.Ziplines, Is.Empty, "a map exported before ziplines has none");
+            Assert.That(data.WeaponFreeZones.Zones, Is.Empty, "a map exported before weapon free zones has none");
             Assert.That(data.Water.SurfaceAt(new Vector3(0f, 1f, 0f)), Is.Null, "a map exported before water has none");
         }
 
@@ -148,6 +149,36 @@ namespace Shooter.Server.Tests
             Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out _, out var error), Is.False);
             Assert.That(error, Does.Contain("NetArena01.ziplines.json"));
             Assert.That(error, Does.Contain("ziplines[0].end"));
+        }
+
+        [Test]
+        public void LoadsTheWeaponFreeZonesBesideTheCollision()
+        {
+            var directory = TestMaps.Write(_second.Path, "NetArena01");
+            File.WriteAllText(
+                Path.Combine(directory, "NetArena01" + NetMapWeaponFreeZones.Extension),
+                "{ \"zones\": [ { \"id\": \"Shop\", \"min\": [-4, 0, -4], \"max\": [4, 3, 4], \"reaction\": \"BlockDraw\" } ] }");
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out var data, out var error), Is.True, error);
+
+            Assert.That(data.WeaponFreeZones.Zones, Has.Count.EqualTo(1));
+            Assert.That(data.WeaponFreeZones.Zones[0].Id, Is.EqualTo("Shop"));
+            Assert.That(data.WeaponFreeZones.Zones[0].Reaction, Is.EqualTo(WeaponFreeZoneReaction.BlockDraw));
+            Assert.That(data.WeaponFreeZones.Zones[0].Spec.HostileAfterSeconds, Is.EqualTo(WeaponFreeZoneSpec.DefaultHostileAfterSeconds));
+            Assert.That(data.LogLine, Does.Contain(" weaponFreeZones=1 "));
+        }
+
+        [Test]
+        public void BrokenWeaponFreeZonesAreAnError()
+        {
+            var directory = TestMaps.Write(_second.Path, "NetArena01");
+            File.WriteAllText(
+                Path.Combine(directory, "NetArena01" + NetMapWeaponFreeZones.Extension),
+                "{ \"zones\": [ { \"id\": \"Shop\", \"min\": [0, 0, 0], \"max\": [1, 1, 1], \"reaction\": \"Shout\" } ] }");
+
+            Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out _, out var error), Is.False);
+            Assert.That(error, Does.Contain("NetArena01.weapon-free-zones.json"));
+            Assert.That(error, Does.Contain("zones[0].reaction"));
         }
 
         [Test]
