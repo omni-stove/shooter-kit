@@ -13,8 +13,8 @@ namespace Shooter.Net.Tests
         // 承認される前の MatchClient の自分の Id
         private const int _localId = 0;
 
-        private const string _rifleId = "rifle";
-        private const string _knifeId = "knife";
+        private const string _rifleId = "7c1d2a54-3b8e-4f60-9a17-5e2d8c4b6a01";
+        private const string _knifeId = "b3e90f7a-6d12-4c85-8e4a-1f5a9d0c7b22";
 
         private readonly List<string> _logs = new List<string>();
         private MatchClient _client;
