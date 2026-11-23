@@ -1,0 +1,15 @@
+{
+  "bark.line": "{0}: {1}",
+  "bark.speaker.Rifleman": "敵兵",
+  "bark.speaker.Shield": "盾兵",
+  "bark.speaker.Sniper": "狙撃兵",
+  "bark.speaker.Charger": "突撃兵",
+  "bark.speaker.Bomber": "爆弾兵",
+  "bark.Spotted": "見つけたぞ！",
+  "bark.LostTarget": "見失った、探せ！",
+  "bark.Reloading": "装填する、援護しろ！",
+  "bark.Grenade": "手榴弾だ、伏せろ！",
+  "bark.TakingFire": "撃たれてる！",
+  "bark.MovingToCover": "遮蔽に移る！",
+  "bark.AllyDown": "仲間がやられた！"
+}

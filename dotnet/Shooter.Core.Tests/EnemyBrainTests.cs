@@ -224,7 +224,7 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void EnteringAttackFromChaseDoesNotFireAtOnce()
+        public void EnteringAttackFromChaseFiresAtOnceWhenWatchedForTheReactionTime()
         {
             var brain = PatrollingBrain(out _);
 
@@ -233,7 +233,7 @@ namespace Shooter.Core.Tests
             var decision = brain.Tick(0.25f, Sees(Vector3.Zero, new Vector3(0f, 0f, 5f)));
 
             Assert.That(brain.State, Is.EqualTo(EnemyState.Attack));
-            Assert.That(decision.Fire, Is.False, "Chase の時間は反応時間に数えない");
+            Assert.That(decision.Fire, Is.True, "Chase で見続けた時間も反応時間に数える");
         }
 
         [Test]

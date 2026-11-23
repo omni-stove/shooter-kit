@@ -23,6 +23,8 @@ namespace Shooter.Core
 
         ActiveReload,
 
+        Jam,
+
         Dodge,
 
         Vault,

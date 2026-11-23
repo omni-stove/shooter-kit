@@ -44,6 +44,9 @@ namespace Shooter.Runtime
                 case VehicleBoardHint board:
                     text = VehicleBoardPrompt.Describe(board, keyLabel);
                     return true;
+                case SecurityCameraHint camera:
+                    text = SecurityCameraPrompt.Describe(camera, keyLabel);
+                    return true;
                 default:
                     text = default;
                     return false;
@@ -60,6 +63,8 @@ namespace Shooter.Runtime
                     return crate.InputActionPath;
                 case VehicleBoardHint board:
                     return board.InputActionPath;
+                case SecurityCameraHint camera:
+                    return camera.InputActionPath;
                 default:
                     return string.Empty;
             }

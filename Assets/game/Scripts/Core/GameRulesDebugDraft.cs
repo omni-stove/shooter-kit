@@ -65,6 +65,7 @@ namespace Shooter.Core
                 case GameRulesDebugField.Cover: return (int)actions.Cover;
                 case GameRulesDebugField.BlindFire: return (int)actions.BlindFire;
                 case GameRulesDebugField.ActiveReload: return (int)actions.ActiveReload;
+                case GameRulesDebugField.Jam: return (int)actions.Jam;
                 case GameRulesDebugField.Dodge: return (int)actions.Dodge;
                 case GameRulesDebugField.Vault: return (int)actions.Vault;
                 case GameRulesDebugField.Grenade: return (int)actions.Grenade;
@@ -129,6 +130,7 @@ namespace Shooter.Core
                 .WithBlindFire((BlindFire)Get(GameRulesDebugField.BlindFire))
                 .WithDowned((Downed)Get(GameRulesDebugField.Downed))
                 .WithActiveReload((ActiveReload)Get(GameRulesDebugField.ActiveReload))
+                .WithJam((WeaponJam)Get(GameRulesDebugField.Jam))
                 .WithDodge((Dodge)Get(GameRulesDebugField.Dodge))
                 .WithVault((Vault)Get(GameRulesDebugField.Vault))
                 .WithGrenade(grenade)
@@ -236,6 +238,7 @@ namespace Shooter.Core
                 case GameRulesDebugField.Cover: return typeof(Cover);
                 case GameRulesDebugField.BlindFire: return typeof(BlindFire);
                 case GameRulesDebugField.ActiveReload: return typeof(ActiveReload);
+                case GameRulesDebugField.Jam: return typeof(WeaponJam);
                 case GameRulesDebugField.Dodge: return typeof(Dodge);
                 case GameRulesDebugField.Vault: return typeof(Vault);
                 case GameRulesDebugField.Grenade: return typeof(Grenade);

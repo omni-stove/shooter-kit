@@ -355,6 +355,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "WeaponLight",
+                    "type": "Button",
+                    "id": "6e9a2d47-c13b-4f58-8a7e-b25d0f4c9e31",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1345,6 +1354,28 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Holster",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a7c3e915-2f6d-4b08-9d1e-48f2b6a0c7d5",
+                    "path": "<Keyboard>/l",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "WeaponLight",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5b1f8d2c-9e47-4a63-b0c8-e7d3a29f6b14",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "WeaponLight",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

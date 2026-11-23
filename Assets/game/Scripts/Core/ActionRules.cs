@@ -88,6 +88,8 @@ namespace Shooter.Core
 
         public AimWhileReloading AimWhileReloading { get; }
 
+        public WeaponJam Jam { get; }
+
         public Takedown Takedown { get; }
 
         // 構えでリロードを止めるなら、構えを押したときにリロードの方を取り消すので、構えは止めない。
@@ -125,6 +127,7 @@ namespace Shooter.Core
             Stamina stamina = Stamina.Off,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
             AimWhileReloading aimWhileReloading = AimWhileReloading.On,
+            WeaponJam jam = WeaponJam.Off,
             Takedown takedown = Takedown.Off)
         {
             if (!Enum.IsDefined(typeof(Downed), downed))
@@ -212,6 +215,7 @@ namespace Shooter.Core
             RequireDefined(emote, nameof(emote));
             RequireDefined(stamina, nameof(stamina));
             RequireDefined(aimWhileReloading, nameof(aimWhileReloading));
+            RequireDefined(jam, nameof(jam));
             RequireDefined(takedown, nameof(takedown));
             var interrupts = reloadInterruptedBy == null ? DefaultReloadInterruptedBy : CopyInterrupts(reloadInterruptedBy);
 
@@ -246,6 +250,7 @@ namespace Shooter.Core
             Stamina = stamina;
             ReloadInterruptedBy = interrupts;
             AimWhileReloading = aimWhileReloading;
+            Jam = jam;
             Takedown = takedown;
         }
 
@@ -325,6 +330,8 @@ namespace Shooter.Core
 
         public ActionRules WithAimWhileReloading(AimWhileReloading value) => Copy(aimWhileReloading: value);
 
+        public ActionRules WithJam(WeaponJam value) => Copy(jam: value);
+
         public ActionRules WithTakedown(Takedown value) => Copy(takedown: value);
 
         // 空は許すのは、どの動作でもリロードを止めないゲームもあるため。
@@ -391,6 +398,7 @@ namespace Shooter.Core
             Stamina? stamina = null,
             IReadOnlyList<ReloadInterrupt> reloadInterruptedBy = null,
             AimWhileReloading? aimWhileReloading = null,
+            WeaponJam? jam = null,
             Takedown? takedown = null)
         {
             return new ActionRules(
@@ -425,6 +433,7 @@ namespace Shooter.Core
                 stamina ?? Stamina,
                 reloadInterruptedBy ?? ReloadInterruptedBy,
                 aimWhileReloading ?? AimWhileReloading,
+                jam ?? Jam,
                 takedown ?? Takedown);
         }
     }

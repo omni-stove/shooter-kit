@@ -25,7 +25,8 @@ namespace Shooter.Server
             NetMapWater water = null,
             NetMapPickups pickups = null,
             NetMapZiplines ziplines = null,
-            NetMapWeaponFreeZones weaponFreeZones = null)
+            NetMapWeaponFreeZones weaponFreeZones = null,
+            NetMapDoors doors = null)
         {
             WeaponFreeZones = weaponFreeZones ?? NetMapWeaponFreeZones.None;
             Pickups = pickups ?? NetMapPickups.None;
@@ -43,6 +44,8 @@ namespace Shooter.Server
             Source = world;
             Collision = new BvhWorldCollision(world);
             Navigation = new MeshNavigation(navMesh);
+            Doors = doors ?? NetMapDoors.None;
+            CheckDoorGroups(Doors, Collision);
         }
 
         public string Name { get; }
@@ -84,6 +87,9 @@ namespace Shooter.Server
         // はしごと同じく、書き出す前のマップでも武器を出せる場所がどこにも無いだけで動けるよう、ファイルが無ければ空にする。
         public NetMapWeaponFreeZones WeaponFreeZones { get; }
 
+        // はしごと同じく、書き出す前のマップでも破れるドアが無いだけで動けるよう、ファイルが無ければ空にする。
+        public NetMapDoors Doors { get; }
+
         public string LogLine => ServerProgram.LogTag + " map " + Name
             + " colliders=" + ColliderCount.ToString(CultureInfo.InvariantCulture)
             + " navTriangles=" + NavMesh.Triangles.Count.ToString(CultureInfo.InvariantCulture)
@@ -96,6 +102,7 @@ namespace Shooter.Server
             + " water=" + Water.Water.Count.ToString(CultureInfo.InvariantCulture)
             + " ziplines=" + Ziplines.Ziplines.Count.ToString(CultureInfo.InvariantCulture)
             + " weaponFreeZones=" + WeaponFreeZones.Zones.Count.ToString(CultureInfo.InvariantCulture)
+            + " doors=" + Doors.Doors.Count.ToString(CultureInfo.InvariantCulture)
             + " from=" + Directory;
 
         // 作業ディレクトリを先に見るのは、リポジトリのルートから dotnet run したときにコミットした server-data をそのまま使うため。
@@ -154,6 +161,22 @@ namespace Shooter.Server
             }
 
             return ServerProgram.LogTag + " map pool loaded " + maps.Count.ToString(CultureInfo.InvariantCulture) + " maps: " + string.Join(", ", names);
+        }
+
+        // .doors.json だけが別の書き出しのものだと、板の当たりの無いドアになり、破っても外す物が無く、道も塞がない。
+        private static void CheckDoorGroups(NetMapDoors doors, BvhWorldCollision collision)
+        {
+            for (var i = 0; i < doors.Doors.Count; i++)
+            {
+                var group = doors.Doors[i].ColliderGroup;
+                if (!collision.IsGroupEnabled(group))
+                {
+                    throw new ArgumentException(
+                        "door " + i.ToString(CultureInfo.InvariantCulture) + " uses collider group " + group.ToString(CultureInfo.InvariantCulture)
+                        + ", which has no colliders in the map; export the map and its doors together with make export-server-data",
+                        nameof(doors));
+                }
+            }
         }
 
         public static bool TryLoad(string map, IReadOnlyList<string> searchRoots, out ServerMapData data, out string error)
@@ -346,9 +369,25 @@ namespace Shooter.Server
                 }
             }
 
+            NetMapDoors doors = null;
+            var doorsPath = Path.Combine(directory, map + NetMapDoors.Extension);
+            if (File.Exists(doorsPath))
+            {
+                try
+                {
+                    doors = NetMapDoors.Parse(File.ReadAllText(doorsPath), doorsPath);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ServerDataJsonException)
+                {
+                    error = "cannot read " + doorsPath + ": " + e.Message;
+                    return false;
+                }
+            }
+
             try
             {
-                data = new ServerMapData(map, world, navMesh, directory, points, structures, ladders, vehicles, water, pickups, ziplines, weaponFreeZones);
+                data = new ServerMapData(
+                    map, world, navMesh, directory, points, structures, ladders, vehicles, water, pickups, ziplines, weaponFreeZones, doors);
             }
             catch (ArgumentException e)
             {
