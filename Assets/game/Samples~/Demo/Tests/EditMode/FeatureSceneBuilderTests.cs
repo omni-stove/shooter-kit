@@ -111,19 +111,43 @@ namespace Shooter.Tests.EditMode
                 TraversalFeatureSceneBuilder.DoubleJumpStepsName,
                 TraversalFeatureSceneBuilder.ParkourCourseName,
                 HolsterFeatureSceneBuilder.FixtureName,
+                WeaponLightFeatureSceneBuilder.FixtureName,
             }));
         }
 
         [Test]
-        public void TheWeaponFreeZonesComeLastAtTheirOwnCornerOfThePlayground()
+        public void TheWeaponFreeZonesAndTheDarkRoomComeLastAtTheirOwnCornerOfThePlayground()
         {
             var stations = FeatureSceneBuilder.PlaygroundStations();
-            var zones = stations[stations.Count - 1];
+            var zones = stations[stations.Count - 2];
 
             Assert.That(zones.Fixture.Name, Is.EqualTo(HolsterFeatureSceneBuilder.FixtureName));
             Assert.That(zones.Offset, Is.EqualTo(new Vector3(22f, 0f, 6f)));
             Assert.That(zones.Footprint.min, Is.EqualTo(new Vector3(22f, 0f, 6f)));
             Assert.That(zones.Footprint.max, Is.EqualTo(new Vector3(41f, 3f, 21f)));
+
+            var room = stations[stations.Count - 1];
+            Assert.That(room.Fixture.Name, Is.EqualTo(WeaponLightFeatureSceneBuilder.FixtureName));
+            Assert.That(room.Offset, Is.EqualTo(new Vector3(22f, 0f, 26f)));
+            Assert.That(Vector3.Distance(room.Footprint.min, new Vector3(20f, 0f, 26f)), Is.LessThan(Epsilon), room.Footprint.min.ToString());
+            Assert.That(Vector3.Distance(room.Footprint.max, new Vector3(30f, 3.2f, 38f)), Is.LessThan(Epsilon), room.Footprint.max.ToString());
+            Assert.That(room.Footprint.min.z - zones.Footprint.max.z, Is.GreaterThanOrEqualTo(FeatureSceneBuilder.StationGap));
+        }
+
+        [Test]
+        public void PlaygroundPlacesTheDarkRoomAndItsEnemyAtTheStationOffset()
+        {
+            var feature = FeatureSceneBuilder.Playground();
+            FeatureSceneBuilder.PopulateScene(_scene, NewWeapons(), NewRules(feature.Rules), feature);
+
+            var root = Find(WeaponLightFeatureSceneBuilder.FixtureName);
+            Assert.That(root.transform.position, Is.EqualTo(WeaponLightFeatureSceneBuilder.StationOffset));
+
+            var enemy = root.transform.Find(WeaponLightFeatureSceneBuilder.EnemyName);
+            Assert.That(enemy, Is.Not.Null);
+            Assert.That(enemy.GetComponent<EnemyStealth>().CreateSpec().LitGainFactor, Is.EqualTo(1.5f));
+            Assert.That(enemy.position.x, Is.EqualTo(26f).Within(Epsilon));
+            Assert.That(enemy.position.z, Is.EqualTo(36f).Within(Epsilon));
         }
 
         [Test]
@@ -446,6 +470,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(names, Has.No.Member("FeatureVaultWallFixture"));
             Assert.That(names, Has.No.Member("TraversalFeatureFixture"));
             Assert.That(names, Has.No.Member("HolsterZonesFixture"));
+            Assert.That(names, Has.No.Member("DarkRoomFixture"));
         }
 
         // Bounds.Intersects は辺が触れているだけでも重なりと数えるが、ダミーの 1 m 四方に辺が触れているだけの置き場はダミーをふさがないので、内側に入り込んだときだけ重なりとする。

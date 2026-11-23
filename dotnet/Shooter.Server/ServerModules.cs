@@ -151,12 +151,16 @@ namespace Shooter.Server
             modules.Add(new ServerEmotes(rules, movement, signals, tuning.Emotes, tuning.EmotesPath));
             modules.Add(holster);
 
+            // ウェポンライトはしまい始めた人のライトを同じ tick のスナップショットで消して送るので、しまう・構えるより後に見る
+            var weaponLight = new ServerWeaponLight(combat, holster);
+            modules.Add(weaponLight);
+
             // 箱は目的 (ルール) が書いた旗・爆弾・台車の後の空きに足し、拾い物は箱の後の空きに足すので、ルール・箱・拾い物の順。
             // 近接はルールが書いたダウンの欄にとどめの進み具合を書き足すので、ルールより後。
-            // しまう・構えるは戦闘が書いた武器の欄に書き足すので、戦闘より後
+            // しまう・構えるとライトの点灯は戦闘が書いた武器の欄に書き足すので、戦闘より後
             modules.Add(new ServerSnapshots(
                 motorSettings.Rules,
-                new ISnapshotContributor[] { movement, rules, loot, pickups, combat, vehicles, streaks, deployables, bots, status, melee, holster },
+                new ISnapshotContributor[] { movement, rules, loot, pickups, combat, vehicles, streaks, deployables, bots, status, melee, holster, weaponLight },
                 tuning.AntiCheat,
                 rules));
 

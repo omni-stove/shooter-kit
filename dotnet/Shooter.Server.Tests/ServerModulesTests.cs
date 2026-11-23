@@ -44,7 +44,7 @@ namespace Shooter.Server.Tests
         public void WithoutRegisterLobbyAddsTheMatchAndCombatModulesThenTheSnapshotsThenTheAntiCheatChecks()
         {
             Assert.That(Create(_library.Path), Is.Null);
-            Assert.That(_modules, Has.Count.EqualTo(19));
+            Assert.That(_modules, Has.Count.EqualTo(20));
             Assert.That(_modules[0], Is.InstanceOf<ServerAntiCheat>());
             Assert.That(((ServerAntiCheat)_modules[0]).Enabled, Is.False);
             Assert.That(_modules[1], Is.InstanceOf<ServerMovement>());
@@ -62,11 +62,29 @@ namespace Shooter.Server.Tests
             Assert.That(_modules[13], Is.InstanceOf<ServerPickups>());
             Assert.That(_modules[14], Is.InstanceOf<ServerEmotes>());
             Assert.That(_modules[15], Is.InstanceOf<ServerHolster>());
-            Assert.That(_modules[16], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(((ServerSnapshots)_modules[16]).AntiCheat.Conceal.Enabled, Is.True, "concealing is on by default");
-            Assert.That(_modules[17], Is.InstanceOf<ServerViolations>());
-            Assert.That(((ServerViolations)_modules[17]).Enabled, Is.True, "the violations are counted by default");
-            Assert.That(_modules[18], Is.InstanceOf<ServerCheatStats>());
+            Assert.That(_modules[16], Is.InstanceOf<ServerWeaponLight>());
+            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(((ServerSnapshots)_modules[17]).AntiCheat.Conceal.Enabled, Is.True, "concealing is on by default");
+            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
+            Assert.That(((ServerViolations)_modules[18]).Enabled, Is.True, "the violations are counted by default");
+            Assert.That(_modules[19], Is.InstanceOf<ServerCheatStats>());
+        }
+
+        [Test]
+        public void TheWeaponLightTicksAfterTheHolsterAndWritesTheSnapshotAfterTheCombatAndTheHolster()
+        {
+            Assert.That(Create(_library.Path), Is.Null);
+
+            var weaponLight = _modules.OfType<ServerWeaponLight>().Single();
+            var holster = _modules.OfType<ServerHolster>().Single();
+            Assert.That(weaponLight.Name, Is.EqualTo("weaponLight"));
+            Assert.That(_modules.IndexOf(weaponLight), Is.EqualTo(_modules.IndexOf(holster) + 1));
+
+            var contributors = _modules.OfType<ServerSnapshots>().Single().Contributors.ToList();
+            Assert.That(contributors, Has.Exactly(1).SameAs(weaponLight));
+            Assert.That(contributors[^1], Is.SameAs(weaponLight));
+            Assert.That(contributors.IndexOf(holster), Is.LessThan(contributors.IndexOf(weaponLight)));
+            Assert.That(contributors.IndexOf(_modules.OfType<ServerCombat>().Single()), Is.LessThan(contributors.IndexOf(weaponLight)));
         }
 
         [Test]
@@ -106,10 +124,10 @@ namespace Shooter.Server.Tests
                 Is.True,
                 error);
 
-            Assert.That(_modules, Has.Count.EqualTo(18));
-            Assert.That(_modules[16], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(_modules[17], Is.InstanceOf<ServerViolations>());
-            Assert.That(((ServerViolations)_modules[17]).Enabled, Is.False);
+            Assert.That(_modules, Has.Count.EqualTo(19));
+            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
+            Assert.That(((ServerViolations)_modules[18]).Enabled, Is.False);
             Assert.That(_modules.OfType<ServerCheatStats>(), Is.Empty);
         }
 
@@ -157,11 +175,11 @@ namespace Shooter.Server.Tests
                 Is.True,
                 error);
 
-            Assert.That(_modules, Has.Count.EqualTo(19));
-            Assert.That(_modules[16], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(_modules[17], Is.InstanceOf<ServerViolations>());
-            Assert.That(_modules[18], Is.InstanceOf<ServerCheatStats>());
-            Assert.That(((ServerCheatStats)_modules[18]).Stats, Is.SameAs(stats));
+            Assert.That(_modules, Has.Count.EqualTo(20));
+            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
+            Assert.That(_modules[19], Is.InstanceOf<ServerCheatStats>());
+            Assert.That(((ServerCheatStats)_modules[19]).Stats, Is.SameAs(stats));
         }
 
         [Test]
@@ -410,9 +428,9 @@ namespace Shooter.Server.Tests
             WriteLocalFile();
 
             Assert.That(Create(AppContext.BaseDirectory, "-register-lobby", "203.0.113.10:7777"), Is.Null);
-            Assert.That(_modules, Has.Count.EqualTo(20));
-            Assert.That(_modules[19], Is.InstanceOf<ServerLobbyModule>());
-            Assert.That(((ServerLobbyModule)_modules[19]).Region, Is.Null);
+            Assert.That(_modules, Has.Count.EqualTo(21));
+            Assert.That(_modules[20], Is.InstanceOf<ServerLobbyModule>());
+            Assert.That(((ServerLobbyModule)_modules[20]).Region, Is.Null);
         }
 
         [Test]
@@ -426,7 +444,7 @@ namespace Shooter.Server.Tests
             WriteLocalFile();
 
             Assert.That(Create(AppContext.BaseDirectory, "-register-lobby", "203.0.113.10:7777", "--region", "europe"), Is.Null);
-            Assert.That(((ServerLobbyModule)_modules[19]).Region, Is.EqualTo("europe"));
+            Assert.That(((ServerLobbyModule)_modules[20]).Region, Is.EqualTo("europe"));
         }
 
         [Test]
