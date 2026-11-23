@@ -26,6 +26,7 @@ namespace Shooter.Core.Tests
             Assert.That(parkour.WallClimb.MaxSeconds, Is.EqualTo(0.6f));
             Assert.That(parkour.WallClimb.MaxHeight, Is.EqualTo(2.5f));
             Assert.That(parkour.WallClimb.PushOffSpeed, Is.EqualTo(5f));
+            Assert.That(parkour.WallClimb.MantleAtLedge, Is.True, "reaching the ledge mantles, as it did before the item");
             Assert.That(parkour.LedgeHang.Enabled, Is.False);
             Assert.That(parkour.LedgeHang.GrabReach, Is.EqualTo(0.6f));
             Assert.That(parkour.LedgeHang.ShimmySpeed, Is.EqualTo(1.5f));
@@ -41,7 +42,7 @@ namespace Shooter.Core.Tests
             var spec = TraversalJson.Parse(
                 "{\"wallKick\": {\"enabled\": true, \"upSpeed\": 7, \"awaySpeed\": 8},"
                 + " \"landingRoll\": {\"enabled\": true, \"windowSeconds\": 0.25, \"fallSpeedScale\": 0.4, \"rollSeconds\": 0.7, \"minFallSpeed\": 5},"
-                + " \"wallClimb\": {\"enabled\": true, \"minSpeed\": 3, \"climbSpeed\": 6, \"maxSeconds\": 0.8, \"maxHeight\": 3, \"pushOffSpeed\": 4},"
+                + " \"wallClimb\": {\"enabled\": true, \"minSpeed\": 3, \"climbSpeed\": 6, \"maxSeconds\": 0.8, \"maxHeight\": 3, \"pushOffSpeed\": 4, \"mantleAtLedge\": false},"
                 + " \"ledgeHang\": {\"enabled\": true, \"grabReach\": 0.75, \"shimmySpeed\": 2, \"climbUpSpeed\": 2.5, \"regrabSeconds\": 0.4},"
                 + " \"momentum\": {\"slideJumpBoost\": 1.5, \"vaultExitSpeedKeep\": 0.8}}",
                 "traversal.json");
@@ -61,6 +62,7 @@ namespace Shooter.Core.Tests
             Assert.That(parkour.WallClimb.MaxSeconds, Is.EqualTo(0.8f));
             Assert.That(parkour.WallClimb.MaxHeight, Is.EqualTo(3f));
             Assert.That(parkour.WallClimb.PushOffSpeed, Is.EqualTo(4f));
+            Assert.That(parkour.WallClimb.MantleAtLedge, Is.False);
             Assert.That(parkour.LedgeHang.Enabled, Is.True);
             Assert.That(parkour.LedgeHang.GrabReach, Is.EqualTo(0.75f));
             Assert.That(parkour.LedgeHang.ShimmySpeed, Is.EqualTo(2f));
@@ -102,6 +104,7 @@ namespace Shooter.Core.Tests
         [TestCase("{\"wallClimb\": {\"maxSeconds\": 0}}", "wallClimb.maxSeconds")]
         [TestCase("{\"wallClimb\": {\"maxHeight\": 0}}", "wallClimb.maxHeight")]
         [TestCase("{\"wallClimb\": {\"pushOffSpeed\": -1}}", "wallClimb.pushOffSpeed")]
+        [TestCase("{\"wallClimb\": {\"mantleAtLedge\": 1}}", "wallClimb.mantleAtLedge")]
         [TestCase("{\"ledgeHang\": {\"grabReach\": 0}}", "ledgeHang.grabReach")]
         [TestCase("{\"ledgeHang\": {\"shimmySpeed\": -1}}", "ledgeHang.shimmySpeed")]
         [TestCase("{\"ledgeHang\": {\"climbUpSpeed\": 0}}", "ledgeHang.climbUpSpeed")]

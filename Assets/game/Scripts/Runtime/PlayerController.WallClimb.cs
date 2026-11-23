@@ -49,7 +49,7 @@ namespace Shooter.Runtime
                 case WallClimbMotion.None:
                     return;
                 case WallClimbMotion.ReachedLedge:
-                    MantleFromWallClimb(deltaSeconds, ref displacement);
+                    MantleFromWallClimb(tuning.MantleAtLedge, deltaSeconds, ref displacement);
                     overridden = true;
                     return;
                 case WallClimbMotion.PushedOff:
@@ -93,16 +93,20 @@ namespace Shooter.Runtime
             }
         }
 
-        // CharacterMotorSimulation.MantleFromWallClimb と同じく、上に立てないふちでは上向きの速さを捨てて 0 から落ち始める
-        private void MantleFromWallClimb(float deltaSeconds, ref Vector3 displacement)
+        // CharacterMotorSimulation.TryStepWallClimb と同じく、上に立てないふちと、ふちで上に乗らない調整では上向きの速さを捨てて 0 から落ち始める
+        private void MantleFromWallClimb(bool mantleAtLedge, float deltaSeconds, ref Vector3 displacement)
         {
+            if (!mantleAtLedge)
+            {
+                FallFromWall(deltaSeconds, ref displacement);
+                return;
+            }
+
             var probe = MeasureMantle();
             LastMantleProbe = probe;
             if (!probe.CanMantle)
             {
-                var verticalEnd = -_motor.Spec.Gravity * deltaSeconds;
-                _motor.SetVelocity(new NVector3(0f, verticalEnd, 0f));
-                displacement = new Vector3(0f, verticalEnd * 0.5f * deltaSeconds, 0f);
+                FallFromWall(deltaSeconds, ref displacement);
                 return;
             }
 
@@ -110,6 +114,13 @@ namespace Shooter.Runtime
             _mantleKeepsVaultExit = true;
             var overridden = false;
             TryOverrideMoveForMantle(false, deltaSeconds, ref overridden, ref displacement);
+        }
+
+        private void FallFromWall(float deltaSeconds, ref Vector3 displacement)
+        {
+            var verticalEnd = -_motor.Spec.Gravity * deltaSeconds;
+            _motor.SetVelocity(new NVector3(0f, verticalEnd, 0f));
+            displacement = new Vector3(0f, verticalEnd * 0.5f * deltaSeconds, 0f);
         }
 
         // 壁はリーンと同じ体 (自分のコライダーを除く Unity の当たり) で調べる。体を作り直したときだけ測る部品も作り直す。

@@ -42,7 +42,7 @@ namespace Shooter.Core
                 case WallClimbMotion.None:
                     return false;
                 case WallClimbMotion.ReachedLedge:
-                    velocity = MantleFromWallClimb(yaw);
+                    velocity = tuning.MantleAtLedge ? MantleFromWallClimb(yaw) : FallFromWall();
                     return true;
                 case WallClimbMotion.PushedOff:
                     // 跳んだ知らせ (Jumped) を地上のジャンプと同じ 1 か所から出す (壁走りの跳び離れと同じ)
@@ -77,7 +77,7 @@ namespace Shooter.Core
             return velocity;
         }
 
-        // 上に立てないふちでは、WallClimbStep が登り終えたときと同じく、上向きの速さを捨てて 0 から落ち始める
+        // 上に立てないふちと、ふちで上に乗らない調整 (WallClimbTuning.MantleAtLedge) では、WallClimbStep が登り終えたときと同じく、上向きの速さを捨てて 0 から落ち始める
         private Vector3 FallFromWall()
         {
             var verticalEnd = -_motor.Spec.Gravity * TickSeconds;

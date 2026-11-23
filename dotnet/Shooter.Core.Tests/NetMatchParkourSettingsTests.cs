@@ -10,7 +10,7 @@ namespace Shooter.Core.Tests
         private static readonly ParkourTuning _tuned = new ParkourTuning(
             new WallKickTuning(true, 7f, 8f),
             new LandingRollTuning(true, 0.25f, 0.4f, 0.7f, 5f),
-            new WallClimbTuning(true, 3f, 6f, 0.8f, 3f, 4f),
+            new WallClimbTuning(true, 3f, 6f, 0.8f, 3f, 4f, false),
             new LedgeHangTuning(true, 0.75f, 2f, 2.5f, 0.4f),
             new MomentumTuning(1.5f, 0.8f));
 
@@ -79,6 +79,7 @@ namespace Shooter.Core.Tests
             Assert.That(read.WallClimb.MaxSeconds, Is.EqualTo(0.8f));
             Assert.That(read.WallClimb.MaxHeight, Is.EqualTo(3f));
             Assert.That(read.WallClimb.PushOffSpeed, Is.EqualTo(4f));
+            Assert.That(read.WallClimb.MantleAtLedge, Is.False);
             Assert.That(read.LedgeHang.Enabled, Is.True);
             Assert.That(read.LedgeHang.GrabReach, Is.EqualTo(0.75f));
             Assert.That(read.LedgeHang.ShimmySpeed, Is.EqualTo(2f));
@@ -132,7 +133,18 @@ namespace Shooter.Core.Tests
             Assert.That(read.Momentum.SlideJumpBoost, Is.EqualTo(MomentumTuning.DefaultSlideJumpBoost));
             Assert.That(read.LandingRoll.SameAs(LandingRollTuning.Default), Is.True);
             Assert.That(read.WallClimb.SameAs(WallClimbTuning.Default), Is.True);
+            Assert.That(read.WallClimb.MantleAtLedge, Is.True);
             Assert.That(read.LedgeHang.SameAs(LedgeHangTuning.Default), Is.True);
+        }
+
+        [Test]
+        public void TurningOnlyTheMantleAtTheLedgeOffIsWrittenAndReadBack()
+        {
+            var noMantle = new ParkourTuning(wallClimb: new WallClimbTuning(mantleAtLedge: false));
+            var text = NetMatchFile.Write(File(noMantle));
+
+            Assert.That(text, Does.Contain("\"" + NetMatchFile.WallClimbMantleAtLedgeItem + "\": false"));
+            Assert.That(NetMatchFile.Parse(text, "parkour.json").Motor.Parkour.WallClimb.MantleAtLedge, Is.False);
         }
 
         [TestCase("{\"wallKickUpSpeed\": -1}", "motor.wallKickUpSpeed")]
@@ -146,6 +158,7 @@ namespace Shooter.Core.Tests
         [TestCase("{\"wallClimbMaxSeconds\": 0}", "motor.wallClimbMaxSeconds")]
         [TestCase("{\"wallClimbMaxHeight\": 0}", "motor.wallClimbMaxHeight")]
         [TestCase("{\"wallClimbPushOffSpeed\": -1}", "motor.wallClimbPushOffSpeed")]
+        [TestCase("{\"wallClimbMantleAtLedge\": 1}", "motor.wallClimbMantleAtLedge")]
         [TestCase("{\"ledgeGrabReach\": 0}", "motor.ledgeGrabReach")]
         [TestCase("{\"ledgeShimmySpeed\": -1}", "motor.ledgeShimmySpeed")]
         [TestCase("{\"ledgeClimbUpSpeed\": 0}", "motor.ledgeClimbUpSpeed")]

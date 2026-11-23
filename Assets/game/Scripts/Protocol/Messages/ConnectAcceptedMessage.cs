@@ -6,7 +6,7 @@ namespace Shooter.Protocol
     // 起動したかを知らないので、自分の持つ既定値で予測すると片方だけ変えたときに毎 tick ずれるため。
     public sealed class ConnectAcceptedMessage : IMessage
     {
-        public const byte CurrentVersion = 13;
+        public const byte CurrentVersion = 14;
 
         // .NET のサーバーの既定と同じにする。
         public const float DefaultKillPlaneY = -50f;
@@ -226,6 +226,7 @@ namespace Shooter.Protocol
             writer.WriteSingle(wallClimb.MaxSeconds);
             writer.WriteSingle(wallClimb.MaxHeight);
             writer.WriteSingle(wallClimb.PushOffSpeed);
+            writer.WriteBool(wallClimb.MantleAtLedge);
 
             var ledgeHang = parkour.LedgeHang;
             writer.WriteBool(ledgeHang.Enabled);
@@ -248,6 +249,7 @@ namespace Shooter.Protocol
             var landingRoll = ReadValues(reader, 4, "landing roll value");
             var wallClimbEnabled = reader.ReadBool();
             var wallClimb = ReadValues(reader, 5, "wall climb value");
+            var wallClimbMantleAtLedge = reader.ReadBool();
             var ledgeHangEnabled = reader.ReadBool();
             var ledgeHang = ReadValues(reader, 4, "ledge hang value");
             var momentum = ReadValues(reader, 2, "momentum value");
@@ -256,7 +258,7 @@ namespace Shooter.Protocol
                 return new Shooter.Core.ParkourTuning(
                     new Shooter.Core.WallKickTuning(wallKickEnabled, wallKick[0], wallKick[1]),
                     new Shooter.Core.LandingRollTuning(landingRollEnabled, landingRoll[0], landingRoll[1], landingRoll[2], landingRoll[3]),
-                    new Shooter.Core.WallClimbTuning(wallClimbEnabled, wallClimb[0], wallClimb[1], wallClimb[2], wallClimb[3], wallClimb[4]),
+                    new Shooter.Core.WallClimbTuning(wallClimbEnabled, wallClimb[0], wallClimb[1], wallClimb[2], wallClimb[3], wallClimb[4], wallClimbMantleAtLedge),
                     new Shooter.Core.LedgeHangTuning(ledgeHangEnabled, ledgeHang[0], ledgeHang[1], ledgeHang[2], ledgeHang[3]),
                     new Shooter.Core.MomentumTuning(momentum[0], momentum[1]));
             }

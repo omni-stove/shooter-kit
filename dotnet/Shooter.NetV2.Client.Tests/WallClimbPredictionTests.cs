@@ -43,6 +43,35 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void WithMantleAtLedgeOffThePredictionFallsBackLikeTheServer()
+        {
+            var noMantle = new ParkourTuning(wallClimb: new WallClimbTuning(true, mantleAtLedge: false));
+            var server = NewSimulation(noMantle);
+            var client = new OwnerPrediction(NewSimulation(noMantle));
+            var state = RunningAtTheWall(server);
+            client.Start(-1, state);
+
+            var climbed = false;
+            var mantled = false;
+            for (var tick = 0; tick < 120; tick++)
+            {
+                var input = Input(tick, tick == 0);
+                client.Predict(Frame(tick, tick == 0), input);
+                state = server.Step(state, input);
+                climbed |= state.Parkour.Move == Shooter.Core.ParkourMove.WallClimb;
+                mantled |= state.IsVaulting;
+
+                Assert.That(client.Reconcile(tick, AsSent(state)).Outcome, Is.EqualTo(ReconcileOutcome.Matched), "tick " + tick);
+            }
+
+            Assert.That(climbed, Is.True);
+            Assert.That(mantled, Is.False);
+            Assert.That(client.Current, Is.EqualTo(state));
+            Assert.That(state.IsGrounded, Is.True);
+            Assert.That(server.Body.FeetY(state.Position), Is.LessThan(0.1f), "back on the floor, not on the top");
+        }
+
+        [Test]
         public void AClientThatStartsInTheMiddleOfTheMantleFollowsTheSamePath()
         {
             var server = NewSimulation(_climbOn);

@@ -135,6 +135,10 @@ namespace Shooter.Core
         public const float DefaultMaxHeight = 2.5f;
         public const float DefaultPushOffSpeed = 5f;
 
+        // 既定で入なのは、ふちに届いたら上に乗るのが壁登りを入れた今までの動きで、よじ登りのルール (ActionRules.Mantle) とは別に壁登りだけで切り替えられるようにするため。
+        // ルールで切り替えないのは、予測が使う MatchRulesSync に Mantle が無く、クライアントとサーバーで答えが食い違うため。
+        public const bool DefaultMantleAtLedge = true;
+
         public static readonly WallClimbTuning Default = new WallClimbTuning();
 
         public WallClimbTuning(
@@ -143,7 +147,8 @@ namespace Shooter.Core
             float climbSpeed = DefaultClimbSpeed,
             float maxSeconds = DefaultMaxSeconds,
             float maxHeight = DefaultMaxHeight,
-            float pushOffSpeed = DefaultPushOffSpeed)
+            float pushOffSpeed = DefaultPushOffSpeed,
+            bool mantleAtLedge = DefaultMantleAtLedge)
         {
             TuningChecks.RequireNonNegativeFinite(minSpeed, nameof(minSpeed));
             TuningChecks.RequirePositiveFinite(climbSpeed, nameof(climbSpeed));
@@ -156,6 +161,7 @@ namespace Shooter.Core
             MaxSeconds = maxSeconds;
             MaxHeight = maxHeight;
             PushOffSpeed = pushOffSpeed;
+            MantleAtLedge = mantleAtLedge;
         }
 
         public bool Enabled { get; }
@@ -170,6 +176,8 @@ namespace Shooter.Core
 
         public float PushOffSpeed { get; }
 
+        public bool MantleAtLedge { get; }
+
         public bool SameAs(WallClimbTuning other)
         {
             return other != null
@@ -178,7 +186,8 @@ namespace Shooter.Core
                 && ClimbSpeed.Equals(other.ClimbSpeed)
                 && MaxSeconds.Equals(other.MaxSeconds)
                 && MaxHeight.Equals(other.MaxHeight)
-                && PushOffSpeed.Equals(other.PushOffSpeed);
+                && PushOffSpeed.Equals(other.PushOffSpeed)
+                && MantleAtLedge == other.MantleAtLedge;
         }
     }
 
