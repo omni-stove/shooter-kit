@@ -77,6 +77,17 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheDetailOfAFailedOnlineStartIsNotReadAsRichText()
+        {
+            _screen.Bind(_root);
+
+            _screen.ShowReturnReason(MenuReturnReason.OnlineFailed(7, "<size=900>A"));
+
+            Assert.That(_screen.Notice, Is.EqualTo("<size=900>A"));
+            Assert.That(_root.Q<Label>(MainMenuScreen.NoticeName).enableRichText, Is.False);
+        }
+
+        [Test]
         public void TheTutorialButtonSitsNextToTheRangeAndOpensTheRangeWithTheTutorial()
         {
             var names = MainMenuScreen.ButtonNames.ToList();
