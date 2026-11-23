@@ -73,6 +73,7 @@ namespace Shooter.Core.Tests
     ""jump"": ""Off"",
     ""emote"": ""On"",
     ""stamina"": ""On"",
+    ""jam"": ""On"",
     ""takedown"": ""On""
   },
   ""spawnProtectionSeconds"": 1.5,
@@ -381,7 +382,7 @@ namespace Shooter.Core.Tests
         public void ItemNamesMatchTheRulesConstructors()
         {
             Assert.That(GameRulesJson.ItemNames.Count, Is.EqualTo(28));
-            Assert.That(GameRulesJson.ActionItemNames.Count, Is.EqualTo(32));
+            Assert.That(GameRulesJson.ActionItemNames.Count, Is.EqualTo(33));
             Assert.That(GameRulesJson.ItemNames, Does.Contain(GameRulesJson.ActionsItem));
         }
 
@@ -478,6 +479,37 @@ namespace Shooter.Core.Tests
             Assert.That(
                 GameRulesLog.Read(null, rules),
                 Is.EqualTo("[GameRules] read '-' emote=Off stamina=Off respawnAnchor=Base reloadInterruptedBy=Grenade,Aim aimWhileReloading=Off idleWarningSeconds=15"));
+        }
+
+        [Test]
+        public void JamIsOffUnlessTheRulesTurnItOn()
+        {
+            Assert.That(ActionRules.Default.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesJson.Parse("{}", _source).Actions.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesJson.Parse("{\"actions\": {}}", _source).Actions.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(GameRulesJson.Parse("{\"actions\": {\"jam\": \"On\"}}", _source).Actions.Jam, Is.EqualTo(WeaponJam.On));
+        }
+
+        [Test]
+        public void WriteThenParseKeepsTheJam()
+        {
+            var on = GameRules.Default.WithActions(GameRules.Default.Actions.WithJam(WeaponJam.On));
+
+            var written = GameRulesJson.Write(on);
+
+            Assert.That(written, Does.Contain("\"jam\": \"On\""));
+            Assert.That(GameRulesJson.Parse(written, _source).Actions.Jam, Is.EqualTo(WeaponJam.On));
+            Assert.That(GameRulesJson.Parse(GameRulesJson.Write(GameRules.Default), _source).Actions.Jam, Is.EqualTo(WeaponJam.Off));
+        }
+
+        [TestCase("{\"actions\": {\"jam\": \"Always\"}}")]
+        [TestCase("{\"actions\": {\"jam\": \"on\"}}")]
+        [TestCase("{\"actions\": {\"jam\": true}}")]
+        public void BadJamIsRejectedWithItsName(string json)
+        {
+            var e = Assert.Throws<GameRulesJsonException>(() => GameRulesJson.Parse(json, _source));
+
+            AssertNames(e, "actions.jam");
         }
 
         [TestCase("{\"actions\": {\"aimWhileReloading\": \"Never\"}}")]
@@ -672,6 +704,7 @@ namespace Shooter.Core.Tests
                 Jump.Off,
                 emote: Emote.On,
                 stamina: Stamina.On,
+                jam: WeaponJam.On,
                 takedown: Takedown.On);
         }
 
@@ -940,6 +973,7 @@ namespace Shooter.Core.Tests
             Assert.That(a.Stamina, Is.EqualTo(b.Stamina), "actions.stamina");
             Assert.That(a.ReloadInterruptedBy, Is.EqualTo(b.ReloadInterruptedBy), "actions.reloadInterruptedBy");
             Assert.That(a.AimWhileReloading, Is.EqualTo(b.AimWhileReloading), "actions.aimWhileReloading");
+            Assert.That(a.Jam, Is.EqualTo(b.Jam), "actions.jam");
             Assert.That(a.Takedown, Is.EqualTo(b.Takedown), "actions.takedown");
         }
     }

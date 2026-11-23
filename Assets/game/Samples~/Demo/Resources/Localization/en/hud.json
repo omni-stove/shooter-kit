@@ -93,5 +93,7 @@
   "hud.weaponFree.warn": "Weapons are not allowed here. Holster your weapon",
   "hud.weaponFree.warnThenHostile": "Holster your weapon: hostile in {0} s",
   "hud.weaponFree.autoHolster": "Weapons are not allowed here. Holstering",
-  "hud.weaponFree.blockDraw": "Weapons cannot be drawn here"
+  "hud.weaponFree.blockDraw": "Weapons cannot be drawn here",
+  "hud.securityAlarm.ringing": "Alarm! Spotted by a camera: {0} s left",
+  "hud.securityCamera.disable": "Hold [{0}] for {1} s to disable the camera"
 }

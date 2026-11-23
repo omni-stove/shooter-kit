@@ -15,6 +15,7 @@ namespace Shooter.Core.Tests
             "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun",
             "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
             "item.redDot", "item.scope4x", "item.holoSight", "item.thermalScope", "item.suppressor", "item.compensator", "item.foregrip", "item.extendedMagazine",
+            "item.weaponLight",
         };
         private static readonly string[] _thermalNameKeys = { "item.thermalScope" };
         private static readonly string[] _thermalWeaponNameKeys = { "weapon.ref.carbine556", "weapon.burstRifle" };
@@ -23,6 +24,11 @@ namespace Shooter.Core.Tests
             "weapon.crowbar", "weapon.club", "weapon.machete", "weapon.combatKnife", "weapon.pryBar", "weapon.kukri", "weapon.sledgehammer",
         };
         private static readonly string[] _usableNameKeys = { "item.bandage", "item.medkit", "item.armorPlate" };
+        private static readonly string[] _lightNameKeys = { "item.weaponLight" };
+        private static readonly string[] _gunNameKeys =
+        {
+            "weapon.ref.carbine556", "weapon.burstRifle", "weapon.ref.compactPistol", "weapon.ricochetPistol", "weapon.shotgun",
+        };
 
         [Test]
         public void TheServerReadsTheSameItemsAsUnity()
@@ -34,7 +40,7 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
-        public void TheShippedItemsAreReadableAndStartWithTwoBandagesAndThreeAttachments()
+        public void TheShippedItemsAreReadableAndStartWithTwoBandagesAndFourAttachments()
         {
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(RepositoryRoot())), "inventory.json");
 
@@ -44,7 +50,7 @@ namespace Shooter.Core.Tests
             Assert.That(catalog.Rule.MaxWeight, Is.EqualTo(30f));
             Assert.That(
                 catalog.Starting.Select(s => (catalog.Items.Single(i => i.Id == s.ItemId).NameKey, s.Count)),
-                Is.EqualTo(new[] { ("item.bandage", 2), ("item.redDot", 1), ("item.suppressor", 1), ("item.foregrip", 1) }));
+                Is.EqualTo(new[] { ("item.bandage", 2), ("item.redDot", 1), ("item.suppressor", 1), ("item.foregrip", 1), ("item.weaponLight", 1) }));
             Assert.That(catalog.Items.Where(i => i.IsUsable).Select(i => i.NameKey), Is.EqualTo(_usableNameKeys));
         }
 
@@ -97,11 +103,11 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(RepositoryRoot())), "inventory.json");
             var expected = new (string NameKey, string[] Slots)[]
             {
-                ("weapon.ref.carbine556", new[] { "optic", "muzzle", "underbarrel", "magazine" }),
-                ("weapon.burstRifle", new[] { "optic", "muzzle", "underbarrel", "magazine" }),
-                ("weapon.ref.compactPistol", new[] { "optic", "muzzle" }),
-                ("weapon.ricochetPistol", new[] { "optic", "muzzle" }),
-                ("weapon.shotgun", new[] { "optic", "underbarrel" }),
+                ("weapon.ref.carbine556", new[] { "optic", "muzzle", "underbarrel", "magazine", "light" }),
+                ("weapon.burstRifle", new[] { "optic", "muzzle", "underbarrel", "magazine", "light" }),
+                ("weapon.ref.compactPistol", new[] { "optic", "muzzle", "light" }),
+                ("weapon.ricochetPistol", new[] { "optic", "muzzle", "light" }),
+                ("weapon.shotgun", new[] { "optic", "underbarrel", "light" }),
             };
 
             Assert.That(catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId != null).Select(w => (w.NameKey, w.AttachmentSlots.ToArray())), Is.EqualTo(expected));
@@ -135,6 +141,34 @@ namespace Shooter.Core.Tests
                 Assert.That(
                     catalog.Items.Where(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, scope.Id)).Select(w => w.NameKey),
                     Is.EqualTo(_thermalWeaponNameKeys));
+            }
+        }
+
+        [Test]
+        public void OnlyTheWeaponLightIsALightItFitsEveryGunAndTheServerReadsItTheSame()
+        {
+            var root = RepositoryRoot();
+            var unity = InventoryJson.Parse(File.ReadAllText(UnityPath(root)), "inventory.json");
+            var server = InventoryJson.Parse(File.ReadAllText(Path.Combine(root, "server-data", "tuning", "inventory.json")), "inventory.json");
+
+            foreach (var catalog in new[] { unity, server })
+            {
+                var lights = catalog.Items.Where(i => i.IsAttachment && i.Attachment.IsLight).ToList();
+                Assert.That(lights.Select(i => i.NameKey), Is.EqualTo(_lightNameKeys));
+
+                var light = lights.Single();
+                Assert.That(light.Id, Is.EqualTo("f3a7c2e9-58b1-4d06-9e4a-2c7b8d1f6a35"));
+                Assert.That(light.Attachment.Slot, Is.EqualTo("light"));
+                Assert.That(light.Attachment.IsOptic, Is.False);
+                Assert.That(light.Attachment.WeaponIds, Is.Empty, "the light fits any gun with a light slot");
+                Assert.That(light.Attachment.Light.Range, Is.EqualTo(25f));
+                Assert.That(light.Attachment.Light.SpotAngle, Is.EqualTo(45f));
+                Assert.That(light.Attachment.Light.Intensity, Is.EqualTo(3f));
+                Assert.That(light.Attachment.Light.VisualId, Is.EqualTo("weaponLight"));
+                Assert.That(
+                    catalog.Items.Where(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, light.Id)).Select(w => w.NameKey),
+                    Is.EqualTo(_gunNameKeys),
+                    "every gun takes the light and no melee weapon does");
             }
         }
 

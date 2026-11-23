@@ -93,5 +93,7 @@
   "hud.weaponFree.warn": "ここでは武器を出してはいけない 武器をしまえ",
   "hud.weaponFree.warnThenHostile": "武器をしまえ あと {0} 秒で敵対される",
   "hud.weaponFree.autoHolster": "ここでは武器を出してはいけない 武器をしまう",
-  "hud.weaponFree.blockDraw": "ここでは武器を構えられない"
+  "hud.weaponFree.blockDraw": "ここでは武器を構えられない",
+  "hud.securityAlarm.ringing": "警報 カメラに見つかった あと {0} 秒",
+  "hud.securityCamera.disable": "[{0}] を {1} 秒長押しでカメラを止める"
 }

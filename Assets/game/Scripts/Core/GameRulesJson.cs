@@ -75,6 +75,7 @@ namespace Shooter.Core
         public const string StaminaItem = "stamina";
         public const string ReloadInterruptedByItem = "reloadInterruptedBy";
         public const string AimWhileReloadingItem = "aimWhileReloading";
+        public const string JamItem = "jam";
         public const string TakedownItem = "takedown";
 
         public static IReadOnlyList<string> ItemNames { get; } = new[]
@@ -142,6 +143,7 @@ namespace Shooter.Core
             StaminaItem,
             ReloadInterruptedByItem,
             AimWhileReloadingItem,
+            JamItem,
             TakedownItem,
         };
 
@@ -282,6 +284,7 @@ namespace Shooter.Core
             writer.Enum(StaminaItem, actions.Stamina);
             writer.EnumArray(ReloadInterruptedByItem, actions.ReloadInterruptedBy);
             writer.Enum(AimWhileReloadingItem, actions.AimWhileReloading);
+            writer.Enum(JamItem, actions.Jam);
             writer.Enum(TakedownItem, actions.Takedown);
             writer.EndObject();
             writer.Float(SpawnProtectionSecondsItem, rules.SpawnProtectionSeconds);
@@ -350,6 +353,7 @@ namespace Shooter.Core
                     fields.ReadEnum(StaminaItem, defaults.Stamina),
                     fields.ReadEnumArray(ReloadInterruptedByItem, defaults.ReloadInterruptedBy),
                     fields.ReadEnum(AimWhileReloadingItem, defaults.AimWhileReloading),
+                    fields.ReadEnum(JamItem, defaults.Jam),
                     fields.ReadEnum(TakedownItem, defaults.Takedown));
             }
             catch (ArgumentException e)

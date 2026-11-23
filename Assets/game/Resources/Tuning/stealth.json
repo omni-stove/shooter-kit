@@ -9,5 +9,38 @@
   "minLandingFallSpeed": 2.5,
   "hardLandingFallSpeed": 12,
   "minLandingVolume": 0.35,
-  "armedGainFactor": 1
+  "armedGainFactor": 1,
+  "securityCamera": {
+    "sweepDegrees": 90,
+    "sweepDegreesPerSecond": 20,
+    "edgePauseSeconds": 2,
+    "viewDistance": 15,
+    "fieldOfViewDegrees": 60,
+    "awareness": {
+      "gainPerSecond": 1,
+      "fullGainDistance": 3,
+      "farGainFactor": 0.15,
+      "peripheralGainFactor": 0.4,
+      "crouchGainFactor": 0.5,
+      "proneGainFactor": 0.25,
+      "stillGainFactor": 0.5,
+      "fullMotionSpeed": 6,
+      "decayDelaySeconds": 3,
+      "decayPerSecond": 0.1,
+      "noticeThreshold": 0.2,
+      "alertThreshold": 0.6,
+      "alarmRadius": 15,
+      "engagedHoldThreshold": 0.8,
+      "gunshotGain": 0.4,
+      "footstepGain": 0.1,
+      "investigateLevel": 0.75,
+      "armedGainFactor": 1
+    },
+    "disableHoldSeconds": 1.5,
+    "disabledSeconds": 30
+  },
+  "alarm": {
+    "durationSeconds": 20,
+    "radius": 30
+  }
 }

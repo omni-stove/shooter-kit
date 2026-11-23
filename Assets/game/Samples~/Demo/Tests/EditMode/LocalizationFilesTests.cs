@@ -132,6 +132,39 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheJuggernautModeTextsAreReadFromTheModesJuggernautTableOfEveryLanguage()
+        {
+            var keysByLanguage = new List<string[]>();
+            foreach (var language in GameLanguages.All)
+            {
+                var modes = JapaneseGameTextSetUp.LoadLayers(language)
+                    .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                    .Value;
+                var code = GameLanguages.Code(language);
+
+                Assert.That(modes.Keys.All(key => key.StartsWith("mode.juggernaut.", StringComparison.Ordinal)), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.chosenIn"), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.current"), Is.True, code);
+                Assert.That(modes.Contains("mode.juggernaut.youAreJuggernaut"), Is.True, code);
+                keysByLanguage.Add(modes.Keys.OrderBy(key => key, StringComparer.Ordinal).ToArray());
+            }
+
+            Assert.That(keysByLanguage.Skip(1), Has.All.EqualTo(keysByLanguage[0]));
+
+            var english = JapaneseGameTextSetUp.LoadLayers(GameLanguage.English)
+                .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(english.Get("mode.juggernaut.youAreJuggernaut"), Is.EqualTo("You are the juggernaut: keep scoring kills"));
+            Assert.That(english.Get("mode.juggernaut.chosenIn"), Is.EqualTo("Juggernaut chosen in {0} s"));
+
+            var japanese = JapaneseGameTextSetUp.LoadLayers(GameLanguage.Japanese)
+                .Single(layer => layer.Key.EndsWith("modes-juggernaut.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(japanese.Get("mode.juggernaut.youAreJuggernaut"), Is.EqualTo("あなたがジャガーノート: キルを重ねて点を稼ぐ"));
+            Assert.That(japanese.Get("mode.juggernaut.current"), Is.EqualTo("ジャガーノート: {0}"));
+        }
+
+        [Test]
         public void ThePayloadModeTextsAreReadFromTheModesPayloadTableOfEveryLanguage()
         {
             foreach (var language in GameLanguages.All)
@@ -185,6 +218,33 @@ namespace Shooter.Core.Tests
             {
                 Assert.That(StringTable.PlaceholdersOf(english.Get(key)), Is.EqualTo(StringTable.PlaceholdersOf(japanese.Get(key))), file + " " + key);
             }
+        }
+
+        // 警報と監視カメラの長押しの案内を HUD に足したので、片方の言語だけに足したキーが画面に出ないよう、hud.json のキーをそろえる。
+        [Test]
+        public void TheHudFileHasTheSameKeysInEnglishAndJapanese()
+        {
+            var english = LayerOf(GameLanguage.English, "hud.json");
+            var japanese = LayerOf(GameLanguage.Japanese, "hud.json");
+
+            Assert.That(english.Count, Is.GreaterThan(0), "en/hud.json");
+            Assert.That(english.Keys.Except(japanese.Keys, StringComparer.Ordinal), Is.Empty, "only in en/hud.json");
+            Assert.That(japanese.Keys.Except(english.Keys, StringComparer.Ordinal), Is.Empty, "missing from en/hud.json");
+            foreach (var key in japanese.Keys)
+            {
+                Assert.That(StringTable.PlaceholdersOf(english.Get(key)), Is.EqualTo(StringTable.PlaceholdersOf(japanese.Get(key))), "hud.json " + key);
+            }
+
+            foreach (var key in new[] { SecurityAlarmText.RingingKey, SecurityCameraPrompt.DisableKey })
+            {
+                Assert.That(english.Keys, Does.Contain(key), "en/hud.json " + key);
+                Assert.That(japanese.Keys, Does.Contain(key), "ja/hud.json " + key);
+            }
+
+            Assert.That(japanese.Get(SecurityAlarmText.RingingKey), Is.EqualTo("警報 カメラに見つかった あと {0} 秒"));
+            Assert.That(english.Get(SecurityAlarmText.RingingKey), Is.EqualTo("Alarm! Spotted by a camera: {0} s left"));
+            Assert.That(japanese.Get(SecurityCameraPrompt.DisableKey), Is.EqualTo("[{0}] を {1} 秒長押しでカメラを止める"));
+            Assert.That(english.Get(SecurityCameraPrompt.DisableKey), Is.EqualTo("Hold [{0}] for {1} s to disable the camera"));
         }
 
         [Test]

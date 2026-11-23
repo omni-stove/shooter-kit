@@ -99,6 +99,99 @@ namespace Shooter.Tests.EditMode
             Assert.That(AwarenessIndicatorCatalog.Load(), Is.SameAs(_content.AwarenessIndicator));
         }
 
+        [Test]
+        public void TheSecurityCameraSlotIsListed()
+        {
+            Assert.That(StealthActionInstaller.SecurityCameraSlotName, Is.EqualTo("SecurityCamera"));
+            Assert.That(GameContentSlots.All.Select(s => s.Name), Has.Member("SecurityCamera"));
+            Assert.That(GameContentSlots.All.Count(s => s.Name == "SecurityCamera"), Is.EqualTo(1));
+
+            StealthActionInstaller.RegisterContentSlots();
+
+            Assert.That(GameContentSlots.All.Count(s => s.Name == "SecurityCamera"), Is.EqualTo(1), "registering again keeps one slot");
+            Assert.That(GameContentSlots.All.Select(s => s.Name), Has.Member(StealthActionInstaller.AwarenessIndicatorSlotName));
+        }
+
+        [Test]
+        public void TheSecurityCameraSlotReadsAndWritesTheGameContent()
+        {
+            var slot = SecurityCameraSlot();
+            var catalog = Track(ScriptableObject.CreateInstance<SecurityCameraCatalog>());
+
+            Assert.That(slot.AssetType, Is.EqualTo(typeof(SecurityCameraCatalog)));
+            Assert.That(slot.Get(_content), Is.Null);
+
+            slot.Set(_content, catalog);
+
+            Assert.That(_content.SecurityCamera, Is.SameAs(catalog));
+            Assert.That(slot.Get(_content), Is.SameAs(catalog));
+            Assert.That(_content.AwarenessIndicator, Is.Null, "the camera has its own field");
+        }
+
+        [Test]
+        public void AnotherTypeInTheSecurityCameraFieldIsNotReadAsACamera()
+        {
+            var slot = SecurityCameraSlot();
+            _content.SecurityCamera = Track(ScriptableObject.CreateInstance<AwarenessIndicatorCatalog>());
+
+            Assert.That(slot.Get(_content), Is.Null);
+        }
+
+        [Test]
+        public void FillEmptyFillsTheSecurityCameraSlotWithTheOnlyCatalog()
+        {
+            var catalog = Track(ScriptableObject.CreateInstance<SecurityCameraCatalog>());
+            var candidates = new Dictionary<System.Type, Object[]>
+            {
+                { typeof(SecurityCameraCatalog), new Object[] { catalog } },
+            };
+
+            var left = GameContentAssets.FillEmpty(_content, t => candidates.TryGetValue(t, out var found) ? found : new Object[0], _ => new TextAsset[0]);
+
+            Assert.That(_content.SecurityCamera, Is.SameAs(catalog));
+            Assert.That(left, Does.Not.Contain(StealthActionInstaller.SecurityCameraSlotName));
+        }
+
+        [Test]
+        public void FillEmptyLeavesTheSecurityCameraSlotWhenTheCandidateIsAmbiguous()
+        {
+            var catalogA = Track(ScriptableObject.CreateInstance<SecurityCameraCatalog>());
+            var catalogB = Track(ScriptableObject.CreateInstance<SecurityCameraCatalog>());
+            var candidates = new Dictionary<System.Type, Object[]>
+            {
+                { typeof(SecurityCameraCatalog), new Object[] { catalogA, catalogB } },
+            };
+
+            var left = GameContentAssets.FillEmpty(_content, t => candidates.TryGetValue(t, out var found) ? found : new Object[0], _ => new TextAsset[0]);
+
+            Assert.That(_content.SecurityCamera, Is.Null);
+            Assert.That(left, Does.Contain(StealthActionInstaller.SecurityCameraSlotName));
+        }
+
+        [Test]
+        public void TheSecurityCameraCatalogComesFromTheEntry()
+        {
+            var catalog = Track(ScriptableObject.CreateInstance<SecurityCameraCatalog>());
+            var prefab = Track(new GameObject("CameraLook"));
+            var clip = Track(AudioClip.Create("Alarm", 441, 1, 44100, false));
+            catalog.CameraPrefab = prefab;
+            catalog.AlarmClip = clip;
+            _content.SecurityCamera = catalog;
+            GameContent.Use(_content);
+
+            var loaded = SecurityCameraCatalog.Load();
+
+            Assert.That(loaded, Is.SameAs(catalog));
+            Assert.That(loaded.CameraPrefab, Is.SameAs(prefab));
+            Assert.That(loaded.AlarmClip, Is.SameAs(clip));
+            Assert.That(SecurityCameraCatalog.ResourcePath, Is.EqualTo(PresentationCatalog.CatalogResourcePath(SecurityCameraCatalog.CatalogName)));
+        }
+
+        private static GameContentSlot SecurityCameraSlot()
+        {
+            return GameContentSlots.All.Single(s => s.Name == StealthActionInstaller.SecurityCameraSlotName);
+        }
+
         private static GameContentSlot AwarenessIndicatorSlot()
         {
             return GameContentSlots.All.Single(s => s.Name == StealthActionInstaller.AwarenessIndicatorSlotName);

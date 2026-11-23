@@ -51,6 +51,9 @@ namespace Shooter.Runtime
                     return true;
                 case BreachHint breach:
                     return BreachPrompt.TryDescribe(breach, keyLabel, out text);
+                case SecurityCameraHint camera:
+                    text = SecurityCameraPrompt.Describe(camera, keyLabel);
+                    return true;
                 default:
                     text = default;
                     return false;
@@ -69,6 +72,8 @@ namespace Shooter.Runtime
                     return board.InputActionPath;
                 case BreachHint breach:
                     return breach.InputActionPath;
+                case SecurityCameraHint camera:
+                    return camera.InputActionPath;
                 default:
                     return string.Empty;
             }
