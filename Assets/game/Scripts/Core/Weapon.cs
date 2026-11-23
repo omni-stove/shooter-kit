@@ -16,6 +16,15 @@ namespace Shooter.Core
         // 予備弾を持ち物から出し入れする武器で、持ち物が変わったとき (弾薬を拾った・捨てた・同じ弾薬の別の武器が使った) に呼ぶ
         public event Action ReserveAmmoChanged;
 
+        // 撃てた 1 発が詰まらせたときに、Fired のあとで呼ぶ
+        public event Action Jammed;
+
+        public event Action JamClearStarted;
+
+        // 解除し終えてまた撃てるようになったとき
+        public event Action JamCleared;
+
+        private readonly IJamRoll _jamRoll;
         private float _cooldownRemaining;
 
         public WeaponSpec Spec { get; }
@@ -46,8 +55,13 @@ namespace Shooter.Core
         {
         }
 
-        public Weapon(WeaponSpec spec, GameRules rules)
-            : this(spec, AmmoModels.For((spec ?? throw new ArgumentNullException(nameof(spec))).Ammo, rules ?? throw new ArgumentNullException(nameof(rules))))
+        // jamRoll を省くと武器の Id から決めた種で作る。詰まらない武器・ルールでは使わない。
+        public Weapon(WeaponSpec spec, GameRules rules, IJamRoll jamRoll = null)
+            : this(
+                spec,
+                AmmoModels.For((spec ?? throw new ArgumentNullException(nameof(spec))).Ammo, rules ?? throw new ArgumentNullException(nameof(rules))),
+                rules,
+                jamRoll)
         {
         }
 
@@ -57,18 +71,20 @@ namespace Shooter.Core
         }
 
         // reserveAmmo はセーブの値をそのまま使い、GameRules.ReserveAmmoMultiplier は掛けない (作ったときに掛けた値がセーブされているため)。
-        public Weapon(WeaponSpec spec, int ammoInMagazine, int reserveAmmo, GameRules rules)
+        public Weapon(WeaponSpec spec, int ammoInMagazine, int reserveAmmo, GameRules rules, IJamRoll jamRoll = null)
             : this(
                 spec,
                 AmmoModels.For(
                     (spec ?? throw new ArgumentNullException(nameof(spec))).Ammo,
                     ammoInMagazine,
                     reserveAmmo,
-                    rules ?? throw new ArgumentNullException(nameof(rules))))
+                    rules ?? throw new ArgumentNullException(nameof(rules))),
+                rules,
+                jamRoll)
         {
         }
 
-        private Weapon(WeaponSpec spec, IAmmoModel ammo)
+        private Weapon(WeaponSpec spec, IAmmoModel ammo, GameRules rules, IJamRoll jamRoll)
         {
             Spec = spec;
             Trigger = TriggerModels.For(spec);
@@ -76,7 +92,22 @@ namespace Shooter.Core
             AmmoTypes = new AmmoTypeSelector(spec);
             MeleeCharge = spec.IsMelee ? new MeleeCharge(spec.Melee) : null;
             Ammo.Reloaded += () => Reloaded?.Invoke();
+            var jam = spec.Ammo?.Jam;
+            if (jam != null && rules.Actions.Jam == WeaponJam.On)
+            {
+                Jam = new WeaponJamState(jam);
+                _jamRoll = jamRoll ?? JamRoll.ForWeapon(spec.Id);
+            }
         }
+
+        // ammo.jam が無いかルールの Jam が Off なら null。
+        public WeaponJamState Jam { get; }
+
+        public bool IsJammed => Jam != null && Jam.IsJammed;
+
+        public bool IsClearingJam => Jam != null && Jam.IsClearing;
+
+        public float JamClearRemainingSeconds => Jam?.ClearRemainingSeconds ?? 0f;
 
         public int MaxReserveAmmo => Ammo.MaxReserveAmmo;
 
@@ -117,7 +148,7 @@ namespace Shooter.Core
 
         public bool TryFire()
         {
-            if (!Ammo.CanFire || _cooldownRemaining > 0f)
+            if (IsJammed || !Ammo.CanFire || _cooldownRemaining > 0f)
             {
                 return false;
             }
@@ -125,7 +156,29 @@ namespace Shooter.Core
             Ammo.Consume();
             _cooldownRemaining = Trigger.MinShotSpacingSeconds;
             Fired?.Invoke();
+            if (Jam != null && Jam.RegisterShot(_jamRoll.Next()))
+            {
+                Jammed?.Invoke();
+            }
+
             return true;
+        }
+
+        public bool TryStartClearJam()
+        {
+            if (Jam == null || !Jam.TryStartClear())
+            {
+                return false;
+            }
+
+            JamClearStarted?.Invoke();
+            return true;
+        }
+
+        // 持ち替えなどで解除をやめる。詰まったまま残り、次は最初から解除し直す
+        public bool CancelClearJam()
+        {
+            return Jam != null && Jam.CancelClear();
         }
 
         public static int ScaleReserveAmmo(int reserveAmmo, float multiplier)
@@ -163,7 +216,7 @@ namespace Shooter.Core
 
         public bool TryStartReload()
         {
-            return Ammo.TryStartReload();
+            return !IsJammed && Ammo.TryStartReload();
         }
 
         public bool TryActiveReload(out ActiveReloadResult result)
@@ -203,6 +256,10 @@ namespace Shooter.Core
 
             _cooldownRemaining = Math.Max(0f, _cooldownRemaining - deltaSeconds);
             Ammo.Tick(deltaSeconds);
+            if (Jam != null && Jam.Tick(deltaSeconds))
+            {
+                JamCleared?.Invoke();
+            }
         }
     }
 }
