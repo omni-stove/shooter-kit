@@ -110,7 +110,40 @@ namespace Shooter.Tests.EditMode
                 TraversalFeatureSceneBuilder.WallRunCorridorName,
                 TraversalFeatureSceneBuilder.DoubleJumpStepsName,
                 TraversalFeatureSceneBuilder.ParkourCourseName,
+                HolsterFeatureSceneBuilder.FixtureName,
             }));
+        }
+
+        [Test]
+        public void TheWeaponFreeZonesComeLastAtTheirOwnCornerOfThePlayground()
+        {
+            var stations = FeatureSceneBuilder.PlaygroundStations();
+            var zones = stations[stations.Count - 1];
+
+            Assert.That(zones.Fixture.Name, Is.EqualTo(HolsterFeatureSceneBuilder.FixtureName));
+            Assert.That(zones.Offset, Is.EqualTo(new Vector3(22f, 0f, 6f)));
+            Assert.That(zones.Footprint.min, Is.EqualTo(new Vector3(22f, 0f, 6f)));
+            Assert.That(zones.Footprint.max, Is.EqualTo(new Vector3(41f, 3f, 21f)));
+        }
+
+        [Test]
+        public void PlaygroundPlacesTheFourZonesAndTheGuardAtTheStationOffset()
+        {
+            var feature = FeatureSceneBuilder.Playground();
+            FeatureSceneBuilder.PopulateScene(_scene, NewWeapons(), NewRules(feature.Rules), feature);
+
+            var root = Find(HolsterFeatureSceneBuilder.FixtureName);
+            Assert.That(root.transform.position, Is.EqualTo(HolsterFeatureSceneBuilder.StationOffset));
+            Assert.That(root.GetComponentsInChildren<WeaponFreeZone>(true), Has.Length.EqualTo(4));
+
+            var warnThenHostile = root.transform.Find("WeaponFreeZone_WarnThenHostile");
+            Assert.That(warnThenHostile.position, Is.EqualTo(new Vector3(34f, 0f, 9f)));
+
+            var guard = root.GetComponentInChildren<NeutralGuard>(true);
+            Assert.That(guard, Is.Not.Null);
+            Assert.That(guard.Zone, Is.SameAs(warnThenHostile.GetComponent<WeaponFreeZone>()));
+            Assert.That(guard.transform.position.x, Is.EqualTo(39.5f).Within(Epsilon));
+            Assert.That(guard.transform.position.z, Is.EqualTo(9f).Within(Epsilon));
         }
 
         [Test]
@@ -412,6 +445,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(names, Has.No.Member("FeatureCoversFixture"));
             Assert.That(names, Has.No.Member("FeatureVaultWallFixture"));
             Assert.That(names, Has.No.Member("TraversalFeatureFixture"));
+            Assert.That(names, Has.No.Member("HolsterZonesFixture"));
         }
 
         // Bounds.Intersects は辺が触れているだけでも重なりと数えるが、ダミーの 1 m 四方に辺が触れているだけの置き場はダミーをふさがないので、内側に入り込んだときだけ重なりとする。
