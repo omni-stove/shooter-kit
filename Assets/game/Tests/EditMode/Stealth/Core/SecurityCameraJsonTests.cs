@@ -25,13 +25,15 @@ namespace Shooter.Core.Tests
             "alarmRadius", "engagedHoldThreshold", "gunshotGain", "footstepGain", "investigateLevel", "armedGainFactor",
         };
 
+        private static readonly string[] _expectedAlarmItemNames = { "durationSeconds", "radius" };
+
         [Test]
         public void TheItemNamesAreTheSpecArgumentNames()
         {
             Assert.That(StealthNoiseJson.TopLevelItemNames, Is.EqualTo(_expectedTopLevelItemNames));
             Assert.That(StealthNoiseJson.CameraItemNames, Is.EqualTo(_expectedCameraItemNames));
             Assert.That(StealthNoiseJson.CameraAwarenessItemNames, Is.EqualTo(_expectedCameraAwarenessItemNames));
-            Assert.That(StealthNoiseJson.AlarmItemNames, Is.EqualTo(new[] { "durationSeconds", "radius" }));
+            Assert.That(StealthNoiseJson.AlarmItemNames, Is.EqualTo(_expectedAlarmItemNames));
         }
 
         [Test]
