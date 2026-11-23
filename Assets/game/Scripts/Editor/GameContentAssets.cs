@@ -59,6 +59,7 @@ namespace Shooter.Editor
             new Slot("EmoteAnimations", typeof(EmoteCatalog), c => c.EmoteAnimations, (c, v) => c.EmoteAnimations = (EmoteCatalog)v),
             new Slot("VisionVisuals", typeof(VisionVisualCatalog), c => c.VisionVisuals, (c, v) => c.VisionVisuals = (VisionVisualCatalog)v),
             new Slot("Music", typeof(MusicCatalog), c => c.Music, (c, v) => c.Music = (MusicCatalog)v),
+            new Slot("Barks", typeof(BarkCatalog), c => c.Barks, (c, v) => c.Barks = (BarkCatalog)v),
         };
 
         // 調整値の JSON は型が TextAsset で見分けられないので、キットが Resources から読むときのファイル名で選ぶ。
@@ -109,6 +110,7 @@ namespace Shooter.Editor
             new TuningSlot("GraphicsTuning", KitTuning.GraphicsResourcePath, c => c.GraphicsTuning, (c, v) => c.GraphicsTuning = v),
             new TuningSlot("GamepadLayoutsTuning", KitTuning.GamepadLayoutsResourcePath, c => c.GamepadLayoutsTuning, (c, v) => c.GamepadLayoutsTuning = v),
             new TuningSlot("HolsterTuning", KitTuning.HolsterResourcePath, c => c.HolsterTuning, (c, v) => c.HolsterTuning = v),
+            new TuningSlot("BarkTuning", KitTuning.BarksResourcePath, c => c.BarkTuning, (c, v) => c.BarkTuning = v),
             new TuningSlot("BreachTuning", KitTuning.BreachResourcePath, c => c.BreachTuning, (c, v) => c.BreachTuning = v),
         };
 
