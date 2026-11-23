@@ -13,28 +13,39 @@ namespace Shooter.NetV2
         private readonly MatchClient _client;
         private readonly Func<NetV2LocalPlayer> _localPlayer;
         private readonly Action<string> _log;
+        private readonly Func<string, WeaponSpec> _findWeapon;
         private readonly ClientMelee _melee;
         private bool _canSwing;
         private bool _disposed;
 
-        // 調整値はオフラインと同じ melee の JSON (MeleeActionInstaller.Tuning) を使い、サーバーの server-data/tuning/melee.json と揃える
-        public NetV2MeleePart(MatchClient client, MeleeSpec spec = null, Func<NetV2LocalPlayer> localPlayer = null, Action<string> log = null)
+        // 調整値はオフラインと同じ melee の JSON (MeleeActionInstaller.Tuning) を使い、サーバーの server-data/tuning/melee.json と揃える。
+        // findWeapon が null なら持っている武器を近接武器とみなさず、ルールの Melee が On のときだけ振る
+        public NetV2MeleePart(
+            MatchClient client,
+            MeleeSpec spec = null,
+            Func<NetV2LocalPlayer> localPlayer = null,
+            Action<string> log = null,
+            Func<string, WeaponSpec> findWeapon = null)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _localPlayer = localPlayer ?? (() => NetV2Client.Current != null ? NetV2Client.Current.LocalPlayer : null);
             _log = log ?? (line => Debug.Log(line));
+            _findWeapon = findWeapon ?? (_ => null);
             _melee = new ClientMelee(spec ?? MeleeActionInstaller.Tuning);
             _melee.SwingStarted += HandleSwingStarted;
         }
 
         public ClientMelee Melee => _melee;
 
+        // 最後に届いたスナップショットで、押したら振る見た目を出すか
+        public bool CanSwing => _canSwing;
+
         public bool Handle(IMessage message)
         {
             return false;
         }
 
-        // 振れるか (ルールで近接が On・生きていてダウンしていない) は、サーバーが同じ値で判定するスナップショットの値で決める
+        // 振れるか (ルールで近接が On か近接武器を持っている・生きていてダウンしていない) は、サーバーが同じ値で判定するスナップショットの値で決める
         public void Apply(SnapshotMessage snapshot)
         {
             if (_disposed || snapshot == null)
@@ -42,7 +53,7 @@ namespace Shooter.NetV2
                 return;
             }
 
-            var canSwing = snapshot.Match.Rules.Melee == Shooter.Core.Melee.On && snapshot.Match.State == GameModeState.Playing;
+            var canSwing = snapshot.Match.State == GameModeState.Playing;
             var own = snapshot.Players.IndexOf(_client.PlayerId);
             if (own < 0)
             {
@@ -58,7 +69,7 @@ namespace Shooter.NetV2
                     _melee.Reset();
                 }
 
-                canSwing &= alive;
+                canSwing &= alive && ClientMelee.IsAllowed(snapshot.Match.Rules.Melee, _findWeapon(row.WeaponId));
             }
 
             _canSwing = canSwing;

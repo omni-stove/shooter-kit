@@ -126,6 +126,27 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void WithMeleeOnAnyHeldWeaponSwings()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.On, Rifle()), Is.True);
+            Assert.That(ClientMelee.IsAllowed(Melee.On, Knife()), Is.True);
+            Assert.That(ClientMelee.IsAllowed(Melee.On, null), Is.True);
+        }
+
+        [Test]
+        public void WithMeleeOffAMeleeWeaponStillSwings()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, Knife()), Is.True);
+        }
+
+        [Test]
+        public void WithMeleeOffAGunOrNoWeaponDoesNotSwing()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, Rifle()), Is.False);
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, null), Is.False);
+        }
+
+        [Test]
         public void BadArgumentsAreRejected()
         {
             Assert.Throws<ArgumentNullException>(() => new ClientMelee(null));
@@ -134,6 +155,10 @@ namespace Shooter.NetV2.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => _melee.Update(true, true, float.NaN));
             Assert.That(_started, Is.Empty);
         }
+
+        private static WeaponSpec Rifle() => new WeaponSpec("rifle", "weapon.rifle", WeaponCategory.AssaultRifle);
+
+        private static WeaponSpec Knife() => new WeaponSpec("knife", "weapon.knife", WeaponCategory.Melee, melee: new MeleeWeaponSpec(_spec));
 
         private void Frames(bool held, bool canSwing, float seconds)
         {

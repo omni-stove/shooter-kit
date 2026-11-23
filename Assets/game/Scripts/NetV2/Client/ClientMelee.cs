@@ -34,8 +34,15 @@ namespace Shooter.NetV2
 
         public float CooldownRemaining => _swing.CooldownRemaining;
 
+        // ルールの Melee は銃で殴る振りだけに効き、近接武器 (WeaponSpec.IsMelee) は Off でも振れる。
+        // サーバーの ServerMelee.Check と CheckWeapon の分け方と揃えないと、サーバーが振るのに手元で振りが出ない
+        public static bool IsAllowed(Melee rule, WeaponSpec held)
+        {
+            return rule == Melee.On || (held != null && held.IsMelee);
+        }
+
         // 毎フレーム、近接のボタン (InputButtons.Melee と同じ入力) を押しているかと、今振れる状態か
-        // (ルールで近接が On・生きていてダウンしていない・乗り物に乗っていない・はしごにいない) を渡す。
+        // (IsAllowed・生きていてダウンしていない・乗り物に乗っていない・はしごにいない) を渡す。
         // サーバーと同じく押し始めた瞬間だけ振り、押し続けても振り直さない。振り始めたら true
         public bool Update(bool held, bool canSwing, float deltaSeconds)
         {
