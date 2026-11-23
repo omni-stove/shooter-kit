@@ -32,8 +32,8 @@ namespace Shooter.Server
         private readonly PingRemovedMessage _pingRemoved = new PingRemovedMessage();
 
         private TeamPingRelay _pingRelay;
-        private float _nextPingTrackTime;
-        private float _nextPingRefusalLogTime;
+        private double _nextPingTrackTime;
+        private double _nextPingRefusalLogTime;
 
         // 射撃と同じく、参加していない人と試合の無いときは断る理由も出さずに捨てる。
         internal PingRefusal? ServerPing(int playerId, Vector3 direction)
@@ -53,7 +53,7 @@ namespace Shooter.Server
                 return RefusePing(playerId, PingRefusal.Dead);
             }
 
-            if (!IsFinite(direction) || direction.LengthSquared() < _minPingDirectionSqrMagnitude)
+            if (!ShotValidator.TryNormalizeDirection(direction, _minPingDirectionSqrMagnitude, out direction))
             {
                 return RefusePing(playerId, PingRefusal.InvalidAim);
             }
@@ -64,7 +64,6 @@ namespace Shooter.Server
                 return RefusePing(playerId, interval);
             }
 
-            direction = Vector3.Normalize(direction);
             var team = _session.GetTeam(playerId);
             var hit = ResolvePingAim(pinger, team, pinger.EyePosition, direction, out var targetId);
 
@@ -375,11 +374,6 @@ namespace Shooter.Server
 
             var disc = (b * b) - c;
             return disc < 0f ? float.PositiveInfinity : -b - MathF.Sqrt(disc);
-        }
-
-        private static bool IsFinite(Vector3 v)
-        {
-            return float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
         }
     }
 }

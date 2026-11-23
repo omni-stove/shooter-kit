@@ -417,7 +417,7 @@ namespace Shooter.Server
             _log.WriteLine(ServerEmotesLog.Started(rule, _emotes, _emotesPath));
         }
 
-        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, float shotTick)
+        private void HandleShotAccepted(int shooterId, Vector3 origin, Vector3 direction, double shotTick)
         {
             if (_performers.TryGetValue(shooterId, out var performer))
             {

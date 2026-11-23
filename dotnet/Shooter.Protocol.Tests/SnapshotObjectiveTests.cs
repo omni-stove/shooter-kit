@@ -23,11 +23,12 @@ namespace Shooter.Protocol.Tests
         // 30 で武器の部分 (PlayerFields.Weapon) にしまう・構える (PlayerSnapshot.HolsterPhase・HolsterLowering) が増え、
         // 31 で持ち主に武器を出してはいけない場所の状態 (OwnerSnapshot.WeaponFreeZone) が増え、
         // 32 で持ち主の武器 (WeaponSync) に二丁持ちの左の手 (OffhandAmmoInMagazine・IsOffhandReloading・OffhandReloadStartedAt) が増え、
-        // 33 で武器の部分 (PlayerFields.Weapon) のしまう状態のバイトにウェポンライトの点灯 (PlayerSnapshot.WeaponLightOn) が増えた
+        // 33 で持ち主の武器に弾詰まりと解除の終わる時刻 (WeaponSync.IsJammed・JamClearEndsAt) が増え、
+        // 34 で武器の部分 (PlayerFields.Weapon) のしまう状態のバイトにウェポンライトの点灯 (PlayerSnapshot.WeaponLightOn) が増えた
         [Test]
-        public void TheVersionIs33()
+        public void TheVersionIs34()
         {
-            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(33));
+            Assert.That(SnapshotMessage.CurrentVersion, Is.EqualTo(34));
         }
 
         [Test]

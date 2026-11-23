@@ -63,14 +63,116 @@ namespace Shooter.Editor
 
         public const string AllDefaultsJson = "{}\n";
 
-        // 試合の設定 (NetMatch) の並びに無くても、Demo のネットのマップ (NetBattleRoyale・NetArena01) で遊べるよう必ず書き出すモードのルール。
-        // サーバーはファイルの Objective で目的を選ぶので、アセットの Objective が違えば書き出さずに止める
-        public static readonly IReadOnlyList<(string Name, MatchObjective Objective)> ModeRulesToExport = new[]
+        // rules フォルダーに置く、書き出さずに手で保つルールの名前の一覧。scripts/server-rules.sh も同じファイルを読む
+        public const string HandWrittenFileName = "hand-written.txt";
+
+        public static string HandWrittenPath => Path.Combine(ProjectRoot, RulesFolder, HandWrittenFileName);
+
+        // 試合の設定 (NetMatch) の並びに無くても書き出すモードのルール。サーバーはファイルの Objective で目的を選ぶので、
+        // Objective が None のアセットは書き出しても並びのルールと同じ試合にしかならず、対象にしない。
+        // 順を名前で決めるのは、アセットを探した順が変わっても書き出す順とログが変わらないようにするため
+        public static IReadOnlyList<GameRulesDefinition> ModeRulesToExport(
+            IEnumerable<GameRulesDefinition> assets, ICollection<string> handWritten)
         {
-            (GameRulesAssetBuilder.BattleRoyaleName, MatchObjective.BattleRoyale),
-            (GameRulesAssetBuilder.ExtractionName, MatchObjective.Extraction),
-            (GameRulesAssetBuilder.HordeName, MatchObjective.Horde),
-        };
+            if (assets == null)
+            {
+                throw new ArgumentNullException(nameof(assets));
+            }
+
+            if (handWritten == null)
+            {
+                throw new ArgumentNullException(nameof(handWritten));
+            }
+
+            var picked = new List<GameRulesDefinition>();
+            foreach (var asset in assets)
+            {
+                if (asset != null && asset.Objective != MatchObjective.None && !handWritten.Contains(asset.name) && !picked.Contains(asset))
+                {
+                    picked.Add(asset);
+                }
+            }
+
+            picked.Sort((x, y) => string.CompareOrdinal(x.name, y.name));
+            return picked;
+        }
+
+        // 行の最初の語だけを名前にし、# から行末までを読まないのは、同じファイルを読む scripts/server-rules.sh と対象を揃えるため
+        public static HashSet<string> ParseHandWritten(string text)
+        {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
+
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var line in text.Split('\n'))
+            {
+                var comment = line.IndexOf('#');
+                var words = (comment >= 0 ? line.Substring(0, comment) : line).Split(
+                    new[] { ' ', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                if (words.Length > 0)
+                {
+                    names.Add(words[0]);
+                }
+            }
+
+            return names;
+        }
+
+        // 一覧の無いゲームは手で保つルールが無い
+        public static HashSet<string> LoadHandWritten(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException("path must not be blank", nameof(path));
+            }
+
+            return File.Exists(path) ? ParseHandWritten(File.ReadAllText(path)) : new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        // 書き出しも一覧も触れない *.json は誰も作り直さず、古いルールのままサーバーに読まれる
+        public static IReadOnlyList<string> LeftoverRulesFiles(string directory, IReadOnlyList<string> written, ICollection<string> handWritten)
+        {
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                throw new ArgumentException("directory must not be blank", nameof(directory));
+            }
+
+            if (written == null)
+            {
+                throw new ArgumentNullException(nameof(written));
+            }
+
+            if (handWritten == null)
+            {
+                throw new ArgumentNullException(nameof(handWritten));
+            }
+
+            var writtenNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var path in written)
+            {
+                writtenNames.Add(Path.GetFileName(path));
+            }
+
+            var leftover = new List<string>();
+            if (!Directory.Exists(directory))
+            {
+                return leftover;
+            }
+
+            foreach (var path in Directory.GetFiles(directory, "*" + NetMatchFile.Extension))
+            {
+                var fileName = Path.GetFileName(path);
+                if (!writtenNames.Contains(fileName) && !handWritten.Contains(Path.GetFileNameWithoutExtension(path)))
+                {
+                    leftover.Add(fileName);
+                }
+            }
+
+            leftover.Sort(string.CompareOrdinal);
+            return leftover;
+        }
 
         public static IReadOnlyList<GameRulesDefinition> RulesToExport(NetMatchDefinition match)
         {
@@ -117,7 +219,17 @@ namespace Shooter.Editor
                     LogTag + " no rules to export; set Rules in GameContent or in " + AssetDatabase.GetAssetPath(match));
             }
 
-            return WriteRules(directory, match, WithModeRules(rules, LoadModeRules()));
+            var handWritten = LoadHandWritten(HandWrittenPath);
+            var written = WriteRules(directory, match, WithModeRules(rules, LoadModeRules(handWritten)));
+            var leftover = LeftoverRulesFiles(directory, written, handWritten);
+            if (leftover.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    LogTag + " " + directory + " holds rules this export does not write: " + string.Join(", ", leftover)
+                    + "; delete them, give their rules asset an Objective, or list their names in " + HandWrittenPath + " and keep them by hand");
+            }
+
+            return written;
         }
 
         // 同じアセットを 2 度書かないよう、並びに既にあるルールは足さない
@@ -146,38 +258,30 @@ namespace Shooter.Editor
             return combined;
         }
 
-        // アセットが無ければ GameRulesAssetBuilder と同じ値で作る。あれば、ゲームが変えた値を残すため作り直さない
-        public static IReadOnlyList<GameRulesDefinition> LoadModeRules()
+        // 対象を名前で持たずにルールのフォルダーから探すのは、ゲームが足したモードのアセットも Objective を付けるだけで書き出されるようにするため
+        public static IReadOnlyList<GameRulesDefinition> LoadModeRules(ICollection<string> handWritten)
         {
-            var loaded = new List<GameRulesDefinition>(ModeRulesToExport.Count);
-            foreach (var (name, objective) in ModeRulesToExport)
-            {
-                var asset = GameRulesAssetBuilder.LoadOrBuildModeRules(name);
-                RequireObjective(asset, objective);
-                loaded.Add(asset);
-            }
-
-            return loaded;
+            return ModeRulesToExport(LoadRulesAssets(GameRulesAssetBuilder.Folder), handWritten);
         }
 
-        public static void RequireObjective(GameRulesDefinition asset, MatchObjective objective)
+        public static IReadOnlyList<GameRulesDefinition> LoadRulesAssets(string folder)
         {
-            if (asset == null)
+            var assets = new List<GameRulesDefinition>();
+            if (!AssetDatabase.IsValidFolder(folder))
             {
-                throw new ArgumentNullException(nameof(asset));
+                return assets;
             }
 
-            if (!asset.TryToRules(out var rules, out var error))
+            foreach (var guid in AssetDatabase.FindAssets("t:" + nameof(GameRulesDefinition), new[] { folder }))
             {
-                throw new InvalidOperationException(LogTag + " invalid game rules " + AssetDatabase.GetAssetPath(asset) + ": " + error);
+                var asset = AssetDatabase.LoadAssetAtPath<GameRulesDefinition>(AssetDatabase.GUIDToAssetPath(guid));
+                if (asset != null)
+                {
+                    assets.Add(asset);
+                }
             }
 
-            if (rules.Objective != objective)
-            {
-                throw new InvalidOperationException(
-                    LogTag + " " + AssetDatabase.GetAssetPath(asset) + " has the objective " + rules.Objective + ", but the server plays '"
-                    + asset.name + "' as " + objective + "; set its Objective or rebuild it with make build-scenes (GameRulesAssetBuilder.Build)");
-            }
+            return assets;
         }
 
         public static IReadOnlyList<string> WriteRules(string directory, NetMatchDefinition match, IReadOnlyList<GameRulesDefinition> rules)

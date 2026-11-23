@@ -111,25 +111,32 @@ namespace Shooter.Core
                 return rejection;
             }
 
-            if (!_entries.TryGetValue(playerId, out var entry) || !string.Equals(entry.WeaponId, held.Id, StringComparison.Ordinal))
+            if (!_entries.TryGetValue(playerId, out var entry))
             {
-                // ビームと火炎の撃ち方は照射を自分で数えて最短の間隔を 0 にしているので、それで作ると制限が外れる。照射の間隔で制限する。
-                var round = held.Round;
-                var budget = round.Delivery == RoundDelivery.Beam ? new ShotBudget(round.Beam.TickSeconds, _burst)
-                    : round.Delivery == RoundDelivery.Spray ? new ShotBudget(round.Spray.TickSeconds, _burst)
-                    : new ShotBudget(TriggerModels.For(held), _burst);
-                entry = new Entry(held.Id, budget);
+                entry = new Entry();
                 _entries[playerId] = entry;
             }
 
-            return entry.Budget.TryConsume(nowSeconds) ? ShotRejection.None : ShotRejection.FireRateExceeded;
+            // 持ち替えるたびに作り直すと、別の武器で 1 発撃って戻すだけでトークンが満タンに戻り連射の制限を抜けられるので、武器ごとに残す。
+            if (!entry.Budgets.TryGetValue(held.Id, out var budget))
+            {
+                // ビームと火炎の撃ち方は照射を自分で数えて最短の間隔を 0 にしているので、それで作ると制限が外れる。照射の間隔で制限する。
+                var round = held.Round;
+                budget = round.Delivery == RoundDelivery.Beam ? new ShotBudget(round.Beam.TickSeconds, _burst)
+                    : round.Delivery == RoundDelivery.Spray ? new ShotBudget(round.Spray.TickSeconds, _burst)
+                    : new ShotBudget(TriggerModels.For(held), _burst);
+                entry.Budgets[held.Id] = budget;
+            }
+
+            entry.Current = budget;
+            return budget.TryConsume(nowSeconds) ? ShotRejection.None : ShotRejection.FireRateExceeded;
         }
 
         public bool TryGetBudget(int playerId, out ShotBudget budget)
         {
             if (_entries.TryGetValue(playerId, out var entry))
             {
-                budget = entry.Budget;
+                budget = entry.Current;
                 return true;
             }
 
@@ -217,17 +224,11 @@ namespace Shooter.Core
             _entries.Clear();
         }
 
-        private readonly struct Entry
+        private sealed class Entry
         {
-            public Entry(string weaponId, ShotBudget budget)
-            {
-                WeaponId = weaponId;
-                Budget = budget;
-            }
+            public Dictionary<string, ShotBudget> Budgets { get; } = new Dictionary<string, ShotBudget>(StringComparer.Ordinal);
 
-            public string WeaponId { get; }
-
-            public ShotBudget Budget { get; }
+            public ShotBudget Current { get; set; }
         }
     }
 }

@@ -73,7 +73,7 @@ namespace Shooter.Core
             return _histories.Remove(entityId) || removedStance;
         }
 
-        public IReadOnlyDictionary<int, Vector3> Rewind(float tick)
+        public IReadOnlyDictionary<int, Vector3> Rewind(double tick)
         {
             var result = new Dictionary<int, Vector3>();
             foreach (var pair in _histories)
@@ -87,13 +87,13 @@ namespace Shooter.Core
             return result;
         }
 
-        public IReadOnlyDictionary<int, Vector3> Rewind(float tick, int currentTick)
+        public IReadOnlyDictionary<int, Vector3> Rewind(double tick, int currentTick)
         {
             return Rewind(ClampTick(tick, currentTick));
         }
 
         // 巻き戻し幅の上限はかけないので、呼ぶ側は ClampTick で丸めた tick を渡す。
-        public IReadOnlyDictionary<int, bool> RewindCrouched(float tick)
+        public IReadOnlyDictionary<int, bool> RewindCrouched(double tick)
         {
             var result = new Dictionary<int, bool>();
             foreach (var pair in _stances)
@@ -107,7 +107,7 @@ namespace Shooter.Core
             return result;
         }
 
-        public IReadOnlyDictionary<int, Vector3> RewindLean(float tick)
+        public IReadOnlyDictionary<int, Vector3> RewindLean(double tick)
         {
             var result = new Dictionary<int, Vector3>();
             foreach (var pair in _histories)
@@ -121,15 +121,16 @@ namespace Shooter.Core
             return result;
         }
 
-        public float ClampTick(float tick, int currentTick)
+        public double ClampTick(double tick, int currentTick)
         {
-            if (float.IsNaN(tick))
+            if (double.IsNaN(tick))
             {
                 return tick;
             }
 
+            // float で受け渡すと長く動かしたサーバーの tick (2^23 以上) で小数部が消え、tick の間の補間が効かなくなる。
             var oldest = (double)currentTick - MaxRewindTicks;
-            return (float)Math.Min(Math.Max(tick, oldest), currentTick);
+            return Math.Min(Math.Max(tick, oldest), currentTick);
         }
     }
 }

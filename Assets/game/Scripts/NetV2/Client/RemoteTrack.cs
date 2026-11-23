@@ -55,7 +55,7 @@ namespace Shooter.NetV2
         }
 
         // しゃがみ・泳ぎ・壁走り・パラシュート・パルクールの動き・ウェポンライトは補間で切り替わらないので、前の記録の値を使う。リーンと銃の下げ具合は量なので位置と同じく補間する。
-        public bool TrySample(float tick, out RemotePose pose)
+        public bool TrySample(double tick, out RemotePose pose)
         {
             pose = default;
             if (_count == 0)
@@ -85,7 +85,7 @@ namespace Shooter.NetV2
                 }
 
                 var nextIndex = IndexOf(i + 1);
-                var t = (tick - _ticks[index]) / (_ticks[nextIndex] - _ticks[index]);
+                var t = (float)((tick - _ticks[index]) / ((double)_ticks[nextIndex] - _ticks[index]));
                 var after = _poses[nextIndex];
                 pose = new RemotePose(
                     Vector3.Lerp(before.Position, after.Position, t),

@@ -315,6 +315,27 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void TheAmmoCrateStillComesBackAfterTheServerHasRunForDays()
+        {
+            StartMatch();
+
+            // 約 11.6 日。float の時計ではここから 1/60 秒を足しても進まず、使った箱が二度と戻らなかった
+            _pickups.ClockSeconds = 1_000_000d;
+            var weapons = _combat.WeaponsOf(1);
+            weapons.Find(TestRules.RifleId).SetAmmo(30, 10);
+            MoveTo(1, _crateAt + _standing);
+            Assert.That(_pickups.Collect(1, _crate), Is.EqualTo(ServerPickupRefusal.None), _log.ToString());
+            Assert.That(_pickups.IsCoolingDown(_crate), Is.True);
+
+            Step(_crateCooldownSeconds - 0.1f);
+            Assert.That(_pickups.IsCoolingDown(_crate), Is.True, "the wait is not cut short either");
+
+            Step(0.2f);
+            Assert.That(_pickups.IsCoolingDown(_crate), Is.False);
+            Assert.That(_pickups.ClockSeconds, Is.EqualTo(1_000_001.1d).Within(0.05d));
+        }
+
+        [Test]
         public void TheHerbsGoIntoTheInventory()
         {
             StartMatch();

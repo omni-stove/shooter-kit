@@ -46,11 +46,11 @@ namespace Shooter.Server
         // int.MaxValue は「まだ無い」印で、出現直後の最初の tick を被弾に数えない
         public int LastHealth { get; set; } = int.MaxValue;
 
-        public float Clock { get; set; }
+        public double Clock { get; set; }
 
         public long SpawnTick { get; set; } = -1;
 
-        public float NextPositionLog { get; set; }
+        public double NextPositionLog { get; set; }
 
         public bool WasClimbing { get; set; }
 

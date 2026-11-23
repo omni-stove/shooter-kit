@@ -14,7 +14,7 @@ namespace Shooter.Server
             ImpactSpec impact,
             float chargeFraction,
             ServerLockTarget? lockTarget,
-            float tick,
+            double tick,
             Vector3 shooterPosition,
             TriggerEdge trigger)
         {
@@ -41,7 +41,7 @@ namespace Shooter.Server
 
         public ServerLockTarget? LockTarget { get; }
 
-        public float Tick { get; }
+        public double Tick { get; }
 
         public Vector3 ShooterPosition { get; }
 

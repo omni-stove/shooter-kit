@@ -18,12 +18,13 @@ namespace Shooter.Core
 
         public void ShowSaved(float seconds)
         {
-            if (!(seconds > 0f) || float.IsInfinity(seconds))
+            if (!(seconds >= 0f) || float.IsInfinity(seconds))
             {
-                throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "seconds must be a positive finite number");
+                throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "seconds must be a non-negative finite number");
             }
 
-            if (_countingDown)
+            // 0 秒は「案内を出さない」。MissionCatalog が 0 を有効な秒数として受けるので、ここでも投げない。
+            if (_countingDown || seconds == 0f)
             {
                 return;
             }

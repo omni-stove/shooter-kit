@@ -16,7 +16,7 @@ namespace Shooter.Server
         private readonly VoteKickStateMessage _voteKickState = new VoteKickStateMessage();
         private readonly List<int> _voteKickPlayers = new List<int>();
         private float _voteKickSendElapsed;
-        private float _nextVoteKickRefusalLogTime;
+        private double _nextVoteKickRefusalLogTime;
 
         internal VoteKick CurrentVoteKick => _voteKick;
 

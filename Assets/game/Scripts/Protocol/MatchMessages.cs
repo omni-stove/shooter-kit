@@ -37,6 +37,7 @@ namespace Shooter.Protocol
                 new EmoteRequestMessage(),
                 new HordeFortifyRequestMessage(),
                 new HolsterRequestMessage(),
+                new BreachRequestMessage(),
                 new WeaponLightRequestMessage(),
             };
         }
@@ -55,6 +56,7 @@ namespace Shooter.Protocol
                 new MapVoteStateMessage(),
                 new VoiceRosterMessage(),
                 new VoteKickStateMessage(),
+                new DoorStateMessage(),
                 new ShotMessage(),
                 new HitConfirmMessage(),
                 new DamageTakenMessage(),

@@ -151,9 +151,9 @@ namespace Shooter.Tests.EditMode
             var end = _body.transform.position;
             FallToTheLowerFloor();
 
-            // 手を離して落ちると、横の速さは 1 Tick ごとに空中の操作の割合だけ 0 へ寄り、足し合わせた距離は 速さ × (1 - 割合) / 割合 × Tick に近づく
-            var airControl = _player.Motor.Spec.AirControl;
-            var limit = _player.Motor.Spec.VaultSpeed * 0.5f * (1f - airControl) / airControl * StepSeconds;
+            // 手を離して落ちると、横の速さは 1 Step ごとに「基準の tick あたりの空中の操作の割合」を Step の長さに直したぶんだけ 0 へ寄り、足し合わせた距離は 速さ × 残る割合 / (1 - 残る割合) × Step に近づく
+            var kept = Mathf.Pow(1f - _player.Motor.Spec.AirControl, StepSeconds * TickClock.DefaultTickRate);
+            var limit = _player.Motor.Spec.VaultSpeed * 0.5f * kept / (1f - kept) * StepSeconds;
             Assert.That(_body.transform.position.z - end.z, Is.InRange(limit * 0.7f, limit + 0.01f));
         }
 

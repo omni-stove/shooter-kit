@@ -42,13 +42,15 @@ namespace Shooter.Protocol
         public const ushort DetonateRequest = 39;
         public const ushort HordeFortifyRequest = 40;
         public const ushort HolsterRequest = 41;
-        public const ushort WeaponLightRequest = 42;
+        public const ushort BreachRequest = 42;
+        public const ushort WeaponLightRequest = 43;
 
         public const ushort Snapshot = 48;
         public const ushort StructureState = 49;
         public const ushort MapVoteState = 50;
         public const ushort VoiceRoster = 51;
         public const ushort VoteKickState = 52;
+        public const ushort DoorState = 53;
 
         public const ushort Shot = 64;
         public const ushort HitConfirm = 65;

@@ -17,6 +17,8 @@ namespace Shooter.NetV2.Tests
         private const string _rocketId = "1e5d3c2b-4f6a-4b7c-9d8e-0f1a2b3c4d5e";
         private const string _rifleId = "3a7f5e4d-6b8c-4d9e-9f0a-2b3c4d5e6f70";
         private const string _missileId = "2f6e4d3c-5a7b-4c8d-8e9f-1a2b3c4d5e6f";
+        private const string _firstTypeId = "4b8a6f5e-7c9d-4e0f-8a1b-3c4d5e6f7081";
+        private const string _secondTypeId = "5c9b7a6f-8d0e-4f1a-9b2c-4d5e6f708192";
 
         private static readonly Vector3 _gravity = new Vector3(0f, -9.81f, 0f);
         private static readonly Vector3 _eye = new Vector3(0f, 1.6f, 0f);
@@ -206,6 +208,53 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void TheRoundOfAnAmmoTypeNumberIsTheWeaponsOwnAtZeroAndTheTypeBeforeThatNumberAfter()
+        {
+            var fast = ProjectileRound(40f);
+            var faster = ProjectileRound(50f);
+            var spec = TwoTypes(fast, faster);
+
+            Assert.That(ClientProjectiles.RoundFor(spec, 0), Is.SameAs(spec.Round), "0 is the weapon's own rounds");
+            Assert.That(ClientProjectiles.RoundFor(spec, 1), Is.SameAs(fast));
+            Assert.That(ClientProjectiles.RoundFor(spec, 2), Is.SameAs(faster));
+            Assert.That(ClientProjectiles.RoundFor(spec, 3), Is.SameAs(spec.Round), "past the last type");
+            Assert.That(ClientProjectiles.RoundFor(spec, -1), Is.SameAs(spec.Round));
+            var plain = Find(_rocketId);
+            Assert.That(ClientProjectiles.RoundFor(plain, 1), Is.SameAs(plain.Round), "a weapon without ammo types");
+            Assert.Throws<ArgumentNullException>(() => ClientProjectiles.RoundFor(null, 0));
+        }
+
+        [Test]
+        public void AnAmmoTypeThatKeepsTheWeaponsRoundGivesTheWeaponsRound()
+        {
+            var spec = new WeaponSpec(
+                _rifleId,
+                "",
+                WeaponCategory.AssaultRifle,
+                round: ProjectileRound(20f),
+                ammoTypes: new[] { new AmmoTypeSpec(_firstTypeId, "items.ammo.first") });
+
+            Assert.That(ClientProjectiles.RoundFor(spec, 1), Is.SameAs(spec.Round));
+        }
+
+        [Test]
+        public void TheShootersPredictedRoundFliesAtTheSpeedOfTheChosenAmmoType()
+        {
+            var spec = TwoTypes(ProjectileRound(40f), ProjectileRound(50f));
+
+            _projectiles.LocalFired(Fire(_rifleId, Vector3.UnitZ, ammoTypeIndex: 0), spec);
+            _projectiles.LocalFired(Fire(_rifleId, Vector3.UnitZ, ammoTypeIndex: 1), spec);
+            _projectiles.LocalFired(Fire(_rifleId, Vector3.UnitZ, ammoTypeIndex: 2), spec);
+            _projectiles.LocalFired(Fire(_rifleId, Vector3.UnitZ, ammoTypeIndex: 3), spec);
+
+            Assert.That(_views.Shown, Has.Count.EqualTo(4));
+            Assert.That(_views.Shown[0].Velocity, Is.EqualTo(new Vector3(0f, 0f, 20f)));
+            Assert.That(_views.Shown[1].Velocity, Is.EqualTo(new Vector3(0f, 0f, 40f)));
+            Assert.That(_views.Shown[2].Velocity, Is.EqualTo(new Vector3(0f, 0f, 50f)));
+            Assert.That(_views.Shown[3].Velocity, Is.EqualTo(new Vector3(0f, 0f, 20f)), "past the last type");
+        }
+
+        [Test]
         public void AFarSnapshotIsJumpedTo()
         {
             _projectiles.Spawned(Spawn(5, _other, _rocketId, _eye, new Vector3(0f, 0f, 10f)));
@@ -381,9 +430,36 @@ namespace Shooter.NetV2.Tests
             return new WeaponSpec(id, "", WeaponCategory.AssaultRifle, round: round);
         }
 
-        private static FireRequestMessage Fire(string weaponId, Vector3 direction, TriggerEdge edge = TriggerEdge.None)
+        private static RoundSpec ProjectileRound(float speed)
         {
-            return new FireRequestMessage { WeaponId = weaponId, Origin = _eye, Direction = direction, Trigger = edge };
+            return new RoundSpec(RoundDelivery.Projectile, projectile: new ProjectileSpec(speed, 0f, 5f, WorldHitResponse.Stop));
+        }
+
+        private static WeaponSpec TwoTypes(RoundSpec first, RoundSpec second)
+        {
+            return new WeaponSpec(
+                _rifleId,
+                "",
+                WeaponCategory.AssaultRifle,
+                round: ProjectileRound(20f),
+                ammoTypes: new[]
+                {
+                    new AmmoTypeSpec(_firstTypeId, "items.ammo.first", first),
+                    new AmmoTypeSpec(_secondTypeId, "items.ammo.second", second),
+                });
+        }
+
+        private static FireRequestMessage Fire(
+            string weaponId, Vector3 direction, TriggerEdge edge = TriggerEdge.None, byte ammoTypeIndex = 0)
+        {
+            return new FireRequestMessage
+            {
+                WeaponId = weaponId,
+                Origin = _eye,
+                Direction = direction,
+                Trigger = edge,
+                AmmoTypeIndex = ammoTypeIndex,
+            };
         }
 
         private static ProjectileSpawnedMessage Spawn(int id, int shooter, string weaponId, Vector3 position, Vector3 velocity)
