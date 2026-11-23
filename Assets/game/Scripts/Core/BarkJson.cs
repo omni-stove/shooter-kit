@@ -128,7 +128,7 @@ namespace Shooter.Core
             return values;
         }
 
-        private static IReadOnlyList<string> KindNames()
+        private static System.Collections.ObjectModel.ReadOnlyCollection<string> KindNames()
         {
             var names = new string[BarkSpec.Kinds.Count];
             for (var i = 0; i < names.Length; i++)
