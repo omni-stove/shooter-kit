@@ -55,6 +55,8 @@ namespace Shooter.Runtime
         public const string GamepadLayoutsResourcePath = GamepadLayoutJson.ResourcePath;
         public const string HolsterResourcePath = HolsterJson.ResourcePath;
 
+        public const string BreachResourcePath = BreachJson.ResourcePath;
+
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
         private static readonly Dictionary<string, object> _loaded = new Dictionary<string, object>(StringComparer.Ordinal);
 
@@ -80,6 +82,11 @@ namespace Shooter.Runtime
         public static IReadOnlyList<EmoteSpec> Emotes => Load(c => c.EmotesTuning, EmoteJson.ResourcePath, EmoteJson.Parse, EmoteSpec.DefaultEmotes);
 
         public static InfectedSpec Infected => Load(c => c.InfectedTuning, InfectedJson.ResourcePath, InfectedJson.Parse, InfectedSpec.Default);
+
+        public static JuggernautSpec Juggernaut =>
+            Load(c => c.JuggernautTuning, JuggernautJson.ResourcePath, JuggernautJson.Parse, JuggernautSpec.Default);
+
+        public static VipSpec Vip => Load(c => c.VipTuning, VipJson.ResourcePath, VipJson.Parse, VipSpec.Default);
 
         public static EconomyRules Economy => Load(c => c.EconomyTuning, EconomyResourcePath, EconomyJson.Parse, EconomyRules.Default);
 
@@ -109,6 +116,9 @@ namespace Shooter.Runtime
             Load(c => c.GamepadLayoutsTuning, GamepadLayoutsResourcePath, GamepadLayoutJson.Parse, GamepadLayoutSpec.Default);
         public static HolsterSpec Holster =>
             Load(c => c.HolsterTuning, HolsterResourcePath, HolsterJson.Parse, HolsterSpec.Default);
+
+        public static BreachSpec Breach =>
+            Load(c => c.BreachTuning, BreachResourcePath, BreachJson.Parse, BreachSpec.Default);
 
         public static void Reload()
         {

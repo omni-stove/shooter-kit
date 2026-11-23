@@ -291,6 +291,61 @@ namespace Shooter.Server.Tests
             Assert.DoesNotThrow(() => rules.CheckMap(map, map.Points));
         }
 
+        // 調整値はオフラインの Resources/Tuning/juggernaut.json と同じ値にする。サーバーのルールはまだ無いので、目的の工場は名前を挙げて断る
+        [Test]
+        public void TheJuggernautExampleCarriesTheOfflineTuningAndIsRefusedUntilItsRulesExist()
+        {
+            Assert.That(ServerRulesData.TryLoad("Juggernaut", Roots(), out var data, out var error), Is.True, error);
+            var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "juggernaut.json");
+            var offline = JuggernautJson.Parse(File.ReadAllText(tuningPath), tuningPath);
+
+            Assert.That(data.File.Name, Is.EqualTo("Juggernaut"));
+            Assert.That(data.Rules.Objective, Is.EqualTo(MatchObjective.Juggernaut));
+            Assert.That(data.Rules.RespawnMode, Is.EqualTo(RespawnMode.Individual), "everyone comes back to chase the juggernaut");
+            Assert.That(data.Rules.Actions.Downed, Is.EqualTo(Downed.Off));
+            Assert.That(data.Rules.Actions.Melee, Is.EqualTo(Melee.On));
+            Assert.That(data.Rules.DeathCamera, Is.EqualTo(DeathCamera.KillCam));
+            Assert.That(data.Settings.Juggernaut.SameAs(offline), Is.True, "the rules file and juggernaut.json carry the same tuning");
+            Assert.That(data.Settings.Juggernaut.JuggernautMaxHealth, Is.EqualTo(300));
+            Assert.That(data.Settings.Juggernaut.JuggernautSpeedMultiplier, Is.EqualTo(1.1f));
+            Assert.That(data.Settings.Juggernaut.ScorePerKillAsJuggernaut, Is.EqualTo(1));
+            Assert.That(data.Settings.Juggernaut.ScorePerJuggernautKill, Is.EqualTo(3));
+            Assert.That(data.Settings.Juggernaut.ScoreLimit, Is.EqualTo(15));
+            Assert.That(data.Settings.Juggernaut.TimeLimitSeconds, Is.EqualTo(600f));
+            Assert.That(data.Settings.Juggernaut.StartDelaySeconds, Is.EqualTo(5f));
+            Assert.That(data.Settings.Vip.SameAs(VipSpec.Default), Is.True, "only the juggernaut section is written");
+
+            var e = Assert.Throws<InvalidOperationException>(
+                () => ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost()));
+            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective Juggernaut"));
+        }
+
+        [Test]
+        public void TheVipExampleCarriesTheOfflineTuningAndIsRefusedUntilItsRulesExist()
+        {
+            Assert.That(ServerRulesData.TryLoad("Vip", Roots(), out var data, out var error), Is.True, error);
+            var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "vip.json");
+            var offline = VipJson.Parse(File.ReadAllText(tuningPath), tuningPath);
+
+            Assert.That(data.File.Name, Is.EqualTo("Vip"));
+            Assert.That(data.Rules.Objective, Is.EqualTo(MatchObjective.Vip));
+            Assert.That(data.Rules.RespawnMode, Is.EqualTo(RespawnMode.None), "a fallen player waits for the next round");
+            Assert.That(data.Rules.SpawnProtectionSeconds, Is.Zero);
+            Assert.That(data.Rules.Actions.Downed, Is.EqualTo(Downed.Off), "a shot VIP ends the round at once");
+            Assert.That(data.Rules.Actions.Melee, Is.EqualTo(Melee.On));
+            Assert.That(data.Settings.Vip.SameAs(offline), Is.True, "the rules file and vip.json carry the same tuning");
+            Assert.That(data.Settings.Vip.VipMaxHealth, Is.EqualTo(200));
+            Assert.That(data.Settings.Vip.RoundSeconds, Is.EqualTo(150f));
+            Assert.That(data.Settings.Vip.WinsToWin, Is.EqualTo(4));
+            Assert.That(data.Settings.Vip.ExitHoldSeconds, Is.EqualTo(3f));
+            Assert.That(data.Settings.Vip.SwapEveryRounds, Is.EqualTo(1));
+            Assert.That(data.Settings.Juggernaut.SameAs(JuggernautSpec.Default), Is.True, "only the vip section is written");
+
+            var e = Assert.Throws<InvalidOperationException>(
+                () => ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost()));
+            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective Vip"));
+        }
+
         private static string RequireExported(string relativePath)
         {
             var path = Path.Combine(Roots()[0], ServerMapData.DataDirectoryName, relativePath);

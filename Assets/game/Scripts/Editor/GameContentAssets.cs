@@ -90,6 +90,8 @@ namespace Shooter.Editor
             new TuningSlot("WeatherTuning", WeatherJson.ResourcePath, c => c.WeatherTuning, (c, v) => c.WeatherTuning = v),
             new TuningSlot("TelemetryTuning", TelemetryJson.ResourcePath, c => c.TelemetryTuning, (c, v) => c.TelemetryTuning = v),
             new TuningSlot("InfectedTuning", InfectedJson.ResourcePath, c => c.InfectedTuning, (c, v) => c.InfectedTuning = v),
+            new TuningSlot("JuggernautTuning", JuggernautJson.ResourcePath, c => c.JuggernautTuning, (c, v) => c.JuggernautTuning = v),
+            new TuningSlot("VipTuning", VipJson.ResourcePath, c => c.VipTuning, (c, v) => c.VipTuning = v),
             new TuningSlot("LootTuning", LootJson.ResourcePath, c => c.LootTuning, (c, v) => c.LootTuning = v),
             new TuningSlot("StashTuning", StashJson.ResourcePath, c => c.StashTuning, (c, v) => c.StashTuning = v),
             new TuningSlot("ExtractionTuning", ExtractionJson.ResourcePath, c => c.ExtractionTuning, (c, v) => c.ExtractionTuning = v),
@@ -107,6 +109,7 @@ namespace Shooter.Editor
             new TuningSlot("GraphicsTuning", KitTuning.GraphicsResourcePath, c => c.GraphicsTuning, (c, v) => c.GraphicsTuning = v),
             new TuningSlot("GamepadLayoutsTuning", KitTuning.GamepadLayoutsResourcePath, c => c.GamepadLayoutsTuning, (c, v) => c.GamepadLayoutsTuning = v),
             new TuningSlot("HolsterTuning", KitTuning.HolsterResourcePath, c => c.HolsterTuning, (c, v) => c.HolsterTuning = v),
+            new TuningSlot("BreachTuning", KitTuning.BreachResourcePath, c => c.BreachTuning, (c, v) => c.BreachTuning = v),
         };
 
         public static string DefaultPath => ShooterKitRoot.OutputPath("Resources/" + GameContent.ResourceFolder + "/" + FileName);

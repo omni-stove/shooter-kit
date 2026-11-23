@@ -76,6 +76,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.Drone.Value, Is.Null);
             Assert.That(GameSignals.StealthAlarm.Value, Is.Null);
             Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
+            Assert.That(GameSignals.Breach.Value, Is.Null);
             Assert.That(GameSignals.NetStats.Value, Is.Null);
         }
 
@@ -212,6 +213,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.Vision.Publish(new VisionStatus(VisionMode.Night, VisionSource.Goggles));
             GameSignals.Drone.Publish(new DroneStatus(1f, 1f, 0, true));
             GameSignals.StealthAlarm.Publish(new SecurityAlarmStatus(true, 10f, new System.Numerics.Vector3(1f, 0f, 2f), "cam-a"));
+            GameSignals.Breach.Publish(new BreachStatus(BreachDoorPhase.Planting, 0.5f, 1.25f));
             GameSignals.NetStats.Publish(new NetStatsSignal(40, 2, 900));
             heard = 0;
 
@@ -411,6 +413,47 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.StealthAlarm.HasValue, Is.False);
             GameSignals.StealthAlarm.Publish(ringing);
             Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
+        }
+
+        [Test]
+        public void TheBreachSignalHoldsThePlantingProgressUntilClearedOrResetAll()
+        {
+            var heard = new List<BreachStatus?>();
+            GameSignals.Breach.Changed += heard.Add;
+
+            GameSignals.Breach.Publish(new BreachStatus(BreachDoorPhase.Planting, 0.4f, 1.5f));
+            GameSignals.Breach.Publish(new BreachStatus(BreachDoorPhase.Armed, 0f, 2f));
+
+            Assert.That(GameSignals.Breach.Value, Is.EqualTo((BreachStatus?)new BreachStatus(BreachDoorPhase.Armed, 0f, 2f)));
+            Assert.That(GameSignals.Breach.Value.Value.IsArmed, Is.True);
+            Assert.That(GameSignals.Breach.Value.Value.IsBreached, Is.False);
+            Assert.That(heard, Is.EqualTo(new BreachStatus?[]
+            {
+                new BreachStatus(BreachDoorPhase.Planting, 0.4f, 1.5f),
+                new BreachStatus(BreachDoorPhase.Armed, 0f, 2f),
+            }));
+
+            GameSignals.Breach.Clear();
+            Assert.That(GameSignals.Breach.HasValue, Is.False);
+            Assert.That(heard[heard.Count - 1], Is.Null);
+
+            var before = heard.Count;
+            GameSignals.ResetAll();
+            GameSignals.Breach.Publish(new BreachStatus(BreachDoorPhase.Planting, 0f, 2.5f));
+            Assert.That(heard, Has.Count.EqualTo(before), "subscribers from before the reset are gone");
+        }
+
+        [Test]
+        public void TheBreachStatusRejectsValuesOutOfRange()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus((BreachDoorPhase)99, 0f, 0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus(BreachDoorPhase.Planting, -0.1f, 0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus(BreachDoorPhase.Planting, 1.1f, 0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus(BreachDoorPhase.Planting, float.NaN, 0f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus(BreachDoorPhase.Armed, 0f, -1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BreachStatus(BreachDoorPhase.Armed, 0f, float.PositiveInfinity));
+            Assert.That(new BreachStatus(BreachDoorPhase.Destroyed, 1f, 0f).IsBreached, Is.True);
+            Assert.That(new BreachStatus(BreachDoorPhase.Planting, 0.5f, 1f), Is.Not.EqualTo(new BreachStatus(BreachDoorPhase.Planting, 0.5f, 1.5f)));
         }
 
         [Test]

@@ -126,6 +126,27 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void WithMeleeOnAnyHeldWeaponSwings()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.On, Rifle()), Is.True);
+            Assert.That(ClientMelee.IsAllowed(Melee.On, Knife()), Is.True);
+            Assert.That(ClientMelee.IsAllowed(Melee.On, null), Is.True);
+        }
+
+        [Test]
+        public void WithMeleeOffAMeleeWeaponStillSwings()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, Knife()), Is.True);
+        }
+
+        [Test]
+        public void WithMeleeOffAGunOrNoWeaponDoesNotSwing()
+        {
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, Rifle()), Is.False);
+            Assert.That(ClientMelee.IsAllowed(Melee.Off, null), Is.False);
+        }
+
+        [Test]
         public void BadArgumentsAreRejected()
         {
             Assert.Throws<ArgumentNullException>(() => new ClientMelee(null));
@@ -134,6 +155,32 @@ namespace Shooter.NetV2.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => _melee.Update(true, true, float.NaN));
             Assert.That(_started, Is.Empty);
         }
+
+        [Test]
+        public void ASwingContinuesWhenOnlyStartingIsNoLongerAllowed()
+        {
+            _melee.Update(true, true, true, _frame);
+
+            _melee.Update(true, false, true, _frame);
+
+            Assert.That(_melee.IsSwinging, Is.True);
+            Assert.That(_cancelled, Is.Zero);
+        }
+
+        [Test]
+        public void ASwingStopsWhenContinuingIsNotAllowed()
+        {
+            _melee.Update(true, true, true, _frame);
+
+            _melee.Update(true, false, false, _frame);
+
+            Assert.That(_melee.IsSwinging, Is.False);
+            Assert.That(_cancelled, Is.EqualTo(1));
+        }
+
+        private static WeaponSpec Rifle() => new WeaponSpec("6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83", "weapon.rifle", WeaponCategory.AssaultRifle);
+
+        private static WeaponSpec Knife() => new WeaponSpec("0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", "weapon.knife", WeaponCategory.Melee, melee: new MeleeWeaponSpec(_spec));
 
         private void Frames(bool held, bool canSwing, float seconds)
         {

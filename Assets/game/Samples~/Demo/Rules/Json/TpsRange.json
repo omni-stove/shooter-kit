@@ -28,6 +28,7 @@
     "stealth": "On",
     "suppression": "On",
     "jump": "Off",
+    "takedown": "On",
     "emote": "On",
     "stamina": "On"
   },

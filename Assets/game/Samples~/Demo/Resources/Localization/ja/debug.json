@@ -13,6 +13,7 @@
   "debug.rules.field.Vault": "乗り越え",
   "debug.rules.field.Grenade": "グレネード",
   "debug.rules.field.Melee": "近接攻撃",
+  "debug.rules.field.Takedown": "テイクダウン",
   "debug.rules.field.Stagger": "怯み",
   "debug.rules.field.Slide": "スライディング",
   "debug.rules.field.Mantle": "崖のぼり",
