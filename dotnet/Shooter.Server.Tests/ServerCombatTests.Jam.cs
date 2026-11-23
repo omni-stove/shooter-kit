@@ -3,7 +3,6 @@ using System.Linq;
 using System.Numerics;
 using NUnit.Framework;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server.Tests
 {
