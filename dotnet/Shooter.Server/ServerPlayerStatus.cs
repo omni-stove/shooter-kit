@@ -166,6 +166,31 @@ namespace Shooter.Server
             }
         }
 
+        // Damaged を通さないのは、ドアの突入のように起こした側が種類と秒数を決めて確実に止めたいため (オフラインの StaggerReaction.Impose と同じ)。
+        // よろけのルールが Off なら、オフラインと同じくかけない
+        public bool Impose(int playerId, StaggerKind kind, float seconds, string source)
+        {
+            if (!IsAlive(playerId))
+            {
+                return false;
+            }
+
+            var meters = GetOrAdd(playerId).Meters;
+            if (!meters.IsStaggerOn)
+            {
+                return false;
+            }
+
+            var verdict = meters.StaggerJudge.Impose(kind, seconds);
+            if (verdict.Outcome != StaggerOutcome.Staggered)
+            {
+                return false;
+            }
+
+            _log.WriteLine(ServerPlayerStatusLog.StaggerImposed(playerId, verdict, source));
+            return true;
+        }
+
         // 撃った人と、この弾が当たった人は数えない。味方も数えるのはオフラインの Hitscan と同じ
         public void ShotPassed(int shooterId, Vector3 origin, Vector3 direction, float length, IReadOnlySet<int> struck)
         {
