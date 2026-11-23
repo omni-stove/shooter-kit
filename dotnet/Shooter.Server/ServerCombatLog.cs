@@ -54,6 +54,29 @@ namespace Shooter.Server
                 + " hand=" + AkimboLog.HandName(hand) + " reason=" + ShotRejection.NotAkimbo;
         }
 
+        // 武器の部分は WeaponJamLog の行をそのまま使い、オフラインのログと同じ書式で突き合わせられるようにする
+        public static string Jammed(int playerId, string weaponId, int sustainedShots, float chance)
+        {
+            return JamPrefix(playerId) + WeaponJamLog.Jammed(weaponId, sustainedShots, chance);
+        }
+
+        public static string JamClearStarted(int playerId, string weaponId, float clearSeconds)
+        {
+            return JamPrefix(playerId) + WeaponJamLog.ClearStarted(weaponId, clearSeconds);
+        }
+
+        public static string JamClearCanceled(int playerId, string weaponId, float remainingSeconds)
+        {
+            return JamPrefix(playerId) + WeaponJamLog.ClearCanceled(weaponId, remainingSeconds);
+        }
+
+        public static string JamCleared(int playerId, string weaponId)
+        {
+            return JamPrefix(playerId) + WeaponJamLog.Cleared(weaponId);
+        }
+
+        private static string JamPrefix(int playerId) => ServerCombat.LogTag + " player=" + Text(playerId) + " ";
+
         private static string Text(int value) => value.ToString(CultureInfo.InvariantCulture);
     }
 }

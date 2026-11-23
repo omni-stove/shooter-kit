@@ -855,7 +855,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -1437,7 +1437,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -1863,7 +1863,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -3184,7 +3184,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -3565,7 +3565,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -3946,7 +3946,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6
@@ -4372,7 +4372,7 @@ MonoBehaviour:
   _archetype: 0
   _sightRange: 40
   _attackRange: 15
-  _fireRange: 30
+  _fireRange: 40
   _fireToleranceDegrees: 15
   _loseSightSeconds: 2
   _searchSeconds: 6

@@ -14,7 +14,7 @@ namespace Shooter.Server
         private MountedGunEnemyBehavior _gunner;
         private VehicleWeaponAim _gunAim;
         private bool _wasSeekingGun;
-        private float _nextGunLeave;
+        private double _nextGunLeave;
 
         // 乗りに行く候補の乗り物の番号。無ければ -1
         public int GunCandidate { get; private set; } = -1;

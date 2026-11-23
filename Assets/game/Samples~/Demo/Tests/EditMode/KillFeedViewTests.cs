@@ -41,6 +41,30 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ThePlayersNameIsNotReadAsRichText()
+        {
+            var table = new ParticipantTable();
+            table.Set(new Participant(1, "<size=900>A", Team.Alpha, true));
+            table.Set(new Participant(2, "<alpha=#00>x", Team.Bravo, false));
+            GameSignals.Participants.Publish(table);
+            try
+            {
+                _view.Show(new KillFeedEntry(1, 2, "rifle", false, false));
+
+                Assert.That(_view.Feed.Lines[0].Killer.Text, Is.EqualTo("<size=900>A"));
+                Assert.That(_view.Feed.Lines[0].Victim.Text, Is.EqualTo("<alpha=#00>x"));
+                Assume.That(_view.Element, Is.Not.Null, "the UIDocument built no visual tree in Edit Mode");
+                var names = _view.Element[0].Query<Label>(className: KillFeedView.NameClass).ToList();
+                Assert.That(names.ConvertAll(l => l.text), Is.EqualTo(new[] { "<size=900>A", "<alpha=#00>x" }));
+                Assert.That(_view.Element[0].Query<Label>().ToList().All(l => !l.enableRichText), Is.True);
+            }
+            finally
+            {
+                GameSignals.Participants.Clear();
+            }
+        }
+
+        [Test]
         public void HudCreatesTheViewWithAnEmptyFeed()
         {
             Assert.That(_view, Is.Not.Null);

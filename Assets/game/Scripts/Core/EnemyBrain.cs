@@ -15,6 +15,9 @@ namespace Shooter.Core
         private Vector3 _searchPoint;
         private float _reactionElapsed;
         private bool _engaging;
+
+        // _engaging は FireRange の内でだけ立てて足を止めさせる。こちらは FireRange の外でも立て、走りながら構え時間を数え続けるのに使う。
+        private bool _watching;
         private int _shotsInAttack;
         private float _lostElapsed;
         private float _searchElapsed;
@@ -409,6 +412,7 @@ namespace Shooter.Core
             if (next != EnemyState.Attack && next != EnemyState.Chase)
             {
                 _engaging = false;
+                _watching = false;
             }
 
             StateChanged?.Invoke(previous, next);

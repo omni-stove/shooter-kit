@@ -80,6 +80,27 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheReportedPlayersNameInThePromptIsNotReadAsRichText()
+        {
+            GameSignals.Scoreboard.Publish(new[]
+            {
+                new ScoreboardEntry(_localId, ScoreboardName.Player(_localId), Team.Alpha, 0, 0, 0, ScoreboardConnection.Connected, true),
+                new ScoreboardEntry(_otherId, ScoreboardName.Literal("<size=900>A"), Team.Bravo, 0, 0, 0, ScoreboardConnection.Connected, false),
+            });
+            PublishControls();
+            _view.Pin();
+
+            _view.BeginReport(_otherId);
+
+            var reasons = _view.Element.Q<VisualElement>(className: ScoreboardView.ReasonsRowClass);
+            Assert.That(reasons, Is.Not.Null);
+            var prompt = reasons.Q<Label>();
+            Assert.That(prompt.text, Is.EqualTo(Localizer.Resolve(ModerationText.ReportPrompt("<size=900>A"))));
+            Assert.That(prompt.text, Does.Contain("<size=900>A"));
+            Assert.That(prompt.enableRichText, Is.False);
+        }
+
+        [Test]
         public void ThePlayersButtonIsShownOnlyWhileSomethingCanBeModerated()
         {
             Assert.That(PlayersButton.style.display.value, Is.EqualTo(DisplayStyle.None), "offline there is nothing to block or report");

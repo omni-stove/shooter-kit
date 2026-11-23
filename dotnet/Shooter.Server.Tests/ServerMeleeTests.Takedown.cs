@@ -293,9 +293,159 @@ namespace Shooter.Server.Tests
             Assert.Throws<ArgumentNullException>(() => ServerMelee.UnawareBots(null));
         }
 
+        // テイクダウンは銃で殴る振りとは別のルール (Takedown) なので、Melee が Off でも出せる
+        [Test]
+        public void WithMeleeOffAndTakedownOnTheMeleeButtonStillTakesDown()
+        {
+            StartWithTwoUnaware(RulesWith(Melee.Off, Takedown.On));
+            PlaceFacing(2, -3.5f, 0f, _facingEast);
+            Face(1);
+
+            Press(1);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.True, _log.ToString());
+            Assert.That(_log.ToString(), Does.Contain("[ContextMelee] started id=1 target=2 move=takedown"));
+            Assert.That(_log.ToString(), Does.Not.Contain(MeleeLog.Refused("1", MeleeRefusal.Off)));
+
+            Hold(1, InputButtons.None, _takedownTicks);
+
+            Assert.That(_rules.Session.IsAlive(2), Is.False, _log.ToString());
+            Assert.That(_log.ToString(), Does.Contain(
+                "[ContextMelee] resolved id=1 target=2 move=takedown outcome=Kill dmg=" + NetMatchSettings.DefaultMaxHealth + " killed=true"));
+        }
+
+        [Test]
+        public void WithMeleeOffAndTakedownOnATargetFacingTheAttackerIsNotHitWithTheGun()
+        {
+            StartWithTwoUnaware(RulesWith(Melee.Off, Takedown.On));
+            PlaceFacing(2, -3.5f, 0f, _facingWest);
+            Face(1);
+
+            Swing(1);
+
+            var log = _log.ToString();
+            Assert.That(log, Does.Contain("[ContextMelee] none id=1 target=2 conditions="));
+            Assert.That(log, Does.Contain(MeleeLog.Refused("1", MeleeRefusal.Off)));
+            Assert.That(log, Does.Not.Contain("[Melee] swing id=1"));
+            Assert.That(log, Does.Not.Contain("[ContextMelee] started"));
+            Assert.That(_melee.IsSwinging(1), Is.False);
+            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth), log);
+        }
+
+        [Test]
+        public void WithMeleeOffAndTakedownOnTheTakedownButtonAlsoTakesDown()
+        {
+            StartWithTwoUnaware(RulesWith(Melee.Off, Takedown.On));
+            PlaceFacing(2, -3.5f, 0f, _facingEast);
+            Face(1);
+
+            Hold(1, InputButtons.Takedown, 1);
+            Hold(1, InputButtons.None, _takedownTicks);
+
+            Assert.That(_rules.Session.IsAlive(2), Is.False, _log.ToString());
+        }
+
+        [Test]
+        public void WithMeleeOnAndTakedownOffAnUnawareTargetFromBehindGetsTheOrdinarySwing()
+        {
+            StartWithTwoUnaware(RulesWith(Melee.On, Takedown.Off));
+            PlaceFacing(2, -3.5f, 0f, _facingEast);
+            Face(1);
+
+            Swing(1);
+
+            var log = _log.ToString();
+            Assert.That(_melee.IsPerformingTakedown(1), Is.False, log);
+            Assert.That(log, Does.Not.Contain("[ContextMelee] started"));
+            Assert.That(log, Does.Contain("[Melee] swing id=1"));
+            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth - 30), log);
+        }
+
+        [Test]
+        public void WithMeleeOnAndTakedownOffTheTakedownButtonDoesNothing()
+        {
+            StartWithTwoUnaware(RulesWith(Melee.On, Takedown.Off));
+            PlaceFacing(2, -3.5f, 0f, _facingEast);
+            Face(1);
+
+            Hold(1, InputButtons.Takedown, 1);
+            Hold(1, InputButtons.None, _takedownTicks);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.False);
+            Assert.That(_melee.IsSwinging(1), Is.False);
+            Assert.That(_rules.Session.GetHealth(2), Is.EqualTo(NetMatchSettings.DefaultMaxHealth), _log.ToString());
+        }
+
+        // とどめの技 (execute) は持っている銃で刺すので Melee に従い、Takedown が Off でも出せる
+        [Test]
+        public void WithMeleeOnAndTakedownOffADownedEnemyIsStillExecuted()
+        {
+            StartExecutionWithFour(takedown: Takedown.Off);
+            Assert.That(_rules.ApplyDamage(1, 2, NetMatchSettings.DefaultMaxHealth), Is.EqualTo(DamageOutcome.Downed), _log.ToString());
+            PlaceFacing(2, -3.5f, 0f, _facingWest);
+            Face(1);
+
+            Press(1);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.True, _log.ToString());
+            Assert.That(_log.ToString(), Does.Contain("[ContextMelee] started id=1 target=2 move=" + ContextMeleeMove.ExecuteId));
+        }
+
+        // Melee が Off なら目的のとどめの技も候補に入れず、Takedown が On でもダウン中の敵を刺さない
+        [Test]
+        public void WithMeleeOffAndTakedownOnADownedEnemyIsNotExecuted()
+        {
+            StartExecutionWithFour(melee: Melee.Off);
+            Assert.That(_rules.ApplyDamage(1, 2, NetMatchSettings.DefaultMaxHealth), Is.EqualTo(DamageOutcome.Downed), _log.ToString());
+            PlaceFacing(2, -3.5f, 0f, _facingWest);
+            Face(1);
+
+            Press(1);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.False, _log.ToString());
+            Assert.That(_log.ToString(), Does.Not.Contain("[ContextMelee] started"));
+        }
+
+        // Takedown が Off でテイクダウンの登録が無くても、Spec を替えたら、残っているとどめの技の探す扇は新しい値に合う。
+        // 2 は 1 の正面 (東) から 60 度ずれた 1.5 m 先で、90 度の扇の外、150 度の扇の内
+        [Test]
+        public void WithTakedownOffReplacingTheSpecStillWidensTheFanTheExecutionSearches()
+        {
+            StartExecutionWithFour(takedown: Takedown.Off);
+            Assert.That(_rules.ApplyDamage(1, 2, NetMatchSettings.DefaultMaxHealth), Is.EqualTo(DamageOutcome.Downed), _log.ToString());
+            PlaceFacing(2, _alphaSpawn.X + 0.75f, 1.3f, _facingWest);
+            Face(1);
+
+            Press(1);
+            Assert.That(_melee.IsPerformingTakedown(1), Is.False, "outside the 90 degree fan: " + _log);
+            WaitOutTheSwing(1);
+
+            _melee.Spec = new MeleeSpec(
+                damage: 30, reach: 2f, arcDegrees: 150f, swingSeconds: 0.5f, cooldownSeconds: 0.4f, impactSeconds: 0.2f, lungeDistance: 0f);
+            Press(1);
+
+            Assert.That(_melee.IsPerformingTakedown(1), Is.True, _log.ToString());
+            Assert.That(_log.ToString(), Does.Contain("[ContextMelee] started id=1 target=2 move=" + ContextMeleeMove.ExecuteId));
+        }
+
+        private static GameRules RulesWith(Melee melee, Takedown takedown)
+        {
+            var rules = MeleeRules();
+            return rules.WithActions(rules.Actions.WithMelee(melee).WithTakedown(takedown));
+        }
+
         private void StartWithTwoUnaware()
         {
             StartWithTwo();
+            _melee.IsTargetUnaware = id => id == 2;
+        }
+
+        private void StartWithTwoUnaware(GameRules rules)
+        {
+            Start(rules);
+            Join(1);
+            Join(2);
+            Step(0.2f);
             _melee.IsTargetUnaware = id => id == 2;
         }
 

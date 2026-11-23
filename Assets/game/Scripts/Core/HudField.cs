@@ -29,5 +29,7 @@ namespace Shooter.Core
         LockOn,
 
         AimBlock,
+
+        Jam,
     }
 }

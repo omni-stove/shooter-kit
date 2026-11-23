@@ -9,7 +9,7 @@ namespace Shooter.Server
     // 引数の並びは各 Raise の引数名と同じにする
     internal sealed class ServerCheatSignals
     {
-        public event Action<int, Vector3, Vector3, float> ShotAccepted;
+        public event Action<int, Vector3, Vector3, double> ShotAccepted;
 
         public event Action<int, ShotRejection> ShotRejected;
 
@@ -29,7 +29,7 @@ namespace Shooter.Server
             return MathF.Atan2(direction.Y, flat);
         }
 
-        internal void RaiseShotAccepted(int shooterId, Vector3 origin, Vector3 direction, float shotTick)
+        internal void RaiseShotAccepted(int shooterId, Vector3 origin, Vector3 direction, double shotTick)
         {
             ShotAccepted?.Invoke(shooterId, origin, direction, shotTick);
         }

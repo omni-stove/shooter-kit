@@ -55,12 +55,69 @@ namespace Shooter.Core.Tests
         [Test]
         public void SomethingHangingAboveBothRaysIsNotCover()
         {
-            AddBlock(CharacterCoverSensor.UpperProbeHeight + 0.1f, 2.5f);
+            AddBlock(MotorSpec.DefaultCoverUpperProbeHeight + 0.1f, 2.5f);
 
             var result = NewSensor().Probe(_position, _forward, _forward, MotorSpec.Default, out var topY);
 
             Assert.That(result.IsWall, Is.False);
             Assert.That(topY, Is.EqualTo(0f));
+        }
+
+        // 壁の上端は足元から 0.4 m で、既定の 2 本の Ray (0.5 m・0.9 m) はどちらも上を越える。
+        [TestCase(MotorSpec.DefaultCoverProbeHeight, false, 0f)]
+        [TestCase(0.3f, true, 0.4f)]
+        public void AWallLowerThanTheFootRayIsFoundOnlyWithALowerConfiguredRay(float probeHeight, bool isWall, float expectedTopY)
+        {
+            AddBlock(0f, 0.4f);
+
+            var result = NewSensor().Probe(_position, _forward, _forward, SpecWith(coverProbeHeight: probeHeight), out var topY);
+
+            Assert.That(result.IsWall, Is.EqualTo(isWall));
+            Assert.That(topY, Is.EqualTo(expectedTopY).Within(_tolerance));
+        }
+
+        // 車体の底は足元から 0.6 m で、足元の Ray (0.5 m) は下を抜ける。
+        [TestCase(MotorSpec.DefaultCoverUpperProbeHeight, true)]
+        [TestCase(0.55f, false)]
+        public void ARaisedBodyIsFoundOnlyWhenTheConfiguredUpperRayReachesIt(float upperProbeHeight, bool isWall)
+        {
+            AddBlock(0.6f, 1.4f);
+
+            var result = NewSensor().Probe(
+                _position, _forward, _forward, SpecWith(coverUpperProbeHeight: upperProbeHeight), out _);
+
+            Assert.That(result.IsWall, Is.EqualTo(isWall));
+        }
+
+        // 壁の上端は足元から 3.5 m。上端を測る Ray の始点より高い壁は、始点の高さを上端とする。
+        [TestCase(MotorSpec.DefaultCoverTopProbeHeight, 3f)]
+        [TestCase(4f, 3.5f)]
+        public void TheTopOfATallWallIsMeasuredUpToTheConfiguredTopRay(float topProbeHeight, float expectedTopY)
+        {
+            AddBlock(0f, 3.5f);
+
+            var result = NewSensor().Probe(_position, _forward, _forward, SpecWith(coverTopProbeHeight: topProbeHeight), out var topY);
+
+            Assert.That(result.IsWall, Is.True);
+            Assert.That(result.TopHeight, Is.EqualTo(expectedTopY).Within(_tolerance));
+            Assert.That(topY, Is.EqualTo(expectedTopY).Within(_tolerance));
+        }
+
+        private static MotorSpec SpecWith(
+            float coverProbeHeight = MotorSpec.DefaultCoverProbeHeight,
+            float coverUpperProbeHeight = MotorSpec.DefaultCoverUpperProbeHeight,
+            float coverTopProbeHeight = MotorSpec.DefaultCoverTopProbeHeight)
+        {
+            return new MotorSpec(
+                MotorSpec.DefaultWalkSpeed,
+                MotorSpec.DefaultSprintSpeed,
+                MotorSpec.DefaultJumpHeight,
+                MotorSpec.DefaultGravity,
+                MotorSpec.DefaultAirControl,
+                MotorSpec.DefaultCrouchSpeed,
+                coverProbeHeight: coverProbeHeight,
+                coverUpperProbeHeight: coverUpperProbeHeight,
+                coverTopProbeHeight: coverTopProbeHeight);
         }
 
         private CharacterCoverSensor NewSensor()

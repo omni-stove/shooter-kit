@@ -32,7 +32,7 @@ namespace Shooter.Server
         private bool _hasPath;
         private bool _failed;
         private Vector3 _destination;
-        private float _pathTime;
+        private double _pathTime;
         private int _next;
         private int _ladder = ServerBotNavigation.NoLadder;
         private bool _ascending;
@@ -57,7 +57,7 @@ namespace Shooter.Server
         public int NextIndex => _next;
 
         // 引けなかった先も RepathSeconds の間は引き直さず、届かない先で毎 tick A* を回さない
-        public bool Refresh(float clock, Vector3 from, Vector3 destination)
+        public bool Refresh(double clock, Vector3 from, Vector3 destination)
         {
             if (IsOnLadderLink)
             {

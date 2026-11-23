@@ -68,10 +68,10 @@ namespace Shooter.Core
         public const float DefaultSightRange = 40f;
         public const float DefaultAttackRange = 15f;
 
-        // 見つけてから少し詰めた距離で構えて撃ち始め、DefaultAttackRange まで撃ちながら近づかせる。
-        public const float DefaultFireRange = 30f;
+        // 見つけた距離から撃ち始め、DefaultAttackRange まで撃ちながら近づかせる。視界より短いと、見つけてから撃たずに走るだけの距離ができる。
+        public const float DefaultFireRange = DefaultSightRange;
 
-        // 30m 先で半径 1m ほど散らばりが増え、人の幅には半分も当たらない。
+        // 40m 先で半径 1.4m ほど散らばりが増え、人の幅には半分も当たらない。
         public const float DefaultRangeSpreadDegrees = 2f;
 
         public const float DefaultFireToleranceDegrees = 15f;

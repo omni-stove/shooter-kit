@@ -15,8 +15,15 @@ namespace Shooter.Server
         private readonly int _playerId;
         private readonly TextWriter _log;
         private readonly Func<double> _now;
+        private readonly Func<int> _matchSeed;
+        private readonly Func<int, IJamRoll> _newJamRoll;
+
+        // 出直すたびに武器を作り直すので、作るたびに同じ種から引き直すと、どの命でも同じ発で詰まる。そうならないよう、試合の間は武器ごとに 1 つを持ち回す
+        private readonly Dictionary<string, IJamRoll> _jamRolls = new Dictionary<string, IJamRoll>(StringComparer.Ordinal);
+        private int _jamRollsMatchSeed;
         private Loadout<ServerWeapon> _loadout;
         private double _reloadStartedAt;
+        private double _jamClearEndsAt;
         private float _chargeFraction;
         private double _chargeFrom;
         private int _burstRoundsLeft;
@@ -31,14 +38,20 @@ namespace Shooter.Server
         // 二丁持ちの武器の ServerWeapon は Spec と並びの位置のためだけに持ち、弾を数えない (予備弾の受け皿にもつながない)
         private readonly Dictionary<ServerWeapon, ServerAkimbo> _akimbo = new Dictionary<ServerWeapon, ServerAkimbo>();
 
-        public ServerPlayerWeapons(int playerId, TextWriter log, Func<double> now)
+        // matchSeed は武器を作るたびに読むので、試合が替わって種が変われば、その後に作る武器から新しい種で引く。
+        // newJamRoll は種から弾詰まりの乱数を作る。テストが固定の値の列を渡せるよう差し替えられる
+        public ServerPlayerWeapons(int playerId, TextWriter log, Func<double> now, Func<int> matchSeed = null, Func<int, IJamRoll> newJamRoll = null)
         {
             _playerId = playerId;
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _now = now ?? throw new ArgumentNullException(nameof(now));
+            _matchSeed = matchSeed ?? (() => 0);
+            _newJamRoll = newJamRoll ?? (seed => new JamRoll(seed));
         }
 
         public bool IsEquipped => _loadout != null;
+
+        public bool IsJammed => _loadout != null && _loadout.Current.IsJammed;
 
         public WeaponSpec CurrentSpec => _loadout?.Current.Spec;
 
@@ -509,7 +522,14 @@ namespace Shooter.Server
             }
 
             _loadout.Tick(deltaSeconds);
-            _loadout.Current.Tick(deltaSeconds);
+            var weapon = _loadout.Current;
+            var wasJammed = weapon.IsJammed;
+            weapon.Tick(deltaSeconds);
+            if (wasJammed && !weapon.IsJammed)
+            {
+                _log.WriteLine(ServerCombatLog.JamCleared(_playerId, weapon.Spec.Id));
+            }
+
             CurrentAkimbo?.Tick(deltaSeconds);
         }
 
@@ -542,7 +562,21 @@ namespace Shooter.Server
                 return akimbo.TryFire(hand);
             }
 
-            return hand == AkimboHand.Right ? _loadout.Current.TryFire() : ShotRejection.NotAkimbo;
+            if (hand != AkimboHand.Right)
+            {
+                return ShotRejection.NotAkimbo;
+            }
+
+            var weapon = _loadout.Current;
+            var sustained = weapon.JamSustainedShots;
+            var chance = weapon.JamNextShotChance;
+            var result = weapon.TryFire();
+            if (result == ShotRejection.None && weapon.IsJammed)
+            {
+                _log.WriteLine(ServerCombatLog.Jammed(_playerId, weapon.Spec.Id, sustained, chance));
+            }
+
+            return result;
         }
 
         // ボットが次に撃つ手。二丁持ちでなければ右の手
@@ -551,7 +585,8 @@ namespace Shooter.Server
             return CurrentAkimbo?.HandForBot() ?? AkimboHand.Right;
         }
 
-        // 二丁持ちの武器は、満タンでない手を両方込める
+        // 二丁持ちの武器は、満タンでない手を両方込める。
+        // 解除に別の要求を足さないのは、詰まった武器には弾を込められず、リロードの要求が詰まっている間は他に意味を持たないため
         public bool TryReload()
         {
             if (_loadout == null || _loadout.IsSwitching || HoldsShield)
@@ -560,7 +595,13 @@ namespace Shooter.Server
             }
 
             var akimbo = CurrentAkimbo;
-            return akimbo != null ? akimbo.TryReload() : _loadout.Current.TryStartReload();
+            if (akimbo != null)
+            {
+                return akimbo.TryReload();
+            }
+
+            var weapon = _loadout.Current;
+            return weapon.IsJammed ? TryStartClearJam(weapon) : weapon.TryStartReload();
         }
 
         // ボットのリロード。二丁持ちの武器は撃ち切った手だけを込め、もう片方の手で撃ち続ける
@@ -572,7 +613,26 @@ namespace Shooter.Server
             }
 
             var akimbo = CurrentAkimbo;
-            return akimbo != null ? akimbo.TryReloadEmpty() : _loadout.Current.TryStartReload();
+            if (akimbo != null)
+            {
+                return akimbo.TryReloadEmpty();
+            }
+
+            var weapon = _loadout.Current;
+            return weapon.IsJammed ? TryStartClearJam(weapon) : weapon.TryStartReload();
+        }
+
+        private bool TryStartClearJam(ServerWeapon weapon)
+        {
+            if (!weapon.TryStartClearJam())
+            {
+                return false;
+            }
+
+            var seconds = weapon.JamClearRemainingSeconds;
+            _jamClearEndsAt = _now() + seconds;
+            _log.WriteLine(ServerCombatLog.JamClearStarted(_playerId, weapon.Spec.Id, seconds));
+            return true;
         }
 
         public bool CancelReload()
@@ -730,6 +790,8 @@ namespace Shooter.Server
                 IsOverheated = weapon.IsOverheated,
                 ChargeFraction = spec.Trigger.Charge != null ? _chargeFraction : 0f,
                 AmmoTypeIndex = AmmoTypeIndex,
+                IsJammed = weapon.IsJammed,
+                JamClearEndsAt = weapon.IsClearingJam ? _jamClearEndsAt : 0d,
             };
 
             // 二丁持ちの武器の弾数とリロードは ServerWeapon ではなく左右の手から載せる
@@ -785,10 +847,16 @@ namespace Shooter.Server
 
         private static float HolsterSeconds(ServerWeapon weapon) => weapon.Spec.HolsterSeconds;
 
+        // 解除は途中までの分を残さず、詰まったまましまう。戻って構えたらリロードの要求で最初から解除し直す
         private void HolsterWeapon(ServerWeapon weapon)
         {
             weapon.CancelReload();
             AkimboOf(weapon)?.CancelReload();
+            var remaining = weapon.JamClearRemainingSeconds;
+            if (weapon.CancelClearJam())
+            {
+                _log.WriteLine(ServerCombatLog.JamClearCanceled(_playerId, weapon.Spec.Id, remaining));
+            }
         }
 
         private ServerAkimbo AkimboOf(ServerWeapon weapon)
@@ -799,7 +867,7 @@ namespace Shooter.Server
         // 二丁持ちの武器は左右の手を作り、予備弾の受け皿は手につなぐ (ServerWeapon は弾を数えないので受け皿につながない)
         private ServerWeapon CreateWeapon(WeaponSpec spec, GameRules rules)
         {
-            var weapon = new ServerWeapon(spec, rules);
+            var weapon = new ServerWeapon(spec, rules, JamRollFor(spec.Id));
             var pool = _poolFor?.Invoke(spec);
             if (spec.IsAkimbo)
             {
@@ -820,6 +888,46 @@ namespace Shooter.Server
             if (_akimbo.Remove(weapon, out var akimbo))
             {
                 akimbo.Release();
+            }
+        }
+
+        private IJamRoll JamRollFor(string weaponId)
+        {
+            var matchSeed = _matchSeed();
+            if (matchSeed != _jamRollsMatchSeed)
+            {
+                _jamRolls.Clear();
+                _jamRollsMatchSeed = matchSeed;
+            }
+
+            if (!_jamRolls.TryGetValue(weaponId, out var roll))
+            {
+                roll = _newJamRoll(JamSeed(matchSeed, _playerId, weaponId));
+                _jamRolls.Add(weaponId, roll);
+            }
+
+            return roll;
+        }
+
+        // HashCode.Combine は起動ごとに種が変わるので使わず、FNV-1a (32 ビット) で混ぜる。同じ試合の Id ならログから同じ詰まり方を再現できる
+        internal static int JamSeed(int matchSeed, int playerId, string weaponId)
+        {
+            var hash = Mix(2166136261u, matchSeed);
+            hash = Mix(hash, playerId);
+            return unchecked((int)Mix(hash, JamRoll.SeedFor(weaponId)));
+        }
+
+        private static uint Mix(uint hash, int value)
+        {
+            unchecked
+            {
+                var bits = (uint)value;
+                for (var shift = 0; shift < 32; shift += 8)
+                {
+                    hash = (hash ^ ((bits >> shift) & 0xFFu)) * 16777619u;
+                }
+
+                return hash;
             }
         }
 

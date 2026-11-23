@@ -401,6 +401,7 @@ namespace Shooter.Protocol.Tests
         [TestCase(MessageIds.DetonateRequest)]
         [TestCase(MessageIds.HordeFortifyRequest)]
         [TestCase(MessageIds.HolsterRequest)]
+        [TestCase(MessageIds.BreachRequest)]
         public void TheNewRequestsAreOnlyReadByTheServer(ushort id)
         {
             Assert.That(MatchMessages.CreateServerTable().TryGet(id, out _), Is.True);
@@ -417,6 +418,7 @@ namespace Shooter.Protocol.Tests
         [TestCase(MessageIds.BuyAnswer)]
         [TestCase(MessageIds.PlayerNames)]
         [TestCase(MessageIds.EmoteState)]
+        [TestCase(MessageIds.DoorState)]
         public void TheNewServerMessagesAreOnlyReadByTheClient(ushort id)
         {
             Assert.That(MatchMessages.CreateClientTable().TryGet(id, out _), Is.True);

@@ -16,6 +16,7 @@ namespace Shooter.Core
         public const string HardLandingFallSpeedItem = "hardLandingFallSpeed";
         public const string MinLandingVolumeItem = "minLandingVolume";
         public const string ArmedGainFactorItem = "armedGainFactor";
+        public const string LitGainFactorItem = "litGainFactor";
         public const string SecurityCameraItem = "securityCamera";
         public const string AlarmItem = "alarm";
 
@@ -65,6 +66,7 @@ namespace Shooter.Core
             HardLandingFallSpeedItem,
             MinLandingVolumeItem,
             ArmedGainFactorItem,
+            LitGainFactorItem,
         };
 
         // ItemNames に入れないのは、ItemNames が ParamName を項目名へ戻す一覧で、入れ子の項目はその中の一覧で戻すため。
@@ -104,6 +106,7 @@ namespace Shooter.Core
             FootstepGainItem,
             InvestigateLevelItem,
             ArmedGainFactorItem,
+            LitGainFactorItem,
         };
 
         public static IReadOnlyList<string> AlarmItemNames { get; } = new[]
@@ -138,6 +141,8 @@ namespace Shooter.Core
                 var minLandingVolume = fields.ReadFloat(MinLandingVolumeItem, defaults.MinLandingVolume);
                 var armedNode = fields.Find(ArmedGainFactorItem);
                 float? armedGainFactor = armedNode == null ? (float?)null : fields.ToFloat(ArmedGainFactorItem, armedNode);
+                var litNode = fields.Find(LitGainFactorItem);
+                float? litGainFactor = litNode == null ? (float?)null : fields.ToFloat(LitGainFactorItem, litNode);
                 var camera = ReadCamera(fields.Object(SecurityCameraItem, CameraItemNames));
                 var alarm = ReadAlarm(fields.Object(AlarmItem, AlarmItemNames));
                 try
@@ -153,7 +158,7 @@ namespace Shooter.Core
                         minLandingFallSpeed,
                         hardLandingFallSpeed,
                         minLandingVolume);
-                    return new StealthTuningSpec(noise, armedGainFactor, camera, alarm);
+                    return new StealthTuningSpec(noise, armedGainFactor, litGainFactor, camera, alarm);
                 }
                 catch (ArgumentException e)
                 {
@@ -249,7 +254,8 @@ namespace Shooter.Core
                 gunshotGain: awareness.ReadFloat(GunshotGainItem, AwarenessSpec.DefaultGunshotGain),
                 footstepGain: awareness.ReadFloat(FootstepGainItem, AwarenessSpec.DefaultFootstepGain),
                 investigateLevel: awareness.ReadFloat(InvestigateLevelItem, AwarenessSpec.DefaultInvestigateLevel),
-                armedGainFactor: awareness.ReadFloat(ArmedGainFactorItem, AwarenessSpec.DefaultArmedGainFactor));
+                armedGainFactor: awareness.ReadFloat(ArmedGainFactorItem, AwarenessSpec.DefaultArmedGainFactor),
+                litGainFactor: awareness.ReadFloat(LitGainFactorItem, AwarenessSpec.DefaultLitGainFactor));
         }
 
         private static SecurityAlarmSpec ReadAlarm(ServerDataJson.Fields alarm)

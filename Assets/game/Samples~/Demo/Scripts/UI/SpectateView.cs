@@ -129,7 +129,7 @@ namespace Shooter.Runtime
 
             while (_rows.Count < _lines.Count)
             {
-                var row = new Label { pickingMode = PickingMode.Ignore };
+                var row = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
                 row.AddToClassList(RowClass);
                 element.Add(row);
                 _rows.Add(row);

@@ -109,6 +109,7 @@ namespace Shooter.Runtime
             }
 
             // 次の Play まで残すと、その間に走らせた Edit Mode のテストが本物のプロフィールで判定され、保存先にも書き込むので、Play を抜けるときに外す。
+            // 外すときに記録係が保存していない分を書くので、終了の前に別の保存は要らない。
             Application.quitting -= Uninstall;
             Application.quitting += Uninstall;
         }

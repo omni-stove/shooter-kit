@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -80,6 +81,25 @@ namespace Shooter.Server.Tests
                 Assert.That(_context.Bodies.TryGet(botId, out var body) && body.HasSpawned, Is.True);
                 Assert.That(_log.ToString(), Does.Contain("[Bot] added player=" + Text(botId) + " name=" + BotRoster.KillFeedName(botId)));
             }
+        }
+
+        // 約 11.6 日。float では刻みが 0.0625 秒になり、1 tick を足しても時計が進まない
+        [Test]
+        public void ABotsClockKeepsEveryTickAfterALongUptime()
+        {
+            Start(BotTestMaps.Flat(FlatPoints()), Rules(), bots: 2);
+            Join(1);
+            Tick();
+            var botId = _bots.BotIds.First();
+            Assert.That(_bots.TryGetAgent(botId, out var agent), Is.True);
+            agent.Clock = 1_000_000d;
+
+            for (var i = 0; i < 60; i++)
+            {
+                Tick();
+            }
+
+            Assert.That(agent.Clock, Is.EqualTo(1_000_001d).Within(1e-6d), "sixty ticks are one second");
         }
 
         [Test]
@@ -193,6 +213,83 @@ namespace Shooter.Server.Tests
             Assert.That(kills, Is.GreaterThan(0), _log.ToString());
             Assert.That(_log.ToString(), Does.Contain("[Net] hit attacker=10000000"));
             Assert.That(_log.ToString(), Does.Match(@"\[Match\] kill .*1000000"));
+        }
+
+        [Test]
+        public void ABotWithAJammedRifleClearsItBeforeItShootsAgain()
+        {
+            // BotsShootEachOtherAndTheKillsAreLogged と同じ置き方。確率 1 のライフルなので、Bot の撃った発は必ず詰まる
+            var points = new NetMapPoints(
+                new[]
+                {
+                    new SpawnPoint(new Vector3(-28f, 1.1f, -28f), Team.Alpha),
+                    new SpawnPoint(new Vector3(-6f, 1.1f, 20f), Team.Alpha),
+                    new SpawnPoint(new Vector3(6f, 1.1f, 20f), Team.Bravo),
+                },
+                Array.Empty<ControlPointArea>());
+            var rules = Rules();
+            var rifle = TestRules.Rifle();
+            var jamming = new WeaponSpec(
+                rifle.Id,
+                rifle.NameKey,
+                rifle.Category,
+                rifle.Trigger,
+                new AmmoSpec(30, 90, 2f, jam: new JamSpec(1f, 0f, 0f, 1f, 0.5f)),
+                rifle.Round,
+                rifle.Impact,
+                rifle.Aim,
+                rifle.AmmoTypes,
+                rifle.ShotNoiseRadius);
+            Start(BotTestMaps.Flat(points), rules.WithActions(rules.Actions.WithJam(WeaponJam.On)), bots: 3, spec: SightOf(20f), rifle: jamming);
+            Join(1);
+            int? shooter = null;
+            var ticks = 0;
+            for (var elapsed = 0f; elapsed < 60f && shooter == null; elapsed += _tickSeconds)
+            {
+                Tick();
+
+                // ログを毎 tick 分けると長いログで遅くなるので、15 tick ごとに見る
+                if (++ticks % 15 == 0)
+                {
+                    shooter = _bots.BotIds.Cast<int?>().FirstOrDefault(id => ShotAfterAClear(id.Value));
+                }
+            }
+
+            Assert.That(shooter, Is.Not.Null, _log.ToString());
+            var botId = shooter.Value;
+            var lines = _log.ToString().Split('\n');
+            var cleared = JamLines(lines, botId, " cleared")[0];
+
+            // 倒れて出直すと、詰まったまま解除せずに新しい武器を持つことがあるので、解除し終えた行の直前と直後で比べる
+            var jammed = JamLines(lines, botId, " jammed ").Where(line => line < cleared).ToList();
+            var started = JamLines(lines, botId, " clear started ").Where(line => line < cleared).ToList();
+            Assert.That(jammed, Is.Not.Empty);
+            Assert.That(started, Is.Not.Empty, "the bot asks to clear the jam");
+            Assert.That(jammed[^1], Is.LessThan(started[^1]));
+            Assert.That(_log.ToString(), Does.Not.Contain("[Net] rejected shot attacker=" + Text(botId) + " reason=Jammed"), "the bot does not pull a jammed trigger");
+        }
+
+        private bool ShotAfterAClear(int botId)
+        {
+            var lines = _log.ToString().Split('\n');
+            var clears = JamLines(lines, botId, " cleared");
+            return clears.Count > 0 && JamLines(lines, botId, " jammed ").Any(line => line > clears[0]);
+        }
+
+        // 1 つの Bot の弾詰まりの行が、ログの何行目に出たか
+        private static List<int> JamLines(string[] lines, int botId, string kind)
+        {
+            var prefix = "[Combat] player=" + Text(botId) + " [Jam] ";
+            var found = new List<int>();
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith(prefix, StringComparison.Ordinal) && lines[i].Contains(kind, StringComparison.Ordinal))
+                {
+                    found.Add(i);
+                }
+            }
+
+            return found;
         }
 
         [Test]
@@ -595,9 +692,10 @@ namespace Shooter.Server.Tests
             return GameRules.Default.WithActions(actions).WithSpawnProtectionSeconds(0f).WithIdleKickSeconds(0f).WithRegenPerSecond(0f);
         }
 
-        private void Start(ServerMapData map, GameRules rules, int bots, NetBotSpec spec = null, IMatchObjectiveRules objective = null, bool melee = false)
+        private void Start(
+            ServerMapData map, GameRules rules, int bots, NetBotSpec spec = null, IMatchObjectiveRules objective = null, bool melee = false, WeaponSpec rifle = null)
         {
-            var data = new ServerRulesData("TeamDeathmatch", TestRules.File(rules), PingSpec.Default, "memory", null, bots: spec);
+            var data = new ServerRulesData("TeamDeathmatch", TestRules.File(rules, rifle: rifle), PingSpec.Default, "memory", null, bots: spec);
             var settings = ServerModules.MotorSettingsFrom(data);
             _match = new ServerMatch(NetMatchSettings.DefaultRestartDelaySeconds, _log, new ServerEventWriter(true, _json, _log), () => _time);
             var options = new NetLaunchOptions(

@@ -39,6 +39,22 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheSpeakersNameIsNotReadAsRichText()
+        {
+            var view = CreateView();
+            var table = new ParticipantTable();
+            table.Set(new Participant(1, "P1", Team.Alpha, true));
+            table.Set(new Participant(2, "<size=900>A", Team.Alpha, false));
+            GameSignals.Participants.Publish(table);
+
+            GameSignals.Voice.Publish(new VoiceStatus(true, new[] { 2 }, true));
+
+            Assert.That(view.Lines, Is.EqualTo(new[] { "送信中", "<size=900>A が話している" }));
+            Assert.That(RowTexts(view), Is.EqualTo(view.Lines));
+            Assert.That(view.Element.Children().All(row => !((Label)row).enableRichText), Is.True);
+        }
+
+        [Test]
         public void TheHudCarriesTheViewAndHidesItWithoutAValue()
         {
             var view = CreateView();

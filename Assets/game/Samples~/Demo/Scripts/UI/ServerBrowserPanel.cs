@@ -357,7 +357,7 @@ namespace Shooter.Runtime
 
         private Button AddFilter(string name, Action clicked)
         {
-            var button = new Button(clicked) { name = name };
+            var button = new Button(clicked) { name = name, enableRichText = false };
             button.AddToClassList(FilterClass);
             _filters.Add(button);
             return button;

@@ -60,6 +60,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.CoverBackHoldSeconds, Is.EqualTo(0.2f));
             Assert.That(spec.CoverPeekSlideSeconds, Is.EqualTo(0.15f));
             Assert.That(spec.CoverMinWallHeight, Is.EqualTo(0f));
+            Assert.That(spec.CoverProbeHeight, Is.EqualTo(0.5f));
+            Assert.That(spec.CoverUpperProbeHeight, Is.EqualTo(0.9f));
+            Assert.That(spec.CoverTopProbeHeight, Is.EqualTo(3f));
             Assert.That(spec.LadderTopEntryDepth, Is.EqualTo(0.3f));
             Assert.That(spec.LadderMinApproachDot, Is.EqualTo(0.5f));
             Assert.That(spec.LadderMinApproachSpeed, Is.EqualTo(0.5f));
@@ -81,6 +84,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.CoverBackHoldSeconds, Is.EqualTo(0.7f));
             Assert.That(spec.CoverPeekSlideSeconds, Is.EqualTo(0.25f));
             Assert.That(spec.CoverMinWallHeight, Is.EqualTo(0.7f));
+            Assert.That(spec.CoverProbeHeight, Is.EqualTo(0.3f));
+            Assert.That(spec.CoverUpperProbeHeight, Is.EqualTo(0.8f));
+            Assert.That(spec.CoverTopProbeHeight, Is.EqualTo(4f));
             Assert.That(spec.LadderTopEntryDepth, Is.EqualTo(0.6f));
             Assert.That(spec.LadderMinApproachDot, Is.EqualTo(0.75f));
             Assert.That(spec.LadderMinApproachSpeed, Is.EqualTo(1.5f));
@@ -99,6 +105,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(spec.CoverEnterSpeed, Is.EqualTo(MotorSpec.DefaultCoverEnterSpeed));
             Assert.That(spec.CoverPeekSlideSeconds, Is.EqualTo(MotorSpec.DefaultCoverPeekSlideSeconds));
             Assert.That(spec.CoverMinWallHeight, Is.EqualTo(MotorSpec.DefaultCoverMinWallHeight));
+            Assert.That(spec.CoverProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverProbeHeight));
+            Assert.That(spec.CoverUpperProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverUpperProbeHeight));
+            Assert.That(spec.CoverTopProbeHeight, Is.EqualTo(MotorSpec.DefaultCoverTopProbeHeight));
             Assert.That(spec.LadderTopEntryDepth, Is.EqualTo(MotorSpec.DefaultLadderTopEntryDepth));
             Assert.That(spec.LadderMinApproachSpeed, Is.EqualTo(MotorSpec.DefaultLadderMinApproachSpeed));
         }
@@ -120,6 +129,18 @@ namespace Shooter.Tests.EditMode
             _settings.ResetToDefaults();
             _settings.CoverMinWallHeight = -0.1f;
             Assert.Throws<System.ArgumentOutOfRangeException>(() => MotorSettings.Resolve(_settings));
+
+            _settings.ResetToDefaults();
+            _settings.CoverProbeHeight = -0.1f;
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => MotorSettings.Resolve(_settings));
+
+            _settings.ResetToDefaults();
+            _settings.CoverUpperProbeHeight = -0.1f;
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => MotorSettings.Resolve(_settings));
+
+            _settings.ResetToDefaults();
+            _settings.CoverTopProbeHeight = 0.8f;
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => MotorSettings.Resolve(_settings), "0.8 m is below the upper ray at 0.9 m");
         }
 
         [Test]
@@ -135,7 +156,56 @@ namespace Shooter.Tests.EditMode
             Assert.That(motor.CoverPeekSlideSeconds, Is.EqualTo(0.25f));
             Assert.That(motor.CoverEnterSpeed, Is.EqualTo(3f));
             Assert.That(motor.CoverMinWallHeight, Is.EqualTo(0.7f));
+            Assert.That(motor.CoverProbeHeight, Is.EqualTo(0.3f));
+            Assert.That(motor.CoverUpperProbeHeight, Is.EqualTo(0.8f));
+            Assert.That(motor.CoverTopProbeHeight, Is.EqualTo(4f));
             Assert.That(motor.LadderMinApproachSpeed, Is.EqualTo(1.5f));
+        }
+
+        // 壁の上端は足元から 0.4 m で、既定の 2 本の Ray (0.5 m・0.9 m) はどちらも上を越える。
+        [TestCase(MotorSpec.DefaultCoverProbeHeight, false)]
+        [TestCase(0.3f, true)]
+        public void TheCoverControllerEntersA40CentimeterWallOnlyWithALowerProbeHeight(float probeHeight, bool enters)
+        {
+            _settings.CoverProbeHeight = probeHeight;
+            var cover = CreateCoverPlayer(_settings.CreateSpec());
+            BuildWall(faceZ: 1f, height: 0.4f);
+
+            cover.Tick(true, false, Vector2.zero, _frame);
+
+            Assert.That(cover.IsInCover, Is.EqualTo(enters));
+            Assert.That(cover.CoverWallHeight, Is.EqualTo(enters ? 0.4f : 0f).Within(0.01f));
+        }
+
+        // 車体の底は足元から 0.6 m、上端は 1.4 m で、足元の Ray (0.5 m) は下を抜ける。
+        [TestCase(MotorSpec.DefaultCoverUpperProbeHeight, true)]
+        [TestCase(0.55f, false)]
+        public void TheCoverControllerEntersARaisedBodyOnlyWhenTheUpperProbeHeightReachesIt(float upperProbeHeight, bool enters)
+        {
+            _settings.CoverUpperProbeHeight = upperProbeHeight;
+            var cover = CreateCoverPlayer(_settings.CreateSpec());
+            BuildWall(faceZ: 1f, height: 0.8f);
+            _wall.transform.position += new Vector3(0f, 0.6f, 0f);
+            Physics.SyncTransforms();
+
+            cover.Tick(true, false, Vector2.zero, _frame);
+
+            Assert.That(cover.IsInCover, Is.EqualTo(enters));
+        }
+
+        // 壁の上端は足元から 3.5 m。上端を測る Ray の始点より高い壁は、始点の高さを上端とする。
+        [TestCase(MotorSpec.DefaultCoverTopProbeHeight, 3f)]
+        [TestCase(4f, 3.5f)]
+        public void TheCoverControllerMeasuresATallWallUpToTheTopProbeHeight(float topProbeHeight, float expectedHeight)
+        {
+            _settings.CoverTopProbeHeight = topProbeHeight;
+            var cover = CreateCoverPlayer(_settings.CreateSpec());
+            BuildWall(faceZ: 1f, height: 3.5f);
+
+            cover.Tick(true, false, Vector2.zero, _frame);
+
+            Assert.That(cover.IsInCover, Is.True);
+            Assert.That(cover.CoverWallHeight, Is.EqualTo(expectedHeight).Within(0.01f));
         }
 
         // 壁の上端は足元から 2 m。
@@ -219,6 +289,9 @@ namespace Shooter.Tests.EditMode
             _settings.CoverBackHoldSeconds = 0.7f;
             _settings.CoverPeekSlideSeconds = 0.25f;
             _settings.CoverMinWallHeight = 0.7f;
+            _settings.CoverProbeHeight = 0.3f;
+            _settings.CoverUpperProbeHeight = 0.8f;
+            _settings.CoverTopProbeHeight = 4f;
             _settings.LadderTopEntryDepth = 0.6f;
             _settings.LadderMinApproachDot = 0.75f;
             _settings.LadderMinApproachSpeed = 1.5f;

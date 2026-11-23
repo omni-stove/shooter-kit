@@ -27,6 +27,12 @@ namespace Shooter.Server
             return _combat.Rules.Rules?.Actions.Melee != Melee.On ? MeleeRefusal.Off : CheckWeapon(playerId);
         }
 
+        // 背後から倒す技を出せるか。銃で殴る振りとは別のルール (Takedown) なので、Melee が Off でも出せる (ContextMeleeAction と同じ)
+        internal MeleeRefusal CheckTakedown(int playerId)
+        {
+            return _combat.Rules.Rules?.Actions.Takedown != Shooter.Core.Takedown.On ? MeleeRefusal.Off : CheckWeapon(playerId);
+        }
+
         // 近接武器の振りと投げを振れるか。武器の攻撃なので、ルールの Melee が Off でも振れる (MeleeController.CheckWeaponSwing と同じ)
         internal MeleeRefusal CheckWeapon(int playerId)
         {

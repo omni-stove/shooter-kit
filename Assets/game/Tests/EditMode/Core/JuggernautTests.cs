@@ -395,6 +395,11 @@ namespace Shooter.Core.Tests
             Assert.That(JuggernautLog.Changed(new JuggernautChange(2, 1, JuggernautChangeReason.Repicked)), Is.EqualTo("[Mode] juggernaut change player=2 from=1 reason=repicked"));
             Assert.That(JuggernautLog.Changed(new JuggernautChange(0, 2, JuggernautChangeReason.Left)), Is.EqualTo("[Mode] juggernaut change player=0 from=2 reason=left"));
             Assert.That(JuggernautLog.Score(4, 12), Is.EqualTo("[Mode] juggernaut score player=4 score=12"));
+            Assert.That(JuggernautLog.Body(2, 300, 1.1f), Is.EqualTo("[Mode] juggernaut body player=2 max-health=300 speed=1.1"));
+            Assert.That(JuggernautLog.Body(0, 300, null), Is.EqualTo("[Mode] juggernaut body player=0 max-health=300 speed=-"));
+            Assert.That(JuggernautLog.Restored(2, 100, 1f), Is.EqualTo("[Mode] juggernaut restore player=2 max-health=100 speed=1"));
+            Assert.That(JuggernautLog.BotTarget(1, 3, false), Is.EqualTo("[Mode] juggernaut bot-target player=1 target=3 role=hunter"));
+            Assert.That(JuggernautLog.BotTarget(3, 0, true), Is.EqualTo("[Mode] juggernaut bot-target player=3 target=0 role=juggernaut"));
             Assert.Throws<ArgumentOutOfRangeException>(() => JuggernautLog.ReasonText((JuggernautChangeReason)99));
         }
 

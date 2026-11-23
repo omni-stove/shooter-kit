@@ -200,7 +200,7 @@ namespace Shooter.Runtime
 
         private static Label CreateLabel(string text, string className)
         {
-            var label = new Label(text ?? string.Empty) { pickingMode = PickingMode.Ignore };
+            var label = new Label(text ?? string.Empty) { pickingMode = PickingMode.Ignore, enableRichText = false };
             label.AddToClassList(className);
             return label;
         }

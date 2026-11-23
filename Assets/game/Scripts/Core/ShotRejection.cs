@@ -52,5 +52,8 @@ namespace Shooter.Core
 
         // 二丁持ちでない武器を左の手で撃とうとした (FireRequestMessage.Hand が Left)。
         NotAkimbo,
+
+        // 弾が詰まっていて、解除し終えるまで撃てない。
+        Jammed,
     }
 }

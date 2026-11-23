@@ -160,6 +160,80 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ASpawnPointBringsBackTheFullAmountAfterAPartialTake()
+        {
+            // 2 枠まで。包帯は 1 山 5 個までなので、始めの 2 個と合わせて 10 個まで
+            var catalog = Catalog(new InventoryRule(maxStacks: 2));
+            var first = NewPlayer(catalog);
+            var second = NewPlayer(catalog);
+            var point = new GameObject("Spawn").AddComponent<PickupSpawnPoint>();
+            _created.Add(point.gameObject);
+            point.Contents = PickupContents.ForItem(_bandageId, 9);
+            point.RespawnSeconds = 5f;
+            Assert.That(point.TrySpawn(), Is.True);
+            var pickup = point.Current;
+            var collected = 0;
+            point.Collected += (source, collection) => collected++;
+
+            Assert.That(pickup.TryCollect(first, out var partial), Is.True);
+
+            Assert.That(partial.Items, Is.EqualTo(8));
+            Assert.That(first.GetComponent<PlayerInventory>().Inventory.CountOf(_bandageId), Is.EqualTo(10));
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(1));
+            Assert.That(pickup.IsAvailable, Is.True, "the rest stays");
+            Assert.That(collected, Is.Zero);
+
+            Assert.That(pickup.TryCollect(second, out var rest), Is.True);
+
+            Assert.That(rest.Items, Is.EqualTo(1));
+            Assert.That(second.GetComponent<PlayerInventory>().Inventory.CountOf(_bandageId), Is.EqualTo(3));
+            Assert.That(collected, Is.EqualTo(1));
+            Assert.That(pickup.gameObject.activeSelf, Is.False);
+
+            point.Tick(5f);
+
+            Assert.That(pickup.gameObject.activeSelf, Is.True);
+            Assert.That(pickup.IsAvailable, Is.True);
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(9));
+            Assert.That(pickup.Contents.ToSpec().Amount, Is.EqualTo(9));
+            Assert.That(point.Contents.ToSpec().Amount, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void RestockingTwiceInARowKeepsTheFullAmount()
+        {
+            var catalog = Catalog(new InventoryRule(maxStacks: 2));
+            var pickup = Pickup.Create(PickupContents.ForItem(_bandageId, 9), Vector3.zero);
+            pickup.DestroyOnCollect = false;
+
+            // 2 回続けて一部だけ拾われても、戻すのは最初の数
+            Assert.That(pickup.TryCollect(NewPlayer(catalog), out _), Is.True);
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(1));
+            pickup.Restock();
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(9));
+            Assert.That(pickup.TryCollect(NewPlayer(catalog), out _), Is.True);
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(1));
+            pickup.Restock();
+            pickup.Restock();
+
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void ContentsSetAfterAPartialTakeAreWhatRestockKeeps()
+        {
+            var pickup = Pickup.Create(PickupContents.ForItem(_bandageId, 9), Vector3.zero);
+            pickup.DestroyOnCollect = false;
+            Assert.That(pickup.TryCollect(NewPlayer(Catalog(new InventoryRule(maxStacks: 2))), out _), Is.True);
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(1));
+
+            pickup.Contents = PickupContents.ForItem(_bandageId, 4);
+            pickup.Restock();
+
+            Assert.That(pickup.Spec.Amount, Is.EqualTo(4));
+        }
+
+        [Test]
         public void ThePickupHintNamesTheItem()
         {
             var player = NewPlayer(Catalog(InventoryRule.Default));

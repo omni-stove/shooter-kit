@@ -15,8 +15,9 @@ namespace Shooter.Core.Tests
             AwarenessPosture posture = AwarenessPosture.Standing,
             float light = 1f,
             float speed = 0f,
-            bool armed = true) =>
-            new AwarenessSighting(true, distance, angle, posture, light, speed, armed);
+            bool armed = true,
+            bool lit = false) =>
+            new AwarenessSighting(true, distance, angle, posture, light, speed, armed, lit);
 
         private static float Gain(AwarenessSighting sighting) => AwarenessMeter.GainPerSecond(AwarenessSpec.Default, _sightRange, sighting);
 
@@ -219,6 +220,84 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(armedGainFactor: float.NaN));
             Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(armedGainFactor: float.PositiveInfinity));
             Assert.Throws<ArgumentOutOfRangeException>(() => AwarenessSpec.Default.WithArmedGainFactor(-1f));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(litGainFactor: -0.1f)).ParamName,
+                Is.EqualTo("litGainFactor"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(litGainFactor: float.NaN));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new AwarenessSpec(litGainFactor: float.PositiveInfinity));
+            Assert.That(
+                Assert.Throws<ArgumentOutOfRangeException>(() => AwarenessSpec.Default.WithLitGainFactor(-1f)).ParamName,
+                Is.EqualTo("litGainFactor"));
+        }
+
+        [Test]
+        public void TheLitFactorDefaultsToOneSoLitAndDarkFillAlike()
+        {
+            Assert.That(AwarenessSpec.DefaultLitGainFactor, Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.LitGainFactor, Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.LitFactor(true), Is.EqualTo(1f));
+            Assert.That(AwarenessSpec.Default.LitFactor(false), Is.EqualTo(1f));
+            Assert.That(Gain(Seen(lit: true)), Is.EqualTo(Gain(Seen(lit: false))));
+            Assert.That(new AwarenessSighting(true, 1f, 0f, AwarenessPosture.Standing, 1f, 0f).IsLit, Is.False, "targets without a light count as dark");
+            Assert.That(AwarenessSighting.None.IsLit, Is.False);
+        }
+
+        [Test]
+        public void ALitFactorOfOneAndAHalfFillsOneAndAHalfTimesAsFast()
+        {
+            var spec = new AwarenessSpec(litGainFactor: 1.5f);
+            var lit = AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(lit: true));
+            var dark = AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(lit: false));
+
+            Assert.That(spec.LitFactor(true), Is.EqualTo(1.5f));
+            Assert.That(spec.LitFactor(false), Is.EqualTo(1f));
+            Assert.That(dark, Is.EqualTo(Gain(Seen(lit: false))).Within(1e-6f), "a dark light fills as before");
+            Assert.That(lit, Is.EqualTo(dark * 1.5f).Within(1e-6f));
+            Assert.That(SecondsToNotice(spec, Seen(lit: true)), Is.LessThan(SecondsToNotice(spec, Seen(lit: false))));
+
+            var litMeter = new AwarenessMeter(spec);
+            var darkMeter = new AwarenessMeter(spec);
+            litMeter.Tick(0.1f, _sightRange, Seen(lit: true));
+            darkMeter.Tick(0.1f, _sightRange, Seen(lit: false));
+            Assert.That(litMeter.Level, Is.EqualTo(darkMeter.Level * 1.5f).Within(1e-6f));
+        }
+
+        [Test]
+        public void TheLitFactorMultipliesWithTheArmedFactor()
+        {
+            var spec = new AwarenessSpec(armedGainFactor: 2f, litGainFactor: 1.5f);
+            var neither = AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: false, lit: false));
+
+            Assert.That(AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: true, lit: false)), Is.EqualTo(neither * 2f).Within(1e-6f));
+            Assert.That(AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: false, lit: true)), Is.EqualTo(neither * 1.5f).Within(1e-6f));
+            Assert.That(AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: true, lit: true)), Is.EqualTo(neither * 3f).Within(1e-6f));
+            Assert.That(
+                AwarenessMeter.GainPerSecond(spec, _sightRange, Seen(armed: true, lit: true, light: 0f)),
+                Is.Zero,
+                "a light on the weapon does not make a pitch-dark spot visible on its own");
+            Assert.That(
+                AwarenessMeter.GainPerSecond(spec, _sightRange, new AwarenessSighting(false, 10f, 0f, AwarenessPosture.Standing, 1f, 0f, true, true)),
+                Is.Zero,
+                "without line of sight the light adds nothing");
+        }
+
+        [Test]
+        public void WithLitGainFactorKeepsTheOtherValues()
+        {
+            var spec = new AwarenessSpec(fieldOfViewDegrees: 90f, gainPerSecond: 2f, alarmRadius: 8f, investigateLevel: 0.7f, armedGainFactor: 2f);
+
+            var lit = spec.WithLitGainFactor(3f);
+
+            Assert.That(lit, Is.Not.SameAs(spec));
+            Assert.That(lit.LitGainFactor, Is.EqualTo(3f));
+            Assert.That(spec.LitGainFactor, Is.EqualTo(AwarenessSpec.DefaultLitGainFactor));
+            Assert.That(lit.ArmedGainFactor, Is.EqualTo(2f));
+            Assert.That(lit.FieldOfViewDegrees, Is.EqualTo(90f));
+            Assert.That(lit.GainPerSecond, Is.EqualTo(2f));
+            Assert.That(lit.AlarmRadius, Is.EqualTo(8f));
+            Assert.That(lit.InvestigateLevel, Is.EqualTo(0.7f));
+            Assert.That(lit.FootstepGain, Is.EqualTo(spec.FootstepGain));
+            Assert.That(lit.WithArmedGainFactor(4f).LitGainFactor, Is.EqualTo(3f), "changing the armed factor keeps the lit factor");
         }
 
         [Test]

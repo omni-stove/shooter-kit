@@ -107,7 +107,7 @@ namespace Shooter.Core
         public static KillCamClip FromHistories(
             HitboxHistory positions,
             HitboxHistory yawDirections,
-            float endTick,
+            double endTick,
             float tickRate,
             float seconds,
             Vector3 eyeOffset,
@@ -118,7 +118,7 @@ namespace Shooter.Core
                 throw new ArgumentNullException(nameof(positions));
             }
 
-            if (float.IsNaN(endTick))
+            if (double.IsNaN(endTick))
             {
                 throw new ArgumentOutOfRangeException(nameof(endTick), endTick, "endTick must not be NaN");
             }
@@ -131,7 +131,7 @@ namespace Shooter.Core
                 return Empty;
             }
 
-            var end = Math.Min((double)endTick, newest);
+            var end = Math.Min(endTick, newest);
             var start = Math.Max(end - ((double)seconds * tickRate), oldest);
             if (!(end > start))
             {
@@ -145,9 +145,9 @@ namespace Shooter.Core
             while (true)
             {
                 // start と end は記録の範囲に収めてあるので、間の tick はどれも取れる
-                if (positions.TrySample((float)tick, out var position))
+                if (positions.TrySample(tick, out var position))
                 {
-                    yaw = SampleYaw(yawDirections, (float)tick, yaw);
+                    yaw = SampleYaw(yawDirections, tick, yaw);
                     var offset = (float)((tick - start) / tickRate);
 
                     // float に丸めると隣の tick と同じ秒になることがあり、同じ秒は 2 つ持てない
@@ -169,7 +169,7 @@ namespace Shooter.Core
             return offsets.Count > 1 ? new KillCamClip(offsets, poses) : Empty;
         }
 
-        private static float SampleYaw(HitboxHistory yawDirections, float tick, float previous)
+        private static float SampleYaw(HitboxHistory yawDirections, double tick, float previous)
         {
             if (yawDirections == null || !yawDirections.TrySample(tick, out var facing))
             {

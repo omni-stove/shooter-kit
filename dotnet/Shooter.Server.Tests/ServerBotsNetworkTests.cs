@@ -26,6 +26,7 @@ namespace Shooter.Server.Tests
         private TestClient _client;
         private ushort _port;
         private float _now;
+        private int _ticks;
         private MatchServer _server;
 
         [SetUp]
@@ -37,6 +38,7 @@ namespace Shooter.Server.Tests
             _client = new TestClient();
             _port = TestClient.FreePort();
             _now = 0f;
+            _ticks = 0;
         }
 
         [TearDown]
@@ -62,6 +64,9 @@ namespace Shooter.Server.Tests
             var firstSeen = BotRows().ToDictionary(row => row.PlayerId, row => row.Position);
 
             Pump(() => KillLines().Any(IsByBot));
+            // 負荷が高いと kill の時点で届いている snapshot が見つけた時のままのことがあるので、kill の tick まで届くのを待つ
+            var killTick = _ticks;
+            Pump(() => _client.LatestSnapshot.Tick >= killTick);
 
             var log = _log.ToString();
             var kill = KillLines().First(IsByBot);
@@ -167,6 +172,7 @@ namespace Shooter.Server.Tests
             do
             {
                 _now += _tickSeconds;
+                _ticks++;
                 _server.Tick(_now, _tickSeconds);
                 _client.Poll();
                 if (until())

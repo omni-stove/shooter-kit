@@ -194,6 +194,20 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void AZoneDamageIntervalBelowTheFloorStillEndsTheTickAndDealsTheDamagePerSecond()
+        {
+            Begin(Spec(zone: new ZoneSpec(new[] { new ZonePhase(60f, 10f, 8f, 10f) }, 1e-9f, 3)));
+            JoinFour();
+            _host.Steps(1);
+            _host.Place(1, _outside);
+
+            _host.Steps(65);
+
+            // 間隔は下限の 0.05 秒に切り上がるので、約 1.08 秒で 10 毎秒の 10〜11 が入る
+            Assert.That(_host.Session.GetHealth(1), Is.InRange(NetMatchSettings.DefaultMaxHealth - 11, NetMatchSettings.DefaultMaxHealth - 10), _log.ToString());
+        }
+
+        [Test]
         public void ZoneDamageBelowOnePerHitCarriesOverAsOffline()
         {
             Begin(Spec(zone: OnePhase(damagePerSecond: 0.5f)));
@@ -440,6 +454,24 @@ namespace Shooter.Server.Tests
                 Array.Empty<ControlPointArea>(),
                 zone: new NetMapZoneCircle(Vector3.Zero, zoneRadius),
                 dropHeight: dropHeight);
+        }
+
+        [Test]
+        public void TheClockKeepsEveryTickAfterALongUptime()
+        {
+            // 約 11.6 日。float の時計では刻みが 0.0625 秒になり、1/60 秒を足しても変わらなかった
+            const double longUptime = 1_000_000d;
+            const float tickSeconds = 1f / 60f;
+            Begin(Spec());
+            JoinFour();
+            _host.Steps(1);
+            _rules.ClockSeconds = longUptime;
+
+            _host.Steps(1);
+            Assert.That(_rules.ClockSeconds, Is.EqualTo(longUptime + tickSeconds).Within(1e-9d), _log.ToString());
+
+            _host.Steps(59);
+            Assert.That(_rules.ClockSeconds, Is.EqualTo(longUptime + 1d).Within(1e-6d), "sixty ticks are one second");
         }
 
         private static GameRules Plain()

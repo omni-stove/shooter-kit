@@ -25,6 +25,7 @@ namespace Shooter.Runtime
         private MeleeController _melee;
         private Damageable _self;
         private Melee _rule = Melee.Off;
+        private Takedown _takedownRule = Takedown.Off;
         private MeleeSpec _finisherSource;
         private MeleeSpec _takedownSource;
         private MeleeSpec _searchSpec;
@@ -56,6 +57,11 @@ namespace Shooter.Runtime
         public ContextMeleeRun Run => _run;
 
         public Melee Rule => _rule;
+
+        public Takedown TakedownRule => _takedownRule;
+
+        // 処刑技は持っている銃で殴る技なので Melee に、背後から倒す技は Takedown に従う。どちらかが On なら技を探す。
+        public bool AllowsAnyMove => _rule == Melee.On || _takedownRule == Takedown.On;
 
         public bool IsPerforming => _run.IsActive;
 
@@ -174,24 +180,34 @@ namespace Shooter.Runtime
             }
 
             _rule = rules.Actions.Melee;
-            enabled = _rule == Melee.On && Bind();
+            _takedownRule = rules.Actions.Takedown;
+            enabled = AllowsAnyMove && Bind();
+            SyncMoves();
 
             // Edit Mode では enabled を変えても OnDisable が走らないので、技の取り消しはここでも揃える。
             if (!enabled)
+            {
+                Stop(ContextMeleeInterruption.Cancelled, true);
+                return;
+            }
+
+            // 片方のルールだけを Off にしたら、その技の最中なら止める。もう片方の技は続ける。
+            if (_run.IsActive && !Allows(_run.Move.Id))
             {
                 Stop(ContextMeleeInterruption.Cancelled, true);
             }
         }
 
         // 振れない理由 (MeleeRefusal) のログはふつうの近接の側で出すので、ここでは黙って false を返す。
+        // 技はルールが Off なら登録しないので (SyncMoves)、振れるかは Melee を見ない CheckWeaponSwing で見る。CheckSwing だと Melee が Off のときにテイクダウンまで断る。
         public bool TryBegin()
         {
-            if (!enabled || _rule != Melee.On || _run.IsActive || !Bind())
+            if (!enabled || !AllowsAnyMove || _run.IsActive || !Bind())
             {
                 return false;
             }
 
-            if (_melee.CheckSwing() != MeleeRefusal.None)
+            if (_melee.CheckWeaponSwing() != MeleeRefusal.None)
             {
                 return false;
             }
@@ -210,6 +226,13 @@ namespace Shooter.Runtime
 
             var situation = new ContextMeleeSituation(Observe(hit.Target), Mathf.Max(0f, hit.Distance));
             var move = _selector.Select(situation);
+
+            // ゲームが Selector に足した処刑 (execute) は SyncMoves が外せないので、選んだ後にルールで断る。
+            if (move != null && !Allows(move.Id))
+            {
+                move = null;
+            }
+
             if (move == null)
             {
                 Debug.Log(ContextMeleeLog.NoMove(AttackerId, hit.Target.Id, situation.Conditions), this);
@@ -663,8 +686,27 @@ namespace Shooter.Runtime
             }
 
             var spec = _melee.Spec;
-            _finisherSource = SyncMove(ContextMeleeMove.FinisherId, _includeFinisher, spec, _finisherSource, ContextMeleeMove.Finisher);
-            _takedownSource = SyncMove(ContextMeleeMove.TakedownId, _includeTakedown, spec, _takedownSource, ContextMeleeMove.Takedown);
+            _finisherSource = SyncMove(
+                ContextMeleeMove.FinisherId, _includeFinisher && Allows(ContextMeleeMove.FinisherId), spec, _finisherSource, ContextMeleeMove.Finisher);
+            _takedownSource = SyncMove(
+                ContextMeleeMove.TakedownId, _includeTakedown && Allows(ContextMeleeMove.TakedownId), spec, _takedownSource, ContextMeleeMove.Takedown);
+        }
+
+        // ゲームが Selector に足した技は、どちらのルールのものか分からないので、どちらかが On なら出す。
+        private bool Allows(string moveId)
+        {
+            if (string.Equals(moveId, ContextMeleeMove.TakedownId, StringComparison.Ordinal))
+            {
+                return _takedownRule == Takedown.On;
+            }
+
+            if (string.Equals(moveId, ContextMeleeMove.FinisherId, StringComparison.Ordinal)
+                || string.Equals(moveId, ContextMeleeMove.ExecuteId, StringComparison.Ordinal))
+            {
+                return _rule == Melee.On;
+            }
+
+            return AllowsAnyMove;
         }
 
         private MeleeSpec SyncMove(string id, bool include, MeleeSpec spec, MeleeSpec source, Func<MeleeSpec, ContextMeleeMove> create)
