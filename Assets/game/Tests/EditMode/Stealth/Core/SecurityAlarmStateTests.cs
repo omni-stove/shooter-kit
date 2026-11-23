@@ -7,9 +7,9 @@ namespace Shooter.Core.Tests
 {
     public sealed class SecurityAlarmStateTests
     {
-        private static readonly int[] ExpectedOnRadius = { 0, 1, 5, 6 };
-        private static readonly int[] ExpectedFirst = { 0 };
-        private static readonly int[] ExpectedFirstTwo = { 0, 1 };
+        private static readonly int[] _expectedOnRadius = { 0, 1, 5, 6 };
+        private static readonly int[] _expectedFirst = { 0 };
+        private static readonly int[] _expectedFirstTwo = { 0, 1 };
 
         [Test]
         public void ANewAlarmIsSilent()
@@ -136,7 +136,7 @@ namespace Shooter.Core.Tests
             var count = SecurityAlarmState.SelectWithin(Vector3.Zero, 5f, candidates, selected);
 
             Assert.That(count, Is.EqualTo(4));
-            Assert.That(selected, Is.EqualTo(ExpectedOnRadius), "exactly on the radius counts, height included, and the old contents are cleared");
+            Assert.That(selected, Is.EqualTo(_expectedOnRadius), "exactly on the radius counts, height included, and the old contents are cleared");
         }
 
         [Test]
@@ -159,11 +159,11 @@ namespace Shooter.Core.Tests
 
             state.Raise(Vector3.Zero, "cam-a");
             Assert.That(state.SelectRecipients(candidates, selected), Is.EqualTo(1));
-            Assert.That(selected, Is.EqualTo(ExpectedFirst));
+            Assert.That(selected, Is.EqualTo(_expectedFirst));
 
             state.Raise(new Vector3(20f, 0f, 0f), "cam-b");
             Assert.That(state.SelectRecipients(candidates, selected), Is.EqualTo(2));
-            Assert.That(selected, Is.EqualTo(ExpectedFirstTwo));
+            Assert.That(selected, Is.EqualTo(_expectedFirstTwo));
 
             state.Tick(4f);
             Assert.That(state.SelectRecipients(candidates, selected), Is.Zero);
