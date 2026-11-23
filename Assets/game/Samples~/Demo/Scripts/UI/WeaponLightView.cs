@@ -17,7 +17,7 @@ namespace Shooter.Runtime
 
         public const string TextClass = "weapon-light__text";
 
-        [SerializeField, Tooltip("ライトの印の画像。空なら Hud.uss の weapon-light__icon の丸 (点灯で塗り、消灯で縁だけ) を出す")]
+        [SerializeField]
         private Texture2D _iconImage;
 
         private WeaponLightStatus? _status;
