@@ -48,6 +48,29 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheCoverTuningIsCarriedOver()
+        {
+            var original = new EnemySpec(
+                20f,
+                12f,
+                2f,
+                6f,
+                1f,
+                coverOnHitMaxDistance: 9f,
+                coverMoveSpreadDegrees: 1.5f,
+                coverMaxPeeks: 6,
+                coverPeekReactionSeconds: 0.8f,
+                coverCooldownSeconds: 12f);
+            var spec = WaveStrength.Apply(original, 3f);
+
+            Assert.That(spec.CoverOnHitMaxDistance, Is.EqualTo(9f));
+            Assert.That(spec.CoverMoveSpreadDegrees, Is.EqualTo(1.5f));
+            Assert.That(spec.CoverMaxPeeks, Is.EqualTo(6));
+            Assert.That(spec.CoverPeekReactionSeconds, Is.EqualTo(0.8f));
+            Assert.That(spec.CoverCooldownSeconds, Is.EqualTo(12f));
+        }
+
+        [Test]
         public void WeakerSpreadIsCappedAtTheMaximum()
         {
             var spec = WaveStrength.Apply(Spec(), 0.01f);

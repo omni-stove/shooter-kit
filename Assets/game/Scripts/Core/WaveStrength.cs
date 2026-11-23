@@ -39,7 +39,12 @@ namespace Shooter.Core
                 spec.ArrivalDistance,
                 spec.SprintRatio,
                 spec.CrouchRatio,
-                spec.RecoilControl);
+                spec.RecoilControl,
+                spec.CoverOnHitMaxDistance,
+                spec.CoverMoveSpreadDegrees,
+                spec.CoverMaxPeeks,
+                spec.CoverPeekReactionSeconds,
+                spec.CoverCooldownSeconds);
         }
 
         public static int Health(int baseHealth, float multiplier)

@@ -33,6 +33,16 @@ namespace Shooter.Core
 
         public float CoverHealthFraction { get; }
 
+        public float CoverOnHitMaxDistance { get; }
+
+        public float CoverMoveSpreadDegrees { get; }
+
+        public int CoverMaxPeeks { get; }
+
+        public float CoverPeekReactionSeconds { get; }
+
+        public float CoverCooldownSeconds { get; }
+
         public EnemyArchetype Archetype { get; }
 
         public float StaggerResistance { get; }
@@ -79,6 +89,11 @@ namespace Shooter.Core
         public const float DefaultCoverHideSeconds = 1.5f;
         public const float DefaultCoverPeekSeconds = 2f;
         public const float DefaultCoverHealthFraction = 0.5f;
+        public const float DefaultCoverOnHitMaxDistance = 5f;
+        public const float DefaultCoverMoveSpreadDegrees = 4f;
+        public const int DefaultCoverMaxPeeks = 3;
+        public const float DefaultCoverPeekReactionSeconds = 0.3f;
+        public const float DefaultCoverCooldownSeconds = 5f;
         public const float DefaultStaggerResistance = 0f;
         public const float DefaultArrivalDistance = 0.5f;
 
@@ -132,7 +147,12 @@ namespace Shooter.Core
             DefaultArrivalDistance,
             DefaultSprintRatio,
             DefaultCrouchRatio,
-            DefaultRecoilControl);
+            DefaultRecoilControl,
+            DefaultCoverOnHitMaxDistance,
+            DefaultCoverMoveSpreadDegrees,
+            DefaultCoverMaxPeeks,
+            DefaultCoverPeekReactionSeconds,
+            DefaultCoverCooldownSeconds);
 
         public EnemySpec(
             float sightRange,
@@ -158,7 +178,12 @@ namespace Shooter.Core
             float arrivalDistance = DefaultArrivalDistance,
             float sprintRatio = DefaultSprintRatio,
             float crouchRatio = DefaultCrouchRatio,
-            float recoilControl = DefaultRecoilControl)
+            float recoilControl = DefaultRecoilControl,
+            float coverOnHitMaxDistance = DefaultCoverOnHitMaxDistance,
+            float coverMoveSpreadDegrees = DefaultCoverMoveSpreadDegrees,
+            int coverMaxPeeks = DefaultCoverMaxPeeks,
+            float coverPeekReactionSeconds = DefaultCoverPeekReactionSeconds,
+            float coverCooldownSeconds = DefaultCoverCooldownSeconds)
         {
             if (!(sightRange > 0f) || float.IsInfinity(sightRange))
             {
@@ -187,6 +212,16 @@ namespace Shooter.Core
             {
                 throw new ArgumentOutOfRangeException(nameof(coverHealthFraction), coverHealthFraction, "coverHealthFraction must be between 0 and 1");
             }
+
+            RequireNonNegativeSeconds(coverOnHitMaxDistance, nameof(coverOnHitMaxDistance));
+            RequireSpread(coverMoveSpreadDegrees, nameof(coverMoveSpreadDegrees));
+            if (coverMaxPeeks < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(coverMaxPeeks), coverMaxPeeks, "coverMaxPeeks must be at least 1");
+            }
+
+            RequireNonNegativeSeconds(coverPeekReactionSeconds, nameof(coverPeekReactionSeconds));
+            RequireNonNegativeSeconds(coverCooldownSeconds, nameof(coverCooldownSeconds));
 
             if (!Enum.IsDefined(typeof(EnemyArchetype), archetype))
             {
@@ -226,6 +261,11 @@ namespace Shooter.Core
             CoverHideSeconds = coverHideSeconds;
             CoverPeekSeconds = coverPeekSeconds;
             CoverHealthFraction = coverHealthFraction;
+            CoverOnHitMaxDistance = coverOnHitMaxDistance;
+            CoverMoveSpreadDegrees = coverMoveSpreadDegrees;
+            CoverMaxPeeks = coverMaxPeeks;
+            CoverPeekReactionSeconds = coverPeekReactionSeconds;
+            CoverCooldownSeconds = coverCooldownSeconds;
             Archetype = archetype;
             Shield = shield ?? ShieldSpec.Default;
             Sniper = sniper ?? SniperSpec.Default;
