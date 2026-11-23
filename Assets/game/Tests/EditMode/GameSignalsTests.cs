@@ -68,6 +68,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameSignals.Emotes.Value, Is.Null);
             Assert.That(GameSignals.Holster.Value, Is.Null);
             Assert.That(GameSignals.WeaponLight.Value, Is.Null);
+            Assert.That(GameSignals.WeaponJam.Value, Is.Null);
             Assert.That(GameSignals.WeaponFreeZone.Value, Is.Null);
             Assert.That(GameSignals.VoteKick.Value, Is.Null);
             Assert.That(GameSignals.VoteKickSender.Value, Is.Null);
@@ -207,6 +208,7 @@ namespace Shooter.Tests.EditMode
             GameSignals.Emotes.Publish(new FakeEmoteControl());
             GameSignals.Holster.Publish(new HolsterStatus(HolsterPhase.Holstered, 1f, false));
             GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, true));
+            GameSignals.WeaponJam.Publish(new WeaponJamStatus(WeaponJamPhase.Clearing, 0.5f, 1f));
             GameSignals.WeaponFreeZone.Publish(new WeaponFreeZoneStatus(true, WeaponFreeZoneReaction.WarnThenHostile, true, 3f));
             GameSignals.VoteKick.Publish(new VoteKickStatus(3, 1, 1, 4, 30f));
             GameSignals.VoteKickSender.Publish(new FakeVoteKickSender());
@@ -336,6 +338,48 @@ namespace Shooter.Tests.EditMode
             GameSignals.WeaponLight.Publish(new WeaponLightStatus(true, false));
 
             Assert.That(heard, Has.Count.EqualTo(2), "subscribers from before the reset are gone");
+        }
+
+        [Test]
+        public void TheWeaponJamSignalHoldsTheTypedPhaseAndTheSecondsLeftUntilResetAll()
+        {
+            var heard = new List<WeaponJamStatus?>();
+            GameSignals.WeaponJam.Changed += heard.Add;
+
+            GameSignals.WeaponJam.Publish(new WeaponJamStatus(WeaponJamPhase.None, 0f, 1f));
+            Assert.That(GameSignals.WeaponJam.HasValue, Is.True, "not being jammed is still something to show");
+            Assert.That(GameSignals.WeaponJam.Value.Value.Phase, Is.EqualTo(WeaponJamPhase.None));
+            Assert.That(GameSignals.WeaponJam.Value.Value.IsJammed, Is.False);
+
+            GameSignals.WeaponJam.Publish(new WeaponJamStatus(WeaponJamPhase.Jammed, 0f, 1f));
+            Assert.That(GameSignals.WeaponJam.Value.Value.IsJammed, Is.True);
+            Assert.That(GameSignals.WeaponJam.Value.Value.IsClearing, Is.False);
+            Assert.That(GameSignals.WeaponJam.Value.Value.ClearRemainingSeconds, Is.EqualTo(0f));
+
+            GameSignals.WeaponJam.Publish(new WeaponJamStatus(WeaponJamPhase.Clearing, 0.25f, 1f));
+            var clearing = GameSignals.WeaponJam.Value.Value;
+            Assert.That(clearing.Phase, Is.EqualTo(WeaponJamPhase.Clearing));
+            Assert.That(clearing.IsJammed, Is.True, "still jammed until the clear is done");
+            Assert.That(clearing.ClearRemainingSeconds, Is.EqualTo(0.25f));
+            Assert.That(clearing.ClearSeconds, Is.EqualTo(1f));
+            Assert.That(clearing.ClearFraction, Is.EqualTo(0.75f));
+            Assert.That(heard, Has.Count.EqualTo(3));
+
+            GameSignals.ResetAll();
+            Assert.That(GameSignals.WeaponJam.Value, Is.Null);
+            GameSignals.WeaponJam.Publish(WeaponJamStatus.None);
+
+            Assert.That(heard, Has.Count.EqualTo(3), "subscribers from before the reset are gone");
+        }
+
+        [Test]
+        public void AWeaponJamStatusRefusesSecondsLeftOutsideAClear()
+        {
+            Assert.Throws<ArgumentException>(() => new WeaponJamStatus(WeaponJamPhase.Jammed, 0.5f, 1f));
+            Assert.Throws<ArgumentException>(() => new WeaponJamStatus(WeaponJamPhase.None, 0.5f, 1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new WeaponJamStatus(WeaponJamPhase.Clearing, 2f, 1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new WeaponJamStatus(WeaponJamPhase.Clearing, -0.5f, 1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new WeaponJamStatus((WeaponJamPhase)99, 0f, 1f));
         }
 
         [Test]

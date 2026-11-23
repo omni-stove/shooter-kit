@@ -1913,6 +1913,194 @@ namespace Shooter.Tests.EditMode
             }
         }
 
+        [Test]
+        public void PressingReloadOnAJammedWeaponClearsItWithoutReloadingAndItFiresAgainAfterTheClearSeconds()
+        {
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            try
+            {
+                var roll = new FixedJamRoll(0f, 0.9f);
+                _controller.Rules = TestJam.JamOn;
+                _controller.JamRolls = spec => spec.Id == TestWeapons.RifleId ? roll : null;
+                _controller.Initialize(_camera.transform, _attack, _reload, rifle);
+                var reloads = 0;
+                var dryFires = 0;
+                _controller.ReloadStarted += _ => reloads++;
+                _controller.DryFired += _ => dryFires++;
+                var magazine = rifle.MagazineSize;
+
+                LogAssert.Expect(LogType.Log, $"[Combat] fire ammo={magazine - 1}");
+                LogAssert.Expect(LogType.Log, $"[Jam] weapon={TestWeapons.RifleId} jammed sustained=0 chance=0.500");
+                Assert.That(_controller.Fire(), Is.True, "the shot that jams still fires");
+                Assert.That(_controller.Weapon.IsJammed, Is.True);
+                Assert.That(_controller.ShotCount, Is.EqualTo(1));
+
+                _controller.Tick(0.5f);
+                Assert.That(_controller.PullTrigger(true, true), Is.False, "a jammed weapon does not fire");
+                Assert.That(_controller.ShotCount, Is.EqualTo(1));
+                Assert.That(dryFires, Is.Zero, "a jam is not a dry fire");
+
+                LogAssert.Expect(LogType.Log, $"[Jam] weapon={TestWeapons.RifleId} clear started seconds=1.00");
+                Assert.That(_controller.PressReload(), Is.True, "the reload key starts the clear");
+                Assert.That(_controller.Weapon.IsClearingJam, Is.True);
+                Assert.That(_controller.Weapon.IsReloading, Is.False);
+                Assert.That(reloads, Is.Zero, "no reload starts while jammed");
+                Assert.That(_controller.Weapon.AmmoInMagazine, Is.EqualTo(magazine - 1), "the clear keeps the magazine");
+                Assert.That(_controller.PressReload(), Is.False, "pressing again does not restart the clear");
+
+                _controller.Tick(TestJam.ClearSeconds / 2f);
+                Assert.That(_controller.Weapon.IsJammed, Is.True);
+                Assert.That(_controller.Fire(), Is.False, "not yet: half the clear is left");
+                Assert.That(_controller.JamStatus, Is.EqualTo(new Shooter.Core.WeaponJamStatus(Shooter.Core.WeaponJamPhase.Clearing, 0.5f, 1f)));
+
+                LogAssert.Expect(LogType.Log, $"[Jam] weapon={TestWeapons.RifleId} cleared");
+                _controller.Tick(TestJam.ClearSeconds / 2f);
+                Assert.That(_controller.Weapon.IsJammed, Is.False);
+                Assert.That(_controller.Weapon.AmmoInMagazine, Is.EqualTo(magazine - 1), "clearing does not take or give rounds");
+                Assert.That(reloads, Is.Zero);
+
+                LogAssert.Expect(LogType.Log, $"[Combat] fire ammo={magazine - 2}");
+                Assert.That(_controller.Fire(), Is.True, "it fires again after the clear seconds");
+                Assert.That(_controller.Weapon.IsJammed, Is.False, "the 0.9 roll is above the 0.5 chance");
+                Assert.That(roll.Calls, Is.EqualTo(2));
+                LogAssert.NoUnexpectedReceived();
+            }
+            finally
+            {
+                Object.DestroyImmediate(rifle);
+            }
+        }
+
+        [Test]
+        public void SwitchingAwayCancelsTheClearAndTheWeaponIsStillJammedWhenDrawnAgain()
+        {
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            var handgun = CreateHandgun();
+            try
+            {
+                _controller.Rules = TestJam.JamOn;
+                _controller.JamRolls = _ => new FixedJamRoll(0f);
+                _controller.Initialize(_camera.transform, _attack, _reload, null, null, new[] { rifle, handgun });
+                Assert.That(_controller.Fire(), Is.True);
+                Assert.That(_controller.PressReload(), Is.True);
+                _controller.Tick(TestJam.ClearSeconds / 2f);
+                var jammedRifle = _controller.Weapon;
+
+                LogAssert.Expect(LogType.Log, $"[Jam] weapon={TestWeapons.RifleId} clear canceled remaining=0.50");
+                Assert.That(_controller.Select(TestWeapons.HandgunId), Is.True);
+                Assert.That(jammedRifle.IsClearingJam, Is.False, "switching cancels the clear");
+                Assert.That(jammedRifle.IsJammed, Is.True);
+                Assert.That(_controller.JamStatus.Phase, Is.EqualTo(Shooter.Core.WeaponJamPhase.None), "the handgun is not jammed");
+
+                _controller.Tick(TestJam.ClearSeconds * 2f);
+                Assert.That(_controller.Select(TestWeapons.RifleId), Is.True);
+                _controller.Tick(TestJam.ClearSeconds * 2f);
+                Assert.That(_controller.Weapon, Is.SameAs(jammedRifle));
+                Assert.That(jammedRifle.IsJammed, Is.True, "still jammed when drawn again");
+                Assert.That(jammedRifle.IsClearingJam, Is.False);
+                Assert.That(_controller.Fire(), Is.False);
+
+                Assert.That(_controller.PressReload(), Is.True, "the clear starts over");
+                Assert.That(jammedRifle.JamClearRemainingSeconds, Is.EqualTo(TestJam.ClearSeconds), "the half done before the switch is not kept");
+                _controller.Tick(TestJam.ClearSeconds / 2f);
+                Assert.That(jammedRifle.IsJammed, Is.True);
+                _controller.Tick(TestJam.ClearSeconds / 2f);
+                Assert.That(jammedRifle.IsJammed, Is.False);
+                Assert.That(_controller.Fire(), Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(rifle);
+                Object.DestroyImmediate(handgun);
+            }
+        }
+
+        [Test]
+        public void TheReloadKeyStillReloadsAWeaponThatIsNotJammed()
+        {
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            try
+            {
+                _controller.Rules = TestJam.JamOn;
+                _controller.JamRolls = _ => new FixedJamRoll(0.9f);
+                _controller.Initialize(_camera.transform, _attack, _reload, rifle);
+                Assert.That(_controller.Fire(), Is.True);
+                Assert.That(_controller.Weapon.IsJammed, Is.False);
+
+                Assert.That(_controller.PressReload(), Is.True);
+
+                Assert.That(_controller.Weapon.IsReloading, Is.True);
+                Assert.That(_controller.Weapon.IsClearingJam, Is.False);
+                Assert.That(_controller.TryStartClearJam(), Is.False, "nothing to clear");
+            }
+            finally
+            {
+                Object.DestroyImmediate(rifle);
+            }
+        }
+
+        [Test]
+        public void TheLocalPlayersJamStatusIsPublishedAsItChangesAndClearedWhenDisabled()
+        {
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            GameSignals.ResetAll();
+            try
+            {
+                var heard = new System.Collections.Generic.List<Shooter.Core.WeaponJamStatus?>();
+                GameSignals.WeaponJam.Changed += heard.Add;
+                _controller.Rules = TestJam.JamOn;
+                _controller.JamRolls = _ => new FixedJamRoll(0f);
+                _controller.Initialize(_camera.transform, _attack, _reload, rifle);
+                Assert.That(GameSignals.WeaponJam.Value, Is.EqualTo((Shooter.Core.WeaponJamStatus?)new Shooter.Core.WeaponJamStatus(Shooter.Core.WeaponJamPhase.None, 0f, 1f)));
+
+                _controller.Fire();
+                Assert.That(GameSignals.WeaponJam.Value, Is.EqualTo((Shooter.Core.WeaponJamStatus?)new Shooter.Core.WeaponJamStatus(Shooter.Core.WeaponJamPhase.Jammed, 0f, 1f)));
+
+                _controller.PressReload();
+                Assert.That(GameSignals.WeaponJam.Value, Is.EqualTo((Shooter.Core.WeaponJamStatus?)new Shooter.Core.WeaponJamStatus(Shooter.Core.WeaponJamPhase.Clearing, 1f, 1f)));
+
+                _controller.Tick(0.25f);
+                Assert.That(GameSignals.WeaponJam.Value.Value.Phase, Is.EqualTo(Shooter.Core.WeaponJamPhase.Clearing));
+                Assert.That(GameSignals.WeaponJam.Value.Value.ClearRemainingSeconds, Is.EqualTo(0.75f));
+
+                _controller.Tick(0.75f);
+                Assert.That(GameSignals.WeaponJam.Value, Is.EqualTo((Shooter.Core.WeaponJamStatus?)new Shooter.Core.WeaponJamStatus(Shooter.Core.WeaponJamPhase.None, 0f, 1f)));
+                var published = heard.Count;
+                _controller.Tick(0.25f);
+                Assert.That(heard, Has.Count.EqualTo(published), "an unchanged frame is not published again");
+                Assert.That(heard, Has.Count.EqualTo(5), "none, jammed, clearing 1, clearing 0.75, none");
+
+                InvokeLifecycle("OnDisable");
+                Assert.That(GameSignals.WeaponJam.Value, Is.Null);
+            }
+            finally
+            {
+                Object.DestroyImmediate(rifle);
+                GameSignals.ResetAll();
+            }
+        }
+
+        [Test]
+        public void AWeaponWithoutAJamOrWithTheRuleOffIsNeverJammed()
+        {
+            var rifle = TestJam.JammingRifle(TestJam.HalfChance());
+            try
+            {
+                _controller.JamRolls = _ => new FixedJamRoll(0f);
+                _controller.Initialize(_camera.transform, _attack, _reload, rifle);
+
+                Assert.That(_controller.Fire(), Is.True);
+
+                Assert.That(_controller.Weapon.Jam, Is.Null, "the default rules leave Jam off");
+                Assert.That(_controller.Weapon.IsJammed, Is.False);
+                Assert.That(_controller.JamStatus, Is.EqualTo(Shooter.Core.WeaponJamStatus.None));
+            }
+            finally
+            {
+                Object.DestroyImmediate(rifle);
+            }
+        }
+
         private void InvokeLifecycle(string method)
         {
             // Edit Mode のテストでは OnEnable と OnDisable を Unity が呼ばないので、直に呼ぶ。
