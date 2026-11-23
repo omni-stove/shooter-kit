@@ -49,11 +49,12 @@
             <ui:VisualElement name="hud-reload-fill" class="hud__reload-fill" picking-mode="Ignore" />
             <ui:VisualElement name="hud-reload-window" class="hud__reload-window" picking-mode="Ignore" />
         </ui:VisualElement>
-        <!-- 武器の溜め・熱・弾薬の種類。武器にその値があるときだけ HudView が行ごと出す。 -->
+        <!-- 武器の溜め・熱・弾薬の種類・弾詰まり (解除中は残りの割合)。武器にその値があるときだけ HudView が行ごと出す。 -->
         <ui:VisualElement name="hud-weapon-gauges" class="hud__weapon-gauges" picking-mode="Ignore">
             <ui:Label name="hud-ammo-type" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
             <ui:Label name="hud-charge" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
             <ui:Label name="hud-heat" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
+            <ui:Label name="hud-jam" text="" class="hud__gauge" picking-mode="Ignore" style="display: none;" />
         </ui:VisualElement>
         <!-- 照準の下に出す倍率とロックオンの進み。値があるときだけ HudView が出す。 -->
         <ui:VisualElement name="hud-aim-readout" class="hud__aim-readout" picking-mode="Ignore">

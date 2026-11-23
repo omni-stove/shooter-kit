@@ -82,6 +82,13 @@ namespace Shooter.Core
 
         public bool IsLockedOn => LockOnProgress == 1f;
 
+        public bool IsJammed { get; private set; }
+
+        public bool IsClearingJam => JamClearRemaining.HasValue;
+
+        // 解除の残りを解除にかかる時間に対する割合 (1 で始めたところ、0 で解き終わる) で持つ。解除していなければ null。
+        public float? JamClearRemaining { get; private set; }
+
         public void BindHealth(Health health)
         {
             if (_health != null)
@@ -102,11 +109,7 @@ namespace Shooter.Core
         {
             if (_weapon != null)
             {
-                _weapon.Fired -= OnWeaponChanged;
-                _weapon.Reloaded -= OnWeaponChanged;
-                _weapon.ReserveAmmoAdded -= OnWeaponChanged;
-                _weapon.ReserveAmmoChanged -= OnWeaponChanged;
-                _weapon.AmmoTypeSwitched -= OnWeaponChanged;
+                Unsubscribe(_weapon);
             }
 
             _weapon = weapon;
@@ -117,6 +120,9 @@ namespace Shooter.Core
                 _weapon.ReserveAmmoAdded += OnWeaponChanged;
                 _weapon.ReserveAmmoChanged += OnWeaponChanged;
                 _weapon.AmmoTypeSwitched += OnWeaponChanged;
+                _weapon.Jammed += RefreshJam;
+                _weapon.JamClearStarted += RefreshJam;
+                _weapon.JamCleared += RefreshJam;
             }
 
             OnWeaponChanged();
@@ -190,11 +196,7 @@ namespace Shooter.Core
 
             if (_weapon != null)
             {
-                _weapon.Fired -= OnWeaponChanged;
-                _weapon.Reloaded -= OnWeaponChanged;
-                _weapon.ReserveAmmoAdded -= OnWeaponChanged;
-                _weapon.ReserveAmmoChanged -= OnWeaponChanged;
-                _weapon.AmmoTypeSwitched -= OnWeaponChanged;
+                Unsubscribe(_weapon);
                 _weapon = null;
             }
 
@@ -526,9 +528,71 @@ namespace Shooter.Core
             ApplyGauge(HudField.LockOn, null);
         }
 
+        // 詰まって、まだ解除を始めていない。
+        public void SetJam()
+        {
+            ApplyJam(true, null);
+        }
+
+        // 詰まりを解除している。clearRemaining は解除の残りの割合 (1 で始めたところ、0 で解き終わる)。
+        public void SetJam(float clearRemaining)
+        {
+            ApplyJam(true, Fraction(clearRemaining, nameof(clearRemaining)));
+        }
+
+        public void ClearJam()
+        {
+            ApplyJam(false, null);
+        }
+
+        // 解除の残りは時間で減りイベントが無いので、RefreshWeaponGauges から毎フレームも呼ぶ。
+        public void RefreshJam()
+        {
+            if (_weapon == null || !_weapon.IsJammed)
+            {
+                ClearJam();
+                return;
+            }
+
+            if (!_weapon.IsClearingJam)
+            {
+                SetJam();
+                return;
+            }
+
+            var remaining = _weapon.JamClearRemainingSeconds / _weapon.Jam.Spec.ClearSeconds;
+            SetJam(Math.Max(0f, Math.Min(1f, remaining)));
+        }
+
+        private void ApplyJam(bool jammed, float? clearRemaining)
+        {
+            if (jammed == IsJammed && clearRemaining == JamClearRemaining)
+            {
+                return;
+            }
+
+            IsJammed = jammed;
+            JamClearRemaining = clearRemaining;
+            Changed?.Invoke(HudField.Jam);
+        }
+
+        private void Unsubscribe(Weapon weapon)
+        {
+            weapon.Fired -= OnWeaponChanged;
+            weapon.Reloaded -= OnWeaponChanged;
+            weapon.ReserveAmmoAdded -= OnWeaponChanged;
+            weapon.ReserveAmmoChanged -= OnWeaponChanged;
+            weapon.AmmoTypeSwitched -= OnWeaponChanged;
+            weapon.Jammed -= RefreshJam;
+            weapon.JamClearStarted -= RefreshJam;
+            weapon.JamCleared -= RefreshJam;
+        }
+
         // 溜め・熱・弾薬の種類は時間や入力で変わり Weapon にイベントが無いので、リロードの進みと同じく HUD が毎フレーム呼ぶ。
         public void RefreshWeaponGauges()
         {
+            // 持ち替えで解除を取り消したときも Weapon にイベントが無いので、ここで読み直す。
+            RefreshJam();
             if (_weapon == null)
             {
                 ClearCharge();
