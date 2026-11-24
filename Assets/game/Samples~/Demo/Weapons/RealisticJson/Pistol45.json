@@ -56,5 +56,12 @@
     "blindFireSpreadDegrees": 5,
     "zoomLevels": [55],
     "swayDegrees": 0
+  },
+  "akimbo": {
+    "spreadMultiplier": 1.5,
+    "blocksAds": true,
+    "reloadSecondsMultiplier": 1.2,
+    "moveSpeedMultiplier": 1,
+    "offhandShotDelaySeconds": 0.05
   }
 }
