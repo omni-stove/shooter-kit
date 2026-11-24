@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Shooter.Core;
 using UnityEngine;
 
@@ -81,6 +82,11 @@ namespace Shooter.Runtime
                 {
                     problems.Add($"{label} sway: {error}");
                 }
+
+                if (!(entry.AkimboReloadLowering >= 0f && entry.AkimboReloadLowering <= 1f))
+                {
+                    problems.Add($"{label} akimbo reload lowering {entry.AkimboReloadLowering.ToString(CultureInfo.InvariantCulture)} is outside 0..1");
+                }
             }
 
             if (problems.Count > 0)
@@ -108,9 +114,22 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("歩行の揺れ・視点への追従遅れ・発砲時の跳ね上がりの強さ")]
         private ViewmodelSwayParameters _sway = new ViewmodelSwayParameters();
 
+        [SerializeField, Tooltip("二丁持ちの左手のモデル。空なら右手のモデル (Prefab) を左右反転して置く")]
+        private GameObject _leftPrefab;
+
+        [SerializeField, Tooltip("二丁持ちのとき、カメラから見た左手のモデルの根の位置 (m)。右・上・前")]
+        private Vector3 _leftOffset = ViewmodelEntry.DefaultLeftOffset;
+
+        [SerializeField, Range(0f, 1f), Tooltip("二丁持ちでリロードしている手を下げる深さ。持ち替えでしまい切ったときの下げ幅に掛ける割合")]
+        private float _akimboReloadLowering = ViewmodelEntry.DefaultAkimboReloadLowering;
+
         public static readonly Vector3 DefaultOffset = new Vector3(0.14f, -0.14f, 0.2f);
 
         public static readonly Vector3 DefaultAdsOffset = new Vector3(0f, 0f, 0.2f);
+
+        public static readonly Vector3 DefaultLeftOffset = Mirror(DefaultOffset);
+
+        public const float DefaultAkimboReloadLowering = 0.4f;
 
         public ViewmodelEntry()
         {
@@ -122,12 +141,28 @@ namespace Shooter.Runtime
         }
 
         public ViewmodelEntry(string weaponId, GameObject prefab, Vector3 offset, ViewmodelSwayParameters sway, Vector3 adsOffset)
+            : this(weaponId, prefab, offset, sway, adsOffset, null, Mirror(offset))
+        {
+        }
+
+        public ViewmodelEntry(
+            string weaponId,
+            GameObject prefab,
+            Vector3 offset,
+            ViewmodelSwayParameters sway,
+            Vector3 adsOffset,
+            GameObject leftPrefab,
+            Vector3 leftOffset,
+            float akimboReloadLowering = DefaultAkimboReloadLowering)
         {
             _weaponId = weaponId?.Trim() ?? string.Empty;
             _prefab = prefab;
             _offset = offset;
             _sway = sway ?? new ViewmodelSwayParameters();
             _adsOffset = adsOffset;
+            _leftPrefab = leftPrefab;
+            _leftOffset = leftOffset;
+            _akimboReloadLowering = akimboReloadLowering;
         }
 
         public string WeaponId => _weaponId ?? string.Empty;
@@ -137,6 +172,17 @@ namespace Shooter.Runtime
         public Vector3 Offset => _offset;
 
         public Vector3 AdsOffset => _adsOffset;
+
+        public GameObject LeftPrefab => _leftPrefab;
+
+        public Vector3 LeftOffset => _leftOffset;
+
+        public float AkimboReloadLowering => _akimboReloadLowering;
+
+        public static Vector3 Mirror(Vector3 offset)
+        {
+            return new Vector3(-offset.x, offset.y, offset.z);
+        }
 
         public ViewmodelSwayParameters Sway => _sway ??= new ViewmodelSwayParameters();
 

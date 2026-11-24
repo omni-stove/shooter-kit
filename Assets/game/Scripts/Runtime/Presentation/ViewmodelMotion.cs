@@ -69,6 +69,9 @@ namespace Shooter.Runtime
 
         public Func<float> AdsProgressSource { get; set; }
 
+        // true の間は撃っても軸を跳ねさせない。二丁持ちは軸に両手のモデルが載るので、軸ごと跳ねさせると撃っていない手まで跳ねる。
+        public Func<bool> HandsKickSeparately { get; set; }
+
         private void OnEnable()
         {
             if (NetStartup.ShouldDisablePresentation(NetStartup.IsDedicatedServerBuild))
@@ -136,6 +139,11 @@ namespace Shooter.Runtime
             return shooter != null && shooter.transform.IsChildOf(transform);
         }
 
+        public bool KicksOnShot(GameObject shooter)
+        {
+            return IsOwnShot(shooter) && !(HandsKickSeparately != null && HandsKickSeparately());
+        }
+
         public void Kick()
         {
             _sway.Kick();
@@ -177,7 +185,7 @@ namespace Shooter.Runtime
 
         private void HandleShotFired(ShotFiredInfo shot)
         {
-            if (IsOwnShot(shot.Shooter))
+            if (KicksOnShot(shot.Shooter))
             {
                 Kick();
             }
