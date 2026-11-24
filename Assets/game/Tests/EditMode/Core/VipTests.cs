@@ -589,6 +589,19 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => VipLog.RoundEndLog(1, Side.Alpha, Side.Bravo, (VipRoundEnd)99, 0, 0));
         }
 
+        [Test]
+        public void RunnerLogsWriteTheBodyTheSpawnSwapAndTheBots()
+        {
+            Assert.That(VipLog.BodyLog(2, 250), Is.EqualTo("[Vip] body player=2 max-health=250"));
+            Assert.That(VipLog.RestoredLog(2, 100), Is.EqualTo("[Vip] restore player=2 max-health=100"));
+            Assert.That(VipLog.SpawnSwapLog(4, Side.Bravo, Side.Alpha), Is.EqualTo("[Vip] spawn_swap points=4 attacker=1 defender=0"));
+            Assert.That(VipLog.BotExitLog(3, 0), Is.EqualTo("[Vip] bot_exit player=3 exit=0"));
+            Assert.That(VipLog.BotEscortLog(3, 2), Is.EqualTo("[Vip] bot_escort player=3 vip=2"));
+            Assert.That(VipLog.BotTargetLog(1, 2), Is.EqualTo("[Vip] bot_target player=1 vip=2"));
+            Assert.That(VipLog.NoExitLog("Runner"), Is.EqualTo("[Vip] not_started runner=Runner reason=no-exit-point"));
+            Assert.That(VipLog.NoExitLog(null), Is.EqualTo("[Vip] not_started runner=- reason=no-exit-point"));
+        }
+
         private static Vip Create(
             Func<int, int> pick = null,
             float exitHoldSeconds = _exitHoldSeconds,

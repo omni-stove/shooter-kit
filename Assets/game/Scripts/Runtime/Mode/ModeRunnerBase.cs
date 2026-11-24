@@ -113,6 +113,12 @@ namespace Shooter.Runtime
 
         protected abstract ModeSession CreateSession();
 
+        // Scene の置き忘れは組み立ての誤りではないので、CreateSession で投げてエラーにせず、派生が警告を出して始めないで済むようにする。
+        protected virtual bool CanBegin()
+        {
+            return true;
+        }
+
         protected virtual void OnBegan()
         {
         }
@@ -243,6 +249,11 @@ namespace Shooter.Runtime
             if (IsStarted)
             {
                 return true;
+            }
+
+            if (!CanBegin())
+            {
+                return false;
             }
 
             var bootstrap = FindAnyObjectByType<GameBootstrap>();
