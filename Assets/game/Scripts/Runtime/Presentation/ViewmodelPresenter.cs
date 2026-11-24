@@ -51,6 +51,16 @@ namespace Shooter.Runtime
         private bool _hiddenBySight;
         private Material _paint;
 
+        private GameObject _leftInstance;
+        private Vector3 _leftHipPosition;
+        private bool _leftMirrored;
+        private WeaponSockets _leftSockets = WeaponSockets.None;
+
+        // 歩行の揺れと追従遅れは軸 (ViewmodelMotion) で両手そろって揺らすので、手ごとには跳ね上がりだけを持つ。
+        private readonly ViewmodelSway _rightKick = new ViewmodelSway();
+        private readonly ViewmodelSway _leftKick = new ViewmodelSway();
+        private WeaponController _hooked;
+
         public ViewmodelCatalog Catalog
         {
             get
@@ -112,6 +122,17 @@ namespace Shooter.Runtime
 
         public bool IsHiddenBySight => _instance != null && _hiddenBySight;
 
+        public GameObject LeftInstance => _instance != null && _leftInstance != null ? _leftInstance : null;
+
+        public bool IsLeftMirrored => LeftInstance != null && _leftMirrored;
+
+        public WeaponSockets LeftSockets => LeftInstance != null ? _leftSockets : WeaponSockets.None;
+
+        public float HandKicks(AkimboHand hand)
+        {
+            return KickOf(hand).Kicks;
+        }
+
         public Func<SightView> SightSource { get; set; }
 
         public ViewmodelMotion Motion
@@ -128,18 +149,40 @@ namespace Shooter.Runtime
             if (NetStartup.ShouldDisablePresentation(NetStartup.IsDedicatedServerBuild))
             {
                 enabled = false;
+                return;
+            }
+
+            if (_resolved)
+            {
+                HookFiredHand();
             }
         }
 
         private void OnDisable()
         {
+            UnhookFiredHand();
+
             // 親ごと無効にされている最中は子の SetActive が許されないので、隠さずに壊すだけにする。
             Remove(ReasonDisabled, false);
         }
 
         private void LateUpdate()
         {
+            StepHands(Time.deltaTime);
             Refresh();
+        }
+
+        public void StepHands(float deltaSeconds)
+        {
+            if (!(deltaSeconds >= 0f) || float.IsInfinity(deltaSeconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(deltaSeconds), deltaSeconds, "deltaSeconds must be a non-negative finite number");
+            }
+
+            Resolve();
+            var ads = Mathf.Clamp01(_motion.AdsProgress());
+            _rightKick.Tick(deltaSeconds, 0f, 0f, 0f, ads);
+            _leftKick.Tick(deltaSeconds, 0f, 0f, 0f, ads);
         }
 
         public void Refresh()
@@ -159,7 +202,8 @@ namespace Shooter.Runtime
                 return;
             }
 
-            if (_instance != null && string.Equals(wanted, _weaponId, StringComparison.Ordinal))
+            var akimbo = HeldHands(wanted) != null;
+            if (_instance != null && string.Equals(wanted, _weaponId, StringComparison.Ordinal) && akimbo == (_leftInstance != null))
             {
                 var attachments = WantedAttachments(wanted);
                 if (!WeaponAttachments.SameAs(attachments, _attachments))
@@ -188,7 +232,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            Spawn(wanted, entry);
+            Spawn(wanted, entry, akimbo);
             PlaceForAim();
         }
 
@@ -214,8 +258,99 @@ namespace Shooter.Runtime
 
             var progress = Mathf.Clamp01(_motion.AdsProgress());
             var lowering = _weapon != null ? _weapon.SwitchLowering : 0f;
-            _instance.transform.localPosition = LoweredPosition(Vector3.Lerp(_hipPosition, _adsPosition, progress), lowering);
+            var right = Vector3.Lerp(_hipPosition, _adsPosition, progress);
+            var hands = _leftInstance != null ? HeldHands(_weaponId) : null;
+            if (hands == null)
+            {
+                _instance.transform.localPosition = LoweredPosition(right, lowering);
+            }
+            else
+            {
+                PlaceHand(_instance.transform, LoweredPosition(right, Mathf.Max(lowering, HandReloadLowering(hands, AkimboHand.Right))), _rightKick);
+                PlaceHand(_leftInstance.transform, LoweredPosition(_leftHipPosition, Mathf.Max(lowering, HandReloadLowering(hands, AkimboHand.Left))), _leftKick);
+            }
+
             HideForSight(CurrentSightView().HidesViewmodel, false);
+        }
+
+        // 込め始めと込め終わりで構えた位置に戻るよう、進みの半ばで一番深く下げる。
+        public static float AkimboReloadLowering(bool reloading, float progress, float depth)
+        {
+            if (!reloading || float.IsNaN(progress) || float.IsNaN(depth))
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(depth) * Mathf.Sin(Mathf.PI * Mathf.Clamp01(progress));
+        }
+
+        private float HandReloadLowering(AkimboHands hands, AkimboHand hand)
+        {
+            return AkimboReloadLowering(hands.IsHandReloading(hand), hands.ReloadProgress(hand), _entry != null ? _entry.AkimboReloadLowering : 0f);
+        }
+
+        private static void PlaceHand(Transform model, Vector3 position, ViewmodelSway kick)
+        {
+            float intensity = ViewmodelMotion.GlobalMultiplier;
+            model.localPosition = position + kick.Position.ToUnity() * intensity;
+            model.localRotation = Quaternion.Euler(-kick.PitchUpDegrees * intensity, 0f, 0f);
+        }
+
+        private ViewmodelSway KickOf(AkimboHand hand)
+        {
+            switch (hand)
+            {
+                case AkimboHand.Right:
+                    return _rightKick;
+                case AkimboHand.Left:
+                    return _leftKick;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(hand), hand, "hand is not a defined AkimboHand");
+            }
+        }
+
+        // WeaponIdSource で別の武器を見せている間は、持っている武器の手の組を当てない。
+        private AkimboHands HeldHands(string weaponId)
+        {
+            var hands = _weapon != null && _weapon.IsInitialized ? _weapon.Akimbo : null;
+            return hands != null && string.Equals(hands.Spec.Id, weaponId, StringComparison.Ordinal) ? hands : null;
+        }
+
+        private void HandleFiredHand(Weapon weapon, AkimboHand hand)
+        {
+            if (_leftInstance == null)
+            {
+                return;
+            }
+
+            KickOf(hand).Kick();
+        }
+
+        private void HookFiredHand()
+        {
+            if (ReferenceEquals(_hooked, _weapon))
+            {
+                return;
+            }
+
+            UnhookFiredHand();
+            if (_weapon == null)
+            {
+                return;
+            }
+
+            _weapon.FiredHand += HandleFiredHand;
+            _hooked = _weapon;
+        }
+
+        private void UnhookFiredHand()
+        {
+            if (!ReferenceEquals(_hooked, null))
+            {
+                _hooked.FiredHand -= HandleFiredHand;
+            }
+
+            _hooked = null;
         }
 
         private SightView CurrentSightView()
@@ -243,15 +378,29 @@ namespace Shooter.Runtime
             }
 
             _hiddenBySight = hide;
-            foreach (var renderer in _instance.GetComponentsInChildren<Renderer>(true))
+            SetRenderersEnabled(_instance, !hide);
+            if (_leftInstance != null)
             {
-                renderer.enabled = !hide;
+                SetRenderersEnabled(_leftInstance, !hide);
             }
 
             if (!force)
             {
                 Debug.Log($"{LogTag} sight hidden={(hide ? "true" : "false")} weapon={_weaponId}", this);
             }
+        }
+
+        private static void SetRenderersEnabled(GameObject model, bool enabled)
+        {
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = enabled;
+            }
+        }
+
+        public static string FormatLeftHandLog(string weaponId, string prefabName, bool mirrored, bool hasMuzzle)
+        {
+            return $"{LogTag} akimbo left weapon={weaponId} prefab={prefabName} mirrored={(mirrored ? "true" : "false")} muzzle={hasMuzzle}";
         }
 
         public static string FormatSpawnLog(string weaponId, string prefabName, bool hasMuzzle)
@@ -320,6 +469,12 @@ namespace Shooter.Runtime
         {
             var catalog = _weapon != null ? _weapon.AttachmentCatalog : KitTuning.Items;
             WeaponAttachmentModels.Apply(_instance.transform, attachments, catalog, AttachmentModels);
+            if (_leftInstance != null)
+            {
+                WeaponAttachmentModels.Apply(_leftInstance.transform, attachments, catalog, AttachmentModels);
+                _leftSockets = new WeaponSockets(_leftInstance.transform);
+            }
+
             _attachments = attachments;
             ApplyPaint(WantedPaint());
             _sockets = new WeaponSockets(_instance.transform);
@@ -354,7 +509,7 @@ namespace Shooter.Runtime
             return entry;
         }
 
-        private void Spawn(string weaponId, ViewmodelEntry entry)
+        private void Spawn(string weaponId, ViewmodelEntry entry, bool akimbo)
         {
             var pivot = _motion.EnsurePivot();
             if (pivot == null)
@@ -381,6 +536,11 @@ namespace Shooter.Runtime
                 WeaponAttachmentModels.Apply(instance.transform, _attachments, _weapon != null ? _weapon.AttachmentCatalog : KitTuning.Items, AttachmentModels);
             }
 
+            if (akimbo)
+            {
+                SpawnLeft(pivot, entry);
+            }
+
             _paint = null;
             ApplyPaint(WantedPaint());
             _sockets = new WeaponSockets(instance.transform);
@@ -391,8 +551,13 @@ namespace Shooter.Runtime
                 _presentation.WeaponModel = instance.transform;
             }
 
-            _motion.Settings = SwaySettingsFor(entry);
+            var sway = SwaySettingsFor(entry);
+            _motion.Settings = sway;
             _motion.ResetMotion();
+            _rightKick.Settings = sway;
+            _leftKick.Settings = sway;
+            _rightKick.Reset();
+            _leftKick.Reset();
             _hiddenBySight = false;
 
             var hasMuzzle = _sockets.Muzzle != null;
@@ -401,6 +566,37 @@ namespace Shooter.Runtime
                     ? FormatSpawnLog(weaponId, instance.name, hasMuzzle)
                     : FormatSwapLog(previousId, weaponId, instance.name, hasMuzzle),
                 this);
+            if (_leftInstance != null)
+            {
+                Debug.Log(FormatLeftHandLog(weaponId, _leftInstance.name, _leftMirrored, _leftSockets.Muzzle != null), this);
+            }
+        }
+
+        // 左手のモデルが無い武器は、形をコードで作らず右手のモデルを鏡に映して使う。
+        private void SpawnLeft(Transform pivot, ViewmodelEntry entry)
+        {
+            var mirrored = entry.LeftPrefab == null;
+            var prefab = mirrored ? entry.Prefab : entry.LeftPrefab;
+            var left = Instantiate(prefab, pivot, false);
+            left.name = prefab.name;
+            left.transform.localPosition = entry.LeftOffset;
+            left.transform.localRotation = Quaternion.identity;
+            if (mirrored)
+            {
+                var scale = left.transform.localScale;
+                left.transform.localScale = new Vector3(-scale.x, scale.y, scale.z);
+            }
+
+            PrepareForView(left);
+            if (_attachments.Count > 0)
+            {
+                WeaponAttachmentModels.Apply(left.transform, _attachments, _weapon != null ? _weapon.AttachmentCatalog : KitTuning.Items, AttachmentModels);
+            }
+
+            _leftInstance = left;
+            _leftHipPosition = entry.LeftOffset;
+            _leftMirrored = mirrored;
+            _leftSockets = new WeaponSockets(left.transform);
         }
 
         private void Remove(string reason, bool hideFirst = true)
@@ -410,6 +606,7 @@ namespace Shooter.Runtime
                 // 外から壊されていても、次に同じ武器を出すときに作り直させる。
                 _weaponId = null;
                 _sockets = WeaponSockets.None;
+                DestroyLeft(hideFirst);
                 return;
             }
 
@@ -420,6 +617,7 @@ namespace Shooter.Runtime
 
         private void DestroyInstance(bool hideFirst = true)
         {
+            DestroyLeft(hideFirst);
             if (_instance == null)
             {
                 return;
@@ -443,6 +641,23 @@ namespace Shooter.Runtime
             _sockets = WeaponSockets.None;
         }
 
+        private void DestroyLeft(bool hideFirst)
+        {
+            if (_leftInstance != null)
+            {
+                if (hideFirst)
+                {
+                    _leftInstance.SetActive(false);
+                }
+
+                DestroySafely(_leftInstance);
+            }
+
+            _leftInstance = null;
+            _leftMirrored = false;
+            _leftSockets = WeaponSockets.None;
+        }
+
         private Material WantedPaint()
         {
             return PaintSource != null ? PaintSource() : CosmeticLooks.WornPaint();
@@ -457,6 +672,11 @@ namespace Shooter.Runtime
 
             var changed = paint != _paint;
             CamoPaint.Apply(_instance, paint);
+            if (_leftInstance != null)
+            {
+                CamoPaint.Apply(_leftInstance, paint);
+            }
+
             _paint = paint;
             if (changed)
             {
@@ -523,6 +743,9 @@ namespace Shooter.Runtime
             {
                 _motion = gameObject.AddComponent<ViewmodelMotion>();
             }
+
+            _motion.HandsKickSeparately = () => _leftInstance != null;
+            HookFiredHand();
         }
 
         private void WarnMissingCatalog()
