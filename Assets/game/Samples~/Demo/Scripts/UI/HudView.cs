@@ -350,7 +350,7 @@ namespace Shooter.Runtime
         private void ShowAmmo()
         {
             AmmoLabel.text = HudNumberFormat.Ammo(_model);
-            AmmoLabel.EnableInClassList(ReloadingClass, _model.IsReloading);
+            AmmoLabel.EnableInClassList(ReloadingClass, _model.IsReloading || _model.IsOffhandReloading);
             AmmoPanel.style.display = Display(_visibility.Ammo);
         }
 
