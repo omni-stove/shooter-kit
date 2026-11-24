@@ -213,7 +213,7 @@ namespace Shooter.Net.Tests
             _part.Apply(Snapshot(_allyId));
 
             var other = Snapshot(_allyId);
-            other.Match.Objective = MatchObjective.TeamDeathmatch;
+            other.Match.Objective = MatchObjective.SearchAndDestroy;
             _part.Apply(other);
 
             Assert.That(_part.Status, Is.Null);
