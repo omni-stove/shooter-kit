@@ -105,12 +105,23 @@ namespace Shooter.Runtime
                 {
                     problems.Add($"{label} dry-fire sound is missing");
                 }
+
+                var offset = entry.LeftHandBodyOffset;
+                if (!IsFinite(offset.x) || !IsFinite(offset.y) || !IsFinite(offset.z))
+                {
+                    problems.Add($"{label} left-hand body offset is not finite");
+                }
             }
 
             if (problems.Count > 0)
             {
                 throw new PresentationCatalogException($"weapon extras catalog '{source}': {string.Join("; ", problems)}");
             }
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -138,6 +149,12 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("地面に置いた (拾える) ときの銃の見た目。原点が見た目の中心で、前が +Z (銃口)。当たり判定は外す。空なら仮の銃の形を組む")]
         private GameObject _pickupModel;
 
+        [SerializeField, Tooltip("二丁持ちの武器で、三人称の体の左手に持たせる銃の見た目。原点が見た目の中心で、前が +Z (銃口)。当たり判定は外す。空なら右手の体の銃 (置いたときの見た目か仮の箱) を左右反転して持たせる")]
+        private GameObject _leftHandBodyModel;
+
+        [SerializeField, Tooltip("左手の銃を、右手の構えを左右に映した位置からずらす量 (m)。左手の銃の向きで測る")]
+        private Vector3 _leftHandBodyOffset = Vector3.zero;
+
         public WeaponExtrasAssets()
         {
         }
@@ -163,6 +180,18 @@ namespace Shooter.Runtime
         {
             get => _pickupModel;
             set => _pickupModel = value;
+        }
+
+        public GameObject LeftHandBodyModel
+        {
+            get => _leftHandBodyModel;
+            set => _leftHandBodyModel = value;
+        }
+
+        public Vector3 LeftHandBodyOffset
+        {
+            get => _leftHandBodyOffset;
+            set => _leftHandBodyOffset = value;
         }
     }
 }
