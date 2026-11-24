@@ -17,7 +17,7 @@ namespace Shooter.Runtime
         public const string BodyRootName = "MockBody";
         public const string ViewModelRootName = "MockViewModel";
         public const string LeftHandGunName = "LeftHandGun";
-        public const string LeftHandGunModelName = "LeftHandGunModel";
+        public const string LeftHandGunModelName = BodyWeaponModels.LeftHandGunModelName;
 
         // 敵 (既定の白いカプセル) ともネット対戦のチーム色 (青・赤) とも見分けが付く緑にする。
         public static readonly Color BodyColor = new Color(0.2f, 0.75f, 0.45f);
@@ -35,11 +35,8 @@ namespace Shooter.Runtime
         private Transform _torso;
         private Transform _head;
         private Transform _bodyGun;
-        private Transform _bodyGunDefault;
-        private Transform _bodyGunModel;
-        private string _bodyGunWeaponId;
+        private BodyWeaponModels _bodyGuns;
         private Transform _leftHandGun;
-        private Transform _leftHandGunModel;
         private IReadOnlyList<string> _bodyGunAttachments = WeaponAttachments.None;
         private WeaponExtrasCatalog _weaponModels;
         private bool _weaponModelsResolved;
@@ -91,13 +88,13 @@ namespace Shooter.Runtime
         public Transform Head => _head;
         public Transform BodyGun => _bodyGun;
 
-        public Transform BodyGunModel => _bodyGunModel;
+        public Transform BodyGunModel => _bodyGuns != null ? _bodyGuns.Model : null;
 
         public Transform LeftHandGun => _leftHandGun;
 
-        public Transform LeftHandGunModel => _leftHandGunModel;
+        public Transform LeftHandGunModel => _bodyGuns != null ? _bodyGuns.LeftHandModel : null;
 
-        public string BodyWeaponId => _bodyGunWeaponId;
+        public string BodyWeaponId => _bodyGuns != null ? _bodyGuns.WeaponId : null;
 
         public WeaponExtrasCatalog WeaponModels
         {
@@ -115,7 +112,7 @@ namespace Shooter.Runtime
             {
                 _weaponModels = value;
                 _weaponModelsResolved = true;
-                _bodyGunWeaponId = null;
+                _bodyGuns?.Forget();
             }
         }
 
@@ -340,8 +337,8 @@ namespace Shooter.Runtime
                 _head = CreatePart(prefabs.Head, PrimitiveType.Sphere, "Head", _bodyRoot, isGun: false, _bodyRenderers);
                 _head.localScale = Vector3.one * PlayerMockPose.HeadDiameter;
                 _bodyGun = CreateRoot("Gun", _bodyRoot);
-                _bodyGunDefault = CreateGun(prefabs.Gun, _bodyGun, _bodyRenderers);
                 _leftHandGun = CreateRoot(LeftHandGunName, _bodyRoot);
+                _bodyGuns = new BodyWeaponModels(_bodyGun, _leftHandGun, hand => CreateGun(Prefabs.Gun, hand, _bodyRenderers), _bodyRenderers);
 
                 _viewModelRoot = CreateRoot(ViewModelRootName, camera);
                 _viewModelGun = CreateRoot("Gun", _viewModelRoot);
@@ -480,12 +477,9 @@ namespace Shooter.Runtime
             _torso = null;
             _head = null;
             _bodyGun = null;
-            _bodyGunDefault = null;
-            _bodyGunModel = null;
-            _bodyGunWeaponId = null;
+            _bodyGuns = null;
             _bodyGunAttachments = WeaponAttachments.None;
             _leftHandGun = null;
-            _leftHandGunModel = null;
             _viewModelRoot = null;
             _viewModelGun = null;
             _bodyMaterial = null;
@@ -619,23 +613,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            if (_bodyGunModel != null)
-            {
-                var old = _bodyGunModel;
-                _bodyRenderers.RemoveAll(r => r == null || r.transform.IsChildOf(old));
-                DestroySafely(old.gameObject);
-                _bodyGunModel = null;
-            }
-
-            if (model != null)
-            {
-                var instance = VisualPrefab.Instantiate(model, _bodyGun, model.name, stripColliders: true);
-                VisualPrefab.SetLayer(instance, _bodyGun.gameObject.layer);
-                _bodyRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));
-                _bodyGunModel = instance.transform;
-            }
-
-            _bodyGunDefault.gameObject.SetActive(_bodyGunModel == null);
+            _bodyGuns.SetModel(model);
         }
 
         // 持ち替えたときと付けた物が変わったときだけ置き直す。毎フレーム作り直すと、プレハブの複製が積もる。
@@ -645,13 +623,13 @@ namespace Shooter.Runtime
             var weapon = controller != null ? controller.Weapon : null;
             var weaponId = weapon != null ? weapon.Spec.Id : null;
             var attachments = weaponId != null ? controller.AttachmentsOf(weaponId) : WeaponAttachments.None;
-            if (string.Equals(weaponId, _bodyGunWeaponId, StringComparison.Ordinal))
+            if (string.Equals(weaponId, BodyWeaponId, StringComparison.Ordinal))
             {
                 if (!WeaponAttachments.SameAs(attachments, _bodyGunAttachments))
                 {
                     _bodyGunAttachments = attachments;
-                    WeaponAttachmentModels.Apply(_bodyGunModel, attachments, controller.AttachmentCatalog, AttachmentModelCatalog.Load());
-                    AddBodyRenderers(_bodyGunModel);
+                    WeaponAttachmentModels.Apply(BodyGunModel, attachments, controller.AttachmentCatalog, AttachmentModelCatalog.Load());
+                    AddBodyRenderers(BodyGunModel);
                 }
 
                 return;
@@ -661,79 +639,21 @@ namespace Shooter.Runtime
             _bodyGunAttachments = attachments;
             if (attachments.Count > 0)
             {
-                WeaponAttachmentModels.Apply(_bodyGunModel, attachments, controller.AttachmentCatalog, AttachmentModelCatalog.Load());
-                AddBodyRenderers(_bodyGunModel);
+                WeaponAttachmentModels.Apply(BodyGunModel, attachments, controller.AttachmentCatalog, AttachmentModelCatalog.Load());
+                AddBodyRenderers(BodyGunModel);
             }
         }
 
         // 二丁持ちかを Id から引かず spec で受け取るのは、オフラインは WeaponController の武器の Spec を、オンラインのほかの人はスナップショットの武器 Id から引いた Spec を渡し、引き方が違うため。
         public void ShowBodyWeapon(string weaponId, WeaponSpec spec)
         {
-            var id = string.IsNullOrEmpty(weaponId) ? null : weaponId;
-            if (spec != null && !string.Equals(spec.Id, id, StringComparison.Ordinal))
-            {
-                throw new ArgumentException($"spec '{spec.Id}' is not the spec of weapon '{id}'", nameof(spec));
-            }
-
+            var id = BodyWeaponModels.RequireSpecOf(weaponId, spec);
             if (!IsBuilt)
             {
                 return;
             }
 
-            _bodyGunWeaponId = id;
-            var catalog = id != null ? WeaponModels : null;
-            WeaponExtrasAssets assets = null;
-            if (catalog != null)
-            {
-                catalog.TryGetWeapon(id, out assets);
-            }
-
-            SetBodyGunModel(assets != null ? assets.PickupModel : null);
-            SetLeftHandGun(spec != null && spec.IsAkimbo, assets);
-        }
-
-        // 左右反転は左手のプレハブが無いときだけにする。左手用に作られたプレハブを反転すると右手の向きに戻ってしまう。
-        private void SetLeftHandGun(bool akimbo, WeaponExtrasAssets assets)
-        {
-            if (_leftHandGunModel != null)
-            {
-                var old = _leftHandGunModel;
-                _bodyRenderers.RemoveAll(r => r == null || r.transform.IsChildOf(old));
-                DestroySafely(old.gameObject);
-                _leftHandGunModel = null;
-            }
-
-            if (!akimbo)
-            {
-                return;
-            }
-
-            var holder = CreateRoot(LeftHandGunModelName, _leftHandGun);
-            holder.localPosition = assets != null ? assets.LeftHandBodyOffset : Vector3.zero;
-            var leftPrefab = assets != null ? assets.LeftHandBodyModel : null;
-            if (leftPrefab != null)
-            {
-                var instance = VisualPrefab.Instantiate(leftPrefab, holder, leftPrefab.name, stripColliders: true);
-                VisualPrefab.SetLayer(instance, holder.gameObject.layer);
-                _bodyRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));
-            }
-            else
-            {
-                holder.localScale = new Vector3(-1f, 1f, 1f);
-                var rightModel = assets != null ? assets.PickupModel : null;
-                if (rightModel != null)
-                {
-                    var instance = VisualPrefab.Instantiate(rightModel, holder, rightModel.name, stripColliders: true);
-                    VisualPrefab.SetLayer(instance, holder.gameObject.layer);
-                    _bodyRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));
-                }
-                else
-                {
-                    CreateGun(Prefabs.Gun, holder, _bodyRenderers);
-                }
-            }
-
-            _leftHandGunModel = holder;
+            _bodyGuns.Show(id, spec, id != null ? WeaponModels : null);
         }
 
         // 付けた物の描画物も体の描画物として数え、一人称で体を隠すときに一緒に隠す

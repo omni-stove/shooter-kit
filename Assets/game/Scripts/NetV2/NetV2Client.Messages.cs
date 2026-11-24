@@ -314,7 +314,9 @@ namespace Shooter.NetV2
                 return;
             }
 
-            _remotes.Add(playerId, NetV2RemotePlayer.Create(playerId, _client.Motor.Stance, _client.Motor.Motor, _remoteRoot));
+            var remote = NetV2RemotePlayer.Create(playerId, _client.Motor.Stance, _client.Motor.Motor, _remoteRoot);
+            remote.WeaponSpecSource = _weapons.SpecFor;
+            _remotes.Add(playerId, remote);
             Debug.Log(LogTag + " player " + playerId.ToString(CultureInfo.InvariantCulture) + " is in view", this);
         }
 
