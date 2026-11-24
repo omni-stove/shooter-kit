@@ -88,6 +88,10 @@ namespace Shooter.Runtime
         // 死んだ・しまったを Damageable と WeaponController から読めない本体 (NetV2 の自分の体) は、隠す理由 (Reason*) をここから渡す。
         public Func<string> HiddenReasonSource { get; set; }
 
+        // WeaponController の手の組 (AkimboHands) を持たない本体 (NetV2 の自分の体) は、武器 Id ごとの二丁持ちの手の様子をここから渡す。
+        // 二丁持ちで持っていなければ null を返す。決めた間は WeaponController の手の組を見ない。
+        public Func<string, AkimboHandsView?> AkimboSource { get; set; }
+
         public AttachmentModelCatalog AttachmentModels
         {
             get
@@ -131,6 +135,20 @@ namespace Shooter.Runtime
         public float HandKicks(AkimboHand hand)
         {
             return KickOf(hand).Kicks;
+        }
+
+        // WeaponController.FiredHand を出さない本体 (NetV2 の自分の体) が、撃った手だけを跳ねさせる口。左手のモデルが無ければ跳ねさせない
+        // (1 丁で持つ武器の跳ね上がりは ViewmodelMotion が CombatEvents.ShotFired で出す)。
+        public bool KickHand(AkimboHand hand)
+        {
+            var kick = KickOf(hand);
+            if (_leftInstance == null)
+            {
+                return false;
+            }
+
+            kick.Kick();
+            return true;
         }
 
         public Func<SightView> SightSource { get; set; }
@@ -202,7 +220,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            var akimbo = HeldHands(wanted) != null;
+            var akimbo = HeldHands(wanted).HasValue;
             if (_instance != null && string.Equals(wanted, _weaponId, StringComparison.Ordinal) && akimbo == (_leftInstance != null))
             {
                 var attachments = WantedAttachments(wanted);
@@ -259,13 +277,14 @@ namespace Shooter.Runtime
             var progress = Mathf.Clamp01(_motion.AdsProgress());
             var lowering = _weapon != null ? _weapon.SwitchLowering : 0f;
             var right = Vector3.Lerp(_hipPosition, _adsPosition, progress);
-            var hands = _leftInstance != null ? HeldHands(_weaponId) : null;
-            if (hands == null)
+            var held = _leftInstance != null ? HeldHands(_weaponId) : null;
+            if (!held.HasValue)
             {
                 _instance.transform.localPosition = LoweredPosition(right, lowering);
             }
             else
             {
+                var hands = held.Value;
                 PlaceHand(_instance.transform, LoweredPosition(right, Mathf.Max(lowering, HandReloadLowering(hands, AkimboHand.Right))), _rightKick);
                 PlaceHand(_leftInstance.transform, LoweredPosition(_leftHipPosition, Mathf.Max(lowering, HandReloadLowering(hands, AkimboHand.Left))), _leftKick);
             }
@@ -284,7 +303,7 @@ namespace Shooter.Runtime
             return Mathf.Clamp01(depth) * Mathf.Sin(Mathf.PI * Mathf.Clamp01(progress));
         }
 
-        private float HandReloadLowering(AkimboHands hands, AkimboHand hand)
+        private float HandReloadLowering(in AkimboHandsView hands, AkimboHand hand)
         {
             return AkimboReloadLowering(hands.IsHandReloading(hand), hands.ReloadProgress(hand), _entry != null ? _entry.AkimboReloadLowering : 0f);
         }
@@ -310,10 +329,15 @@ namespace Shooter.Runtime
         }
 
         // WeaponIdSource で別の武器を見せている間は、持っている武器の手の組を当てない。
-        private AkimboHands HeldHands(string weaponId)
+        private AkimboHandsView? HeldHands(string weaponId)
         {
+            if (AkimboSource != null)
+            {
+                return string.IsNullOrEmpty(weaponId) ? null : AkimboSource(weaponId);
+            }
+
             var hands = _weapon != null && _weapon.IsInitialized ? _weapon.Akimbo : null;
-            return hands != null && string.Equals(hands.Spec.Id, weaponId, StringComparison.Ordinal) ? hands : null;
+            return hands != null && string.Equals(hands.Spec.Id, weaponId, StringComparison.Ordinal) ? AkimboHandsView.Of(hands) : (AkimboHandsView?)null;
         }
 
         private void HandleFiredHand(Weapon weapon, AkimboHand hand)

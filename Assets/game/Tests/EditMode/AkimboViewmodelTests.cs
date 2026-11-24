@@ -343,6 +343,45 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ABodyWithoutHandsShowsTheLeftModelKicksAndLowersFromTheSources()
+        {
+            // オンラインの自分の体と同じく、WeaponController の手の組ではなく差し込み口から二丁持ちの様子を渡す。持っている 1 丁の武器より口を優先する
+            var plain = Definition(Pistol(null, PlainPistolId), "Pistol");
+            _controller.Initialize(_controller.transform, _attack, _reload, null, null, new[] { plain });
+            AkimboHandsView? hands = new AkimboHandsView(false, 0f, false, 0f);
+            _presenter.WeaponIdSource = () => PistolId;
+            _presenter.AkimboSource = id => id == PistolId ? hands : null;
+            _presenter.Refresh();
+
+            Assert.That(_presenter.CurrentWeaponId, Is.EqualTo(PistolId));
+            Assert.That(_presenter.LeftInstance, Is.Not.Null);
+            var right = _presenter.Instance.transform;
+            var left = _presenter.LeftInstance.transform;
+            var kickBack = ViewmodelSwaySettings.Default.KickBackMeters;
+
+            Assert.That(_presenter.KickHand(AkimboHand.Left), Is.True);
+            _presenter.Refresh();
+            Assert.That(_presenter.HandKicks(AkimboHand.Left), Is.EqualTo(1f));
+            Assert.That(_presenter.HandKicks(AkimboHand.Right), Is.EqualTo(0f));
+            Assert.That(left.localPosition.z, Is.EqualTo(0.25f - kickBack).Within(1e-5f));
+            Assert.That(right.localPosition, Is.EqualTo(RightOffset), "the right gun did not fire");
+
+            _presenter.StepHands(10f);
+            hands = new AkimboHandsView(false, 0f, true, 0.5f);
+            _presenter.Refresh();
+            var depth = ViewmodelEntry.DefaultAkimboReloadLowering * ViewmodelPresenter.LoweredDrop;
+            Assert.That(left.localPosition.y, Is.EqualTo(-0.1f - depth).Within(1e-4f));
+            Assert.That(right.localPosition.y, Is.EqualTo(-0.1f).Within(1e-6f), "the right hand is not reloading");
+
+            hands = null;
+            _presenter.Refresh();
+            Assert.That(_presenter.LeftInstance, Is.Null, "a weapon held with one hand has no left model");
+            Assert.That(_presenter.Instance, Is.Not.Null);
+            Assert.That(_presenter.KickHand(AkimboHand.Right), Is.False, "a single weapon kicks through ViewmodelMotion");
+            Assert.That(_presenter.HandKicks(AkimboHand.Right), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void AReloadLoweringOutsideZeroToOneFailsValidation()
         {
             _catalog.SetWeapons(new[]

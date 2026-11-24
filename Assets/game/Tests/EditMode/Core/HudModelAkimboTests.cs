@@ -57,6 +57,39 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void SettingBothHandsAtOnceSendsOneAmmoChange()
+        {
+            var model = new HudModel();
+            var changes = Record(model);
+
+            model.SetAmmo(6, 24, false, false, 3, true);
+
+            Assert.That(changes, Is.EqualTo(new[] { HudField.Ammo }));
+            Assert.That(model.MagazineAmmo, Is.EqualTo(6));
+            Assert.That(model.ReserveAmmo, Is.EqualTo(24));
+            Assert.That(model.OffhandMagazineAmmo, Is.EqualTo(3));
+            Assert.That(model.IsOffhandReloading, Is.True);
+
+            model.SetAmmo(6, 24, false, false, 3, true);
+            Assert.That(changes, Has.Count.EqualTo(1), "the same values send nothing");
+
+            model.SetAmmo(30, 90, true, false, null, true);
+            Assert.That(changes, Has.Count.EqualTo(2));
+            Assert.That(model.OffhandMagazineAmmo, Is.Null);
+            Assert.That(model.IsOffhandReloading, Is.False, "no left magazine keeps no left reload");
+            Assert.That(model.IsAkimbo, Is.False);
+        }
+
+        [Test]
+        public void SettingBothHandsRejectsANegativeLeftMagazine()
+        {
+            var model = new HudModel();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => model.SetAmmo(6, 24, false, false, -1, false));
+            Assert.That(model.MagazineAmmo, Is.Null);
+        }
+
+        [Test]
         public void BindingTheHandsShowsBothMagazinesAndTheSharedReserveAtOnce()
         {
             var model = new HudModel();

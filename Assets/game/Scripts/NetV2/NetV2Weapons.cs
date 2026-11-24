@@ -10,6 +10,7 @@ namespace Shooter.NetV2
     {
         private string _triggerWeaponId;
         private ClientTrigger _trigger;
+        private ClientTrigger _offhandTrigger;
         private string _triggerError;
         private readonly Dictionary<string, WeaponSpec> _specs = new Dictionary<string, WeaponSpec>(StringComparer.Ordinal);
         private string _ownWeaponId;
@@ -38,7 +39,15 @@ namespace Shooter.NetV2
 
             _triggerWeaponId = weaponId;
             _trigger = TryFind(weaponId, out var spec, out _triggerError) ? new ClientTrigger(spec) : null;
+            _offhandTrigger = _trigger != null ? ClientAkimbo.OffhandTriggerFor(_trigger.Spec) : null;
             return _trigger;
+        }
+
+        // 二丁持ちの武器の左手の引き金。右手 (TriggerFor) と別に間合いを数えるので別の引き金にし、二丁持ちでない武器では null。
+        public ClientTrigger OffhandTriggerFor(string weaponId)
+        {
+            TriggerFor(weaponId);
+            return _offhandTrigger;
         }
 
         // 毎 tick 届くスナップショットや知らせから引くので、引いた武器 (無かったことも) を覚えてアセットを読み直さない。

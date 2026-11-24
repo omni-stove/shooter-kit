@@ -269,6 +269,28 @@ namespace Shooter.Core
             ApplyAmmo(magazine, reserve, reloading, infiniteReserve, OffhandMagazineAmmo, IsOffhandReloading);
         }
 
+        // 左右の手を 1 度に書く口。SetAmmo と SetOffhandAmmo を続けて呼ぶと、1 発で Ammo の知らせが 2 度届き、途中の組み合わせが描かれるため。
+        // 手の組 (BindAkimbo) を持たない本体 (オンラインの自分) がスナップショットの左右の弾倉を渡すのに使う。offhandMagazine が null なら左手を消す。
+        public void SetAmmo(int magazine, int reserve, bool reloading, bool infiniteReserve, int? offhandMagazine, bool offhandReloading)
+        {
+            if (magazine < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(magazine), magazine, "magazine must not be negative");
+            }
+
+            if (reserve < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(reserve), reserve, "reserve must not be negative");
+            }
+
+            if (offhandMagazine < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offhandMagazine), offhandMagazine, "offhandMagazine must not be negative");
+            }
+
+            ApplyAmmo(magazine, reserve, reloading, infiniteReserve, offhandMagazine, offhandReloading);
+        }
+
         // 左手の弾倉だけを書く。右手の弾倉と予備弾は SetAmmo で書く。
         public void SetOffhandAmmo(int magazine, bool reloading)
         {

@@ -248,7 +248,7 @@ namespace Shooter.NetV2
                 }
                 else
                 {
-                    model.SetAmmo(_weapon.AmmoInMagazine, _weapon.ReserveAmmo, _weapon.IsReloading, match.Rules.InfiniteReserve);
+                    ClientAkimbo.ShowAmmo(model, _weapon, weaponSpec, match.Rules.InfiniteReserve);
                 }
             }
 

@@ -40,6 +40,18 @@ namespace Shooter.NetV2
             return predicted.Ladder.IsClimbing ? ViewmodelPresenter.ReasonHolstered : null;
         }
 
+        // 一人称の左手のモデル (ViewmodelPresenter.AkimboSource) を出すかと、手ごとにリロードで下げる深さを、本人のスナップショットの左右の弾倉・リロードから決める。
+        // オフラインの体は WeaponController の手の組から読むが、NetV2 の自分の体は手の組を持たないため。
+        public static AkimboHandsView? AkimboHands(ClientAkimboReloads reloads, OwnerSnapshot owner, string weaponId, WeaponSpec spec, double nowSeconds)
+        {
+            if (reloads == null)
+            {
+                throw new ArgumentNullException(nameof(reloads));
+            }
+
+            return reloads.Observe(owner, weaponId, spec, nowSeconds);
+        }
+
         // オフラインの体 (ViewmodelMotion が CharacterController から読む) と同じく、宙にいる間は揺らさない。
         public static float HorizontalSpeed(in CharacterMotorState predicted)
         {
