@@ -71,6 +71,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(GameRulesAssetBuilder.InfectedPath, Is.EqualTo(Root + "/Rules/Infected.asset"));
             Assert.That(GameRulesAssetBuilder.ExtractionPath, Is.EqualTo(Root + "/Rules/Extraction.asset"));
             Assert.That(GameRulesAssetBuilder.PayloadPath, Is.EqualTo(Root + "/Rules/Payload.asset"));
+            Assert.That(GameRulesAssetBuilder.JuggernautPath, Is.EqualTo(Root + "/Rules/Juggernaut.asset"));
+            Assert.That(GameRulesAssetBuilder.VipPath, Is.EqualTo(Root + "/Rules/Vip.asset"));
             Assert.That(SearchAndDestroySceneBuilder.EconomyPath, Is.EqualTo(Root + "/Modes/SearchAndDestroyEconomy.asset"));
 
             Assert.That(WeaponAssetBuilder.MachetePath, Is.EqualTo(Root + "/Weapons/Machete.asset"));
@@ -118,6 +120,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(BuildSceneList.InfectedScene, Is.EqualTo(Root + "/Scenes/Infected.unity"));
             Assert.That(BuildSceneList.ExtractionScene, Is.EqualTo(Root + "/Scenes/Extraction.unity"));
             Assert.That(BuildSceneList.PayloadScene, Is.EqualTo(Root + "/Scenes/Payload.unity"));
+            Assert.That(BuildSceneList.JuggernautScene, Is.EqualTo(Root + "/Scenes/Juggernaut.unity"));
+            Assert.That(BuildSceneList.VipScene, Is.EqualTo(Root + "/Scenes/Vip.unity"));
             Assert.That(BuildSceneList.ModeTestScene, Is.EqualTo(Root + "/Scenes/ModeTest.unity"));
             Assert.That(BuildSceneList.NetTestScene, Is.EqualTo(Root + "/Scenes/NetTest.unity"));
             Assert.That(BuildSceneList.PlaygroundScene, Is.EqualTo(Root + "/Scenes/Playground.unity"));
@@ -136,6 +140,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(CampaignSceneBuilder.NavMeshDataPath, Is.EqualTo(Root + "/Scenes/Campaign01/NavMesh-Level.asset"));
             Assert.That(Campaign02Mission.NavMeshDataPath, Is.EqualTo(Root + "/Scenes/Campaign02/NavMesh-Level.asset"));
             Assert.That(new PayloadSceneBuilder().NavMeshDataPath, Is.EqualTo(Root + "/Scenes/Payload/NavMesh-Floor.asset"));
+            Assert.That(new JuggernautSceneBuilder().NavMeshDataPath, Is.EqualTo(Root + "/Scenes/Juggernaut/NavMesh-Floor.asset"));
+            Assert.That(new VipSceneBuilder().NavMeshDataPath, Is.EqualTo(Root + "/Scenes/Vip/NavMesh-Floor.asset"));
         }
 
         [Test]
@@ -152,6 +158,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(BuildSceneList.PlaygroundScene, Is.EqualTo("Assets/ShooterKit/Scenes/Playground.unity"));
             Assert.That(BuildSceneList.PayloadScene, Is.EqualTo("Assets/ShooterKit/Scenes/Payload.unity"));
             Assert.That(GameRulesAssetBuilder.PayloadPath, Is.EqualTo("Assets/ShooterKit/Rules/Payload.asset"));
+            Assert.That(BuildSceneList.JuggernautScene, Is.EqualTo("Assets/ShooterKit/Scenes/Juggernaut.unity"));
+            Assert.That(BuildSceneList.VipScene, Is.EqualTo("Assets/ShooterKit/Scenes/Vip.unity"));
             Assert.That(TraversalFeatureSceneBuilder.TraversalTuningPath, Is.EqualTo("Assets/ShooterKit/Tuning/Playground.json"));
 
             ShooterKitRoot.ClearPreferredOutput();

@@ -19,8 +19,7 @@ namespace Shooter.Editor
         {
         }
 
-        // BuildSceneList にはつなぎ込みで足すので、それまでは同じ組み方 (出力先ルートの Scenes/<モード名>) でここに持つ。
-        public static string ScenePathValue => ShooterKitRoot.OutputScene(ModeName);
+        public static string ScenePathValue => BuildSceneList.JuggernautScene;
 
         public static string RulesPathValue => GameRulesAssetBuilder.JuggernautPath;
 

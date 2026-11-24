@@ -417,7 +417,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(playlists.Select(p => p.Id), Is.EqualTo(new[] { "demo-objectives", "demo-mutated" }));
             var objectives = playlists[0];
             Assert.That(objectives.Order, Is.EqualTo(PlaylistOrder.Sequential));
-            Assert.That(objectives.Entries.Select(e => e.Scene), Is.EqualTo(new[] { "Payload", "SearchAndDestroy", "BattleRoyale" }));
+            Assert.That(objectives.Entries.Select(e => e.Scene), Is.EqualTo(new[] { "Payload", "SearchAndDestroy", "BattleRoyale", "Juggernaut", "Vip" }));
             Assert.That(objectives.Entries.All(e => !e.HasRules && e.MutatorIds.Count == 0), Is.True, "the scenes keep their own rules");
 
             var mutated = playlists[1];

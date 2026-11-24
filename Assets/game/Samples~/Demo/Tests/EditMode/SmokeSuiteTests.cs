@@ -38,6 +38,8 @@ namespace Shooter.Tests.EditMode
                     nameof(PayloadSmokeRun),
                     nameof(SearchAndDestroySmokeRun),
                     nameof(AkimboSmokeRun),
+                    nameof(JuggernautSmokeRun),
+                    nameof(VipSmokeRun),
                 }));
             Assert.That(SmokeSuite.Runs.Select(run => run.LogTag), Is.Unique);
         }
@@ -50,6 +52,8 @@ namespace Shooter.Tests.EditMode
             Assert.That(tags[nameof(BattleRoyaleSmokeRun)], Is.EqualTo("[BattleRoyaleSmokeRun]"));
             Assert.That(tags[nameof(PayloadSmokeRun)], Is.EqualTo("[PayloadSmokeRun]"));
             Assert.That(tags[nameof(SearchAndDestroySmokeRun)], Is.EqualTo("[SearchAndDestroySmokeRun]"));
+            Assert.That(tags[nameof(JuggernautSmokeRun)], Is.EqualTo("[JuggernautSmoke]"));
+            Assert.That(tags[nameof(VipSmokeRun)], Is.EqualTo("[VipSmoke]"));
         }
 
         // スイートに入れず、それぞれの -executeMethod で単独に走らせる SmokeRun。
@@ -60,10 +64,6 @@ namespace Shooter.Tests.EditMode
             nameof(KnockbackSmokeRun),
             nameof(DominationSmokeRun),
             nameof(CaptureTheFlagSmokeRun),
-
-            // SmokeSuite.Runs へはつなぎ込みの issue で足すので、それまではスイートの外に置く。
-            nameof(JuggernautSmokeRun),
-            nameof(VipSmokeRun),
         };
 
         [Test]

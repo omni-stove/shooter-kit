@@ -369,7 +369,7 @@ namespace Shooter.Core.Tests
                 var code = GameLanguages.Code(language);
 
                 Assert.That(playlist.Keys.All(key => key.StartsWith("playlist.", StringComparison.Ordinal)), Is.True, code);
-                foreach (var scene in new[] { "Payload", "SearchAndDestroy", "BattleRoyale" })
+                foreach (var scene in new[] { "Payload", "SearchAndDestroy", "BattleRoyale", "Juggernaut", "Vip" })
                 {
                     Assert.That(playlist.Contains(PlaylistPanel.ModeKeyOf(scene)), Is.True, $"{code}: {scene}");
                 }
@@ -377,6 +377,8 @@ namespace Shooter.Core.Tests
 
             Assert.That(LayerOf(GameLanguage.Japanese, "playlist.json").Get("playlist.mode.Payload"), Is.EqualTo("ペイロード"));
             Assert.That(LayerOf(GameLanguage.English, "playlist.json").Get("playlist.mode.SearchAndDestroy"), Is.EqualTo("Search and Destroy"));
+            Assert.That(LayerOf(GameLanguage.Japanese, "playlist.json").Get("playlist.mode.Vip"), Is.EqualTo("VIP 護衛"));
+            Assert.That(LayerOf(GameLanguage.English, "playlist.json").Get("playlist.mode.Juggernaut"), Is.EqualTo("Juggernaut"));
         }
 
         [Test]
