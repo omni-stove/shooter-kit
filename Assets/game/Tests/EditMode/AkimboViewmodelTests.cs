@@ -196,6 +196,22 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheViewmodelMotionSettingScalesTheHandKick()
+        {
+            HoldAkimboThenPlain();
+            _presenter.Refresh();
+            var left = _presenter.LeftInstance.transform;
+
+            ViewmodelMotion.GlobalMultiplier = 0f;
+            Assert.That(_controller.PullTrigger(AkimboHand.Left, true, true), Is.True);
+            _presenter.Refresh();
+
+            Assert.That(_presenter.HandKicks(AkimboHand.Left), Is.EqualTo(1f));
+            Assert.That(left.localPosition, Is.EqualTo(new Vector3(-0.12f, -0.1f, 0.25f)));
+            Assert.That(Quaternion.Angle(left.localRotation, Quaternion.identity), Is.LessThan(0.01f));
+        }
+
+        [Test]
         public void WhileAkimboTheShotDoesNotKickTheSharedPivot()
         {
             HoldAkimboThenPlain();

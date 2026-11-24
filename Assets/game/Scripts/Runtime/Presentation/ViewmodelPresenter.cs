@@ -291,8 +291,9 @@ namespace Shooter.Runtime
 
         private static void PlaceHand(Transform model, Vector3 position, ViewmodelSway kick)
         {
-            model.localPosition = position + kick.Position.ToUnity();
-            model.localRotation = Quaternion.Euler(-kick.PitchUpDegrees, 0f, 0f);
+            float intensity = ViewmodelMotion.GlobalMultiplier;
+            model.localPosition = position + kick.Position.ToUnity() * intensity;
+            model.localRotation = Quaternion.Euler(-kick.PitchUpDegrees * intensity, 0f, 0f);
         }
 
         private ViewmodelSway KickOf(AkimboHand hand)
