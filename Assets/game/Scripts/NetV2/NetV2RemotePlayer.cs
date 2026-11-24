@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Shooter.Core;
 using Shooter.Runtime;
 using UnityEngine;
@@ -11,6 +12,12 @@ namespace Shooter.NetV2
     {
         // プレハブはルートの原点を足元ではなく本体の位置 (移動の位置) に合わせて作る前提で、そのまま本体に重ねる。
         public const string BodyResourcePath = "NetV2/RemotePlayerBody";
+
+        // 武器に体用の見た目 (WeaponExtrasCatalog の置いたときの見た目) が無いときに持たせる銃。中心が原点、前が +Z。無ければ仮の箱を組む
+        public const string BodyGunResourcePath = "NetV2/RemotePlayerGun";
+
+        public const string BodyGunName = "BodyGun";
+        public const string RightHandGunName = "Gun";
 
         private const string _bodyName = "Body";
 
@@ -27,6 +34,15 @@ namespace Shooter.NetV2
         private WeaponLightSpec _weaponLightSpec;
         private WeaponLightCatalog _weaponLightCatalog;
         private bool _weaponLightCatalogResolved;
+        private Transform _bodyGun;
+        private Transform _rightHandGun;
+        private Transform _leftHandGun;
+        private BodyWeaponModels _bodyGuns;
+        private readonly List<Renderer> _bodyGunRenderers = new List<Renderer>();
+        private Material _gunMaterial;
+        private WeaponExtrasCatalog _weaponModels;
+        private bool _weaponModelsResolved;
+        private Func<string, WeaponSpec> _weaponSpecSource;
 
         public int PlayerId { get; private set; }
 
@@ -82,6 +98,51 @@ namespace Shooter.NetV2
 
         public Transform Body => _body;
 
+        // 体の銃の置き場。体 (Body) の子にしないのは、しゃがみと伏せで体を縦に縮めると銃まで潰れ、見た目の差し替えで体ごと作り直されるため
+        public Transform BodyGun => _bodyGun;
+
+        public Transform RightHandGun => _rightHandGun;
+
+        public Transform LeftHandGun => _leftHandGun;
+
+        public Transform BodyGunModel => _bodyGuns.Model;
+
+        public Transform LeftHandGunModel => _bodyGuns.LeftHandModel;
+
+        public string BodyWeaponId => _bodyGuns.WeaponId;
+
+        // 二丁持ちかはスナップショットに載らないので、武器 Id から Spec を引く口。NetV2Client が NetV2Weapons.SpecFor をつなぐ。空なら右手の銃だけを持たせる
+        public Func<string, WeaponSpec> WeaponSpecSource
+        {
+            get => _weaponSpecSource;
+            set
+            {
+                _weaponSpecSource = value;
+                _bodyGuns.Forget();
+            }
+        }
+
+        // 決めなければオフラインの体 (PlayerMockBody) と同じ Resources の WeaponExtrasCatalog を引く
+        public WeaponExtrasCatalog WeaponModels
+        {
+            get
+            {
+                if (!_weaponModelsResolved)
+                {
+                    _weaponModels = WeaponExtrasCatalog.Load();
+                    _weaponModelsResolved = true;
+                }
+
+                return _weaponModels;
+            }
+            set
+            {
+                _weaponModels = value;
+                _weaponModelsResolved = true;
+                _bodyGuns.Forget();
+            }
+        }
+
         // スナップショットが載せてきた見た目の Id。体を替えられなかった (カタログに無い・絵が無い) ときも Id は残し、同じ Id で引き直さない。
         public string CosmeticId { get; private set; } = string.Empty;
 
@@ -107,6 +168,7 @@ namespace Shooter.NetV2
             remote.PlayerId = playerId;
             remote._geometry = geometry;
             remote._leanAngleDegrees = Mathf.Clamp(motor.LeanAngleDegrees, 0f, 90f);
+            remote.CreateBodyGun();
             remote.SetBody(CreateBody(null, geometry, root.transform));
             NetV2LocalPlayer.AttachPresentation(root, false);
             return remote;
@@ -153,6 +215,7 @@ namespace Shooter.NetV2
 
             IsConcealed = concealed;
             _body.gameObject.SetActive(!concealed);
+            _bodyGun.gameObject.SetActive(!concealed);
 
             // 隠れる前の傾きから寄せると、離れた場所で見え直した体が前の姿から倒れ込んで見えるので、見え直したらそのまま置く
             _snapTilt = true;
@@ -189,6 +252,7 @@ namespace Shooter.NetV2
             IsParachuting = pose.Parachuting;
             WeaponLowering = pose.HolsterLowering;
             IsWeaponHidden = pose.IsWeaponHidden;
+            ShowBodyWeapon(pose.ShownWeaponId);
             ShowWeaponLight(pose.ShowsWeaponLight);
             var target = pose.Parachuting
                 ? Quaternion.identity
@@ -199,6 +263,122 @@ namespace Shooter.NetV2
             _drop = _snapTilt ? targetDrop : Mathf.Lerp(_drop, targetDrop, blend);
             _snapTilt = false;
             PlaceBody();
+        }
+
+        // 持ち替えたときだけ引き直す。毎 tick 置き直すと、プレハブの複製が積もる
+        private void ShowBodyWeapon(string weaponId)
+        {
+            var id = string.IsNullOrEmpty(weaponId) ? null : weaponId;
+            var armed = id != null;
+            if (_rightHandGun.gameObject.activeSelf != armed)
+            {
+                _rightHandGun.gameObject.SetActive(armed);
+                _leftHandGun.gameObject.SetActive(armed);
+            }
+
+            if (string.Equals(id, _bodyGuns.WeaponId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var spec = id != null && _weaponSpecSource != null ? _weaponSpecSource(id) : null;
+
+            // 届いた Id は信用できないので、Id の違う Spec が返っても体の銃 (BodyWeaponModels.Show) で投げさせず、二丁持ちと分からない武器として見せる
+            if (spec != null && !string.Equals(spec.Id, id, StringComparison.Ordinal))
+            {
+                spec = null;
+            }
+
+            _bodyGuns.Show(id, spec, id != null ? WeaponModels : null);
+        }
+
+        private void CreateBodyGun()
+        {
+            _bodyGun = CreateChild(BodyGunName, transform);
+            _rightHandGun = CreateChild(RightHandGunName, _bodyGun);
+            _leftHandGun = CreateChild(PlayerMockBody.LeftHandGunName, _bodyGun);
+            _bodyGuns = new BodyWeaponModels(_rightHandGun, _leftHandGun, CreateDefaultGun, _bodyGunRenderers);
+            _rightHandGun.gameObject.SetActive(false);
+            _leftHandGun.gameObject.SetActive(false);
+        }
+
+        private static Transform CreateChild(string childName, Transform parent)
+        {
+            var child = new GameObject(childName).transform;
+            child.SetParent(parent, false);
+            child.gameObject.layer = parent.gameObject.layer;
+            return child;
+        }
+
+        private Transform CreateDefaultGun(Transform hand)
+        {
+            var prefab = Resources.Load<GameObject>(BodyGunResourcePath);
+            if (prefab != null)
+            {
+                var instance = VisualPrefab.Instantiate(prefab, hand, prefab.name, stripColliders: true);
+                VisualPrefab.SetLayer(instance, hand.gameObject.layer);
+                _bodyGunRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));
+                return instance.transform;
+            }
+
+            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = "GunBox";
+            // Destroy は次のフレームまで残り、その間に射撃の Ray に当たるので、すぐ消す
+            DestroyImmediate(box.GetComponent<Collider>());
+            box.layer = hand.gameObject.layer;
+            box.transform.SetParent(hand, false);
+            box.transform.localScale = PlayerMockPose.GunSize;
+            var boxRenderer = box.GetComponent<Renderer>();
+            if (_gunMaterial == null && boxRenderer.sharedMaterial != null)
+            {
+                // プリミティブに付いてくる材質を元にすると、今の描画パイプラインのシェーダーをそのまま使える
+                _gunMaterial = new Material(boxRenderer.sharedMaterial) { name = "RemoteGun", color = PlayerMockBody.GunColor };
+            }
+
+            if (_gunMaterial != null)
+            {
+                boxRenderer.sharedMaterial = _gunMaterial;
+            }
+
+            _bodyGunRenderers.Add(boxRenderer);
+            return box.transform;
+        }
+
+        private void OnDestroy()
+        {
+            if (_gunMaterial == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(_gunMaterial);
+            }
+            else
+            {
+                DestroyImmediate(_gunMaterial);
+            }
+        }
+
+        // オフラインの体と同じく足元を軸に傾けるので、置き場を足元に置いて体と同じ傾きで回し、銃の構えは足元からの位置で決める
+        private void PlaceBodyGun()
+        {
+            if (_bodyGun == null)
+            {
+                return;
+            }
+
+            var standing = _geometry.Standing;
+            var shape = _geometry.Shape(_stance);
+            _bodyGun.localPosition = new Vector3(0f, shape.BottomY, 0f) + (Vector3.down * _drop);
+            _bodyGun.localRotation = _tilt;
+            var right = PlayerMockPose.HeldBodyGun(WeaponLowering, shape.Height / standing.Height);
+            var left = PlayerMockPose.LeftHandGun(right);
+            _rightHandGun.localPosition = right.Position;
+            _rightHandGun.localRotation = right.Rotation;
+            _leftHandGun.localPosition = left.Position;
+            _leftHandGun.localRotation = left.Rotation;
         }
 
         // 光を体の子に付けるのは、隠れている間 (SetConcealed) に体と一緒に止めるため。銃口のソケットがあればそこから照らす
@@ -320,6 +500,7 @@ namespace Shooter.NetV2
             var feet = new Vector3(0f, shape.BottomY, 0f);
             _body.localPosition = feet + (_tilt * (upright - feet)) + (Vector3.down * _drop);
             _body.localRotation = _tilt;
+            PlaceBodyGun();
         }
     }
 }

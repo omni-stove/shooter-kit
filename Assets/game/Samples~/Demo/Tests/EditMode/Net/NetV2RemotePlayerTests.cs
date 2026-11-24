@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.NetV2;
+using Shooter.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -11,6 +12,9 @@ namespace Shooter.Net.Tests
     {
         private const string Desert = "skin-desert";
         private const string _mark = "DesertMark";
+        private const string AkimboPistolId = "5b81c3e9-2f47-4a6d-9e05-7c3a1d8f6b42";
+        private const string PistolId = "e2a7d4c6-8b19-4f53-a0c8-3d6e9b2f1a75";
+        private const float Tolerance = 1e-4f;
 
         private static readonly StanceGeometry _stance = new StanceGeometry(2f, 0f, 0.6f, 1.2f, 0.5f);
 
@@ -18,6 +22,7 @@ namespace Shooter.Net.Tests
         private NetV2RemotePlayer _remote;
         private GameObject _desertSkin;
         private readonly List<string> _asked = new List<string>();
+        private readonly List<string> _specAsked = new List<string>();
 
         [SetUp]
         public void SetUp()
@@ -322,6 +327,212 @@ namespace Shooter.Net.Tests
                 System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, null, 0f, true, WallRunSide.None, true, ParkourMove.LedgeHang));
 
             Assert.That(_remote.Drop, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void TheBodyGunStartsEmptyAndApartFromTheBody()
+        {
+            Assert.That(_remote.BodyGun, Is.Not.Null);
+            Assert.That(_remote.BodyGun.parent, Is.SameAs(_remote.transform), "crouching squashes the body, not the gun");
+            Assert.That(_remote.RightHandGun.parent, Is.SameAs(_remote.BodyGun));
+            Assert.That(_remote.LeftHandGun.parent, Is.SameAs(_remote.BodyGun));
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.False, "nothing is held before the first snapshot");
+            Assert.That(_remote.BodyWeaponId, Is.Null);
+            Assert.That(_remote.RightHandGun.Find("GunBox").localScale, Is.EqualTo(PlayerMockPose.GunSize));
+            Assert.That(_remote.RightHandGun.GetComponentsInChildren<Collider>(true), Is.Empty);
+        }
+
+        [Test]
+        public void AnAkimboWeaponFromTheSnapshotPutsAGunInEachHand()
+        {
+            UseWeapons();
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            Assert.That(_remote.BodyWeaponId, Is.EqualTo(AkimboPistolId));
+            Assert.That(_specAsked, Is.EqualTo(new[] { AkimboPistolId }));
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.True);
+            Assert.That(_remote.LeftHandGun.gameObject.activeSelf, Is.True);
+            Assert.That(_remote.LeftHandGunModel, Is.Not.Null);
+            Assert.That(_remote.LeftHandGunModel.parent, Is.SameAs(_remote.LeftHandGun));
+            Assert.That(_remote.LeftHandGunModel.Find("GunBox"), Is.Not.Null, "without models the left hand mirrors the default box");
+            Assert.That(_remote.LeftHandGunModel.localScale.x, Is.EqualTo(-1f).Within(Tolerance));
+        }
+
+        [Test]
+        public void APlainWeaponLeavesTheLeftHandEmpty()
+        {
+            UseWeapons();
+
+            _remote.Show(WeaponPose(PistolId, 0f));
+
+            Assert.That(_remote.BodyWeaponId, Is.EqualTo(PistolId));
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.True);
+            Assert.That(_remote.LeftHandGunModel, Is.Null);
+            Assert.That(_remote.LeftHandGun.childCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TheSpecIsLookedUpOnlyWhenTheWeaponChanges()
+        {
+            UseWeapons();
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+            var left = _remote.LeftHandGunModel;
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+            _remote.Show(WeaponPose(AkimboPistolId, 0.5f));
+
+            Assert.That(_specAsked, Is.EqualTo(new[] { AkimboPistolId }));
+            Assert.That(_remote.LeftHandGunModel, Is.SameAs(left), "the same weapon keeps its left gun");
+
+            _remote.Show(WeaponPose(PistolId, 0f));
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            Assert.That(_specAsked, Is.EqualTo(new[] { AkimboPistolId, PistolId, AkimboPistolId }));
+        }
+
+        [Test]
+        public void AHolsteredWeaponEmptiesBothHandsAndDrawingItAgainFillsThem()
+        {
+            UseWeapons();
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            _remote.Show(WeaponPose(AkimboPistolId, 1f));
+
+            Assert.That(_remote.BodyWeaponId, Is.Null);
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.False);
+            Assert.That(_remote.LeftHandGun.gameObject.activeSelf, Is.False);
+            Assert.That(_remote.LeftHandGunModel, Is.Null);
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            Assert.That(_remote.BodyWeaponId, Is.EqualTo(AkimboPistolId));
+            Assert.That(_remote.LeftHandGunModel, Is.Not.Null);
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.True);
+        }
+
+        [Test]
+        public void ConcealingHidesTheBodyGun()
+        {
+            UseWeapons();
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            _remote.SetConcealed(true);
+            Assert.That(_remote.BodyGun.gameObject.activeSelf, Is.False);
+
+            _remote.SetConcealed(false);
+            Assert.That(_remote.BodyGun.gameObject.activeSelf, Is.True);
+        }
+
+        [Test]
+        public void WithoutASpecSourceOnlyTheRightGunIsHeld()
+        {
+            _remote.WeaponModels = null;
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            Assert.That(_remote.BodyWeaponId, Is.EqualTo(AkimboPistolId));
+            Assert.That(_remote.RightHandGun.gameObject.activeSelf, Is.True);
+            Assert.That(_remote.LeftHandGunModel, Is.Null);
+        }
+
+        [Test]
+        public void ASpecOfAnotherWeaponIsNotTrustedForTheLeftHand()
+        {
+            _remote.WeaponModels = null;
+            _remote.WeaponSpecSource = id => Spec(PistolId, AkimboSpec.Default);
+
+            Assert.That(() => _remote.Show(WeaponPose(AkimboPistolId, 0f)), Throws.Nothing);
+
+            Assert.That(_remote.BodyWeaponId, Is.EqualTo(AkimboPistolId));
+            Assert.That(_remote.LeftHandGunModel, Is.Null);
+        }
+
+        [Test]
+        public void TheWeaponsBodyModelIsTakenFromTheCatalog()
+        {
+            var pistol = Track(PartPrefab("Pistol"));
+            var catalog = Track(ScriptableObject.CreateInstance<WeaponExtrasCatalog>());
+            catalog.SetWeapons(new[] { new WeaponExtrasAssets(AkimboPistolId, null, null, null) { PickupModel = pistol } });
+            UseWeapons();
+            _remote.WeaponModels = catalog;
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            Assert.That(_remote.BodyGunModel, Is.Not.Null);
+            Assert.That(_remote.RightHandGun.Find("PistolPrefab/Pistol"), Is.Not.Null);
+            Assert.That(_remote.RightHandGun.Find("GunBox").gameObject.activeSelf, Is.False, "the default box makes way for the model");
+            Assert.That(_remote.LeftHandGunModel.Find("PistolPrefab/Pistol"), Is.Not.Null, "the left hand mirrors the same model");
+        }
+
+        [Test]
+        public void TheGunsAreHeldAtTheHipFromTheFeetAndMirroredInTheLeftHand()
+        {
+            UseWeapons();
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0f));
+
+            // 立ちの高さ 2・中心 0 なので、足元は -1
+            Assert.That(Vector3.Distance(_remote.BodyGun.localPosition, new Vector3(0f, -1f, 0f)), Is.LessThan(Tolerance));
+            Assert.That(Vector3.Distance(_remote.RightHandGun.localPosition, new Vector3(0.25f, 1.15f, 0.3f)), Is.LessThan(Tolerance));
+            Assert.That(Vector3.Distance(_remote.LeftHandGun.localPosition, new Vector3(-0.25f, 1.15f, 0.3f)), Is.LessThan(Tolerance));
+
+            _remote.Show(new RemotePose(System.Numerics.Vector3.Zero, 0f, PlayerStance.Crouching, AkimboPistolId));
+
+            // しゃがみの高さ 1.2 / 立ちの高さ 2 で、腰の高さ 1.15 を 0.69 へ縮める
+            Assert.That(Vector3.Distance(_remote.RightHandGun.localPosition, new Vector3(0.25f, 0.69f, 0.3f)), Is.LessThan(Tolerance));
+            Assert.That(_remote.BodyGun.localScale, Is.EqualTo(Vector3.one), "the gun is not squashed with the body");
+        }
+
+        [Test]
+        public void ALoweringWeaponMovesBothGunsDown()
+        {
+            UseWeapons();
+
+            _remote.Show(WeaponPose(AkimboPistolId, 0.5f));
+
+            // 腰だめ (0.25, 1.15, 0.3) としまった位置 (0.25, 0.85, 0.15) の中ほど
+            Assert.That(Vector3.Distance(_remote.RightHandGun.localPosition, new Vector3(0.25f, 1f, 0.225f)), Is.LessThan(Tolerance));
+            Assert.That(Vector3.Distance(_remote.LeftHandGun.localPosition, new Vector3(-0.25f, 1f, 0.225f)), Is.LessThan(Tolerance));
+        }
+
+        private void UseWeapons()
+        {
+            _remote.WeaponModels = null;
+            _specAsked.Clear();
+            _remote.WeaponSpecSource = id =>
+            {
+                _specAsked.Add(id);
+                return id == AkimboPistolId ? Spec(AkimboPistolId, AkimboSpec.Default) : id == PistolId ? Spec(PistolId, null) : null;
+            };
+        }
+
+        private static RemotePose WeaponPose(string weaponId, float lowering)
+        {
+            return new RemotePose(
+                System.Numerics.Vector3.Zero, 0f, PlayerStance.Standing, weaponId, 0f, false, WallRunSide.None, false, ParkourMove.None, lowering);
+        }
+
+        private static GameObject PartPrefab(string partName)
+        {
+            var root = new GameObject(partName + "Prefab");
+            var model = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            model.name = partName;
+            model.transform.SetParent(root.transform, false);
+            return root;
+        }
+
+        private static WeaponSpec Spec(string id, AkimboSpec akimbo)
+        {
+            return new WeaponSpec(
+                id,
+                "weapon.pistol",
+                WeaponCategory.Handgun,
+                new TriggerSpec(FireMode.Semi, 0.2f),
+                new AmmoSpec(8, 16, 1.5f),
+                impact: new ImpactSpec(30),
+                aim: new AimSpec(2f),
+                akimbo: akimbo);
         }
     }
 }

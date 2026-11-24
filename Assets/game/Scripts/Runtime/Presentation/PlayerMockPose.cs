@@ -302,6 +302,14 @@ namespace Shooter.Runtime
             return Lowered(held, new MockPartPose(ScaleHeight(BodyLoweredGunPosition, scale), Quaternion.Euler(BodyLoweredGunEuler)), state.SwitchLowering);
         }
 
+        // オンラインのほかの人の体 (NetV2RemotePlayer) が使う。覗き込みとリロードはスナップショットの姿勢に載らないので、腰だめの構えをしまう度合いだけ下げる。
+        public static MockPartPose HeldBodyGun(float lowering, float stanceScale)
+        {
+            RequirePositiveFinite(stanceScale, nameof(stanceScale));
+            var held = new MockPartPose(ScaleHeight(BodyHipGunPosition, stanceScale), Quaternion.identity);
+            return Lowered(held, new MockPartPose(ScaleHeight(BodyLoweredGunPosition, stanceScale), Quaternion.Euler(BodyLoweredGunEuler)), lowering);
+        }
+
         public static MockPartPose ViewModel(PlayerActionState state)
         {
             if (state.IsReloading || state.IsDowned)
