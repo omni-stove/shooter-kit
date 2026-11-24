@@ -102,6 +102,7 @@ namespace Shooter.Net.Tests
                 Path.Combine(_directory, "suppression.json"),
                 Path.Combine(_directory, "emotes.json"),
                 Path.Combine(_directory, "holster.json"),
+                Path.Combine(_directory, "breach.json"),
             }));
             Assert.That(File.ReadAllText(Path.Combine(_directory, "knockback.json")), Is.EqualTo(knockback));
             Assert.That(File.ReadAllText(Path.Combine(_directory, "bots.json")), Is.EqualTo(bots));
@@ -152,6 +153,7 @@ namespace Shooter.Net.Tests
         [TestCase("stagger.json", StaggerActionInstaller.TuningResourcePath)]
         [TestCase("suppression.json", KitTuning.SuppressionResourcePath)]
         [TestCase("holster.json", KitTuning.HolsterResourcePath)]
+        [TestCase("breach.json", KitTuning.BreachResourcePath)]
         public void WithoutGameContentTheServerReadTuningOfResourcesIsWritten(string fileName, string resourcePath)
         {
             ServerRulesExporter.ExportTuning(_directory);

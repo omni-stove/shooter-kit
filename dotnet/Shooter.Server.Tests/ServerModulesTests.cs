@@ -44,7 +44,7 @@ namespace Shooter.Server.Tests
         public void WithoutRegisterLobbyAddsTheMatchAndCombatModulesThenTheSnapshotsThenTheAntiCheatChecks()
         {
             Assert.That(Create(_library.Path), Is.Null);
-            Assert.That(_modules, Has.Count.EqualTo(20));
+            Assert.That(_modules, Has.Count.EqualTo(21));
             Assert.That(_modules[0], Is.InstanceOf<ServerAntiCheat>());
             Assert.That(((ServerAntiCheat)_modules[0]).Enabled, Is.False);
             Assert.That(_modules[1], Is.InstanceOf<ServerMovement>());
@@ -63,11 +63,12 @@ namespace Shooter.Server.Tests
             Assert.That(_modules[14], Is.InstanceOf<ServerEmotes>());
             Assert.That(_modules[15], Is.InstanceOf<ServerHolster>());
             Assert.That(_modules[16], Is.InstanceOf<ServerWeaponLight>());
-            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(((ServerSnapshots)_modules[17]).AntiCheat.Conceal.Enabled, Is.True, "concealing is on by default");
-            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
-            Assert.That(((ServerViolations)_modules[18]).Enabled, Is.True, "the violations are counted by default");
-            Assert.That(_modules[19], Is.InstanceOf<ServerCheatStats>());
+            Assert.That(_modules[17], Is.InstanceOf<ServerDoors>());
+            Assert.That(_modules[18], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(((ServerSnapshots)_modules[18]).AntiCheat.Conceal.Enabled, Is.True, "concealing is on by default");
+            Assert.That(_modules[19], Is.InstanceOf<ServerViolations>());
+            Assert.That(((ServerViolations)_modules[19]).Enabled, Is.True, "the violations are counted by default");
+            Assert.That(_modules[20], Is.InstanceOf<ServerCheatStats>());
         }
 
         [Test]
@@ -85,6 +86,31 @@ namespace Shooter.Server.Tests
             Assert.That(contributors[^1], Is.SameAs(weaponLight));
             Assert.That(contributors.IndexOf(holster), Is.LessThan(contributors.IndexOf(weaponLight)));
             Assert.That(contributors.IndexOf(_modules.OfType<ServerCombat>().Single()), Is.LessThan(contributors.IndexOf(weaponLight)));
+        }
+
+        [Test]
+        public void TheDoorsTakeTheBreachTuning()
+        {
+            var breach = new BreachSpec(reach: 3.5f);
+            var tuning = new ServerCombatTuning(breach: breach, breachPath: "memory/breach.json");
+            Assert.That(ServerLaunch.TryParse(Array.Empty<string>(), _ => null, out var launch, out var parseError), Is.True, parseError);
+
+            Assert.That(
+                ServerModules.Create(launch, Runtime(), _modules, _library.Path, ServerMotorSettings.Default, tuning, null, out var error),
+                Is.True,
+                error);
+
+            var doors = _modules.OfType<ServerDoors>().Single();
+            Assert.That(doors.Spec, Is.SameAs(breach));
+            Assert.That(doors.Name, Is.EqualTo("doors"));
+        }
+
+        [Test]
+        public void WithoutABreachFileTheDoorsUseTheDefaultTuning()
+        {
+            Assert.That(Create(_library.Path), Is.Null);
+
+            Assert.That(_modules.OfType<ServerDoors>().Single().Spec, Is.SameAs(BreachSpec.Default));
         }
 
         [Test]
@@ -124,10 +150,10 @@ namespace Shooter.Server.Tests
                 Is.True,
                 error);
 
-            Assert.That(_modules, Has.Count.EqualTo(19));
-            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
-            Assert.That(((ServerViolations)_modules[18]).Enabled, Is.False);
+            Assert.That(_modules, Has.Count.EqualTo(20));
+            Assert.That(_modules[18], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(_modules[19], Is.InstanceOf<ServerViolations>());
+            Assert.That(((ServerViolations)_modules[19]).Enabled, Is.False);
             Assert.That(_modules.OfType<ServerCheatStats>(), Is.Empty);
         }
 
@@ -175,11 +201,11 @@ namespace Shooter.Server.Tests
                 Is.True,
                 error);
 
-            Assert.That(_modules, Has.Count.EqualTo(20));
-            Assert.That(_modules[17], Is.InstanceOf<ServerSnapshots>());
-            Assert.That(_modules[18], Is.InstanceOf<ServerViolations>());
-            Assert.That(_modules[19], Is.InstanceOf<ServerCheatStats>());
-            Assert.That(((ServerCheatStats)_modules[19]).Stats, Is.SameAs(stats));
+            Assert.That(_modules, Has.Count.EqualTo(21));
+            Assert.That(_modules[18], Is.InstanceOf<ServerSnapshots>());
+            Assert.That(_modules[19], Is.InstanceOf<ServerViolations>());
+            Assert.That(_modules[20], Is.InstanceOf<ServerCheatStats>());
+            Assert.That(((ServerCheatStats)_modules[20]).Stats, Is.SameAs(stats));
         }
 
         [Test]
@@ -275,6 +301,8 @@ namespace Shooter.Server.Tests
             Assert.That(tuning.AntiCheatPath, Is.Null);
             Assert.That(tuning.Holster, Is.SameAs(HolsterSpec.Default));
             Assert.That(tuning.HolsterPath, Is.Null);
+            Assert.That(tuning.Breach, Is.SameAs(BreachSpec.Default));
+            Assert.That(tuning.BreachPath, Is.Null);
             Assert.That(tuning.LogLine, Is.EqualTo("[Server] combat tuning melee=default streaks=default deployables=none holster=default anticheat=default"));
         }
 
@@ -292,6 +320,34 @@ namespace Shooter.Server.Tests
             Assert.That(tuning.Holster.IsArmedPhase(HolsterPhase.Drawing), Is.False, "Resources/Tuning/holster.json counts Drawing as armed");
             Assert.That(tuning.HolsterPath, Is.EqualTo(path));
             Assert.That(tuning.LogLine, Does.Contain(" holster=" + path + " "));
+        }
+
+        [Test]
+        public void TheBreachTuningIsReadFromServerData()
+        {
+            var tuningDirectory = Path.Combine(_roots.Path, ServerMapData.DataDirectoryName, ServerRulesData.TuningDirectoryName);
+            Directory.CreateDirectory(tuningDirectory);
+            var path = Path.GetFullPath(Path.Combine(tuningDirectory, ServerDoors.BreachFileName));
+            File.WriteAllText(path, "{\"reach\": 3.5}");
+
+            Assert.That(ServerCombatTuning.TryLoad(new[] { _roots.Path }, out var tuning, out var error), Is.True, error);
+
+            Assert.That(tuning.Breach.Reach, Is.EqualTo(3.5f));
+            Assert.That(tuning.BreachPath, Is.EqualTo(path));
+        }
+
+        [Test]
+        public void AnUnreadableBreachTuningFileStopsTheStart()
+        {
+            var tuningDirectory = Path.Combine(_roots.Path, ServerMapData.DataDirectoryName, ServerRulesData.TuningDirectoryName);
+            Directory.CreateDirectory(tuningDirectory);
+            File.WriteAllText(Path.Combine(tuningDirectory, ServerDoors.BreachFileName), "{\"kickDamage\": 2}");
+
+            Assert.That(ServerCombatTuning.TryLoad(new[] { _roots.Path }, out var tuning, out var error), Is.False);
+
+            Assert.That(tuning, Is.Null);
+            Assert.That(error, Does.StartWith("cannot read breach tuning: "));
+            Assert.That(error, Does.Contain("kickDamage"));
         }
 
         [Test]
@@ -428,9 +484,9 @@ namespace Shooter.Server.Tests
             WriteLocalFile();
 
             Assert.That(Create(AppContext.BaseDirectory, "-register-lobby", "203.0.113.10:7777"), Is.Null);
-            Assert.That(_modules, Has.Count.EqualTo(21));
-            Assert.That(_modules[20], Is.InstanceOf<ServerLobbyModule>());
-            Assert.That(((ServerLobbyModule)_modules[20]).Region, Is.Null);
+            Assert.That(_modules, Has.Count.EqualTo(22));
+            Assert.That(_modules[21], Is.InstanceOf<ServerLobbyModule>());
+            Assert.That(((ServerLobbyModule)_modules[21]).Region, Is.Null);
         }
 
         [Test]

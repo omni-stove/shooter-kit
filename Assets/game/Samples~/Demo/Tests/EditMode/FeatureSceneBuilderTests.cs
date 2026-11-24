@@ -105,14 +105,51 @@ namespace Shooter.Tests.EditMode
                 new SuppressionRangeFixture().Name,
                 new PingRangeFixture().Name,
                 new GrappleWallFixture().Name,
+                SecurityCameraRangeFixture.RootName,
                 TraversalFeatureSceneBuilder.LeanCornerName,
                 TraversalFeatureSceneBuilder.SwimPoolsName,
                 TraversalFeatureSceneBuilder.WallRunCorridorName,
                 TraversalFeatureSceneBuilder.DoubleJumpStepsName,
                 TraversalFeatureSceneBuilder.ParkourCourseName,
+                BreachFeatureSceneBuilder.FixtureName,
                 HolsterFeatureSceneBuilder.FixtureName,
                 WeaponLightFeatureSceneBuilder.FixtureName,
             }));
+        }
+
+        [Test]
+        public void TheBreachRoomStandsBesideTheWeaponFreeZonesWithTheirFrontEdgeLinedUp()
+        {
+            var stations = FeatureSceneBuilder.PlaygroundStations();
+            var zones = stations.Single(s => s.Fixture.Name == HolsterFeatureSceneBuilder.FixtureName);
+            var room = stations.Single(s => s.Fixture.Name == BreachFeatureSceneBuilder.FixtureName);
+
+            Assert.That(room.Footprint.min.x, Is.EqualTo(zones.Footprint.max.x + FeatureSceneBuilder.StationGap).Within(Epsilon));
+            Assert.That(room.Footprint.min.z, Is.EqualTo(zones.Footprint.min.z).Within(Epsilon));
+            Assert.That(room.Offset.x, Is.EqualTo(47.3f).Within(Epsilon));
+            Assert.That(room.Offset.z, Is.EqualTo(8.5f).Within(Epsilon));
+            Assert.That(room.Footprint.min.y, Is.EqualTo(0f).Within(Epsilon), "the room stands on the floor");
+        }
+
+        [Test]
+        public void PlaygroundPlacesTheBreachRoomWithTwoDoorsATargetAnEnemyAndACharge()
+        {
+            var feature = FeatureSceneBuilder.Playground();
+            FeatureSceneBuilder.PopulateScene(_scene, NewWeapons(), NewRules(feature.Rules), feature);
+
+            var station = feature.Stations.Single(s => s.Fixture.Name == BreachFeatureSceneBuilder.FixtureName);
+            var root = Find(BreachFeatureSceneBuilder.FixtureName);
+            Assert.That(Vector3.Distance(root.transform.position, station.Offset), Is.LessThan(Epsilon));
+
+            var doors = root.GetComponentsInChildren<BreachDoor>(true);
+            Assert.That(doors.Select(d => d.Id), Is.EquivalentTo(new[] { BreachFeatureSceneBuilder.KickDoorId, BreachFeatureSceneBuilder.ChargeDoorId }));
+            Assert.That(root.GetComponentsInChildren<TargetDummy>(true).Single().GetComponent<StaggerReaction>(), Is.Not.Null);
+            var enemy = root.GetComponentsInChildren<EnemyAgent>(true).Single();
+            Assert.That(enemy.WeaponDefinition, Is.Not.Null, "the enemy is armed with the bootstrap weapon");
+
+            var point = root.GetComponentInChildren<PickupSpawnPoint>(true);
+            var charge = doors.Single(d => d.Id == BreachFeatureSceneBuilder.ChargeDoorId);
+            Assert.That(point.Contents.ToSpec().ItemId, Is.EqualTo(BreachFeatureSceneBuilder.ChargeSpec(charge.Tuning).ChargeItemId));
         }
 
         [Test]
@@ -201,7 +238,7 @@ namespace Shooter.Tests.EditMode
             var hut = stations.Single(s => s.Fixture.Name == "HutYard");
 
             Assert.That(hut.Offset, Is.EqualTo(TpsRangeSceneBuilder.HutCenter));
-            foreach (var station in stations.Take(14).Where(s => s.Fixture.Name != "HutYard"))
+            foreach (var station in stations.Take(15).Where(s => s.Fixture.Name != "HutYard"))
             {
                 Assert.That(station.Offset, Is.EqualTo(Vector3.zero), station.Fixture.Name);
             }
@@ -470,6 +507,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(names, Has.No.Member("FeatureVaultWallFixture"));
             Assert.That(names, Has.No.Member("TraversalFeatureFixture"));
             Assert.That(names, Has.No.Member("HolsterZonesFixture"));
+            Assert.That(names, Has.No.Member("BreachRoomFixture"));
             Assert.That(names, Has.No.Member("DarkRoomFixture"));
         }
 

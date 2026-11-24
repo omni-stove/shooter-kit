@@ -11,6 +11,7 @@
         "Shooter.Protocol",
         "Shooter.Samples.Editor",
         "Shooter.Runtime",
+        "Shooter.Interaction",
         "Shooter.Runtime.UI",
         "Unity.AI.Navigation"
     ],

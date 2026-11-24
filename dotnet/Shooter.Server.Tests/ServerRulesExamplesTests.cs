@@ -56,6 +56,30 @@ namespace Shooter.Server.Tests
             Assert.That(data.Rules.Actions.Melee, Is.EqualTo(Melee.On));
         }
 
+        // 書き出す TeamDeathmatch だけが Demo のアセット (GameRulesAssetBuilder.TeamDeathmatchAssetRules) から詰まりを受け継ぐ
+        [TestCase("TeamDeathmatch", WeaponJam.On)]
+        [TestCase("Domination", WeaponJam.Off)]
+        [TestCase("Elimination", WeaponJam.Off)]
+        [TestCase("CaptureTheFlag", WeaponJam.Off)]
+        [TestCase("Hardpoint", WeaponJam.Off)]
+        [TestCase("SearchAndDestroy", WeaponJam.Off)]
+        [TestCase("FreeForAll", WeaponJam.Off)]
+        [TestCase("KillConfirmed", WeaponJam.Off)]
+        [TestCase("GunGame", WeaponJam.Off)]
+        [TestCase("Payload", WeaponJam.Off)]
+        [TestCase("Horde", WeaponJam.Off)]
+        [TestCase("Infected", WeaponJam.Off)]
+        [TestCase("Guardian", WeaponJam.Off)]
+        [TestCase("Execution", WeaponJam.Off)]
+        [TestCase("Juggernaut", WeaponJam.Off)]
+        [TestCase("Vip", WeaponJam.Off)]
+        public void OnlyTheTeamDeathmatchExampleJams(string name, WeaponJam jam)
+        {
+            Assert.That(ServerRulesData.TryLoad(name, Roots(), out var data, out var error), Is.True, error);
+
+            Assert.That(data.Rules.Actions.Jam, Is.EqualTo(jam));
+        }
+
         // 手で保つ例 (server-data/rules/hand-written.txt) は Demo の同じ名前のルールアセットに合わせる。アセットはどれもチームデスマッチの値から作る (GameRulesAssetBuilder) ので、
         // 書き出した TeamDeathmatch の例と比べ、モードごとに変えているダウン・出現直後の無敵・予備弾だけを期待値で持つ
         [TestCase("CaptureTheFlag", Downed.Off, 2f, false)]

@@ -13,7 +13,7 @@ namespace Shooter.Editor
     // シーンは 2 つにまとめる。
     // Playground: ボタンを押せばすぐ試せる機能を全部入れ、TPS の射撃場の置く物 (ITpsRangeFixture) を射撃場と同じ位置に置く (射撃場で重ならないよう配置済み)。
     // 射撃場に無い移動の置く物 (傾き・泳ぎ・壁走り・二段ジャンプ) は、敵の視界に入らないよう出現位置の後ろ (-Z) に一列に並べる。
-    // 武器を出してはいけない場所と中立の警備 (HolsterFeatureSceneBuilder) と、ウェポンライトを試す暗い部屋 (WeaponLightFeatureSceneBuilder) は、
+    // 武器を出してはいけない場所と中立の警備 (HolsterFeatureSceneBuilder) と、突入の部屋 (BreachFeatureSceneBuilder) と、ウェポンライトを試す暗い部屋 (WeaponLightFeatureSceneBuilder) は、
     // 射撃場では置き場が無いので Playground の右奥だけに置く。
     // HighDrop: 出現位置を高い台の上にし、始めから飛び降りてパラシュートと落下ダメージを試せるようにする。
     // どちらも床の外へ落ちないよう、床の縁に壁を立てる。
@@ -84,6 +84,9 @@ namespace Shooter.Editor
                 FeatureStation.InPlace(new SuppressionRangeFixture()),
                 FeatureStation.InPlace(new PingRangeFixture()),
                 FeatureStation.InPlace(new GrappleWallFixture()),
+
+                // 射撃場では smoke の番まで眠らせて置くが、Playground は手で試す場なので始めから動かす。
+                FeatureStation.InPlace(new SecurityCameraRangeFixture(startsAwake: true)),
             };
 
             var nearestZ = float.MaxValue;
@@ -101,7 +104,10 @@ namespace Shooter.Editor
             stations.AddRange(Row(traversal, TraversalRowStartX, nearestZ - StationGap));
 
             // 移動の列より後に足すのは、列の奥の端 (nearestZ) を TPS の射撃場の置く物だけで決めるため。
-            stations.Add(new FeatureStation(HolsterFeatureSceneBuilder.Fixture(), HolsterFeatureSceneBuilder.StationOffset));
+            // 突入の部屋は武器を出してはいけない場所の並びの +X に並べるので、その置き場から位置を決める。
+            var holster = new FeatureStation(HolsterFeatureSceneBuilder.Fixture(), HolsterFeatureSceneBuilder.StationOffset);
+            stations.Add(BreachFeatureSceneBuilder.StationAfter(holster.Footprint));
+            stations.Add(holster);
             stations.Add(new FeatureStation(WeaponLightFeatureSceneBuilder.Fixture(), WeaponLightFeatureSceneBuilder.StationOffset));
             return stations;
         }

@@ -80,6 +80,42 @@ namespace Shooter.Core.Tests
             Assert.That(closest, Is.LessThan(0.5f));
         }
 
+        [TestCase("Shotgun.json", 0.04f, 0f, 0.5f, 0.04f, 1.5f)]
+        [TestCase("SlugCannon.json", 0.06f, 0f, 0.5f, 0.06f, 1.8f)]
+        [TestCase("Minigun.json", 0.002f, 0.001f, 0.5f, 0.05f, 2.5f)]
+        public void TheJammingSamplesCarryTheirJam(
+            string file, float chancePerShot, float chancePerSustainedShot, float sustainedResetSeconds, float maxChance, float clearSeconds)
+        {
+            var path = Path.Combine(SampleWeaponJsonFolder(), file);
+            var jam = WeaponSpecJson.Parse(File.ReadAllText(path), path).Ammo.Jam;
+
+            Assert.That(jam, Is.Not.Null, file);
+            Assert.That(jam.ChancePerShot, Is.EqualTo(chancePerShot));
+            Assert.That(jam.ChancePerSustainedShot, Is.EqualTo(chancePerSustainedShot));
+            Assert.That(jam.SustainedResetSeconds, Is.EqualTo(sustainedResetSeconds));
+            Assert.That(jam.MaxChance, Is.EqualTo(maxChance));
+            Assert.That(jam.ClearSeconds, Is.EqualTo(clearSeconds));
+        }
+
+        [Test]
+        public void OnlyTheThreeMagazineSamplesJam()
+        {
+            var jamming = new List<string>();
+            foreach (var path in Directory.GetFiles(SampleWeaponJsonFolder(), "*.json"))
+            {
+                var spec = WeaponSpecJson.Parse(File.ReadAllText(path), path);
+                if (spec.Ammo.Jam != null)
+                {
+                    jamming.Add(Path.GetFileName(path));
+                    Assert.That(spec.Ammo.Kind, Is.EqualTo(AmmoKind.Magazine), path);
+                }
+            }
+
+            Assert.That(jamming, Is.EquivalentTo(_jammingSamples));
+        }
+
+        private static readonly string[] _jammingSamples = { "Minigun.json", "Shotgun.json", "SlugCannon.json" };
+
         [Test]
         public void TheShotgunLoadsOneShellAtATime()
         {

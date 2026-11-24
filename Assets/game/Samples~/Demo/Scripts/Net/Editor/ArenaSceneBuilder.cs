@@ -61,6 +61,22 @@ namespace Shooter.Editor
         public const float PieceSize = 1f;
         public const int PieceMaxHealth = DestructiblePiece.DefaultMaxHealth;
 
+        public const string BreachDoorsRootName = "BreachDoors";
+        public const string BreachDoorName = "Breach Door West South";
+        public const string BreachDoorId = "arena-west-south";
+
+        // 板の当たりが出入口の縁の部品の当たりに食い込まないよう、出入口よりわずかに小さくする。
+        public const float BreachDoorFit = 0.02f;
+        public const float BreachDoorThickness = 0.1f;
+
+        public static readonly Vector3 BreachDoorPanelSize = new Vector3(
+            (DoorWidth * PieceSize) - BreachDoorFit, (DoorHeight * PieceSize) - BreachDoorFit, BreachDoorThickness);
+
+        // 西の建物の南の出入口を塞ぐ。北の出入口は開けたままにし、破らなくても中へ入れるようにする。前 (+Z) は建物の外 (南) へ向ける。
+        public static Vector3 BreachDoorFeet => Buildings[0].GroundCenter + new Vector3(0f, 0f, -((BuildingDepth - 1) * PieceSize / 2f));
+
+        public static Quaternion BreachDoorRotation => Quaternion.LookRotation(Vector3.back, Vector3.up);
+
         // 東西の壁は角を南北の壁と二重に数えないよう除く。
         public const int BuildingPieceCount =
             (2 * ((BuildingWidth * BuildingWallHeight) - (DoorWidth * DoorHeight)))
@@ -227,7 +243,7 @@ namespace Shooter.Editor
             BuildSceneList.Register(scenePath);
             AssetDatabase.SaveAssets();
             Debug.Log(LogTag + " wrote " + scenePath + " and " + navMeshDataPath + " (" + SpawnPoints.Count + " spawn point(s), "
-                + Buildings.Count + " building(s), " + ControlPoints.Count + " control point(s), "
+                + Buildings.Count + " building(s), 1 breach door, " + ControlPoints.Count + " control point(s), "
                 + FlagBases.Count + " flag base(s), " + features.LadderTowers.Count + " ladder tower(s), "
                 + features.WaterPools.Count + " water pool(s), " + features.Vehicles.Count + " vehicle(s)); start a server with "
                 + NetLaunchOptions.MapFlag + " " + MapName);
@@ -371,6 +387,8 @@ namespace Shooter.Editor
             {
                 CreateBuilding(scene, buildingName, groundCenter, pool, pieceVisualPrefab);
             }
+
+            CreateBreachDoor(scene);
 
             var spawnRoot = new GameObject(SpawnPointsRootName);
             SceneManager.MoveGameObjectToScene(spawnRoot, scene);
@@ -604,6 +622,26 @@ namespace Shooter.Editor
                 }
 
                 return structure;
+            }
+            catch
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                throw;
+            }
+        }
+
+        // ドアの状態はサーバー (ServerDoors) が持ち、クライアント (NetV2DoorsPart) は届いた段に合わせて板を開け・壊すだけなので、オフラインと同じ部品を置けばよい。
+        // 板はここで作ってシーンに残し、マップの書き出し (MapCollisionExporter) が板の当たりをこのドアの組にして .doors.json に書く。
+        public static BreachDoor CreateBreachDoor(Scene scene)
+        {
+            SceneBuildHelpers.RequireLoaded(scene);
+
+            var root = new GameObject(BreachDoorsRootName);
+            SceneManager.MoveGameObjectToScene(root, scene);
+            try
+            {
+                return BreachFeatureSceneBuilder.CreateDoor(
+                    root.transform, BreachDoorName, BreachDoorId, BreachDoorFeet, BreachDoorRotation, BreachDoorPanelSize);
             }
             catch
             {
