@@ -117,6 +117,9 @@ namespace Shooter.Runtime
         [SerializeField, Tooltip("二丁持ちの左手のモデル。空なら右手のモデル (Prefab) を左右反転して置く")]
         private GameObject _leftPrefab;
 
+        [SerializeField, Tooltip("左手の位置を指定するか。オフなら右手の位置 (Offset) の x を反転した位置に置く")]
+        private bool _hasLeftOffset;
+
         [SerializeField, Tooltip("二丁持ちのとき、カメラから見た左手のモデルの根の位置 (m)。右・上・前")]
         private Vector3 _leftOffset = ViewmodelEntry.DefaultLeftOffset;
 
@@ -162,6 +165,7 @@ namespace Shooter.Runtime
             _adsOffset = adsOffset;
             _leftPrefab = leftPrefab;
             _leftOffset = leftOffset;
+            _hasLeftOffset = true;
             _akimboReloadLowering = akimboReloadLowering;
         }
 
@@ -175,7 +179,8 @@ namespace Shooter.Runtime
 
         public GameObject LeftPrefab => _leftPrefab;
 
-        public Vector3 LeftOffset => _leftOffset;
+        // 旗が無い (旧データ) ときは、項目自身の _offset から鏡の位置を作る
+        public Vector3 LeftOffset => _hasLeftOffset ? _leftOffset : Mirror(_offset);
 
         public float AkimboReloadLowering => _akimboReloadLowering;
 

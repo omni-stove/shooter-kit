@@ -163,6 +163,14 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ASerializedEntryWithoutALeftOffsetMirrorsItsOwnOffset()
+        {
+            var entry = JsonUtility.FromJson<ViewmodelEntry>("{\"_offset\":{\"x\":0.17,\"y\":-0.17,\"z\":0.12}}");
+
+            Assert.That(entry.LeftOffset, Is.EqualTo(new Vector3(-0.17f, -0.17f, 0.12f)));
+        }
+
+        [Test]
         public void OnlyTheHandThatFiredKicks()
         {
             HoldAkimboThenPlain();
