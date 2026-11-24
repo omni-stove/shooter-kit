@@ -35,6 +35,7 @@ MonoBehaviour:
   _grenade: 1
   _grenadeCount: 3
   _melee: 0
+  _takedown: 1
   _stagger: 1
   _slide: 1
   _mantle: 1
@@ -53,6 +54,7 @@ MonoBehaviour:
   _stamina: 1
   _reloadInterruptedBy: 0000000001000000i
   _aimWhileReloading: 0
+  _jam: 0
   _playerMaxHealth: 100
   _headDamageMultiplier: 2
   _bodyDamageMultiplier: 1

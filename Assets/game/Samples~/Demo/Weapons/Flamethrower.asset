@@ -91,6 +91,13 @@ MonoBehaviour:
     _coolPerSecond: 0.35
     _coolDelaySeconds: 0.5
     _overheatSeconds: 2
+  _jam:
+    _enabled: 0
+    _chancePerShot: 0.01
+    _chancePerSustainedShot: 0.005
+    _sustainedResetSeconds: 0.5
+    _maxChance: 0.15
+    _clearSeconds: 1.2
   _delivery: 3
   _pelletCount: 1
   _pelletSpreadDegrees: 0
@@ -236,3 +243,10 @@ MonoBehaviour:
     _throwMaxFlightSeconds: 8
     _thrownCollectMode: 0
     _thrownPrefab: {fileID: 0}
+  _akimbo:
+    _enabled: 0
+    _spreadMultiplier: 1.5
+    _blocksAds: 1
+    _reloadSecondsMultiplier: 1
+    _moveSpeedMultiplier: 1
+    _offhandShotDelaySeconds: 0.05

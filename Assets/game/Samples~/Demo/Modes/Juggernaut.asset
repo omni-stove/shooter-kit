@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b649acc78651240c7d27e0830879c9b, type: 3}
+  m_Name: Juggernaut
+  m_EditorClassIdentifier: Shooter.Runtime::Shooter.Runtime.JuggernautDefinition
+  _juggernautMaxHealth: 300
+  _juggernautSpeedMultiplier: 1.1
+  _scorePerKillAsJuggernaut: 1
+  _scorePerJuggernautKill: 3
+  _scoreLimit: 15
+  _timeLimitSeconds: 600
+  _startDelaySeconds: 5
+  _respawnSeconds: 3
