@@ -29,7 +29,8 @@ namespace Shooter.Core
         }
 
         // reserveAmmo はセーブの値をそのまま使い、GameRules.ReserveAmmoMultiplier は掛けない (Weapon と同じく、作ったときに掛けた値がセーブされているため)。
-        public AkimboHands(WeaponSpec spec, int rightAmmoInMagazine, int leftAmmoInMagazine, int reserveAmmo, GameRules rules)
+        // 手ごとの詰まりの判定は、渡さなければ左右で別の種から引く (同じ種だと左右で同じ順番目の弾で詰まるため)。
+        public AkimboHands(WeaponSpec spec, int rightAmmoInMagazine, int leftAmmoInMagazine, int reserveAmmo, GameRules rules, IJamRoll rightJamRoll = null, IJamRoll leftJamRoll = null)
         {
             Spec = RequireAkimbo(spec);
             if (rules == null)
@@ -38,10 +39,10 @@ namespace Shooter.Core
             }
 
             var handSpec = HandSpec(spec);
-            Right = new Weapon(handSpec, rightAmmoInMagazine, reserveAmmo, rules);
+            Right = new Weapon(handSpec, rightAmmoInMagazine, reserveAmmo, rules, rightJamRoll);
 
             // 左の手に予備弾を持たせないのは、右の手と同じ数を持たせると分け合う予備弾が 2 倍に見えるため。
-            Left = new Weapon(handSpec, leftAmmoInMagazine, 0, rules);
+            Left = new Weapon(handSpec, leftAmmoInMagazine, 0, rules, leftJamRoll ?? JamRoll.ForWeapon(spec.Id + ":left"));
             _reserve = Share(reserveAmmo);
             Wire();
         }

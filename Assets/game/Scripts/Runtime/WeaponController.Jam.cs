@@ -13,12 +13,48 @@ namespace Shooter.Runtime
 
         public Func<WeaponSpec, IJamRoll> JamRolls { get; set; }
 
-        public WeaponJamStatus JamStatus => WeaponJamStatus.Of(Weapon);
+        public WeaponJamStatus JamStatus => WeaponJamStatus.Of(JamWeapon);
+
+        // 二丁持ちの間に詰まるのは手の Weapon なので、並びの Weapon ではなく詰まっている手を見る。
+        private Weapon JamWeapon
+        {
+            get
+            {
+                var hands = Akimbo;
+                if (hands == null)
+                {
+                    return Weapon;
+                }
+
+                if (hands.Right.IsJammed || hands.Right.IsClearingJam)
+                {
+                    return hands.Right;
+                }
+
+                return hands.Left.IsJammed || hands.Left.IsClearingJam ? hands.Left : hands.Right;
+            }
+        }
+
+        private AkimboHand? HandOf(Weapon weapon)
+        {
+            var hands = Akimbo;
+            if (hands == null)
+            {
+                return null;
+            }
+
+            if (ReferenceEquals(weapon, hands.Right))
+            {
+                return AkimboHand.Right;
+            }
+
+            return ReferenceEquals(weapon, hands.Left) ? AkimboHand.Left : (AkimboHand?)null;
+        }
 
         public bool TryStartClearJam()
         {
             EnsureInitialized();
-            var weapon = Weapon;
+            var weapon = JamWeapon;
             if (weapon == null || IsSwitching || IsReloadBlockedByModifier || !weapon.TryStartClearJam())
             {
                 return false;
@@ -31,7 +67,7 @@ namespace Shooter.Runtime
         public bool CancelClearJam()
         {
             EnsureInitialized();
-            var canceled = CancelClearJam(Weapon);
+            var canceled = CancelClearJam(JamWeapon);
             PublishJam();
             return canceled;
         }
@@ -110,9 +146,10 @@ namespace Shooter.Runtime
             CombatEvents.RaiseWeaponJamCleared(JamHolder, weapon.Spec.Id);
 
             // 最後の 1 発で詰まると撃ったときの自動リロードは詰まりで断られているので、解除し終えたここで始める (ServerWeapon と同じ)。
-            if (weapon == Weapon)
+            var hand = HandOf(weapon);
+            if (weapon == Weapon || hand.HasValue)
             {
-                ReloadIfAuto(weapon);
+                ReloadIfAuto(weapon, hand);
             }
         }
 

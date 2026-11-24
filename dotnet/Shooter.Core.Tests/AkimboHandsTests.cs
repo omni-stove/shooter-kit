@@ -409,6 +409,85 @@ namespace Shooter.Core.Tests
             Assert.That(AkimboLog.Reload(AkimboHand.Right), Is.EqualTo("[Combat] akimbo reload hand=right"));
         }
 
+        private static readonly GameRules _jamOn = GameRules.Default.WithActions(ActionRules.Default.WithJam(WeaponJam.On));
+
+        private static WeaponSpec JammingPistol()
+        {
+            return new WeaponSpec(
+                _id,
+                null,
+                WeaponCategory.Handgun,
+                new TriggerSpec(FireMode.Semi, _fireInterval),
+                new AmmoSpec(8, 24, _reloadSeconds, jam: new JamSpec(0.5f, 0f, 0f, 0.5f, 1f)),
+                akimbo: AkimboSpec.Default);
+        }
+
+        // 確率 0.5 で下回ったら詰まる。弾倉の 8 発の内で最初に詰まる発数 (詰まらなければ 0) を、同じ乱数の列から数える。
+        private static int ExpectedFirstJam(JamRoll roll)
+        {
+            for (var shot = 1; shot <= 8; shot++)
+            {
+                if (roll.Draw() < 0.5f)
+                {
+                    return shot;
+                }
+            }
+
+            return 0;
+        }
+
+        private static int FirstJam(AkimboHands hands, AkimboHand hand)
+        {
+            var weapon = hands.Hand(hand);
+            for (var shot = 1; shot <= 8; shot++)
+            {
+                Assert.That(hands.TryFire(hand), Is.True, hand + " shot " + shot);
+                if (weapon.IsJammed)
+                {
+                    return shot;
+                }
+
+                hands.Tick(_fireInterval);
+            }
+
+            return 0;
+        }
+
+        private sealed class ConstantJamRoll : IJamRoll
+        {
+            private readonly float _value;
+
+            public ConstantJamRoll(float value)
+            {
+                _value = value;
+            }
+
+            public float Draw()
+            {
+                return _value;
+            }
+        }
+
+        [Test]
+        public void TheLeftHandDrawsJamsFromItsOwnSeedByDefault()
+        {
+            Assert.That(JamRoll.SeedFor(_id), Is.Not.EqualTo(JamRoll.SeedFor(_id + ":left")));
+
+            var hands = new AkimboHands(JammingPistol(), 8, 8, 16, _jamOn);
+
+            Assert.That(FirstJam(hands, AkimboHand.Right), Is.EqualTo(ExpectedFirstJam(JamRoll.ForWeapon(_id))));
+            Assert.That(FirstJam(hands, AkimboHand.Left), Is.EqualTo(ExpectedFirstJam(JamRoll.ForWeapon(_id + ":left"))));
+        }
+
+        [Test]
+        public void AGivenLeftJamRollIsUsedForTheLeftHandOnly()
+        {
+            var hands = new AkimboHands(JammingPistol(), 8, 8, 16, _jamOn, new ConstantJamRoll(0.9f), new ConstantJamRoll(0f));
+
+            Assert.That(FirstJam(hands, AkimboHand.Left), Is.EqualTo(1));
+            Assert.That(FirstJam(hands, AkimboHand.Right), Is.EqualTo(0));
+        }
+
         private sealed class TestPool : IAmmoPool
         {
             private readonly int _max;

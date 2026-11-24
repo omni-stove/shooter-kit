@@ -14,6 +14,9 @@ namespace Shooter.Runtime
 
         public const string PreviousActionPath = "Player/Previous";
 
+        // 二丁持ちの左手の引き金。覗き込みと同じボタンにするのは、二丁持ちの間は覗き込まない (AkimboSpec.BlocksAds) ため。
+        public const string OffhandActionPath = InputActionPaths.Aim;
+
         // シーンに置いたまま再コンパイルすると、Unity が private の値も保存し直し、null の InputAction を空のアクションとして戻してしまう (再生でシーンを読み直さないので、そのまま使われる)。
         [NonSerialized]
         private InputAction _attackAction;
@@ -23,10 +26,13 @@ namespace Shooter.Runtime
         private InputAction _nextAction;
         [NonSerialized]
         private InputAction _previousAction;
+        [NonSerialized]
+        private InputAction _offhandAction;
         private bool _enabledAttackAction;
         private bool _enabledReloadAction;
         private bool _enabledNextAction;
         private bool _enabledPreviousAction;
+        private bool _enabledOffhandAction;
 
         public InputAction AttackAction => _attackAction;
         public InputAction ReloadAction => _reloadAction;
@@ -34,6 +40,35 @@ namespace Shooter.Runtime
         public InputAction NextAction => _nextAction;
 
         public InputAction PreviousAction => _previousAction;
+
+        public InputAction OffhandAction => _offhandAction;
+
+        public void SetOffhandAction(InputAction action)
+        {
+            ReplaceAction(ref _offhandAction, ref _enabledOffhandAction, action);
+
+            // Edit Mode では OnDisable が呼ばれず無効に戻せないので、Play 中だけ有効にする。
+            if (Application.isPlaying && isActiveAndEnabled)
+            {
+                _enabledOffhandAction |= EnableIfNeeded(_offhandAction);
+            }
+        }
+
+        private void ReadTriggers()
+        {
+            var rightPressed = _attackAction.IsPressed();
+            var rightWasPressed = _attackAction.WasPressedThisFrame();
+
+            // 二丁持ちでない武器の間に読まないのは、同じボタンを覗き込み (AimDownSights) と近接武器の投げが使うため。
+            if (_offhandAction == null || !IsAkimbo)
+            {
+                DropOffhand();
+                PullTrigger(rightPressed, rightWasPressed);
+                return;
+            }
+
+            PullTriggers(rightPressed, rightWasPressed, _offhandAction.IsPressed(), _offhandAction.WasPressedThisFrame());
+        }
 
         private void EnableActions()
         {
@@ -43,6 +78,7 @@ namespace Shooter.Runtime
             _enabledNextAction |= EnableIfNeeded(_nextAction);
             _enabledPreviousAction |= EnableIfNeeded(_previousAction);
             _enabledSwitchAmmoTypeAction |= EnableIfNeeded(_switchAmmoTypeAction);
+            _enabledOffhandAction |= EnableIfNeeded(_offhandAction);
         }
 
         private void DisableActions()
@@ -52,6 +88,7 @@ namespace Shooter.Runtime
             DisableIfEnabledHere(_nextAction, ref _enabledNextAction);
             DisableIfEnabledHere(_previousAction, ref _enabledPreviousAction);
             DisableIfEnabledHere(_switchAmmoTypeAction, ref _enabledSwitchAmmoTypeAction);
+            DisableIfEnabledHere(_offhandAction, ref _enabledOffhandAction);
         }
 
         private InputAction FindOptionalAction(InputActionAsset actions, string path, string effect)
