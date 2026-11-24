@@ -7,7 +7,9 @@
       "entries": [
         { "scene": "Payload" },
         { "scene": "SearchAndDestroy" },
-        { "scene": "BattleRoyale" }
+        { "scene": "BattleRoyale" },
+        { "scene": "Juggernaut" },
+        { "scene": "Vip" }
       ]
     },
     {

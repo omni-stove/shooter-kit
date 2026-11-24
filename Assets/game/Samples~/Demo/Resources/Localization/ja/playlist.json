@@ -18,5 +18,7 @@
   "playlist.name.demo-mutated": "ミューテーター入り",
   "playlist.mode.Payload": "ペイロード",
   "playlist.mode.SearchAndDestroy": "サーチ&デストロイ",
-  "playlist.mode.BattleRoyale": "バトルロイヤル"
+  "playlist.mode.BattleRoyale": "バトルロイヤル",
+  "playlist.mode.Juggernaut": "ジャガーノート",
+  "playlist.mode.Vip": "VIP 護衛"
 }

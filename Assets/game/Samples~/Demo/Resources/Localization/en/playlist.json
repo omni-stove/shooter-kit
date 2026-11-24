@@ -18,5 +18,7 @@
   "playlist.name.demo-mutated": "Mutated mix",
   "playlist.mode.Payload": "Payload",
   "playlist.mode.SearchAndDestroy": "Search and Destroy",
-  "playlist.mode.BattleRoyale": "Battle Royale"
+  "playlist.mode.BattleRoyale": "Battle Royale",
+  "playlist.mode.Juggernaut": "Juggernaut",
+  "playlist.mode.Vip": "VIP Escort"
 }

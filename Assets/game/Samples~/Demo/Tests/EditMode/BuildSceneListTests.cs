@@ -10,11 +10,6 @@ namespace Shooter.Tests.EditMode
     {
         private const string Other = "Assets/Scenes/SampleScene.unity";
 
-        // ルールのアセットだけを先に足し、シーンとその並びは後から足すモード
-        private static readonly string[] _modesWithoutScenes = { GameRulesAssetBuilder.JuggernautName, GameRulesAssetBuilder.VipName };
-
-        private static string[] ModesWithScenes => GameRulesAssetBuilder.ModeNames.Except(_modesWithoutScenes).ToArray();
-
         [Test]
         public void BuildersSaveToTheListedPaths()
         {
@@ -99,7 +94,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ListHasEveryModeSceneNamedAfterItsRules()
         {
-            foreach (var name in ModesWithScenes)
+            foreach (var name in GameRulesAssetBuilder.ModeNames)
             {
                 var scene = BuildSceneList.ModeScene(name);
                 Assert.That(scene, Is.EqualTo(DemoSample.Root + "/Scenes/" + name + ".unity"), name);
@@ -130,7 +125,7 @@ namespace Shooter.Tests.EditMode
             var start = scenes.IndexOf(BuildSceneList.BattleRoyaleScene) + 1;
             Assert.That(
                 scenes.Skip(start).Take(4),
-                Is.EqualTo(new[] { BuildSceneList.InfectedScene, BuildSceneList.ExtractionScene, BuildSceneList.PayloadScene, BuildSceneList.ModeTestScene }));
+                Is.EqualTo(new[] { BuildSceneList.InfectedScene, BuildSceneList.ExtractionScene, BuildSceneList.PayloadScene, BuildSceneList.JuggernautScene }));
             Assert.That(BuildSceneList.WebScenes, Has.No.Member(BuildSceneList.InfectedScene), "the menu has no button for the modes");
             Assert.That(BuildSceneList.WebScenes, Has.No.Member(BuildSceneList.PayloadScene), "the browser build has no mode scenes");
         }
@@ -145,9 +140,37 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ListHasTheJuggernautAndVipScenesRightAfterThePayload()
+        {
+            var scenes = BuildSceneList.Scenes.ToList();
+
+            Assert.That(BuildSceneList.JuggernautScene, Is.EqualTo(DemoSample.Root + "/Scenes/Juggernaut.unity"));
+            Assert.That(BuildSceneList.VipScene, Is.EqualTo(DemoSample.Root + "/Scenes/Vip.unity"));
+            Assert.That(BuildSceneList.ModeScene(GameRulesAssetBuilder.JuggernautName), Is.EqualTo(BuildSceneList.JuggernautScene));
+            Assert.That(BuildSceneList.ModeScene(GameRulesAssetBuilder.VipName), Is.EqualTo(BuildSceneList.VipScene));
+            var start = scenes.IndexOf(BuildSceneList.PayloadScene) + 1;
+            Assert.That(
+                scenes.Skip(start).Take(3),
+                Is.EqualTo(new[] { BuildSceneList.JuggernautScene, BuildSceneList.VipScene, BuildSceneList.ModeTestScene }));
+            Assert.That(BuildSceneList.WebScenes, Has.No.Member(BuildSceneList.JuggernautScene), "the browser build has no mode scenes");
+            Assert.That(BuildSceneList.WebScenes, Has.No.Member(BuildSceneList.VipScene), "the browser build has no mode scenes");
+            Assert.That(BuildSceneList.ServerScenes, Has.No.Member(BuildSceneList.JuggernautScene), "the dedicated server runs only the net maps");
+            Assert.That(BuildSceneList.ServerScenes, Has.No.Member(BuildSceneList.VipScene), "the dedicated server runs only the net maps");
+        }
+
+        [Test]
+        public void TheJuggernautAndVipScenesAreBuiltWhereTheListExpectsThem()
+        {
+            Assert.That(JuggernautSceneBuilder.ScenePathValue, Is.EqualTo(BuildSceneList.JuggernautScene));
+            Assert.That(new JuggernautSceneBuilder().ScenePath, Is.EqualTo(BuildSceneList.JuggernautScene));
+            Assert.That(VipSceneBuilder.ScenePathValue, Is.EqualTo(BuildSceneList.VipScene));
+            Assert.That(new VipSceneBuilder().ScenePath, Is.EqualTo(BuildSceneList.VipScene));
+        }
+
+        [Test]
         public void ArrangeSkipsTheModeScenesUntilTheyAreBuilt()
         {
-            var modeScenes = ModesWithScenes.Select(BuildSceneList.ModeScene).ToArray();
+            var modeScenes = GameRulesAssetBuilder.ModeNames.Select(BuildSceneList.ModeScene).ToArray();
 
             var scenes = BuildSceneList.Arrange(null, path => !modeScenes.Contains(path));
 

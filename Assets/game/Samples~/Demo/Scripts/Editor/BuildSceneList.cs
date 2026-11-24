@@ -74,6 +74,8 @@ namespace Shooter.Editor
         public static string InfectedScene => ShooterKitRoot.OutputScene(GameRulesAssetBuilder.InfectedName);
         public static string ExtractionScene => ShooterKitRoot.OutputScene(GameRulesAssetBuilder.ExtractionName);
         public static string PayloadScene => ShooterKitRoot.OutputScene(GameRulesAssetBuilder.PayloadName);
+        public static string JuggernautScene => ShooterKitRoot.OutputScene(GameRulesAssetBuilder.JuggernautName);
+        public static string VipScene => ShooterKitRoot.OutputScene(GameRulesAssetBuilder.VipName);
 
         public static string ModeTestScene => ShooterKitRoot.OutputScene("ModeTest");
 
@@ -116,6 +118,8 @@ namespace Shooter.Editor
                     InfectedScene,
                     ExtractionScene,
                     PayloadScene,
+                    JuggernautScene,
+                    VipScene,
                     ModeTestScene,
                     NetArena01Scene,
                     NetBattleRoyaleScene,
@@ -166,6 +170,10 @@ namespace Shooter.Editor
                     return ExtractionScene;
                 case GameRulesAssetBuilder.PayloadName:
                     return PayloadScene;
+                case GameRulesAssetBuilder.JuggernautName:
+                    return JuggernautScene;
+                case GameRulesAssetBuilder.VipName:
+                    return VipScene;
                 default:
                     throw new ArgumentException(
                         $"'{name}' is not one of the mode names ({string.Join(", ", GameRulesAssetBuilder.ModeNames)})", nameof(name));
