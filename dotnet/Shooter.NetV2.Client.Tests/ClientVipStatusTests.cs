@@ -287,7 +287,7 @@ namespace Shooter.NetV2.Tests
         {
             _status.Apply(Snapshot(vip: _ally, defender: Team.Alpha));
             var other = Snapshot(vip: _ally, defender: Team.Alpha);
-            other.Match.Objective = MatchObjective.TeamDeathmatch;
+            other.Match.Objective = MatchObjective.SearchAndDestroy;
 
             Assert.That(_status.Apply(other), Is.True);
             Assert.That(_status.Status, Is.Null);
