@@ -169,6 +169,8 @@ namespace Shooter.Server.Tests
         [TestCase(MatchObjective.Infected, typeof(InfectedRules))]
         [TestCase(MatchObjective.Guardian, typeof(GuardianRules))]
         [TestCase(MatchObjective.Execution, typeof(ExecutionRules))]
+        [TestCase(MatchObjective.Juggernaut, typeof(JuggernautRules))]
+        [TestCase(MatchObjective.Vip, typeof(VipRules))]
         public void EveryOnlineModeHasServerRules(MatchObjective objective, Type expected)
         {
             var settings = new NetMatchSettings(gunGame: new GunGameSpec(600f, 2f, new[] { TestRules.RifleId }, Array.Empty<string>(), true));
@@ -199,27 +201,101 @@ namespace Shooter.Server.Tests
             }
         }
 
-        // Juggernaut・Vip は列挙とルールのファイルだけを先に足し、サーバーのルールは後から足す
         [Test]
-        public void EveryObjectiveButTheOnesAddedAheadIsSupported()
+        public void EveryObjectiveOfTheEnumIsSupported()
         {
             foreach (var objective in Enum.GetValues<MatchObjective>())
             {
-                var ahead = objective == MatchObjective.Juggernaut || objective == MatchObjective.Vip;
-                Assert.That(ServerObjectiveFactory.Supports(objective), Is.EqualTo(!ahead), objective.ToString());
+                Assert.That(ServerObjectiveFactory.Supports(objective), Is.True, objective.ToString());
             }
 
-            Assert.That(ServerObjectiveFactory.Supported.Count, Is.EqualTo(16));
+            Assert.That(ServerObjectiveFactory.Supported.Count, Is.EqualTo(18));
             Assert.That(ServerObjectiveFactory.Supports((MatchObjective)99), Is.False);
         }
 
-        [TestCase(MatchObjective.Juggernaut)]
-        [TestCase(MatchObjective.Vip)]
-        public void TheObjectivesAddedAheadAreRefusedByName(MatchObjective objective)
+        [Test]
+        public void JuggernautScoresEachPlayerWithTheConfiguredTuningAndKeepsTheSessionFromEndingOnKills()
         {
-            var e = Assert.Throws<InvalidOperationException>(() => ServerObjectiveFactory.Create(objective, new NetMatchSettings(), _host));
+            var tuning = new JuggernautSpec(juggernautMaxHealth: 250, scoreLimit: 12, timeLimitSeconds: 420f, startDelaySeconds: 4f);
+            var settings = new NetMatchSettings(scoreLimit: 30, timeLimitSeconds: 600f, respawnSeconds: 2.5f, juggernaut: tuning);
 
-            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective " + objective));
+            var objective = ServerObjectiveFactory.Create(MatchObjective.Juggernaut, settings, _host);
+
+            Assert.That(objective, Is.TypeOf<JuggernautRules>());
+            Assert.That(objective.Objective, Is.EqualTo(MatchObjective.Juggernaut));
+            Assert.That(((JuggernautRules)objective).Spec, Is.SameAs(tuning), "the tuning of the rules file, not the default");
+            Assert.That(objective.PlaysInRounds, Is.False);
+            Assert.That(objective.KeepsMatchScore, Is.True);
+            Assert.That(objective.HoldsFire, Is.False);
+            Assert.That(objective.UsesLoot, Is.False);
+            Assert.That(objective.RemainingSeconds, Is.EqualTo(420f));
+            var spec = objective.CreateSessionSpec(GameRules.Default, settings);
+            Assert.That(spec.ScoreLimit, Is.EqualTo(int.MaxValue));
+            Assert.That(spec.TimeLimitSeconds, Is.EqualTo(float.MaxValue));
+            Assert.That(spec.RespawnSeconds, Is.EqualTo(2.5f));
+            Assert.That(spec.Rules.FriendlyFire, Is.EqualTo(FriendlyFire.On), "everyone is against everyone");
+            Assert.That(spec.Rules.RespawnMode, Is.EqualTo(RespawnMode.Individual));
+            Assert.DoesNotThrow(() => objective.CheckMap(TestMaps.Data("Empty", TestRules.Points()), TestRules.Points()), "any map with spawns will do");
+
+            objective.Start();
+            Assert.That(_log.ToString(), Does.Contain("[Juggernaut] net respawn=2.5 body maxHealth=250 speedMultiplier=1.1"));
+            var snapshot = default(MatchSnapshot);
+            objective.FillMatch(ref snapshot);
+            Assert.That(snapshot.Objective, Is.EqualTo(MatchObjective.Juggernaut));
+            Assert.That(snapshot.AlphaPoints, Is.EqualTo(12), "the score limit rides in the points");
+            Assert.That(snapshot.BravoPoints, Is.Zero);
+            Assert.That(snapshot.AlphaScore, Is.Zero);
+            Assert.That(snapshot.BravoScore, Is.Zero);
+            var items = new SnapshotList<ObjectiveItemSnapshot>(SnapshotMessage.MaxObjectiveItems, "objective item");
+            objective.FillObjectiveItems(items);
+            Assert.That(items.Count, Is.Zero, "nobody is the juggernaut before the match starts");
+            objective.Stop();
+        }
+
+        [Test]
+        public void VipPlaysInRoundsWithTheConfiguredTuningAndNeedsTheExitsOfTheMap()
+        {
+            var tuning = new VipSpec(vipMaxHealth: 180, roundSeconds: 90f, winsToWin: 3, exitHoldSeconds: 2f, swapEveryRounds: 1);
+            var settings = new NetMatchSettings(respawnSeconds: 4f, vip: tuning);
+
+            var objective = ServerObjectiveFactory.Create(MatchObjective.Vip, settings, _host);
+
+            Assert.That(objective, Is.TypeOf<VipRules>());
+            Assert.That(objective.Objective, Is.EqualTo(MatchObjective.Vip));
+            Assert.That(((VipRules)objective).Spec, Is.SameAs(tuning), "the tuning of the rules file, not the default");
+            Assert.That(objective.PlaysInRounds, Is.True);
+            Assert.That(objective.KeepsMatchScore, Is.True);
+            Assert.That(objective.HoldsFire, Is.False, "a VIP round has no preparation");
+            Assert.That(objective.UsesLoot, Is.False);
+            Assert.That(objective.CurrentRoundPhase(), Is.EqualTo(RoundPhase.Waiting));
+            Assert.That(objective.RemainingSeconds, Is.EqualTo(90f));
+            var spec = objective.CreateSessionSpec(GameRules.Default, settings);
+            Assert.That(spec.ScoreLimit, Is.EqualTo(int.MaxValue));
+            Assert.That(spec.TimeLimitSeconds, Is.EqualTo(float.MaxValue));
+            Assert.That(spec.RespawnSeconds, Is.EqualTo(4f));
+            Assert.That(spec.RespawnsByRound, Is.True);
+
+            var empty = TestMaps.Data("Empty", TestRules.Points());
+            var check = Assert.Throws<InvalidOperationException>(() => objective.CheckMap(empty, TestRules.Points()));
+            Assert.That(check.Message, Does.StartWith("cannot change to map Empty for the Vip match: it has no extraction points for the vip to escape to"));
+            Assert.Throws<InvalidOperationException>(() => objective.Start(), "Start needs a map");
+
+            var exits = new NetMapPoints(
+                TestRules.Points().SpawnPoints,
+                Array.Empty<ControlPointArea>(),
+                extractionPoints: new[] { new NetMapExtractionPoint("exit-b", new Vector3(10f, 0f, 0f), 2f), new NetMapExtractionPoint("exit-a", new Vector3(-10f, 0f, 0f), 2f) });
+            objective.UseMap(TestMaps.Data("Exits", exits), exits);
+            objective.Start();
+            Assert.That(_log.ToString(), Does.Contain("[Vip] settings vipHealth=180 winsToWin=3 round=90s exitHold=2s swapEvery=1"));
+            Assert.That(_log.ToString(), Does.Contain("[Vip] net exits=exit-a,exit-b"));
+            var snapshot = default(MatchSnapshot);
+            objective.FillMatch(ref snapshot);
+            Assert.That(snapshot.Objective, Is.EqualTo(MatchObjective.Vip));
+            Assert.That(snapshot.AlphaPoints, Is.Zero);
+            Assert.That(snapshot.BravoPoints, Is.Zero);
+            Assert.That(snapshot.RoundsToWin, Is.EqualTo(3));
+            Assert.That(objective.DecideWinner(Team.Alpha), Is.Null, "no round is won yet, whoever has more kills");
+            objective.Stop();
         }
 
         // 部品をつながずに作る口 (MatchRulesModule の既定の選び方) でも、試合の場を使わない目的は作れる
@@ -227,6 +303,8 @@ namespace Shooter.Server.Tests
         [TestCase(MatchObjective.Infected)]
         [TestCase(MatchObjective.Guardian)]
         [TestCase(MatchObjective.Execution)]
+        [TestCase(MatchObjective.Juggernaut)]
+        [TestCase(MatchObjective.Vip)]
         public void TheLaterOnlineModesNeedNoMatchParts(MatchObjective objective)
         {
             using var stashes = new TempDirectory();

@@ -65,7 +65,10 @@ docker compose -f docker/server/compose.yaml up -d
 - `Horde` で直す・置ける防衛物は、`make export-server-data` がマップの建物と一緒に書き出した `HordeFortification` だけ。書き出す前のマップでは、直す・置く要求をいつも断る。クライアントは波の合間に案内が出ている間だけ、Interact のキーで直す・置く要求を送る。
 - プレイリストでは `match.*` と武器が最初の項目のルールのまま変わらないので、後の項目で使うモードの節も最初の項目に書く。
 - `Infected` の調整値はルールの `match.infected` に `infected.json` と同じ項目名で書く。感染者の体力の上限と速さ (`infectedMaxHealth`・`infectedSpeedMultiplier`) は感染したときから効き、試合の頭で生存者の値に戻る。`infectedWeaponId` の武器はルールのロードアウトか武器の一覧 (カタログ) に無いと起動 (と次のルールへの切り替え) を断る。空なら感染しても持っている武器のまま。クライアントの体力の表示の上限は接続のときに受けた全員共通の値 (`match.maxHealth`) のままなので、感染者は上限を超えた体力が出る。
-- `Juggernaut`・`Vip` の調整値はルールの `match.juggernaut`・`match.vip` に `juggernaut.json`・`vip.json` と同じ項目名で書く (その目的のルールか、既定値から変えたときだけ書き出す)。起動のログには `[Juggernaut] tuning ...`・`[Vip] tuning ...` の行で読んだ値が出る。専用サーバーの目的のルールはまだ無いので、`server-data/rules/Juggernaut.json`・`Vip.json` で起動すると `the dedicated server has no rules for the match objective ...` で止まる。
+- `Juggernaut`・`Vip` の調整値はルールの `match.juggernaut`・`match.vip` に `juggernaut.json`・`vip.json` と同じ項目名で書く (その目的のルールか、既定値から変えたときだけ書き出す)。起動のログには `[Juggernaut] tuning ...`・`[Vip] tuning ...` の行で読んだ値が出る。
+- `Juggernaut` はどのマップでも遊べ、ジャガーノートが替わると `[Juggernaut] change player=...`、決着すると `[Juggernaut] winner ...` の行が出る。ルールの `friendlyFire` にかかわらず全員が敵同士になる。
+- `Vip` は VIP の向かう脱出地点の要るモードで、書き出したマップでは `NetBattleRoyale` にだけある。脱出地点の無いマップで起動すると `it has no extraction points for the vip to escape to` で止まる。VIP が決まると `[Vip] chosen ...`、ラウンドが終わると `[Vip] round_end ...`、決着すると `[Vip] ended winner=...` の行が出る。
+- クライアントは HUD の目的の欄にジャガーノート・VIP を出し、頭上に目印を付ける。目印の見た目は `NetV2Client.JuggernautMarkerVisual`・`VipMarkerVisual` で差し替え、空ならオフラインと同じ仮の菱形を作る。
 - `Execution` はラウンドの数と秒を `match.round*` に、とどめの秒数と距離を `match.execution` に書く。とどめは近接のボタンで刺すので、ルールの `melee` を `On` にする (`Off` ならダウン中の敵を撃って倒せる)。各チームの最後の 1 人もダウンし、全員がダウンしてもラウンドは終わらず、とどめを刺されるか出血で倒れきった側が落とす。とどめの進み具合は刺されている人のスナップショットの行 (`DownedSync`) に載り、刺している人の HUD に「とどめ NN%」として出る。
 
 ## CI のテンプレート

@@ -95,6 +95,12 @@ namespace Shooter.NetV2
 
         // Guardian のリーダーの頭上の目印の見た目 (GuardianRunner.LeaderMarkerPrefab と同じ作り)。null なら仮の菱形を作る
         public UnityEngine.GameObject LeaderMarkerVisual { get; set; }
+
+        // Juggernaut のジャガーノートの頭上の目印の見た目 (JuggernautRunner.MarkerPrefab と同じ作り)。null なら仮の菱形を作る
+        public UnityEngine.GameObject JuggernautMarkerVisual { get; set; }
+
+        // VIP 護衛の VIP の頭上の目印の見た目 (VipRunner.MarkerPrefab と同じ作り)。null なら仮の菱形を作る
+        public UnityEngine.GameObject VipMarkerVisual { get; set; }
     }
 
     public static class NetV2ClientParts
@@ -113,6 +119,8 @@ namespace Shooter.NetV2
                 NetV2HolsterPart.Create,
                 NetV2WeaponLightPart.Create,
                 NetV2DoorsPart.Create,
+                NetV2JuggernautPart.Create,
+                NetV2VipPart.Create,
             };
 
         public static List<INetV2ClientPart> Create(NetV2ClientPartsContext context)

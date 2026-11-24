@@ -14,7 +14,7 @@ namespace Shooter.Net.Tests
         // 本物の一覧 (BlockListStore.DefaultKey) を壊さないよう、テストだけのキーに保存する。
         private const string BlocksKey = "Shooter.Tests.NetV2ClientParts.Blocks";
 
-        private const int VoiceIndex = 27;
+        private const int VoiceIndex = 30;
 
         private readonly List<string> _logs = new List<string>();
         private readonly List<string> _decided = new List<string>();
@@ -100,6 +100,8 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
                 typeof(NetV2DoorsPart),
+                typeof(NetV2JuggernautPart),
+                typeof(NetV2VipPart),
             }));
         }
 
@@ -119,6 +121,8 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
                 typeof(NetV2DoorsPart),
+                typeof(NetV2JuggernautPart),
+                typeof(NetV2VipPart),
             }));
         }
 
@@ -127,6 +131,56 @@ namespace Shooter.Net.Tests
         {
             Assert.Throws<ArgumentNullException>(() => NetV2PickupPart.Create(null));
             Assert.Throws<ArgumentNullException>(() => NetV2EmotePart.Create(null));
+            Assert.Throws<ArgumentNullException>(() => NetV2JuggernautPart.Create(null));
+            Assert.Throws<ArgumentNullException>(() => NetV2VipPart.Create(null));
+        }
+
+        [Test]
+        public void TheJuggernautAndVipPartsAreRegisteredInMatchesAndReplays()
+        {
+            _parts = NetV2ClientParts.Create(Context(null));
+            Assert.That(_parts.OfType<NetV2JuggernautPart>().Count(), Is.EqualTo(1));
+            Assert.That(_parts.OfType<NetV2VipPart>().Count(), Is.EqualTo(1));
+            foreach (var part in _parts)
+            {
+                part.Dispose();
+            }
+
+            var replay = Context(null);
+            replay.Replay = true;
+            _parts = NetV2ClientParts.Create(replay);
+            Assert.That(_parts.OfType<NetV2JuggernautPart>().Count(), Is.EqualTo(1), "who is the juggernaut can be seen when watching a replay too");
+            Assert.That(_parts.OfType<NetV2VipPart>().Count(), Is.EqualTo(1), "who is the VIP can be seen when watching a replay too");
+        }
+
+        [Test]
+        public void TheJuggernautAndVipPartsTakeTheirMarkerVisualsFromTheContext()
+        {
+            var juggernautLook = new UnityEngine.GameObject("JuggernautLook");
+            var vipLook = new UnityEngine.GameObject("VipLook");
+            try
+            {
+                var context = Context(null);
+                context.JuggernautMarkerVisual = juggernautLook;
+                context.VipMarkerVisual = vipLook;
+
+                var juggernaut = (NetV2JuggernautPart)NetV2JuggernautPart.Create(context);
+                var vip = (NetV2VipPart)NetV2VipPart.Create(context);
+                var empty = Context(null);
+                var bareJuggernaut = (NetV2JuggernautPart)NetV2JuggernautPart.Create(empty);
+                var bareVip = (NetV2VipPart)NetV2VipPart.Create(empty);
+                _parts = new List<INetV2ClientPart> { juggernaut, vip, bareJuggernaut, bareVip };
+
+                Assert.That(juggernaut.MarkerVisual, Is.SameAs(juggernautLook));
+                Assert.That(vip.MarkerVisual, Is.SameAs(vipLook));
+                Assert.That(bareJuggernaut.MarkerVisual, Is.Null);
+                Assert.That(bareVip.MarkerVisual, Is.Null);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(juggernautLook);
+                UnityEngine.Object.DestroyImmediate(vipLook);
+            }
         }
 
         // 再生では送る相手がいないので、輪を開かせない。相手のエモートは記録された知らせで見せる
@@ -180,6 +234,9 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HordePart),
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
+                typeof(NetV2DoorsPart),
+                typeof(NetV2JuggernautPart),
+                typeof(NetV2VipPart),
                 typeof(NetV2VoicePart),
             }));
             Assert.That(((NetV2VoicePart)_parts[VoiceIndex]).Voice, Is.Not.Null);
@@ -217,6 +274,9 @@ namespace Shooter.Net.Tests
                 typeof(NetV2HordePart),
                 typeof(NetV2HolsterPart),
                 typeof(NetV2WeaponLightPart),
+                typeof(NetV2DoorsPart),
+                typeof(NetV2JuggernautPart),
+                typeof(NetV2VipPart),
             }));
             Assert.That(_parts.OfType<NetV2DronePart>(), Is.Empty, "a replay has no drone to pilot");
             Assert.That(_parts.OfType<NetV2VisionPart>(), Is.Empty, "a replay has no own body to put goggles on");

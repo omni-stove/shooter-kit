@@ -150,29 +150,49 @@ namespace Shooter.Server.Tests
             Assert.That(_output.ToString(), Does.Contain("[Domination] net points=3 scoreLimit=100 captureSeconds=8 pointsPerSecond=1 maxCapturers=3"));
         }
 
-        // 目的の列挙とルールのファイルの節だけを先に足したので、調整値の行まで出してから、目的のルールが無いと断って止まる
-        [TestCase(
-            MatchObjective.Juggernaut,
-            "[Juggernaut] tuning maxHealth=250 speedMultiplier=1.2 scorePerKillAsJuggernaut=1 scorePerJuggernautKill=3 scoreLimit=15 timeLimit=600 startDelay=5")]
-        [TestCase(MatchObjective.Vip, "[Vip] tuning maxHealth=200 roundSeconds=150 winsToWin=4 exitHold=3 swapEveryRounds=1")]
-        public void TheAsymmetricRulesPrintTheirTuningAndAreRefusedUntilTheirRulesExist(MatchObjective objective, string tuningLine)
+        [Test]
+        public void TheJuggernautRulesPrintTheirTuningAndStartTheMatch()
         {
-            var name = objective.ToString();
-            TestMaps.Write(_data.Path, "NetTest", points: TestRules.Points());
-            var settings = new NetMatchSettings(juggernaut: new JuggernautSpec(juggernautMaxHealth: 250, juggernautSpeedMultiplier: 1.2f));
-            TestRules.Write(_data.Path, name, TestRules.File(GameRules.Default.WithObjective(objective), settings, name));
+            const string tuningLine =
+                "[Juggernaut] tuning maxHealth=250 speedMultiplier=1.2 scorePerKillAsJuggernaut=1 scorePerJuggernautKill=3 scoreLimit=15 timeLimit=600 startDelay=5";
+            var log = RunAsymmetric(MatchObjective.Juggernaut, TestRules.Points(), out var code);
 
-            var code = ServerProgram.Run(Args("-rules", name), new IServerModule[] { new MatchRulesModule() }, Runtime());
-
-            Assert.That(code, Is.EqualTo(ServerProgram.ExitFailure));
-            var log = _output.ToString();
-            Assert.That(log, Does.Contain("[Server] rules " + name + " objective=" + name));
+            Assert.That(code, Is.EqualTo(ServerProgram.ExitOk), _error.ToString());
             Assert.That(log, Does.Contain(tuningLine + Environment.NewLine));
             Assert.That(
                 log.IndexOf(tuningLine, StringComparison.Ordinal),
-                Is.GreaterThan(log.IndexOf("[Server] rules " + name, StringComparison.Ordinal)),
+                Is.GreaterThan(log.IndexOf("[Server] rules Juggernaut", StringComparison.Ordinal)),
                 "the tuning follows the rules line");
-            Assert.That(_error.ToString(), Does.Contain("[Server] failed to start: the dedicated server has no rules for the match objective " + name));
+            Assert.That(log, Does.Contain(" body maxHealth=250 speedMultiplier=1.2" + Environment.NewLine));
+            Assert.That(log, Does.Contain("[Juggernaut] net respawn="));
+            Assert.That(log, Does.Contain("listening"));
+        }
+
+        [Test]
+        public void TheVipRulesPrintTheirTuningAndStartOnAMapWithExits()
+        {
+            var points = new NetMapPoints(
+                TestRules.Points().SpawnPoints,
+                Array.Empty<ControlPointArea>(),
+                extractionPoints: new[] { new NetMapExtractionPoint("exit-north", new System.Numerics.Vector3(0f, 0f, 30f), 3f) });
+            var log = RunAsymmetric(MatchObjective.Vip, points, out var code);
+
+            Assert.That(code, Is.EqualTo(ServerProgram.ExitOk), _error.ToString());
+            Assert.That(log, Does.Contain("[Vip] tuning maxHealth=200 roundSeconds=150 winsToWin=4 exitHold=3 swapEveryRounds=1" + Environment.NewLine));
+            Assert.That(log, Does.Contain("[Vip] net exits=exit-north" + Environment.NewLine));
+            Assert.That(log, Does.Contain("listening"));
+        }
+
+        [Test]
+        public void TheVipRulesRefuseAMapWithoutExits()
+        {
+            var log = RunAsymmetric(MatchObjective.Vip, TestRules.Points(), out var code);
+
+            Assert.That(code, Is.EqualTo(ServerProgram.ExitFailure));
+            Assert.That(log, Does.Contain("[Vip] map=NetTest refused: it has no extraction points for the vip to escape to"));
+            Assert.That(_error.ToString(), Does.Contain(
+                "[Server] failed to start: cannot start the Vip match on map NetTest: it has no extraction points for the vip to escape to"));
+            Assert.That(log, Does.Not.Contain("listening"));
         }
 
         [Test]
@@ -591,6 +611,21 @@ namespace Shooter.Server.Tests
         private int RunWithServerModules(params string[] args)
         {
             return ServerProgram.Run(args, ServerModules.Create, Runtime());
+        }
+
+        // 調整値の節を書いたルールのファイルとマップを置き、ルールのモジュールだけで起動する。返すのは標準出力の行
+        private string RunAsymmetric(MatchObjective objective, NetMapPoints points, out int code)
+        {
+            var name = objective.ToString();
+            TestMaps.Write(_data.Path, "NetTest", points: points);
+            var settings = new NetMatchSettings(juggernaut: new JuggernautSpec(juggernautMaxHealth: 250, juggernautSpeedMultiplier: 1.2f));
+            TestRules.Write(_data.Path, name, TestRules.File(GameRules.Default.WithObjective(objective), settings, name));
+
+            code = ServerProgram.Run(Args("-rules", name), new IServerModule[] { new MatchRulesModule() }, Runtime());
+
+            var log = _output.ToString();
+            Assert.That(log, Does.Contain("[Server] rules " + name + " objective=" + name));
+            return log;
         }
 
         private int Run(IServerModule[] modules)

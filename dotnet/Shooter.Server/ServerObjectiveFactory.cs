@@ -27,7 +27,9 @@ namespace Shooter.Server
             (MatchObjective.Horde, (settings, host, parts) => new HordeRules(settings, host, parts?.Fortifications)),
             (MatchObjective.Infected, (settings, host, parts) => new InfectedRules(settings, host)),
             (MatchObjective.Guardian, (settings, host, parts) => new GuardianRules(settings, host, parts?.Seed)),
-            (MatchObjective.Execution, (settings, host, parts) => new ExecutionRules(settings, host)));
+            (MatchObjective.Execution, (settings, host, parts) => new ExecutionRules(settings, host)),
+            (MatchObjective.Juggernaut, (settings, host, parts) => new JuggernautRules(settings, host)),
+            (MatchObjective.Vip, (settings, host, parts) => new VipRules(settings, host)));
 
         public static IReadOnlyCollection<MatchObjective> Supported => _creators.Keys;
 

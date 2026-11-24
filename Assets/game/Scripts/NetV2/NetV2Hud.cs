@@ -59,6 +59,8 @@ namespace Shooter.NetV2
         private ClientHardpointStatus _hardpoint;
         private ClientKillConfirmedStatus _killConfirmed;
         private ClientGuardianStatus _guardian;
+        private ClientJuggernautStatus _juggernaut;
+        private ClientVipStatus _vip;
         private ClientPayloadStatus _payload;
         private int? _payloadCheckpoints;
         private bool _payloadCartLooked;
@@ -149,6 +151,8 @@ namespace Shooter.NetV2
             netHud._hardpoint = new ClientHardpointStatus(localPlayerId);
             netHud._killConfirmed = new ClientKillConfirmedStatus(localPlayerId);
             netHud._guardian = new ClientGuardianStatus(localPlayerId);
+            netHud._juggernaut = new ClientJuggernautStatus(localPlayerId);
+            netHud._vip = new ClientVipStatus(localPlayerId);
             netHud._payload = new ClientPayloadStatus(localPlayerId);
             netHud._gunGame = ConfiguredGunGame();
             netHud._battleRoyale = new ClientBattleRoyaleStatus(localPlayerId, Math.Max(1, tickRate));
@@ -328,6 +332,7 @@ namespace Shooter.NetV2
         }
 
         // FFA は AlphaPoints・BravoPoints に 1 キルの点とキル数の上限を載せていてチームの点ではないので、GunGame と同じく 0 を出す。
+        // Juggernaut も 1 人 1 陣営で、AlphaPoints に点の上限、AlphaScore・BravoScore に首位とジャガーノートの点を載せていてチームの点ではないので 0 を出す。
         // Guardian はキルの点を試合の点 (AlphaScore・BravoScore) に入れ、AlphaPoints・BravoPoints を 0 にして送る
         private static int TeamScore(MatchSnapshot match, int score, int points)
         {
@@ -337,6 +342,7 @@ namespace Shooter.NetV2
                 case MatchObjective.Guardian:
                     return score;
                 case MatchObjective.FreeForAll:
+                case MatchObjective.Juggernaut:
                     return 0;
                 default:
                     return points;
@@ -536,6 +542,8 @@ namespace Shooter.NetV2
                 | ApplyDomination(snapshot)
                 | (_killConfirmed != null && _killConfirmed.Apply(snapshot))
                 | (_guardian != null && _guardian.Apply(snapshot))
+                | (_juggernaut != null && _juggernaut.Apply(snapshot))
+                | (_vip != null && _vip.Apply(snapshot))
                 | ApplyPayload(snapshot)
                 | (_battleRoyale != null && _battleRoyale.Apply(snapshot, InteractKeyLabel))
                 | ApplyExtraction(snapshot)
@@ -550,6 +558,8 @@ namespace Shooter.NetV2
                     ?? _dominationStatus
                     ?? _killConfirmed?.Status
                     ?? _guardian?.Status
+                    ?? _juggernaut?.Status
+                    ?? _vip?.Status
                     ?? _payload?.Status
                     ?? _battleRoyale?.Status
                     ?? _extractionStatus
@@ -892,6 +902,8 @@ namespace Shooter.NetV2
             _hardpoint?.Clear();
             _killConfirmed?.Reset();
             _guardian?.Reset();
+            _juggernaut?.Clear();
+            _vip?.Clear();
             _payload?.Clear();
             _payloadCheckpoints = null;
             _payloadCartLooked = false;
