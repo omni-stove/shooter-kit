@@ -28,6 +28,21 @@ namespace Shooter.NetV2
         public static FireDecision Decide(
             SnapshotMessage latest, int playerId, in CharacterMotorState predicted, WeaponSpec spec, bool firesVehicleWeapon)
         {
+            return Decide(latest, playerId, predicted, spec, firesVehicleWeapon, AkimboHand.Right);
+        }
+
+        // 二丁持ちの手は、その手の弾倉とリロードで決める (サーバーの ServerAkimbo.TryFire と同じ)。右手は WeaponSync の弾倉とリロード、左手は Offhand* を見る。
+        // 左手は二丁持ちの武器でしか撃てず (サーバーが NotAkimbo で断る)、座席の武器も二丁持ちにならないので、座席の武器を撃つ間も頼まない。
+        public static FireDecision Decide(
+            SnapshotMessage latest, int playerId, in CharacterMotorState predicted, WeaponSpec spec, bool firesVehicleWeapon, AkimboHand hand)
+        {
+            RequireHand(hand);
+            var left = hand == AkimboHand.Left;
+            if (left && (spec == null || !spec.IsAkimbo || firesVehicleWeapon))
+            {
+                return FireDecision.Hold;
+            }
+
             if (latest == null || !latest.HasOwner)
             {
                 return FireDecision.Hold;
@@ -50,9 +65,12 @@ namespace Shooter.NetV2
             }
 
             var weapon = latest.Owner.Weapon;
+            var magazine = left ? weapon.OffhandAmmoInMagazine : weapon.AmmoInMagazine;
+            var reloading = left ? weapon.IsOffhandReloading : weapon.IsReloading;
+
             // 1 発ずつ込める武器は、込めた弾があればサーバーがリロードを止めて撃たせるので、リロード中でも送る。
-            var firesWhileReloading = spec != null && spec.Ammo.ReloadStyle == ReloadStyle.PerRound && weapon.AmmoInMagazine > 0;
-            if (CurrentWeaponId(latest.Owner) == null || (weapon.IsReloading && !firesWhileReloading) || weapon.IsSwitching)
+            var firesWhileReloading = spec != null && spec.Ammo.ReloadStyle == ReloadStyle.PerRound && magazine > 0;
+            if (CurrentWeaponId(latest.Owner) == null || (reloading && !firesWhileReloading) || weapon.IsSwitching)
             {
                 return FireDecision.Hold;
             }
@@ -69,17 +87,26 @@ namespace Shooter.NetV2
                 return weapon.IsOverheated || weapon.Heat >= 1f ? FireDecision.Hold : FireDecision.Fire;
             }
 
-            return weapon.AmmoInMagazine > 0 ? FireDecision.Fire : FireDecision.Reload;
+            return magazine > 0 ? FireDecision.Fire : FireDecision.Reload;
         }
 
         // 弾薬の種類はサーバーが選んだ番号を返す。手元で選び直すと、切り替えの要求が届く前の弾がずれた種類で送られるため。
         public static void Fill(
             FireRequestMessage request, OwnerSnapshot owner, string weaponId, in TriggerPull pull, TriggerEdge edge, int? lockTargetId)
         {
+            Fill(request, owner, weaponId, pull, edge, lockTargetId, AkimboHand.Right);
+        }
+
+        // 要求は使い回すので、撃った手も毎回書き直す。前の左手の射撃の手が次の右手の射撃に残らないように。
+        public static void Fill(
+            FireRequestMessage request, OwnerSnapshot owner, string weaponId, in TriggerPull pull, TriggerEdge edge, int? lockTargetId, AkimboHand hand)
+        {
             if (request == null)
             {
                 throw new ArgumentNullException(nameof(request));
             }
+
+            RequireHand(hand);
 
             request.WeaponId = weaponId ?? "";
             request.ChargeFraction = Math.Min(1f, Math.Max(0f, pull.ChargeFraction));
@@ -88,6 +115,15 @@ namespace Shooter.NetV2
             request.LockTargetId = lockTargetId.HasValue ? ClientLockTargetIds.WireIdOf(lockTargetId.Value) : 0;
             request.LockTargetKind = lockTargetId.HasValue ? ClientLockTargetIds.KindOf(lockTargetId.Value) : LockTargetKind.Player;
             request.Trigger = edge;
+            request.Hand = hand;
+        }
+
+        private static void RequireHand(AkimboHand hand)
+        {
+            if (hand != AkimboHand.Right && hand != AkimboHand.Left)
+            {
+                throw new ArgumentOutOfRangeException(nameof(hand), hand, "hand is not a defined AkimboHand");
+            }
         }
 
         // 弾薬の種類の番号は 0 が武器そのものの弾、1 からが WeaponSpec.AmmoTypes の番号 + 1 (サーバーの ServerPlayerWeapons.AmmoTypeIndex と同じ)。

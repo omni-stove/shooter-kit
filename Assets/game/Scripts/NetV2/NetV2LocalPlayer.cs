@@ -87,6 +87,7 @@ namespace Shooter.NetV2
         private bool _coverLatched;
         private bool _dodgeLatched;
         private bool _attackLatched;
+        private bool _offhandLatched;
         private bool _reloadLatched;
         private bool _grenadeLatched;
         private bool _pingLatched;
@@ -290,6 +291,12 @@ namespace Shooter.NetV2
 
         public bool IsAttackHeld => !IsInputBlocked && _attack != null && _attack.IsPressed();
 
+        // 二丁持ちの左手の引き金。覗き込みと同じボタン (Player/Aim) にするのは、オフラインの WeaponController.OffhandActionPath と同じく、二丁持ちの間は覗き込まないため。
+        // 二丁持ちでない武器の間も毎フレーム取り捨てる。持ち替えた直後に、前に押した覗き込みで左手を撃たないように。
+        public bool TakeOffhand() => Take(ref _offhandLatched);
+
+        public bool IsOffhandHeld => !IsInputBlocked && _aim != null && _aim.IsPressed();
+
         public void FaceYaw(float yaw)
         {
             var degrees = yaw * Mathf.Rad2Deg;
@@ -422,6 +429,7 @@ namespace Shooter.NetV2
             _coverLatched |= Pressed(_cover);
             _dodgeLatched |= Pressed(_dodge);
             _attackLatched |= Pressed(_attack);
+            _offhandLatched |= Pressed(_aim);
             _reloadLatched |= Pressed(_reload);
             _grenadeLatched |= Pressed(_grenade);
             _pingLatched |= Pressed(_ping);

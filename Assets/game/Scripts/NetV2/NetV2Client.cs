@@ -48,6 +48,9 @@ namespace Shooter.NetV2
         private ClientWeaponHooks _weaponHooks;
         private ClientTrigger _heldContinuous;
         private string _heldContinuousWeaponId;
+        private readonly ClientOffhandTrigger _offhandTrigger = new ClientOffhandTrigger();
+        private readonly ClientAkimboReloads _akimboReloads = new ClientAkimboReloads();
+        private ViewmodelPresenter _viewmodel;
         private NetV2LoadoutChooser _loadout;
         private NetV2Inventory _inventory;
         private ClientPings _pings;
@@ -728,6 +731,10 @@ namespace Shooter.NetV2
                 ? ViewmodelPresenter.ReasonDisabled
                 : NetV2Viewmodel.HiddenReason(_client.LatestSnapshot, _client.PlayerId, _match.LocalState, _vehicles.HidesOwnWeapon());
             presenter.Motion.HorizontalSpeedSource = () => _match != null ? NetV2Viewmodel.HorizontalSpeed(_match.LocalState) : 0f;
+            presenter.AkimboSource = weaponId => _client == null
+                ? null
+                : NetV2Viewmodel.AkimboHands(_akimboReloads, CurrentOwner(), weaponId, _weapons.OwnSpecFor(weaponId), Time.timeAsDouble);
+            _viewmodel = presenter;
         }
 
         private OwnerSnapshot CurrentOwner()

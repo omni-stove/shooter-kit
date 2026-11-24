@@ -82,6 +82,8 @@ namespace Shooter.NetV2
         {
             var held = _local.IsAttackHeld;
             var pressed = _local.TakeAttack();
+            var offhandHeld = _local.IsOffhandHeld;
+            var offhandPressed = _local.TakeOffhand();
             var latest = _client.LatestSnapshot;
             var owner = latest != null && latest.HasOwner ? latest.Owner : null;
             var weaponId = ClientFire.CurrentWeaponId(owner);
@@ -94,7 +96,39 @@ namespace Shooter.NetV2
             }
 
             var reloading = owner != null && owner.Weapon.IsReloading;
-            _local.BlocksAds = (trigger != null && trigger.BlocksAds) || (reloading && latest.Match.Rules.BlocksAimWhileReloading);
+            _local.BlocksAds = (trigger != null && (trigger.BlocksAds || ClientAkimbo.BlocksAds(trigger.Spec)))
+                || (reloading && latest.Match.Rules.BlocksAimWhileReloading);
+            TriggerRight(direction, trigger, held, pressed, weaponId, latest, owner);
+
+            // 右手の後に引くのは、同じフレームに両方を押したら左を遅らせる (ClientOffhandTrigger) ため
+            var offhand = _weapons.OffhandTriggerFor(weaponId);
+            var left = _offhandTrigger.Pull(
+                offhand, Time.deltaTime, offhandHeld, offhandPressed, pressed, latest, _client.PlayerId, _match.LocalState, _vehicles.FiresVehicleWeapon());
+            switch (left.Decision)
+            {
+                case FireDecision.Fire:
+                    for (var i = 0; i < left.Shots; i++)
+                    {
+                        SendFire(direction, weaponId, offhand.Spec, left.Pull, TriggerEdge.None, owner, AkimboHand.Left);
+                    }
+
+                    _local.ReleaseSprint(SprintInput.ReasonFire);
+                    break;
+                case FireDecision.Reload:
+                    // 撃ち切った手はサーバーが ReloadMode.Auto で込め始める (ServerAkimbo.TryFire) ので、リロードは頼まず空撃ちだけ鳴らす。
+                    // リロードを頼むと、満タンでない両手を込め始め、もう片方の手で撃ち続けられなくなる。
+                    if (left.Pressed)
+                    {
+                        _dryFire?.Play(weaponId);
+                    }
+
+                    break;
+            }
+        }
+
+        private void TriggerRight(
+            System.Numerics.Vector3 direction, ClientTrigger trigger, bool held, bool pressed, string weaponId, SnapshotMessage latest, OwnerSnapshot owner)
+        {
             if (trigger == null)
             {
                 _hud?.ShowCharge(null);
@@ -125,17 +159,21 @@ namespace Shooter.NetV2
                 case FireDecision.Fire:
                     for (var i = 0; i < pull.Shots; i++)
                     {
-                        SendFire(direction, weaponId, trigger.Spec, pull, TriggerEdge.None, owner);
+                        SendFire(direction, weaponId, trigger.Spec, pull, TriggerEdge.None, owner, AkimboHand.Right);
                     }
 
                     _local.ReleaseSprint(SprintInput.ReasonFire);
                     break;
                 case FireDecision.Reload:
-                    // 押し続けている間は鳴らさず頼み直さない (オフラインの WeaponController と同じ)
+                    // 押し続けている間は鳴らさず頼み直さない (オフラインの WeaponController と同じ)。
+                    // 二丁持ちの手はサーバーが撃ち切った手だけを込めるので頼まない (左手と同じ)
                     if (pressed)
                     {
                         _dryFire?.Play(weaponId);
-                        RequestReloadIfAuto(latest);
+                        if (!trigger.Spec.IsAkimbo)
+                        {
+                            RequestReloadIfAuto(latest);
+                        }
                     }
 
                     break;
@@ -197,15 +235,15 @@ namespace Shooter.NetV2
                 _heldContinuousWeaponId = null;
             }
 
-            SendFire(direction, weaponId, spec, pull, edge, owner);
+            SendFire(direction, weaponId, spec, pull, edge, owner, AkimboHand.Right);
         }
 
         // 撃てるか (弾・間隔) と当たりはサーバーが決める。表示している tick を載せ、サーバーがその時点へ巻き戻して当てる
         private void SendFire(
-            System.Numerics.Vector3 direction, string weaponId, WeaponSpec spec, in TriggerPull pull, TriggerEdge edge, OwnerSnapshot owner)
+            System.Numerics.Vector3 direction, string weaponId, WeaponSpec spec, in TriggerPull pull, TriggerEdge edge, OwnerSnapshot owner, AkimboHand hand)
         {
             var time = ShotTime.FromTick(Math.Max(0d, _match.Interpolation.RenderTick));
-            ClientFire.Fill(_fire, owner, weaponId, pull, edge, _lockOn != null ? _lockOn.LockedTargetId : null);
+            ClientFire.Fill(_fire, owner, weaponId, pull, edge, _lockOn != null ? _lockOn.LockedTargetId : null, hand);
             _fire.Origin = NetV2Math.ToNumerics(_local.EyePosition);
             _fire.Direction = direction;
             _fire.ClientTick = time.Tick;
@@ -220,6 +258,12 @@ namespace Shooter.NetV2
             if (edge == TriggerEdge.None)
             {
                 CombatEvents.RaiseShotFired(_local.gameObject, _local.EyePosition, _local.AimDirection, _fire.WeaponId);
+
+                // オフラインの WeaponController.FiredHand の代わりに、撃った手だけを跳ねさせる。1 丁で持つ武器は ViewmodelMotion が跳ねさせる
+                if (_viewmodel != null)
+                {
+                    _viewmodel.KickHand(hand);
+                }
             }
         }
 

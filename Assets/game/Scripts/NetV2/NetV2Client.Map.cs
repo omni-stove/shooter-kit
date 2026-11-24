@@ -60,6 +60,9 @@ namespace Shooter.NetV2
 
             _heldContinuous = null;
             _heldContinuousWeaponId = null;
+            _offhandTrigger.Forget();
+            _akimboReloads.Forget();
+            _viewmodel = null;
             _wasReloading = false;
             _loadout.Bind(null);
             DestroyViews();
