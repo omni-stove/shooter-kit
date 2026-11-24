@@ -1,0 +1,8 @@
+{
+  "mode.vip.waiting": "Waiting for a VIP",
+  "mode.vip.youAreVip": "You are the VIP: reach the exit",
+  "mode.vip.escort": "Get the VIP to the exit",
+  "mode.vip.eliminate": "Take down the VIP",
+  "mode.vip.escaping": "VIP escaping {0}%",
+  "mode.vip.rounds": "Rounds {0} - {1}"
+}
