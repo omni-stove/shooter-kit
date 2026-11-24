@@ -329,6 +329,14 @@ namespace Shooter.Runtime
             return new MockPartPose(Vector3.Lerp(held.Position, lowered.Position, lowering), Quaternion.Slerp(held.Rotation, lowered.Rotation, lowering));
         }
 
+        // 二丁持ちの左手の銃。左手だけの構えを別に持たないのは、右手と同じ動き (構え・リロード・持ち替え・反動) を鏡に映して合わせるため。
+        public static MockPartPose LeftHandGun(MockPartPose rightHandGun)
+        {
+            var p = rightHandGun.Position;
+            var r = rightHandGun.Rotation;
+            return new MockPartPose(new Vector3(-p.x, p.y, p.z), new Quaternion(r.x, -r.y, -r.z, r.w));
+        }
+
         public static MockPartPose WithKick(MockPartPose pose, float kick, float distance, float degrees)
         {
             if (!(kick >= 0f && kick <= 1f))
