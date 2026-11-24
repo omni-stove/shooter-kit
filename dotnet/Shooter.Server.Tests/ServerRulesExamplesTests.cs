@@ -29,6 +29,8 @@ namespace Shooter.Server.Tests
         [TestCase("Infected", MatchObjective.Infected)]
         [TestCase("Guardian", MatchObjective.Guardian)]
         [TestCase("Execution", MatchObjective.Execution)]
+        [TestCase("Juggernaut", MatchObjective.Juggernaut)]
+        [TestCase("Vip", MatchObjective.Vip)]
         public void EachExampleRulesFileLoadsAndPicksItsObjective(string name, MatchObjective objective)
         {
             Assert.That(ServerRulesData.TryLoad(name, Roots(), out var data, out var error), Is.True, error);
@@ -137,6 +139,7 @@ namespace Shooter.Server.Tests
         [TestCase("GunGame")]
         [TestCase("Payload")]
         [TestCase("Horde")]
+        [TestCase("Juggernaut")]
         public void TheExampleMapCanBePlayedWithTheExampleRules(string name)
         {
             Assert.That(ServerRulesData.TryLoad(name, Roots(), out var data, out var error), Is.True, error);
@@ -349,9 +352,9 @@ namespace Shooter.Server.Tests
             Assert.DoesNotThrow(() => rules.CheckMap(map, map.Points));
         }
 
-        // 調整値はオフラインの Resources/Tuning/juggernaut.json と同じ値にする。サーバーのルールはまだ無いので、目的の工場は名前を挙げて断る
+        // 調整値はオフラインの Resources/Tuning/juggernaut.json と同じ値にする
         [Test]
-        public void TheJuggernautExampleCarriesTheOfflineTuningAndIsRefusedUntilItsRulesExist()
+        public void TheJuggernautExampleCarriesTheOfflineTuningAndPlaysOnTheExampleMap()
         {
             Assert.That(ServerRulesData.TryLoad("Juggernaut", Roots(), out var data, out var error), Is.True, error);
             var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "juggernaut.json");
@@ -373,13 +376,19 @@ namespace Shooter.Server.Tests
             Assert.That(data.Settings.Juggernaut.StartDelaySeconds, Is.EqualTo(5f));
             Assert.That(data.Settings.Vip.SameAs(VipSpec.Default), Is.True, "only the juggernaut section is written");
 
-            var e = Assert.Throws<InvalidOperationException>(
-                () => ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost()));
-            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective Juggernaut"));
+            Assert.That(ServerMapData.TryLoad(_map, Roots(), out var map, out error), Is.True, error);
+            var rules = (JuggernautRules)ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost());
+            Assert.That(rules.Spec.SameAs(offline), Is.True);
+            Assert.That(rules.RemainingSeconds, Is.EqualTo(600f));
+            var spec = rules.CreateSessionSpec(data.Rules, data.Settings);
+            Assert.That(spec.RespawnSeconds, Is.EqualTo(data.Settings.RespawnSeconds));
+            Assert.That(spec.Rules.FriendlyFire, Is.EqualTo(FriendlyFire.On), "the example says Off, but everyone is against everyone");
+            Assert.DoesNotThrow(() => rules.CheckMap(map, map.Points));
         }
 
+        // VIP が向かう脱出地点を書き出したのは NetBattleRoyale だけなので、例の Arena は断り、NetBattleRoyale で遊ぶ
         [Test]
-        public void TheVipExampleCarriesTheOfflineTuningAndIsRefusedUntilItsRulesExist()
+        public void TheVipExampleCarriesTheOfflineTuningAndPlaysOnTheMapWithExits()
         {
             Assert.That(ServerRulesData.TryLoad("Vip", Roots(), out var data, out var error), Is.True, error);
             var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "vip.json");
@@ -399,9 +408,18 @@ namespace Shooter.Server.Tests
             Assert.That(data.Settings.Vip.SwapEveryRounds, Is.EqualTo(1));
             Assert.That(data.Settings.Juggernaut.SameAs(JuggernautSpec.Default), Is.True, "only the vip section is written");
 
-            var e = Assert.Throws<InvalidOperationException>(
-                () => ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost()));
-            Assert.That(e.Message, Is.EqualTo("the dedicated server has no rules for the match objective Vip"));
+            var rules = (VipRules)ServerObjectiveFactory.Create(data.Rules.Objective, data.Settings, new NoSessionHost());
+            Assert.That(rules.Spec.SameAs(offline), Is.True);
+            Assert.That(rules.RemainingSeconds, Is.EqualTo(150f));
+            Assert.That(rules.PlaysInRounds, Is.True);
+
+            Assert.That(ServerMapData.TryLoad(_map, Roots(), out var arena, out error), Is.True, error);
+            var e = Assert.Throws<InvalidOperationException>(() => rules.CheckMap(arena, arena.Points));
+            Assert.That(e.Message, Does.StartWith("cannot change to map " + _map + " for the Vip match: it has no extraction points for the vip to escape to"));
+
+            RequireExported(Path.Combine(ServerMapData.MapsDirectoryName, _battleRoyaleMap + NetMapPoints.Extension));
+            Assert.That(ServerMapData.TryLoad(_battleRoyaleMap, Roots(), out var withExits, out error), Is.True, error);
+            Assert.DoesNotThrow(() => rules.CheckMap(withExits, withExits.Points));
         }
 
         private static string RequireExported(string relativePath)

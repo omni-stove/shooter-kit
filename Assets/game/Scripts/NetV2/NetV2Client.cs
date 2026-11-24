@@ -119,6 +119,12 @@ namespace Shooter.NetV2
         // 部品を作る前に置く。null なら Guardian のリーダーの目印をオフラインと同じ仮の菱形で作る
         public GameObject LeaderMarkerVisual { get; set; }
 
+        // 部品を作る前に置く。null ならジャガーノートの目印をオフラインと同じ仮の菱形で作る
+        public GameObject JuggernautMarkerVisual { get; set; }
+
+        // 部品を作る前に置く。null なら VIP の目印をオフラインと同じ仮の菱形で作る
+        public GameObject VipMarkerVisual { get; set; }
+
         public static NetV2Client Current { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -477,6 +483,8 @@ namespace Shooter.NetV2
                 LootVisuals = LootVisuals,
                 PickupVisuals = PickupVisuals,
                 LeaderMarkerVisual = LeaderMarkerVisual,
+                JuggernautMarkerVisual = JuggernautMarkerVisual,
+                VipMarkerVisual = VipMarkerVisual,
             }));
         }
 

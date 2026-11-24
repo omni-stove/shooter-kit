@@ -272,6 +272,91 @@ namespace Shooter.Net.Tests
         }
 
         [Test]
+        public void JuggernautPublishesTheJuggernautAsTheModeStatusAndNoTeamScores()
+        {
+            var snapshot = Snapshot(MatchObjective.Juggernaut);
+            snapshot.Tick = 10;
+            snapshot.Match.RemainingSeconds = 500;
+            snapshot.Match.AlphaPoints = 15;
+            snapshot.Match.AlphaScore = 4;
+            snapshot.Match.BravoScore = 4;
+            snapshot.Players[snapshot.Players.IndexOf(_localId)].GunGameTier = 1;
+            snapshot.Players[snapshot.Players.IndexOf(_otherId)].GunGameTier = 4;
+            AddCarried(snapshot, ObjectiveItemKind.Juggernaut, 0, Team.Alpha, _otherId, false);
+
+            _hud.Apply(snapshot);
+
+            var status = GameSignals.ModeStatus.Value;
+            Assert.That(status, Is.Not.Null);
+            Assert.That(status.Detail, Is.InstanceOf<JuggernautStatus>(), "the same detail type as offline, so the Juggernaut formatter reads it");
+            var juggernaut = (JuggernautStatus)status.Detail;
+            Assert.That(juggernaut.JuggernautId, Is.EqualTo((int?)_otherId));
+            Assert.That(juggernaut.IsLocalPlayerJuggernaut, Is.EqualTo((bool?)false));
+            Assert.That(status.OwnSide, Is.EqualTo((Side?)new Side(_localId)), "everyone is their own side");
+            Assert.That(status.RemainingSeconds, Is.EqualTo(500f));
+            Assert.That(_hud.Model.FirstScore, Is.Zero, "the score limit and the leading score are not team scores");
+            Assert.That(_hud.Model.SecondScore, Is.Zero);
+
+            snapshot.Tick++;
+            _hud.Apply(snapshot);
+            Assert.That(GameSignals.ModeStatus.Value, Is.SameAs(status), "an unchanged match is not published again");
+
+            snapshot.Tick++;
+            snapshot.ObjectiveItems[0].OwnerId = _localId;
+            snapshot.ObjectiveItems[0].CarrierId = _localId;
+            _hud.Apply(snapshot);
+            var taken = GameSignals.ModeStatus.Value;
+            Assert.That(taken, Is.Not.SameAs(status));
+            Assert.That(((JuggernautStatus)taken.Detail).IsLocalPlayerJuggernaut, Is.EqualTo((bool?)true));
+
+            snapshot.Tick++;
+            snapshot.Match.Objective = MatchObjective.None;
+            _hud.Apply(snapshot);
+            Assert.That(GameSignals.ModeStatus.Value, Is.Null, "a match without a mode takes the status back");
+        }
+
+        [Test]
+        public void VipPublishesTheVipAndTheRoundWinsAsTheModeStatus()
+        {
+            var snapshot = Snapshot(MatchObjective.Vip);
+            snapshot.Tick = 10;
+            snapshot.Match.RemainingSeconds = 120;
+            snapshot.Match.HasRound = true;
+            snapshot.Match.Round = RoundPhase.Live;
+            snapshot.Match.AlphaPoints = 1;
+            snapshot.Match.BravoPoints = 2;
+            snapshot.Match.PlantFraction = 0.5f;
+            AddCarried(snapshot, ObjectiveItemKind.Vip, 0, Team.Bravo, _localId, false);
+
+            _hud.Apply(snapshot);
+
+            var status = GameSignals.ModeStatus.Value;
+            Assert.That(status, Is.Not.Null);
+            Assert.That(status.Detail, Is.InstanceOf<VipStatus>(), "the same detail type as offline, so the VIP formatter reads it");
+            var vip = (VipStatus)status.Detail;
+            Assert.That(vip.VipId, Is.EqualTo((int?)_localId));
+            Assert.That(vip.IsLocalVip, Is.EqualTo((bool?)true));
+            Assert.That(vip.DefenderSide, Is.EqualTo(Side.Bravo));
+            Assert.That(vip.ExitFraction, Is.EqualTo(0.5f));
+            Assert.That(status.OwnSide, Is.EqualTo((Side?)Side.Bravo));
+            Assert.That(_hud.Model.FirstScore, Is.EqualTo(2), "the own team's round wins come first");
+            Assert.That(_hud.Model.SecondScore, Is.EqualTo(1));
+
+            snapshot.Tick++;
+            snapshot.ObjectiveItems[0].State = ObjectiveItemState.Dropped;
+            _hud.Apply(snapshot);
+            var fallen = GameSignals.ModeStatus.Value;
+            Assert.That(fallen, Is.Not.SameAs(status));
+            Assert.That(((VipStatus)fallen.Detail).ExitFraction, Is.Zero, "a fallen VIP is not escaping");
+
+            _hud.ClearSignals();
+            Assert.That(GameSignals.ModeStatus.Value, Is.Null);
+            snapshot.Tick = 1;
+            _hud.Apply(snapshot);
+            Assert.That(GameSignals.ModeStatus.Value?.Detail, Is.InstanceOf<VipStatus>(), "the next connection's VIP match is shown again");
+        }
+
+        [Test]
         public void HardpointPublishesTheMirroredHillAsTheModeStatusUntilTheModeEnds()
         {
             var snapshot = Snapshot(MatchObjective.Hardpoint);
@@ -936,6 +1021,20 @@ namespace Shooter.Net.Tests
             item.State = fallen ? ObjectiveItemState.Dropped : ObjectiveItemState.Carried;
             item.HasCarrier = !fallen;
             item.CarrierId = fallen ? 0 : leader;
+        }
+
+        private static void AddCarried(SnapshotMessage snapshot, ObjectiveItemKind kind, int itemId, Team team, int owner, bool fallen)
+        {
+            ref var item = ref snapshot.ObjectiveItems.Add();
+            item.ItemId = itemId;
+            item.Present = ObjectiveItemFields.All;
+            item.Kind = kind;
+            item.Team = team;
+            item.HasOwner = true;
+            item.OwnerId = owner;
+            item.State = fallen ? ObjectiveItemState.Dropped : ObjectiveItemState.Carried;
+            item.HasCarrier = !fallen;
+            item.CarrierId = fallen ? 0 : owner;
         }
 
         private static void AddPoint(SnapshotMessage snapshot, int index, Team? owner, int percent, bool contested)

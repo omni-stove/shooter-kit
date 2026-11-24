@@ -45,8 +45,22 @@ namespace Shooter.NetV2
             _log = log ?? (line => Debug.Log(line));
         }
 
+        // NetV2ClientParts.Registered に並べる口。再生でも誰が VIP かは見えるので、試合中と同じく作る
+        public static INetV2ClientPart Create(NetV2ClientPartsContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            var client = context.Client;
+            return new NetV2VipPart(() => client.PlayerId, context.VipMarkerVisual, log: context.Log);
+        }
+
         // Vip の試合でなければ null
         public ClientVipStatus Status => _status != null && _status.Status != null ? _status : null;
+
+        public GameObject MarkerVisual => _prefab;
 
         public int MarkerCount => _hasShown ? 1 : 0;
 
