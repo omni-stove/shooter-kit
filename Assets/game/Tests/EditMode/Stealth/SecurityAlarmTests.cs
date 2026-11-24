@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Shooter.Core;
+using Shooter.Editor;
 using Shooter.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;

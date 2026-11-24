@@ -123,12 +123,12 @@ namespace Shooter.Tests.EditMode
             Assert.That(perception.HasLineOfSight, Is.True);
 
             var decision = _agent.Brain.Tick(0.1f, perception);
-            Assert.That(_agent.State, Is.AnyOf(EnemyState.Attack, EnemyState.Chase));
+            Assert.That(_agent.State, Is.EqualTo(EnemyState.Attack).Or.EqualTo(EnemyState.Chase));
             Assert.That(decision.LookAt, Is.EqualTo(shooter.GroundPoint.ToNumerics()));
             Assert.That(registry.IsOccupied(marker), Is.False);
 
             var next = _agent.Brain.Tick(EnemySpec.DefaultReactionSeconds, _agent.Perceive());
-            Assert.That(_agent.State, Is.AnyOf(EnemyState.Attack, EnemyState.Chase));
+            Assert.That(_agent.State, Is.EqualTo(EnemyState.Attack).Or.EqualTo(EnemyState.Chase));
             Assert.That(next.Fire, Is.True, "it shoots back once it has reacted");
         }
 

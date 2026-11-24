@@ -115,7 +115,7 @@ namespace Shooter.Core.Tests
 
             game.Start();
 
-            Assert.That(game.VipId, Is.AnyOf(_bravoOne, _bravoTwo));
+            Assert.That(game.VipId, Is.EqualTo(_bravoOne).Or.EqualTo(_bravoTwo));
         }
 
         [Test]

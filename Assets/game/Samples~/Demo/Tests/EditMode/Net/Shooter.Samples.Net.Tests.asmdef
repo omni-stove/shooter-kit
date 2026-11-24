@@ -23,6 +23,7 @@
         "Shooter.Progression",
         "Shooter.Editor",
         "Shooter.Samples.Editor",
+        "Shooter.Tests.Components",
         "Shooter.Samples.Net.Editor",
         "Shooter.Runtime",
         "Shooter.Interaction",
