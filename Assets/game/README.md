@@ -80,6 +80,7 @@ private void OnDisable()
 | Horde | `HordeStatus` |
 | Infected | `InfectedStatus` |
 | Extraction | `ExtractionStatus` |
+| VIP 護衛 | `VipStatus` (VIP の ID・脱出の進み・守る側・自分が VIP か) |
 
 ### 機能ごとの口
 

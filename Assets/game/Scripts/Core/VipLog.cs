@@ -42,6 +42,41 @@ namespace Shooter.Core
 
         public static string EndedLog(Side winner) => Tag + " ended winner=" + Number(winner.Id);
 
+        public static string BodyLog(int playerId, int maxHealth)
+        {
+            return Tag + " body player=" + Number(playerId) + " max-health=" + Number(maxHealth);
+        }
+
+        public static string RestoredLog(int playerId, int maxHealth)
+        {
+            return Tag + " restore player=" + Number(playerId) + " max-health=" + Number(maxHealth);
+        }
+
+        public static string SpawnSwapLog(int points, Side attacker, Side defender)
+        {
+            return Tag + " spawn_swap points=" + Number(points) + " attacker=" + Number(attacker.Id) + " defender=" + Number(defender.Id);
+        }
+
+        public static string BotExitLog(int playerId, int exitIndex)
+        {
+            return Tag + " bot_exit player=" + Number(playerId) + " exit=" + Number(exitIndex);
+        }
+
+        public static string BotEscortLog(int playerId, int vipId)
+        {
+            return Tag + " bot_escort player=" + Number(playerId) + " vip=" + Number(vipId);
+        }
+
+        public static string BotTargetLog(int playerId, int vipId)
+        {
+            return Tag + " bot_target player=" + Number(playerId) + " vip=" + Number(vipId);
+        }
+
+        public static string NoExitLog(string runnerName)
+        {
+            return Tag + " not_started runner=" + (string.IsNullOrEmpty(runnerName) ? Nobody : runnerName) + " reason=no-exit-point";
+        }
+
         public static string StatusLog(VipStatus status)
         {
             if (status == null)
