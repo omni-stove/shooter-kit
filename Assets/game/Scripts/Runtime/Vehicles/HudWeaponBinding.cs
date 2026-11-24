@@ -43,9 +43,30 @@ namespace Shooter.Runtime
             }
         }
 
+        // 持ち物の武器が二丁持ちなら左右の手の組。座席の武器に座っている間は null。
+        public AkimboHands CurrentAkimbo
+        {
+            get
+            {
+                var seated = _rider != null && _rider.SeatWeapon != null;
+                return !seated && _weapon != null ? _weapon.Akimbo : null;
+            }
+        }
+
         public void Refresh()
         {
-            if (!_disposed)
+            if (_disposed)
+            {
+                return;
+            }
+
+            // 二丁持ちの組は並びを作り直すたびに替わるが、WeaponChanged が作り直しの後に届くので、ここで組を結び直せば追える。
+            var hands = CurrentAkimbo;
+            if (hands != null)
+            {
+                _model.BindAkimbo(hands);
+            }
+            else
             {
                 _model.BindWeapon(Current);
             }
