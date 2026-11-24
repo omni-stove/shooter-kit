@@ -10,7 +10,6 @@
   "hardLandingFallSpeed": 12,
   "minLandingVolume": 0.35,
   "armedGainFactor": 1,
-  "litGainFactor": 1,
   "securityCamera": {
     "sweepDegrees": 90,
     "sweepDegreesPerSecond": 20,
