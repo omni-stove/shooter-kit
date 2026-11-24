@@ -63,6 +63,7 @@ namespace Shooter.Tests.EditMode
 
             // SmokeSuite.Runs へはつなぎ込みの issue で足すので、それまではスイートの外に置く。
             nameof(JuggernautSmokeRun),
+            nameof(VipSmokeRun),
         };
 
         [Test]
