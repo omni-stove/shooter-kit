@@ -22,6 +22,7 @@ namespace Shooter.Server
         private readonly ServerDeployables _deployables;
         private readonly ServerMelee _melee;
         private readonly ServerVehicles _vehicles;
+        private readonly ServerNoises _noises;
         private readonly List<ServerDecoy> _decoys = new List<ServerDecoy>();
         private readonly SortedDictionary<int, ServerBotAgent> _agents = new SortedDictionary<int, ServerBotAgent>();
         private readonly List<int> _ids = new List<int>();
@@ -46,14 +47,15 @@ namespace Shooter.Server
         private Vector3? _ralliedAt;
 
         // deployables が null なら、囮に気を引かれない (置いた物の無いサーバー)。melee が null なら殴らない (近接の無いサーバー)。
-        // vehicles が null なら固定銃座に乗らない (乗り物の無いサーバー)
+        // vehicles が null なら固定銃座に乗らない (乗り物の無いサーバー)。noises が null なら物音 (ドアの蹴り・爆薬) を聞かない
         public ServerBots(
             MatchRulesModule rules,
             ServerMovement movement,
             ServerCombat combat,
             ServerDeployables deployables = null,
             ServerMelee melee = null,
-            ServerVehicles vehicles = null)
+            ServerVehicles vehicles = null,
+            ServerNoises noises = null)
         {
             _rules = rules ?? throw new ArgumentNullException(nameof(rules));
             _movement = movement ?? throw new ArgumentNullException(nameof(movement));
@@ -61,6 +63,7 @@ namespace Shooter.Server
             _deployables = deployables;
             _melee = melee;
             _vehicles = vehicles;
+            _noises = noises;
         }
 
         public string Name => "bots";
@@ -164,6 +167,7 @@ namespace Shooter.Server
 
         public void Tick(long tick, float deltaSeconds)
         {
+            _noises?.Advance();
             if (_target > 0 || ObjectiveDrivesBots)
             {
                 Reconcile();
@@ -956,6 +960,7 @@ namespace Shooter.Server
                 wasHit,
                 hitSource,
                 healthFraction);
+            perception = HearNoise(selfId, perception);
             if (_deployables == null)
             {
                 return perception;
@@ -965,6 +970,20 @@ namespace Shooter.Server
             _deployables.CollectDecoys(_decoys);
             return agent.Decoys.Contribute(
                 perception, Side.FromTeam(team), !blind, sight, _decoys, point => HasLineOfSight(agent, eye, point), _log);
+        }
+
+        // 撃たれた相手の位置がもう物音になっていれば、そちらを残す (DecoyLure.Hear と同じ)。音は壁越しにも届くので、見通しは見ない。
+        // 敵でない人の音を聞き流すのは、オフラインの EnemyStealth.Hear が味方の鳴らした音を聞き流すのと揃えるため
+        private EnemyPerception HearNoise(int selfId, EnemyPerception perception)
+        {
+            if (_noises == null || perception.HeardNoise
+                || !_noises.TryHear(perception.Self, id => id != selfId && _rules.AreHostile(selfId, id), out var noise))
+            {
+                return perception;
+            }
+
+            _log.WriteLine(ServerBotLog.NoiseHeard(selfId, noise.SourceId, noise.Sound));
+            return DecoyLure.Hear(perception, noise.Sound.Position);
         }
 
         // 壊れた建物の部品は世界の当たりから外れているので、その穴越しには見える

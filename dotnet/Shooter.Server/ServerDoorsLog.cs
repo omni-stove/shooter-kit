@@ -72,6 +72,12 @@ namespace Shooter.Server
             return BreachLog.Staggered(Text(door), method, BreachSpec.StaggerKindFor(method), spec.StaggerSecondsFor(method), count);
         }
 
+        public static string Sounded(int door, BreachMethod method, SoundCueKind kind, float radius)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture, "{0} door={1} sounded method={2} kind={3} radius={4:0.00}", LogTag, door, method, kind, radius);
+        }
+
         public static string Refused(int door, int playerId, BreachMethod method, BreachDoorPhase phase, ServerDoors.Refusal reason)
         {
             return BreachLog.Refused(Text(door), Text(playerId), method, phase, reason.ToString());

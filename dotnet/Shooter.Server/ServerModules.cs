@@ -129,7 +129,9 @@ namespace Shooter.Server
             {
                 WeaponsDropped = playerId => inventories.HoldWeapons(playerId),
             };
-            var bots = new ServerBots(rules, movement, combat, deployables, melee, vehicles);
+            // ドアの蹴り・爆薬の音は Bot が次の tick に聞くので、ドアと Bot に同じものを渡す
+            var noises = new ServerNoises();
+            var bots = new ServerBots(rules, movement, combat, deployables, melee, vehicles, noises);
             modules.Add(bots);
 
             // 近接・ストリーク・設置物は戦闘の DealDamage・Explode でダメージを与え、キルカムは戦闘が出すキルでクリップを送るので、戦闘より後。
@@ -157,7 +159,7 @@ namespace Shooter.Server
 
             // ドアは破った向こうの人をよろけさせ、爆薬を持ち物から使い、爆発を戦闘に任せるので、よろけ (status)・持ち物・戦闘がこの tick を進めた後に見る。
             // ドアの状態は自分で DoorStateMessage を配り、スナップショットには載せない
-            modules.Add(new ServerDoors(combat, status, inventories, tuning.Breach, tuning.BreachPath));
+            modules.Add(new ServerDoors(combat, status, inventories, tuning.Breach, tuning.BreachPath, noises));
 
             // 箱は目的 (ルール) が書いた旗・爆弾・台車の後の空きに足し、拾い物は箱の後の空きに足すので、ルール・箱・拾い物の順。
             // 近接はルールが書いたダウンの欄にとどめの進み具合を書き足すので、ルールより後。

@@ -24,6 +24,7 @@ namespace Shooter.Server
         private readonly ServerCombat _combat;
         private readonly ServerPlayerStatus _status;
         private readonly ServerInventories _inventories;
+        private readonly ServerNoises _noises;
         private readonly string _specPath;
         private readonly List<Door> _doors = new List<Door>();
 
@@ -39,13 +40,19 @@ namespace Shooter.Server
         private double _now;
         private bool _dirty;
 
-        // 怯ませる (status) と品を使う (inventories) は、無ければその部分だけをしない。品を求める spec で在庫が無ければ、爆薬は仕掛けさせない
+        // 怯ませる (status)・品を使う (inventories)・Bot に音を聞かせる (noises) は、無ければその部分だけをしない。品を求める spec で在庫が無ければ、爆薬は仕掛けさせない
         public ServerDoors(
-            ServerCombat combat, ServerPlayerStatus status = null, ServerInventories inventories = null, BreachSpec spec = null, string specPath = null)
+            ServerCombat combat,
+            ServerPlayerStatus status = null,
+            ServerInventories inventories = null,
+            BreachSpec spec = null,
+            string specPath = null,
+            ServerNoises noises = null)
         {
             _combat = combat ?? throw new ArgumentNullException(nameof(combat));
             _status = status;
             _inventories = inventories;
+            _noises = noises;
             Spec = spec ?? BreachSpec.Default;
             _specPath = specPath;
         }
@@ -444,7 +451,7 @@ namespace Shooter.Server
             ClearPanel(door);
             _dirty = true;
             _log.WriteLine(ServerDoorsLog.Kicked(index, kicker));
-            Finish(index, door, BreachMethod.Kick, kicker);
+            Finish(index, door, BreachMethod.Kick, kicker, door.Map.Position);
         }
 
         private void Detonate(int index, Door door)
@@ -454,18 +461,19 @@ namespace Shooter.Server
 
             // 板の当たりが残ると、向こう側の相手への線が板で遮られ爆発が届かないので、先に外す (オフラインの BreachDoor.Detonate と同じ)
             ClearPanel(door);
+            var center = door.Map.Position + (door.Map.Facing * (-door.FarSign * door.Map.PanelSize.Z * 0.5f));
             if (Spec.ChargeRadius > 0f)
             {
-                var center = door.Map.Position + (door.Map.Facing * (-door.FarSign * door.Map.PanelSize.Z * 0.5f));
                 var explosion = new ExplosionSpec(new ExplosionDamage(Spec.ChargeDamage, Spec.ChargeRadius));
                 _combat.Explode(center, explosion, breacher ?? PlayerIds.None, Spec.ChargeItemId);
             }
 
             _log.WriteLine(ServerDoorsLog.Detonated(index, breacher, Spec));
-            Finish(index, door, BreachMethod.Charge, breacher);
+            Finish(index, door, BreachMethod.Charge, breacher, center);
         }
 
-        private void Finish(int index, Door door, BreachMethod method, int? breacher)
+        // 音はオフラインの BreachDoor.Finish と同じく、蹴りは板の中心、爆薬は貼った所から鳴らす
+        private void Finish(int index, Door door, BreachMethod method, int? breacher, Vector3 soundPoint)
         {
             var kind = BreachSpec.StaggerKindFor(method);
             var seconds = Spec.StaggerSecondsFor(method);
@@ -493,6 +501,20 @@ namespace Shooter.Server
             }
 
             _log.WriteLine(ServerDoorsLog.Staggered(index, method, Spec, staggered));
+            Sound(index, method, breacher, soundPoint);
+        }
+
+        private void Sound(int index, BreachMethod method, int? breacher, Vector3 point)
+        {
+            var radius = Spec.SoundRadiusFor(method);
+            if (_noises == null || !(radius > 0f))
+            {
+                return;
+            }
+
+            var kind = method == BreachMethod.Kick ? SoundCueKind.Clatter : SoundCueKind.Explosion;
+            _noises.Emit(breacher ?? PlayerIds.None, new SoundStimulus(kind, point, radius, false));
+            _log.WriteLine(ServerDoorsLog.Sounded(index, method, kind, radius));
         }
 
         // オフラインの BreachDoor.RoomBox と同じ箱 (板の足元から、向こう側へ奥行き・左右へ幅・上へ高さ) に、体のカプセルが掛かるか。

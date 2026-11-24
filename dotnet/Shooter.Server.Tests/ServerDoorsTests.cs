@@ -36,6 +36,7 @@ namespace Shooter.Server.Tests
         private ServerInventories _inventories;
         private ServerPlayerStatus _status;
         private ServerDoors _doors;
+        private ServerNoises _noises;
 
         [SetUp]
         public void SetUp()
@@ -578,7 +579,88 @@ namespace Shooter.Server.Tests
             Assert.Throws<ArgumentNullException>(() => new ServerDoors(null));
         }
 
+        [Test]
+        public void AKickSoundsAClatterFromThePanelForTheBots()
+        {
+            StartWithTwo();
+            Place(1, _nearBehind);
+
+            Request(1, BreachMethod.Kick);
+            Step(BreachSpec.DefaultKickSeconds - 0.1f);
+            Assert.That(_noises.PendingCount, Is.EqualTo(0), "nothing sounds before the foot reaches the panel");
+            Step(0.15f);
+
+            var noise = HeardNoise();
+            Assert.That(noise.SourceId, Is.EqualTo(1));
+            Assert.That(noise.Sound.Kind, Is.EqualTo(SoundCueKind.Clatter));
+            Assert.That(noise.Sound.Radius, Is.EqualTo(BreachSpec.DefaultKickSoundRadius));
+            Assert.That(Vector3.Distance(noise.Sound.Position, new Vector3(0f, 1.5f, 4f)), Is.LessThan(0.001f));
+            Assert.That(_log.ToString(), Does.Contain("[Breach] door=0 sounded method=Kick kind=Clatter radius=25.00"));
+        }
+
+        [Test]
+        public void AChargeSoundsAnExplosionFromWhereItWasPlanted()
+        {
+            Start(DoorRules(), spec: QuickCharge());
+            JoinTwo();
+            Place(1, _nearBehind);
+
+            Request(1, BreachMethod.Charge);
+            Step(1.4f);
+            Assert.That(_noises.PendingCount, Is.EqualTo(0), "an armed charge is silent");
+            Step(0.3f);
+
+            // 仕掛けたのは板の奥 (-Z) なので、爆薬は板の奥の面 (厚さ 0.1 の半分だけ手前) に貼られている
+            var noise = HeardNoise();
+            Assert.That(noise.SourceId, Is.EqualTo(1));
+            Assert.That(noise.Sound.Kind, Is.EqualTo(SoundCueKind.Explosion));
+            Assert.That(noise.Sound.Radius, Is.EqualTo(BreachSpec.DefaultChargeSoundRadius));
+            Assert.That(Vector3.Distance(noise.Sound.Position, new Vector3(0f, 1.5f, 3.95f)), Is.LessThan(0.001f));
+            Assert.That(_log.ToString(), Does.Contain("[Breach] door=0 sounded method=Charge kind=Explosion radius=60.00"));
+        }
+
+        [Test]
+        public void AChargeWhosePlanterLeftSoundsWithoutASource()
+        {
+            Start(DoorRules(), spec: QuickCharge());
+            JoinTwo();
+            Place(1, _nearBehind);
+            Request(1, BreachMethod.Charge);
+            Step(0.6f);
+            Assert.That(_doors.PhaseOf(0), Is.EqualTo(BreachDoorPhase.Armed));
+
+            _match.Leave(new ConnectionId(1UL));
+            _host.OnDisconnected(new ConnectionId(1UL));
+            Step(1.1f);
+
+            Assert.That(_doors.PhaseOf(0), Is.EqualTo(BreachDoorPhase.Destroyed));
+            Assert.That(HeardNoise().SourceId, Is.EqualTo(PlayerIds.None));
+        }
+
+        [Test]
+        public void ADoorWithoutASoundRadiusIsSilent()
+        {
+            Start(DoorRules(), spec: new BreachSpec(kickSoundRadius: 0f));
+            JoinTwo();
+            Place(1, _nearBehind);
+
+            Request(1, BreachMethod.Kick);
+            Step(1f);
+
+            Assert.That(_doors.PhaseOf(0), Is.EqualTo(BreachDoorPhase.Opened));
+            Assert.That(_noises.PendingCount, Is.EqualTo(0));
+            Assert.That(_log.ToString(), Does.Not.Contain(" sounded "));
+        }
+
         private static int DoorGroup => MapColliderGroups.Door(0);
+
+        // Bot の居ないホストでは誰も音を受け取らないので、ここで受け取って 1 つだけ鳴ったことを確かめる
+        private ServerNoises.Noise HeardNoise()
+        {
+            Assert.That(_noises.PendingCount, Is.EqualTo(1), _log.ToString());
+            _noises.Advance();
+            return _noises.Current[0];
+        }
 
         private static GameRules DoorRules(Stagger stagger = Stagger.On)
         {
@@ -643,7 +725,8 @@ namespace Shooter.Server.Tests
             _status = new ServerPlayerStatus(rules, null, _rules);
             movement.InputGate = _status;
             combat.PlayerStatus = _status;
-            _doors = new ServerDoors(combat, _status, _inventories, spec);
+            _noises = new ServerNoises();
+            _doors = new ServerDoors(combat, _status, _inventories, spec, noises: _noises);
             _host = new ServerHost();
             _host.Register(movement);
             _host.Register(_rules);
