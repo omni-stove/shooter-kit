@@ -37,6 +37,7 @@ namespace Shooter.Tests.EditMode
                     nameof(BattleRoyaleSmokeRun),
                     nameof(PayloadSmokeRun),
                     nameof(SearchAndDestroySmokeRun),
+                    nameof(AkimboSmokeRun),
                 }));
             Assert.That(SmokeSuite.Runs.Select(run => run.LogTag), Is.Unique);
         }

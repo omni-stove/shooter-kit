@@ -74,9 +74,22 @@ namespace Shooter.Editor
             "aa7e7cf5-6840-4b20-b0ec-ae5d1dfb9c5c",
             "c1f6ce08-79a8-4d20-a16a-6eb6cee0256d",
             "a21e791d-cf45-4f05-981d-17480c5a791b",
-            "c5171e80-7b9c-44f0-bdd5-3e4fdd67f585",
+            AkimboPistolId,
             "148acbfc-9d35-4c65-96fc-36bea468eaa4",
         };
+
+        public const string AkimboPistolName = "AkimboPistol";
+
+        // Realistic の Pistol45 (JSON の akimbo 部品で二丁持ちになる)。名前で引かないのは、アセットの名前を変えても同じ武器を置くため。
+        public const string AkimboPistolId = "c5171e80-7b9c-44f0-bdd5-3e4fdd67f585";
+
+        // 射撃場の武器の台の前の列と同じ距離にし、拾える範囲 (RangeWeaponRackFixture.PickupRadius) に出現位置が入らず、遮蔽物より手前に置く。
+        public static Vector3 AkimboPistolPosition =>
+            GameBootstrap.PlayerSpawn + (Vector3.down * (GameBootstrap.PlayerHeight / 2f)) + new Vector3(0f, 0f, WeaponTableDistance);
+
+        public static readonly Vector3 AkimboPistolSize = Vector3.one;
+
+        public static Bounds AkimboPistolFootprint => new Bounds(AkimboPistolPosition + (Vector3.up * (AkimboPistolSize.y / 2f)), AkimboPistolSize);
 
         public static IReadOnlyList<string> FeaturedWeaponIds => FeaturedReferenceWeaponIds.Concat(FeaturedRealisticWeaponIds).ToArray();
 
@@ -558,6 +571,42 @@ namespace Shooter.Editor
             }
 
             return weapons;
+        }
+
+        public static WeaponDefinition LoadAkimboPistol(WeaponCatalogAsset realistic)
+        {
+            var weapon = WeaponAssetBuilder.FindInCatalog(realistic, AkimboPistolName, AkimboPistolId);
+            RequireAkimbo(weapon);
+            return weapon;
+        }
+
+        // 射撃場 (Range) では武器の台に同じ拳銃が並ぶので、ここで作る 1 丁は台の無い Playground (FeatureSceneBuilder) にだけ置く。
+        public static GameObject CreateAkimboPistol(Scene scene, WeaponDefinition weapon)
+        {
+            SceneBuildHelpers.RequireLoaded(scene);
+            RequireAkimbo(weapon);
+
+            // 中身を先に作って検査し、不正なら何も置かない。
+            var contents = PickupContents.ForWeapon(weapon, weapon.ToSpec().MagazineSize);
+            var root = new GameObject(AkimboPistolName);
+            SceneManager.MoveGameObjectToScene(root, scene);
+            RangeWeaponRackFixture.CreatePickup(root.transform, weapon.name, contents, AkimboPistolPosition);
+            return root;
+        }
+
+        private static void RequireAkimbo(WeaponDefinition weapon)
+        {
+            if (weapon == null)
+            {
+                throw new ArgumentNullException(nameof(weapon));
+            }
+
+            // 値が不正なら ToSpec が ArgumentException を投げる。
+            if (!weapon.ToSpec().IsAkimbo)
+            {
+                throw new ArgumentException(
+                    $"weapon '{weapon.Id}' has no akimbo part; give its JSON one and rerun {WeaponAssetBuilder.MenuPath}", nameof(weapon));
+            }
         }
 
         // 能力の枠は 2 つ (AbilityHost.SlotCount) なので、射撃場で試すゴーグルとドローンで埋める。使えるかはルールの Abilities で決まる (射撃場の既定は Off)。

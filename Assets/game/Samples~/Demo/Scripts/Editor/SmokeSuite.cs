@@ -44,6 +44,7 @@ namespace Shooter.Editor
             new SmokeRunEntry(nameof(BattleRoyaleSmokeRun), BattleRoyaleSmokeRun.LogTag, BattleRoyaleSmokeRun.Run),
             new SmokeRunEntry(nameof(PayloadSmokeRun), PayloadSmokeRun.LogTag, PayloadSmokeRun.Run),
             new SmokeRunEntry(nameof(SearchAndDestroySmokeRun), SearchAndDestroySmokeRun.LogTag, SearchAndDestroySmokeRun.Run),
+            new SmokeRunEntry(nameof(AkimboSmokeRun), AkimboSmokeRun.LogTag, AkimboSmokeRun.Run),
         };
 
         public static bool IsActive => SessionState.GetBool(ActiveKey, false);

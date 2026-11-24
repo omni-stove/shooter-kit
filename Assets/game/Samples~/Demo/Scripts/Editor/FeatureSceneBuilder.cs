@@ -87,6 +87,7 @@ namespace Shooter.Editor
 
                 // 射撃場では smoke の番まで眠らせて置くが、Playground は手で試す場なので始めから動かす。
                 FeatureStation.InPlace(new SecurityCameraRangeFixture(startsAwake: true)),
+                FeatureStation.InPlace(new FeatureAkimboPistolFixture()),
             };
 
             var nearestZ = float.MaxValue;
@@ -617,6 +618,21 @@ namespace Shooter.Editor
             }
 
             return root;
+        }
+    }
+
+    // Playground には射撃場の武器の台が無いので、二丁持ちを試す拳銃を台の前の列の位置に 1 丁だけ置く。
+    internal sealed class FeatureAkimboPistolFixture : ITpsRangeFixture
+    {
+        public int Order => 0;
+
+        public string Name => BootstrapSceneBuilder.AkimboPistolName;
+
+        public Bounds Footprint => BootstrapSceneBuilder.AkimboPistolFootprint;
+
+        public GameObject Place(Scene scene, GameRules rules)
+        {
+            return BootstrapSceneBuilder.CreateAkimboPistol(scene, BootstrapSceneBuilder.LoadAkimboPistol(WeaponAssetBuilder.LoadRealisticWeapons()));
         }
     }
 

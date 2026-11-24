@@ -699,6 +699,86 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void TheAkimboPistolIsTheRealisticPistol45HeldInBothHands()
+        {
+            var weapon = BootstrapSceneBuilder.LoadAkimboPistol(WeaponAssetBuilder.LoadRealisticWeapons());
+            var spec = weapon.ToSpec();
+
+            Assert.That(BootstrapSceneBuilder.AkimboPistolId, Is.EqualTo("c5171e80-7b9c-44f0-bdd5-3e4fdd67f585"));
+            Assert.That(weapon.Id, Is.EqualTo(BootstrapSceneBuilder.AkimboPistolId));
+            Assert.That(weapon.name, Is.EqualTo("Pistol45"));
+            Assert.That(spec.Category, Is.EqualTo(WeaponCategory.Handgun));
+            Assert.That(spec.IsAkimbo, Is.True, $"rerun {WeaponAssetBuilder.MenuPath} to read the akimbo part of Pistol45.json");
+            Assert.That(spec.Akimbo.SpreadMultiplier, Is.EqualTo(1.5f));
+            Assert.That(spec.Akimbo.BlocksAds, Is.True);
+            Assert.That(spec.Akimbo.ReloadSecondsMultiplier, Is.EqualTo(1.2f));
+            Assert.That(spec.Akimbo.MoveSpeedMultiplier, Is.EqualTo(1f));
+            Assert.That(spec.Akimbo.OffhandShotDelaySeconds, Is.EqualTo(0.05f));
+            Assert.That(BootstrapSceneBuilder.FeaturedRealisticWeaponIds, Has.Member(BootstrapSceneBuilder.AkimboPistolId), "the range's weapon table holds the same pistol");
+        }
+
+        [Test]
+        public void TheAkimboPistolIsOneLookPickupJustAheadOfTheSpawn()
+        {
+            var weapon = BootstrapSceneBuilder.LoadAkimboPistol(WeaponAssetBuilder.LoadRealisticWeapons());
+            var scene = TestScenes.NewAdditive();
+            try
+            {
+                var root = BootstrapSceneBuilder.CreateAkimboPistol(scene, weapon);
+
+                Assert.That(root.name, Is.EqualTo("AkimboPistol"));
+                Assert.That(root.scene, Is.EqualTo(scene));
+                Assert.That(root.transform.parent, Is.Null);
+                var points = root.GetComponentsInChildren<PickupSpawnPoint>();
+                Assert.That(points, Has.Length.EqualTo(1));
+                var point = points[0];
+                Assert.That(point.name, Is.EqualTo(RangeWeaponRackFixture.PickupNamePrefix + "Pistol45"));
+                Assert.That(point.Contents.Weapon, Is.SameAs(weapon));
+                Assert.That(point.Contents.Amount, Is.EqualTo(8));
+                Assert.That(point.CollectMode, Is.EqualTo(PickupCollectMode.Look));
+                Assert.That(point.Radius, Is.EqualTo(RangeWeaponRackFixture.PickupRadius));
+
+                var position = point.transform.position;
+                Assert.That(position, Is.EqualTo(new Vector3(0f, 0f, 2.5f)));
+                Assert.That(position, Is.EqualTo(BootstrapSceneBuilder.AkimboPistolPosition));
+                var feet = GameBootstrap.PlayerSpawn + (Vector3.down * (GameBootstrap.PlayerHeight / 2f));
+                Assert.That(Vector3.Distance(position, feet), Is.GreaterThan(point.Radius), "the pistol is not picked up at the spawn");
+                foreach (var cover in BootstrapSceneBuilder.Covers)
+                {
+                    Assert.That(position.z, Is.LessThan(cover.Center.z - (cover.Size.z / 2f)), $"the pistol is in front of {cover.Name}");
+                }
+
+                Assert.That(BootstrapSceneBuilder.AkimboPistolFootprint.Contains(position), Is.True);
+                Assert.That(BootstrapSceneBuilder.AkimboPistolFootprint.min, Is.EqualTo(new Vector3(-0.5f, 0f, 2f)));
+                Assert.That(BootstrapSceneBuilder.AkimboPistolFootprint.max, Is.EqualTo(new Vector3(0.5f, 1f, 3f)));
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void TheAkimboPistolNeedsAWeaponHeldInBothHands()
+        {
+            var singleHanded = BootstrapSceneBuilder.LoadPlayerWeapons(WeaponAssetBuilder.LoadReferenceWeapons())[1];
+            Assume.That(singleHanded.ToSpec().IsAkimbo, Is.False, "the reference compact pistol is held in one hand");
+
+            var scene = TestScenes.NewAdditive();
+            try
+            {
+                Assert.Throws<ArgumentNullException>(() => BootstrapSceneBuilder.CreateAkimboPistol(scene, null));
+                Assert.Throws<ArgumentException>(() => BootstrapSceneBuilder.CreateAkimboPistol(scene, singleHanded));
+                Assert.Throws<ArgumentNullException>(() => BootstrapSceneBuilder.LoadAkimboPistol(null));
+                Assert.That(scene.rootCount, Is.Zero, "nothing is placed without an akimbo weapon");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
         public void TheGearIsTheRiotShieldAndTheCarbineThatTakesTheThermalScope()
         {
             var gear = BootstrapSceneBuilder.LoadGearWeapons(WeaponAssetBuilder.LoadRangeWeapons(), WeaponAssetBuilder.LoadCatalog());

@@ -247,6 +247,23 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void ThePlaygroundRangeHasTheAkimboPistolJustAheadOfTheSpawn()
+        {
+            var stations = FeatureSceneBuilder.PlaygroundStations();
+            var pistol = stations.Single(s => s.Fixture.Name == BootstrapSceneBuilder.AkimboPistolName);
+
+            Assert.That(pistol.Offset, Is.EqualTo(Vector3.zero));
+            Assert.That(pistol.Footprint.center, Is.EqualTo(new Vector3(0f, 0.5f, 2.5f)));
+
+            var root = pistol.Fixture.Place(_scene, FeatureSceneBuilder.Playground().Rules);
+            var point = root.GetComponentInChildren<PickupSpawnPoint>(true);
+            Assert.That(point, Is.Not.Null);
+            Assert.That(point.Contents.Weapon.Id, Is.EqualTo(BootstrapSceneBuilder.AkimboPistolId));
+            Assert.That(point.Contents.Weapon.ToSpec().IsAkimbo, Is.True);
+            Assert.That(point.transform.position, Is.EqualTo(new Vector3(0f, 0f, 2.5f)));
+        }
+
+        [Test]
         public void TraversalStationsLineUpBehindTheSpawnOutOfTheEnemiesSight()
         {
             var stations = FeatureSceneBuilder.PlaygroundStations();
