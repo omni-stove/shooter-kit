@@ -105,6 +105,7 @@ namespace Shooter.Tests.EditMode
                 new SuppressionRangeFixture().Name,
                 new PingRangeFixture().Name,
                 new GrappleWallFixture().Name,
+                SecurityCameraRangeFixture.RootName,
                 TraversalFeatureSceneBuilder.LeanCornerName,
                 TraversalFeatureSceneBuilder.SwimPoolsName,
                 TraversalFeatureSceneBuilder.WallRunCorridorName,
@@ -213,7 +214,7 @@ namespace Shooter.Tests.EditMode
             var hut = stations.Single(s => s.Fixture.Name == "HutYard");
 
             Assert.That(hut.Offset, Is.EqualTo(TpsRangeSceneBuilder.HutCenter));
-            foreach (var station in stations.Take(14).Where(s => s.Fixture.Name != "HutYard"))
+            foreach (var station in stations.Take(15).Where(s => s.Fixture.Name != "HutYard"))
             {
                 Assert.That(station.Offset, Is.EqualTo(Vector3.zero), station.Fixture.Name);
             }

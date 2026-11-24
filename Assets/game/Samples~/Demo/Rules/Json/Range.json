@@ -24,7 +24,8 @@
     "melee": "On",
     "takedown": "On",
     "emote": "On",
-    "stamina": "On"
+    "stamina": "On",
+    "jam": "On"
   },
   "spawnProtectionSeconds": 0,
   "fallDamage": "Off",

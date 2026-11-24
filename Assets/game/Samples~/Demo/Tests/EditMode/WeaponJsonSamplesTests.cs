@@ -108,6 +108,59 @@ namespace Shooter.Tests.EditMode
             Assert.That(trigger.Tick(spinUp.SpinUpSeconds), Is.EqualTo(1));
         }
 
+        [TestCase("Shotgun", 0.04f, 0f, 0.5f, 0.04f, 1.5f)]
+        [TestCase("SlugCannon", 0.06f, 0f, 0.5f, 0.06f, 1.8f)]
+        [TestCase("Minigun", 0.002f, 0.001f, 0.5f, 0.05f, 2.5f)]
+        public void ImportingTheJammingSamplesKeepsTheirJam(
+            string name, float chancePerShot, float chancePerSustainedShot, float sustainedResetSeconds, float maxChance, float clearSeconds)
+        {
+            WeaponJsonImporter.ImportFrom(SamplesFolder, _folder, null);
+
+            var definition = Load(name);
+            Assert.That(definition.Jam.Enabled, Is.True, name);
+            var jam = definition.ToSpec().Ammo.Jam;
+            Assert.That(jam, Is.Not.Null, name);
+            Assert.That(jam.ChancePerShot, Is.EqualTo(chancePerShot));
+            Assert.That(jam.ChancePerSustainedShot, Is.EqualTo(chancePerSustainedShot));
+            Assert.That(jam.SustainedResetSeconds, Is.EqualTo(sustainedResetSeconds));
+            Assert.That(jam.MaxChance, Is.EqualTo(maxChance));
+            Assert.That(jam.ClearSeconds, Is.EqualTo(clearSeconds));
+        }
+
+        [TestCase("BurstRifle")]
+        [TestCase("Dmr")]
+        [TestCase("RicochetPistol")]
+        [TestCase("Laser")]
+        [TestCase("Flamethrower")]
+        public void ImportingTheOtherSamplesLeavesThemWithoutAJam(string name)
+        {
+            WeaponJsonImporter.ImportFrom(SamplesFolder, _folder, null);
+
+            var definition = Load(name);
+            Assert.That(definition.Jam.Enabled, Is.False, name);
+            Assert.That(definition.ToSpec().Ammo.Jam, Is.Null, name);
+        }
+
+        [TestCase("Shotgun")]
+        [TestCase("SlugCannon")]
+        [TestCase("Minigun")]
+        public void TheCommittedJammingWeaponsMatchTheirJson(string name)
+        {
+            var committed = AssetDatabase.LoadAssetAtPath<WeaponDefinition>(DemoSample.Root + "/Weapons/" + name + ".asset");
+            Assume.That(committed, Is.Not.Null, $"run {nameof(WeaponAssetBuilder)}.Build first");
+
+            WeaponJsonImporter.ImportFrom(SamplesFolder, _folder, null);
+            var imported = Load(name).ToSpec().Ammo.Jam;
+
+            Assert.That(committed.Jam.Enabled, Is.True, $"{name}.asset has no jam; rerun {nameof(WeaponAssetBuilder)}.Build");
+            var jam = committed.ToSpec().Ammo.Jam;
+            Assert.That(jam.ChancePerShot, Is.EqualTo(imported.ChancePerShot), name);
+            Assert.That(jam.ChancePerSustainedShot, Is.EqualTo(imported.ChancePerSustainedShot), name);
+            Assert.That(jam.SustainedResetSeconds, Is.EqualTo(imported.SustainedResetSeconds), name);
+            Assert.That(jam.MaxChance, Is.EqualTo(imported.MaxChance), name);
+            Assert.That(jam.ClearSeconds, Is.EqualTo(imported.ClearSeconds), name);
+        }
+
         [Test]
         public void ImportingTheSamplesMatchesTheCommittedAssetFields()
         {

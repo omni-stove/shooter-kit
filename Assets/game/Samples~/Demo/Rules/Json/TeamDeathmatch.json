@@ -22,7 +22,8 @@
     "grenade": "On",
     "grenadeCount": 2,
     "melee": "On",
-    "takedown": "On"
+    "takedown": "On",
+    "jam": "On"
   },
   "spawnProtectionSeconds": 2,
   "fallDamage": "Off",

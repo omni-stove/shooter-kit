@@ -116,6 +116,13 @@ namespace Shooter.Editor
                 .WithMaxWeapons(DemoMaxWeapons);
         }
 
+        // ほかのモードのルールはどれも TeamDeathmatchRules から作るので、詰まりはそこに入れず、オンラインの試合 (NetMatch) が書き出すこのアセットにだけ入れる。
+        public static GameRules TeamDeathmatchAssetRules()
+        {
+            var rules = TeamDeathmatchRules();
+            return rules.WithActions(rules.Actions.WithJam(WeaponJam.On));
+        }
+
         public static GameRules CampaignEasyRules()
         {
             return new GameRules(
@@ -489,6 +496,7 @@ namespace Shooter.Editor
         // ジャンプを切っても、段差は乗り越えと崖のぼりで上がれる。
         // 近接は射撃場 (RangeActions) から受け継がずに Off にする。近接の smoke の手順 (MeleeSmokeStep・ContextMeleeSmokeStep) が Off で振れないことを確かめてから、自分の間だけ On にするため。
         // テイクダウンを射撃場から受け継ぐだけにせず書いておくのは、射撃場の値を後で変えても TPS 射撃場では近接が Off のままテイクダウンを On に保つため。
+        // 詰まりは射撃場から受け継がずに Off にする。詰まりを試す場は一人称の射撃場 (JamSmokeRun) だけにし、TPS 射撃場の smoke の撃つ手順を詰まりで止めないため。
         public static ActionRules TpsRangeActions()
         {
             return RangeActions()
@@ -506,7 +514,8 @@ namespace Shooter.Editor
                 .WithSuppression(Suppression.On)
                 .WithJump(Jump.Off)
                 .WithMelee(Melee.Off)
-                .WithTakedown(Takedown.On);
+                .WithTakedown(Takedown.On)
+                .WithJam(WeaponJam.Off);
         }
 
         // カバーとブラインドファイアはオンラインのプレイヤーが対応していないので使わない。
@@ -534,7 +543,8 @@ namespace Shooter.Editor
                 .WithEmote(Emote.On)
                 .WithStamina(Stamina.On)
                 .WithMelee(Melee.On)
-                .WithTakedown(Takedown.On);
+                .WithTakedown(Takedown.On)
+                .WithJam(WeaponJam.On);
         }
 
         public static GameRulesDefinition LoadRules(string path)
@@ -691,7 +701,7 @@ namespace Shooter.Editor
         {
             var entries = new[]
             {
-                (Path: SceneBuildHelpers.ValidateAssetPath(teamDeathmatchPath), Rules: TeamDeathmatchRules()),
+                (Path: SceneBuildHelpers.ValidateAssetPath(teamDeathmatchPath), Rules: TeamDeathmatchAssetRules()),
                 (Path: SceneBuildHelpers.ValidateAssetPath(campaignEasyPath), Rules: CampaignEasyRules()),
                 (Path: SceneBuildHelpers.ValidateAssetPath(campaignNormalPath), Rules: CampaignNormalRules()),
                 (Path: SceneBuildHelpers.ValidateAssetPath(campaignHardPath), Rules: CampaignHardRules()),
