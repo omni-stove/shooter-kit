@@ -4,6 +4,7 @@
     "references": [
         "Shooter.Core",
         "Shooter.Core.CoopHold",
+        "Shooter.Core.Presentation",
         "Shooter.Runtime",
         "Unity.InputSystem"
     ],
