@@ -588,6 +588,36 @@ namespace Shooter.Tests.EditMode
             Assert.That(_controller.Akimbo.Left.IsJammed, Is.True, "and the left hand");
         }
 
+        [Test]
+        public void TheHudFollowsTheHandsOfTheHeldAkimboWeapon()
+        {
+            Hold(Pistol(AkimboSpec.Default));
+            var model = new HudModel();
+            using var binding = new HudWeaponBinding(model, _controller, null);
+
+            Assert.That(binding.CurrentAkimbo, Is.SameAs(_controller.Akimbo));
+            Assert.That(model.MagazineAmmo, Is.EqualTo(Magazine));
+            Assert.That(model.OffhandMagazineAmmo, Is.EqualTo(Magazine));
+            Assert.That(model.ReserveAmmo, Is.EqualTo(Reserve));
+
+            LogAssert.Expect(LogType.Log, "[Combat] akimbo fire hand=left ammo=7");
+            Assert.That(_controller.PullTrigger(AkimboHand.Left, true, true), Is.True);
+            Assert.That(model.MagazineAmmo, Is.EqualTo(Magazine), "firing the left hand leaves the right magazine");
+            Assert.That(model.OffhandMagazineAmmo, Is.EqualTo(Magazine - 1));
+        }
+
+        [Test]
+        public void TheHudShowsOneMagazineForAWeaponWithoutTheAkimboPart()
+        {
+            Hold(Pistol(null));
+            var model = new HudModel();
+            using var binding = new HudWeaponBinding(model, _controller, null);
+
+            Assert.That(binding.CurrentAkimbo, Is.Null);
+            Assert.That(model.MagazineAmmo, Is.EqualTo(Magazine));
+            Assert.That(model.OffhandMagazineAmmo, Is.Null);
+        }
+
         private void HoldJamming()
         {
             var definition = Definition(Pistol(AkimboSpec.Default));

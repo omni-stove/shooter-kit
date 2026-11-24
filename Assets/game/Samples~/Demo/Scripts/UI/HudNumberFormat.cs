@@ -17,6 +17,9 @@ namespace Shooter.Runtime
 
         public const string AmmoSeparator = " / ";
 
+        // 二丁持ちの左手と右手の弾倉の間に置く。予備弾は左右で分け合うので AmmoSeparator の後に 1 つだけ出す。
+        public const string AkimboSeparator = " | ";
+
         // 無限のときの予備の数は減らないので、数を出すと有限に見えてしまうため、数の代わりにこれを出す。
         public const string InfiniteReserve = "∞";
 
@@ -56,7 +59,7 @@ namespace Shooter.Runtime
                 throw new ArgumentOutOfRangeException(nameof(reserve), reserve, "reserve must not be negative");
             }
 
-            var magazineText = reloading ? GameText.Resolve(Reloading) : magazine.Value.ToString(CultureInfo.InvariantCulture);
+            var magazineText = Magazine(magazine.Value, reloading);
             if (!showsReserve)
             {
                 return magazineText;
@@ -64,6 +67,29 @@ namespace Shooter.Runtime
 
             var reserveText = infiniteReserve ? InfiniteReserve : reserveCount.ToString(CultureInfo.InvariantCulture);
             return magazineText + AmmoSeparator + reserveText;
+        }
+
+        // 二丁持ちの弾数。画面の左右と同じ並びにするため、左手の弾倉を先に出す (例: "8 | 5 / 32")。
+        // offhandMagazine が null (二丁持ちでない) か右手の弾倉が無ければ、Ammo(magazine, ...) と同じ書き方にする。
+        public static string Ammo(int? magazine, int? offhandMagazine, int? reserve, bool reloading, bool offhandReloading, bool infiniteReserve, bool showsReserve)
+        {
+            if (offhandMagazine.HasValue && offhandMagazine.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offhandMagazine), offhandMagazine, "offhandMagazine must not be negative");
+            }
+
+            var right = Ammo(magazine, reserve, reloading, infiniteReserve, showsReserve);
+            if (!offhandMagazine.HasValue || !magazine.HasValue)
+            {
+                return right;
+            }
+
+            return Magazine(offhandMagazine.Value, offhandReloading) + AkimboSeparator + right;
+        }
+
+        private static string Magazine(int magazine, bool reloading)
+        {
+            return reloading ? GameText.Resolve(Reloading) : magazine.ToString(CultureInfo.InvariantCulture);
         }
 
         public static string Time(int? seconds)
@@ -95,7 +121,7 @@ namespace Shooter.Runtime
 
         public static string Ammo(HudModel model)
         {
-            return Ammo(model.MagazineAmmo, model.ReserveAmmo, model.IsReloading, model.IsReserveInfinite, model.ShowsReserveAmmo);
+            return Ammo(model.MagazineAmmo, model.OffhandMagazineAmmo, model.ReserveAmmo, model.IsReloading, model.IsOffhandReloading, model.IsReserveInfinite, model.ShowsReserveAmmo);
         }
 
         public static string Time(HudModel model)

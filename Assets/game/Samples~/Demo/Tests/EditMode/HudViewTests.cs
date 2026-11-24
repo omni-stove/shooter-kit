@@ -911,6 +911,26 @@ namespace Shooter.Tests.EditMode
         }
 
         [Test]
+        public void AkimboShowsTheLeftAndRightMagazinesBeforeTheSharedReserve()
+        {
+            var model = new HudModel();
+            var view = new HudView(CloneLayout(), model);
+
+            model.SetAmmo(5, 32, false);
+            model.SetOffhandAmmo(8, false);
+            Assert.That(view.AmmoLabel.text, Is.EqualTo("8 | 5 / 32"));
+            Assert.That(view.AmmoLabel.ClassListContains(HudView.ReloadingClass), Is.False);
+
+            model.SetOffhandAmmo(0, true);
+            Assert.That(view.AmmoLabel.text, Is.EqualTo(Localizer.Resolve(HudNumberFormat.Reloading) + " | 5 / 32"), "only the reloading hand shows the reloading text");
+            Assert.That(view.AmmoLabel.ClassListContains(HudView.ReloadingClass), Is.True, "a reloading left hand marks the label too");
+
+            model.ClearOffhandAmmo();
+            Assert.That(view.AmmoLabel.text, Is.EqualTo("5 / 32"), "a single weapon shows one magazine again");
+            Assert.That(view.AmmoLabel.ClassListContains(HudView.ReloadingClass), Is.False);
+        }
+
+        [Test]
         public void TheTimeRoundsUpAndStopsAtTheLongestShownTime()
         {
             var model = new HudModel();
@@ -942,6 +962,20 @@ namespace Shooter.Tests.EditMode
             Assert.That(HudNumberFormat.Ammo(null, null, false, false, false), Is.EqualTo("--"));
             Assert.That(HudNumberFormat.Time(65), Is.EqualTo("01:05"));
             Assert.That(HudNumberFormat.Time((int?)null), Is.EqualTo("--:--"));
+        }
+
+        [Test]
+        public void TheNumberFormatWritesTheLeftHandFirstForAkimbo()
+        {
+            var reloading = GameText.Resolve(HudNumberFormat.Reloading);
+            Assert.That(HudNumberFormat.Ammo(5, 8, 32, false, false, false, true), Is.EqualTo("8 | 5 / 32"));
+            Assert.That(HudNumberFormat.Ammo(5, 0, 32, false, true, false, true), Is.EqualTo(reloading + " | 5 / 32"));
+            Assert.That(HudNumberFormat.Ammo(0, 8, 32, true, false, false, true), Is.EqualTo("8 | " + reloading + " / 32"));
+            Assert.That(HudNumberFormat.Ammo(5, 8, 0, false, false, true, true), Is.EqualTo("8 | 5 / ∞"));
+            Assert.That(HudNumberFormat.Ammo(5, 8, 32, false, false, false, false), Is.EqualTo("8 | 5"));
+            Assert.That(HudNumberFormat.Ammo(5, null, 32, false, false, false, true), Is.EqualTo("5 / 32"), "no left hand writes one magazine");
+            Assert.That(HudNumberFormat.Ammo(null, 8, null, false, false, false, true), Is.EqualTo("-- / --"), "no right hand means no weapon");
+            Assert.Throws<ArgumentOutOfRangeException>(() => HudNumberFormat.Ammo(5, -1, 32, false, false, false, true));
         }
 
         [Test]

@@ -7,6 +7,7 @@ namespace Shooter.Core
     {
         private Health _health;
         private Weapon _weapon;
+        private AkimboHands _akimbo;
         private Match _match;
         private IHudNoticeSource _notice;
 
@@ -28,7 +29,15 @@ namespace Shooter.Core
 
         public bool ShowsReserveAmmo { get; private set; } = true;
 
+        // 二丁持ちの間は右手の弾倉とリロード中。左手は OffhandMagazineAmmo と IsOffhandReloading に持つ。
         public bool IsReloading { get; private set; }
+
+        // 二丁持ちの左手の弾倉。二丁持ちでなければ null。予備弾は左右で分け合うので ReserveAmmo の 1 つだけを持つ。
+        public int? OffhandMagazineAmmo { get; private set; }
+
+        public bool IsOffhandReloading { get; private set; }
+
+        public bool IsAkimbo => OffhandMagazineAmmo.HasValue;
 
         public WeaponSpec WeaponSpec { get; private set; }
 
@@ -107,26 +116,36 @@ namespace Shooter.Core
 
         public void BindWeapon(Weapon weapon)
         {
-            if (_weapon != null)
-            {
-                Unsubscribe(_weapon);
-            }
-
+            UnbindWeapon();
             _weapon = weapon;
             if (_weapon != null)
             {
-                _weapon.Fired += OnWeaponChanged;
-                _weapon.Reloaded += OnWeaponChanged;
-                _weapon.ReserveAmmoAdded += OnWeaponChanged;
-                _weapon.ReserveAmmoChanged += OnWeaponChanged;
-                _weapon.AmmoTypeSwitched += OnWeaponChanged;
-                _weapon.Jammed += RefreshJam;
-                _weapon.JamClearStarted += RefreshJam;
-                _weapon.JamCleared += RefreshJam;
+                Subscribe(_weapon);
             }
 
             OnWeaponChanged();
             SetWeaponSpec(_weapon?.Spec);
+        }
+
+        // 二丁持ちの間は、持ち物の並びの Weapon ではなく左右の手の組を読む。並びの Weapon は二丁持ちの間に数えないので古い。
+        // リロードの進み・詰まり・ゲージは右手から読む。左手の弾倉とリロード中は OffhandMagazineAmmo と IsOffhandReloading に出す。
+        // null を渡すと BindWeapon(null) と同じく武器の欄を空にする。
+        public void BindAkimbo(AkimboHands hands)
+        {
+            UnbindWeapon();
+            _akimbo = hands;
+            _weapon = hands?.Right;
+            if (_akimbo != null)
+            {
+                Subscribe(_akimbo.Right);
+                _akimbo.Fired += OnHandChanged;
+                _akimbo.Reloaded += OnHandChanged;
+            }
+
+            OnWeaponChanged();
+
+            // 手の Weapon.Spec は二丁持ちの部品を外したものなので、武器の名前は組の元の Spec から出す。
+            SetWeaponSpec(_akimbo?.Spec);
         }
 
         public void BindMatch(Match match)
@@ -194,11 +213,7 @@ namespace Shooter.Core
                 _health = null;
             }
 
-            if (_weapon != null)
-            {
-                Unsubscribe(_weapon);
-                _weapon = null;
-            }
+            UnbindWeapon();
 
             if (_match != null)
             {
@@ -251,12 +266,28 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(reserve), reserve, "reserve must not be negative");
             }
 
-            ApplyAmmo(magazine, reserve, reloading, infiniteReserve);
+            ApplyAmmo(magazine, reserve, reloading, infiniteReserve, OffhandMagazineAmmo, IsOffhandReloading);
+        }
+
+        // 左手の弾倉だけを書く。右手の弾倉と予備弾は SetAmmo で書く。
+        public void SetOffhandAmmo(int magazine, bool reloading)
+        {
+            if (magazine < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(magazine), magazine, "magazine must not be negative");
+            }
+
+            ApplyAmmo(MagazineAmmo, ReserveAmmo, IsReloading, IsReserveInfinite, magazine, reloading);
+        }
+
+        public void ClearOffhandAmmo()
+        {
+            ApplyAmmo(MagazineAmmo, ReserveAmmo, IsReloading, IsReserveInfinite, null, false);
         }
 
         public void ClearAmmo()
         {
-            ApplyAmmo(null, null, false, false);
+            ApplyAmmo(null, null, false, false, null, false);
         }
 
         public void SetReserveAmmoShown(bool shown)
@@ -576,6 +607,39 @@ namespace Shooter.Core
             Changed?.Invoke(HudField.Jam);
         }
 
+        private void Subscribe(Weapon weapon)
+        {
+            weapon.Fired += OnWeaponChanged;
+            weapon.Reloaded += OnWeaponChanged;
+            weapon.ReserveAmmoAdded += OnWeaponChanged;
+            weapon.ReserveAmmoChanged += OnWeaponChanged;
+            weapon.AmmoTypeSwitched += OnWeaponChanged;
+            weapon.Jammed += RefreshJam;
+            weapon.JamClearStarted += RefreshJam;
+            weapon.JamCleared += RefreshJam;
+        }
+
+        private void UnbindWeapon()
+        {
+            if (_weapon != null)
+            {
+                Unsubscribe(_weapon);
+                _weapon = null;
+            }
+
+            if (_akimbo != null)
+            {
+                _akimbo.Fired -= OnHandChanged;
+                _akimbo.Reloaded -= OnHandChanged;
+                _akimbo = null;
+            }
+        }
+
+        private void OnHandChanged(AkimboHand hand)
+        {
+            OnWeaponChanged();
+        }
+
         private void Unsubscribe(Weapon weapon)
         {
             weapon.Fired -= OnWeaponChanged;
@@ -593,6 +657,13 @@ namespace Shooter.Core
         {
             // 持ち替えで解除を取り消したときも Weapon にイベントが無いので、ここで読み直す。
             RefreshJam();
+
+            // 二丁持ちは手ごとにリロードを始め、始めたことのイベントが無いので、どちらの手が込めているかを毎フレーム読み直す。
+            if (_akimbo != null)
+            {
+                RefreshAmmo();
+            }
+
             if (_weapon == null)
             {
                 ClearCharge();
@@ -642,15 +713,7 @@ namespace Shooter.Core
 
         private void OnWeaponChanged()
         {
-            // 熱で撃つ武器は弾倉を減らさないので、弾数を出すと撃っても変わらない数が並ぶ。撃てるかは熱のゲージで見せる。近接武器は弾を使わない。
-            if (_weapon != null && !_weapon.Ammo.HeatFraction.HasValue && !_weapon.Spec.IsMelee)
-            {
-                SetAmmo(_weapon.AmmoInMagazine, _weapon.ReserveAmmo, _weapon.IsReloading, _weapon.HasInfiniteReserve);
-            }
-            else
-            {
-                ClearAmmo();
-            }
+            RefreshAmmo();
 
             // 次のフレームを待たずに、リロードが終わった・武器が替わった時点で進みを消すため。
             RefreshReloadProgress();
@@ -669,9 +732,33 @@ namespace Shooter.Core
             Changed?.Invoke(HudField.Health);
         }
 
-        private void ApplyAmmo(int? magazine, int? reserve, bool reloading, bool infiniteReserve)
+        private void RefreshAmmo()
         {
-            if (magazine == MagazineAmmo && reserve == ReserveAmmo && reloading == IsReloading && infiniteReserve == IsReserveInfinite)
+            // 熱で撃つ武器は弾倉を減らさないので、弾数を出すと撃っても変わらない数が並ぶ。撃てるかは熱のゲージで見せる。近接武器は弾を使わない。
+            if (_weapon == null || _weapon.Ammo.HeatFraction.HasValue || _weapon.Spec.IsMelee)
+            {
+                ClearAmmo();
+                return;
+            }
+
+            var left = _akimbo?.Left;
+
+            // 左右の手を 1 度に書くのは、片方ずつ書くと 1 発で Ammo の知らせが 2 度届き、途中の組み合わせが描かれるため。
+            ApplyAmmo(
+                _weapon.AmmoInMagazine,
+                _weapon.ReserveAmmo,
+                _weapon.IsReloading,
+                _weapon.HasInfiniteReserve,
+                left != null ? left.AmmoInMagazine : (int?)null,
+                left != null && left.IsReloading);
+        }
+
+        private void ApplyAmmo(int? magazine, int? reserve, bool reloading, bool infiniteReserve, int? offhandMagazine, bool offhandReloading)
+        {
+            // 左手の弾倉が無ければリロード中も持たない。二丁持ちでない武器に左手のリロード中が残らないように。
+            offhandReloading = offhandMagazine.HasValue && offhandReloading;
+            if (magazine == MagazineAmmo && reserve == ReserveAmmo && reloading == IsReloading && infiniteReserve == IsReserveInfinite
+                && offhandMagazine == OffhandMagazineAmmo && offhandReloading == IsOffhandReloading)
             {
                 return;
             }
@@ -680,6 +767,8 @@ namespace Shooter.Core
             ReserveAmmo = reserve;
             IsReloading = reloading;
             IsReserveInfinite = infiniteReserve;
+            OffhandMagazineAmmo = offhandMagazine;
+            IsOffhandReloading = offhandReloading;
             Changed?.Invoke(HudField.Ammo);
         }
 
