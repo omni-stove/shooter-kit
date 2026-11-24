@@ -423,7 +423,7 @@ namespace Shooter.Core.Tests
         }
 
         // 確率 0.5 で下回ったら詰まる。弾倉の 8 発の内で最初に詰まる発数 (詰まらなければ 0) を、同じ乱数の列から数える。
-        private static int ExpectedFirstJam(IJamRoll roll)
+        private static int ExpectedFirstJam(JamRoll roll)
         {
             for (var shot = 1; shot <= 8; shot++)
             {
