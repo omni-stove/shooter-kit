@@ -220,6 +220,10 @@ namespace Shooter.Runtime
         [SerializeField]
         private MeleeWeaponSettings _melee = new MeleeWeaponSettings();
 
+        [Header("二丁持ち")]
+        [SerializeField]
+        private AkimboSettings _akimbo = new AkimboSettings();
+
         // この項目が無かった頃に保存したアセットも読み込むと 0 になるので、0 を未設定とする。
         public const float UnsetAdsFieldOfView = 0f;
 
@@ -527,6 +531,8 @@ namespace Shooter.Runtime
 
         public MeleeWeaponSettings Melee => _melee ??= new MeleeWeaponSettings();
 
+        public AkimboSettings Akimbo => _akimbo ??= new AkimboSettings();
+
         public bool AssignIdIfEmpty()
         {
             if (!string.IsNullOrWhiteSpace(_id))
@@ -597,7 +603,7 @@ namespace Shooter.Runtime
                     Sight.ToSpec(),
                     AdsMoveSpreadDegrees);
                 return new WeaponSpec(
-                    Id, NameKey, _category, trigger, ammo, round, impact, aim, AmmoTypeSettings.ToSpecs(AmmoTypes), _shotNoiseRadius, _weight, _moveSpeedMultiplier, Description, DrawSeconds, _holsterSeconds, Shield.ToSpec(), Melee.ToSpec());
+                    Id, NameKey, _category, trigger, ammo, round, impact, aim, AmmoTypeSettings.ToSpecs(AmmoTypes), _shotNoiseRadius, _weight, _moveSpeedMultiplier, Description, DrawSeconds, _holsterSeconds, Shield.ToSpec(), Melee.ToSpec(), Akimbo.ToSpec());
             }
             catch (ArgumentException e)
             {

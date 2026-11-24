@@ -152,7 +152,7 @@ namespace Shooter.Runtime
             }
 
             var armed = _loadout != null && !_unarmed;
-            return carry.SpeedMultiplier(armed ? _loadout.Current.Spec : null, armed ? _specs : null, extraWeight) * ShieldMoveSpeedMultiplier * _holsterMoveSpeedMultiplier;
+            return carry.SpeedMultiplier(armed ? _loadout.Current.Spec : null, armed ? _specs : null, extraWeight) * ShieldMoveSpeedMultiplier * AkimboMoveSpeedMultiplier * _holsterMoveSpeedMultiplier;
         }
 
         public int CurrentIndex => _loadout != null && !_unarmed ? _loadout.CurrentIndex : -1;
@@ -236,12 +236,15 @@ namespace Shooter.Runtime
                         PressReload();
                     }
 
+                    // 手放した先の引き金は 1 つしか無いので、右手だけで撃つ。
+                    DropOffhand();
                     PullTrigger(isPressed, wasPressed);
                     return;
                 }
 
                 // 乗り物やテイクダウンは武器をしまわず入力だけ手放すので、押したままの溜めが戻った時に離した扱いで撃たれないよう捨てる。
                 _trigger.Drop();
+                DropOffhand();
                 DropMeleeCharge();
                 return;
             }
@@ -266,14 +269,17 @@ namespace Shooter.Runtime
                 PressReload();
             }
 
-            PullTrigger(_attackAction.IsPressed(), _attackAction.WasPressedThisFrame());
+            ReadTriggers();
         }
 
         public bool PullTrigger(bool isPressed, bool wasPressedThisFrame)
         {
-            EnsureInitialized();
-            var weapon = Weapon;
-            _trigger.Bind(weapon?.Trigger);
+            return PullTrigger(AkimboHand.Right, isPressed, wasPressedThisFrame);
+        }
+
+        private bool PullTrigger(Weapon weapon, AkimboHand? hand, TriggerDriver driver, bool isPressed, bool wasPressedThisFrame)
+        {
+            driver.Bind(weapon?.Trigger);
             if (weapon == null)
             {
                 return false;
@@ -291,38 +297,47 @@ namespace Shooter.Runtime
 
             if (IsFireBlocked || !weapon.Ammo.CanFire || weapon.IsJammed)
             {
-                _trigger.Drop();
+                driver.Drop();
 
                 // 最後の 1 発で詰まった武器は弾倉が空でも空撃ちにしない。リロードの入力は解除に回り、空撃ちの自動リロードも詰まりで断られるため。
                 if (wasPressedThisFrame && !IsFireBlocked && !weapon.IsJammed && IsDryFire(weapon))
                 {
                     Debug.Log($"{DryFireLogPrefix} id={weapon.Spec.Id}", this);
                     DryFired?.Invoke(weapon);
-                    ReloadIfAuto(weapon);
+                    ReloadIfAuto(weapon, hand);
                 }
 
                 return false;
             }
 
-            var shots = _trigger.Pull(weapon.Spec.FireMode, isPressed, wasPressedThisFrame);
-            var charge = _trigger.ShotChargeFraction;
+            var shots = driver.Pull(weapon.Spec.FireMode, isPressed, wasPressedThisFrame);
+            var charge = driver.ShotChargeFraction;
             var fired = false;
-            for (var i = 0; i < shots && FireShot(weapon, charge); i++)
+            for (var i = 0; i < shots && FireShot(weapon, hand, charge); i++)
             {
                 fired = true;
             }
 
             if (fired)
             {
-                ReloadIfAuto(weapon);
+                ReloadIfAuto(weapon, hand);
             }
 
             return fired;
         }
 
-        private void ReloadIfAuto(Weapon weapon)
+        private void ReloadIfAuto(Weapon weapon, AkimboHand? hand)
         {
-            if (Rules.ReloadMode == ReloadMode.Auto && IsDryFire(weapon))
+            if (Rules.ReloadMode != ReloadMode.Auto || !IsDryFire(weapon))
+            {
+                return;
+            }
+
+            if (hand.HasValue)
+            {
+                StartReload(hand.Value);
+            }
+            else
             {
                 StartReload();
             }
@@ -376,6 +391,7 @@ namespace Shooter.Runtime
             var next = FindOptionalAction(actions, NextActionPath, "次の武器への持ち替え");
             var previous = FindOptionalAction(actions, PreviousActionPath, "前の武器への持ち替え");
             var switchAmmoType = FindOptionalAction(actions, SwitchAmmoTypeActionPath, "弾薬の種類の切り替え");
+            var offhand = FindOptionalAction(actions, OffhandActionPath, "二丁持ちの左手の射撃");
 
             try
             {
@@ -393,6 +409,7 @@ namespace Shooter.Runtime
             }
 
             SetSwitchAmmoTypeAction(switchAmmoType);
+            SetOffhandAction(offhand);
             return true;
         }
 
@@ -469,12 +486,10 @@ namespace Shooter.Runtime
 
         public bool Fire()
         {
-            EnsureInitialized();
-            var weapon = Weapon;
-            return FireShot(weapon, weapon != null && weapon.Trigger == _trigger.Model ? _trigger.ChargeFraction : 0f);
+            return Fire(AkimboHand.Right);
         }
 
-        private bool FireShot(Weapon weapon, float chargeFraction)
+        private bool FireShot(Weapon weapon, AkimboHand? hand, float chargeFraction)
         {
             if (weapon == null || IsFireBlocked)
             {
@@ -485,16 +500,21 @@ namespace Shooter.Runtime
             var jamSustainedShots = weapon.Jam?.SustainedShots ?? 0;
             var jamChance = weapon.Jam?.NextShotChance ?? 0f;
             _jamPending = false;
-            if (!weapon.TryFire())
+            var hands = hand.HasValue ? Akimbo : null;
+            if (hands != null ? !hands.TryFire(hand.Value) : !weapon.TryFire())
             {
                 return false;
             }
 
-            Debug.Log($"[Combat] fire ammo={weapon.AmmoInMagazine}", this);
+            Debug.Log(hands != null ? AkimboLog.Fire(hand.Value, weapon.AmmoInMagazine) : $"[Combat] fire ammo={weapon.AmmoInMagazine}", this);
             KickSpread();
             var shotIndex = _shotCount;
             _shotCount = unchecked(_shotCount + 1);
             Fired?.Invoke(weapon);
+            if (hands != null)
+            {
+                FiredHand?.Invoke(weapon, hand.Value);
+            }
 
             // この弾は今の視点の向きで撃ち、反動はカメラが次に向きを書くとき (FirstPersonLook.LateUpdate) から効く。
             ResolveShot(out var aimOrigin, out var aimDirection);
@@ -593,8 +613,19 @@ namespace Shooter.Runtime
         public bool StartReload()
         {
             EnsureInitialized();
+            if (IsReloadBlocked())
+            {
+                return false;
+            }
+
+            var hands = Akimbo;
+            if (hands != null)
+            {
+                return StartAkimboReload(hands);
+            }
+
             var weapon = Weapon;
-            if (weapon == null || weapon.Spec.IsShield || weapon.Spec.IsMelee || IsSwitching || IsReloadBlockedByModifier || !weapon.TryStartReload())
+            if (!weapon.TryStartReload())
             {
                 return false;
             }
@@ -613,9 +644,15 @@ namespace Shooter.Runtime
             }
 
             // 詰まった武器はリロードを断るので、同じ入力を解除に回す。解除中にもう一度押しても始め直さない。
-            if (weapon.IsJammed)
+            if (JamWeapon.IsJammed)
             {
                 return TryStartClearJam();
+            }
+
+            // 片手が込めている間も、もう片方の手が満たんでなければ込め始める。込め始める手が無いときだけ、込めている手のアクティブリロードにする。
+            if (Akimbo != null)
+            {
+                return StartReload() || TryActiveReload();
             }
 
             return weapon.IsReloading ? TryActiveReload() : StartReload();
@@ -625,7 +662,18 @@ namespace Shooter.Runtime
         {
             EnsureInitialized();
             var weapon = Weapon;
-            if (weapon == null || IsSwitching || !weapon.TryActiveReload(out var result))
+            if (weapon == null || IsSwitching)
+            {
+                return false;
+            }
+
+            var hands = Akimbo;
+            if (hands != null)
+            {
+                return TryAkimboActiveReload(hands);
+            }
+
+            if (!weapon.TryActiveReload(out var result))
             {
                 return false;
             }
@@ -645,12 +693,22 @@ namespace Shooter.Runtime
             EnsureInitialized();
             CancelReloadBlockedByModifier();
             var weapon = Weapon;
-            weapon?.Tick(deltaSeconds);
+            var hands = Akimbo;
+            if (hands != null)
+            {
+                hands.Tick(deltaSeconds);
+            }
+            else
+            {
+                weapon?.Tick(deltaSeconds);
+            }
+
             _loadout?.Tick(deltaSeconds);
 
             // 持ち替えた直後の時間をしまった武器の撃ち方に数えないよう、進める前に今の武器の撃ち方へ付け替える。
-            _trigger.Bind(weapon?.Trigger);
+            _trigger.Bind(hands != null ? hands.Right.Trigger : weapon?.Trigger);
             _trigger.Advance(deltaSeconds);
+            TickAkimbo(hands, deltaSeconds);
             _recoil.Tick(deltaSeconds);
             RecoverSpread(deltaSeconds);
             TickMeleeCharge(deltaSeconds);

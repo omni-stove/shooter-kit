@@ -75,13 +75,12 @@ namespace Shooter.Runtime
         // 構えのように始めた瞬間だけ取り消す動作は、している間ずっと止める IWeaponModifier では表せないので、呼んだ時点で一度だけ取り消す。
         public bool InterruptReload(ReloadInterrupt by)
         {
-            var weapon = Weapon;
-            if (weapon == null || !weapon.IsReloading || !Rules.Actions.InterruptsReload(by))
+            if (!IsHeldReloading || !Rules.Actions.InterruptsReload(by))
             {
                 return false;
             }
 
-            weapon.CancelReload();
+            CancelHeldReload();
             Debug.Log(FormatReloadCancelledLog(by), this);
             return true;
         }
@@ -120,8 +119,7 @@ namespace Shooter.Runtime
 
         private void CancelReloadBlockedByModifier()
         {
-            var weapon = Weapon;
-            if (weapon == null || !weapon.IsReloading)
+            if (!IsHeldReloading)
             {
                 return;
             }
@@ -132,7 +130,7 @@ namespace Shooter.Runtime
                 return;
             }
 
-            weapon.CancelReload();
+            CancelHeldReload();
             Debug.Log(FormatReloadCancelledLog(blocker), this);
         }
     }

@@ -46,6 +46,7 @@ namespace Shooter.Runtime
                 return false;
             }
 
+            CancelHeldReload();
             _loadout.Current.CancelReload();
             CancelClearJam(_loadout.Current);
             _unarmed = true;
@@ -68,7 +69,7 @@ namespace Shooter.Runtime
             var list = new PickupWeaponState[items.Count];
             for (var i = 0; i < items.Count; i++)
             {
-                list[i] = PickupWeaponState.Of(items[i]);
+                list[i] = PickupStateOf(items[i]);
             }
 
             currentWeaponId = _loadout.Current.Spec.Id;
@@ -128,10 +129,13 @@ namespace Shooter.Runtime
             {
                 var only = new[] { spec };
                 var armed = WeaponLoadout.Restore(only, AmmoList(ammo), spec.Id, _loadedRules, _switchSeconds, JamRolls, out _);
+
+                // 手放した武器の左手の弾倉は手放すときに予備弾へ移したので、拾い直した武器へ持ち越さない。
+                ReleaseAkimboHands();
                 _unarmed = false;
                 _attachments.Clear();
                 RememberAttachments(spec.Id, kept);
-                SetLoadout(armed, only, new[] { definition }, _loadedRules);
+                SetLoadout(armed, only, new[] { definition }, _loadedRules, freshWeaponId: ammo == null ? spec.Id : null);
                 Debug.Log($"[Combat] weapon added index=0 id={spec.Id} name={spec.LogName}", this);
                 WeaponChanged?.Invoke(Weapon);
                 return true;
@@ -149,7 +153,7 @@ namespace Shooter.Runtime
             Array.Copy(_loadedDefinitions, definitions, _loadedDefinitions.Length);
             definitions[_loadedDefinitions.Length] = definition;
 
-            var carried = new List<WeaponAmmo>(_loadout.SnapshotAmmo());
+            var carried = new List<WeaponAmmo>(SnapshotLoadoutAmmo());
             if (ammo != null)
             {
                 carried.Add(ammo);
@@ -158,7 +162,7 @@ namespace Shooter.Runtime
             var loadout = WeaponLoadout.Restore(specs, carried, Weapon.Spec.Id, _loadedRules, _switchSeconds, JamRolls, out _);
             KeepAmmoTypes(loadout, -1);
             RememberAttachments(spec.Id, kept);
-            SetLoadout(loadout, specs, definitions, _loadedRules);
+            SetLoadout(loadout, specs, definitions, _loadedRules, freshWeaponId: ammo == null ? spec.Id : null);
             Debug.Log($"[Combat] weapon added index={specs.Length - 1} id={spec.Id} name={spec.LogName} attachments={WeaponAttachments.Describe(kept)}", this);
             WeaponChanged?.Invoke(Weapon);
             return true;
@@ -191,7 +195,7 @@ namespace Shooter.Runtime
 
             var leaving = _loadout.Items[index];
             leaving.CancelReload();
-            var leavingAmmo = WeaponAmmo.Leaving(leaving);
+            var leavingAmmo = LeavingAmmoOf(leaving);
             var leavingDefinition = _loadedDefinitions[index];
             var leavingAttachments = AttachmentsOf(leavingAmmo.WeaponId);
 
@@ -201,7 +205,7 @@ namespace Shooter.Runtime
             definitions[index] = definition;
 
             var carried = new List<WeaponAmmo>();
-            foreach (var entry in _loadout.SnapshotAmmo())
+            foreach (var entry in SnapshotLoadoutAmmo())
             {
                 if (!string.Equals(entry.WeaponId, leavingAmmo.WeaponId, StringComparison.Ordinal))
                 {
@@ -218,7 +222,7 @@ namespace Shooter.Runtime
             KeepAmmoTypes(loadout, index);
             _attachments.Remove(leavingAmmo.WeaponId);
             RememberAttachments(spec.Id, kept);
-            SetLoadout(loadout, specs, definitions, _loadedRules);
+            SetLoadout(loadout, specs, definitions, _loadedRules, freshWeaponId: ammo == null ? spec.Id : null);
             dropped = new HeldWeapon(leavingDefinition, leavingAmmo, leavingAttachments);
             Debug.Log(
                 $"[Combat] weapon swapped index={index} id={spec.Id} name={spec.LogName} dropped={leavingAmmo.WeaponId} "
@@ -240,12 +244,13 @@ namespace Shooter.Runtime
 
             var leaving = _loadout.Items[index];
             leaving.CancelReload();
-            dropped = new HeldWeapon(_loadedDefinitions[index], WeaponAmmo.Leaving(leaving), AttachmentsOf(leaving.Spec.Id));
+            dropped = new HeldWeapon(_loadedDefinitions[index], LeavingAmmoOf(leaving), AttachmentsOf(leaving.Spec.Id));
             _attachments.Remove(leaving.Spec.Id);
             if (_loadout.Count == 1)
             {
                 // 持ち物の山は持ち武器から作るので、武器を持っていない状態でも並びを残したまま Disarm で手放したことにする
                 leaving.UseAmmoPool(null);
+                UseAkimboAmmoPool(leaving, null);
                 Debug.Log($"[Combat] weapon dropped index=0 id={leaving.Spec.Id} name={leaving.Spec.LogName} ammo={dropped.Ammo.AmmoInMagazine}/{dropped.Ammo.ReserveAmmo}", this);
                 Disarm();
                 return true;
@@ -254,7 +259,7 @@ namespace Shooter.Runtime
             var specs = new WeaponSpec[_specs.Length - 1];
             var definitions = new WeaponDefinition[_loadedDefinitions.Length - 1];
             var carried = new List<WeaponAmmo>();
-            var ammo = _loadout.SnapshotAmmo();
+            var ammo = SnapshotLoadoutAmmo();
             for (int from = 0, to = 0; from < _specs.Length; from++)
             {
                 if (from == index)
@@ -292,7 +297,9 @@ namespace Shooter.Runtime
 
             foreach (var weapon in _loadout.Items)
             {
-                weapon.UseAmmoPool(poolFor?.Invoke(weapon.Spec));
+                var pool = poolFor?.Invoke(weapon.Spec);
+                weapon.UseAmmoPool(pool);
+                UseAkimboAmmoPool(weapon, pool);
             }
         }
 
@@ -335,17 +342,18 @@ namespace Shooter.Runtime
             }
 
             var index = _loadout.IndexOf(weaponId);
-            return index >= 0 ? _loadout.Items[index].AddReserveAmmo(amount) : 0;
+            return index >= 0 ? AddReserveAmmoTo(_loadout.Items[index], amount) : 0;
         }
 
         public IReadOnlyList<WeaponAmmo> SnapshotAmmo()
         {
             EnsureInitialized();
-            return _unarmed ? Array.Empty<WeaponAmmo>() : _loadout.SnapshotAmmo();
+            return _unarmed ? Array.Empty<WeaponAmmo>() : SnapshotLoadoutAmmo();
         }
 
-        private void SetLoadout(Loadout<Weapon> loadout, WeaponSpec[] specs, WeaponDefinition[] definitions, GameRules rules, bool resetAmmo = false)
+        private void SetLoadout(Loadout<Weapon> loadout, WeaponSpec[] specs, WeaponDefinition[] definitions, GameRules rules, bool resetAmmo = false, string freshWeaponId = null)
         {
+            var leftMagazines = ReleaseAkimboHands();
             if (_loadout != null)
             {
                 _loadout.Switched -= OnSwitched;
@@ -402,11 +410,14 @@ namespace Shooter.Runtime
                 }
             }
 
+            // 受け皿につなぎ終えてから作るのは、組の予備弾を受け皿に合わせた並びの Weapon の数から始めるため。
+            BuildAkimboHands(leftMagazines, rules, resetAmmo, freshWeaponId);
             PublishJam();
         }
 
         private void OnSwitched(int index)
         {
+            CancelStowedAkimboReloads();
             var spec = _loadout.Current.Spec;
             CancelClearJamOfHolstered();
             Debug.Log($"{SwitchedLogPrefix} index={index} id={spec.Id} name={spec.LogName}", this);

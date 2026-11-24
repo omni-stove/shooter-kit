@@ -185,6 +185,13 @@ namespace Shooter.Runtime
             return spec != null && spec.IsMelee;
         }
 
+        // 二丁持ちの間は覗き込みのボタンを左手の引き金 (WeaponController.OffhandAction) に使うので、武器の akimbo 部品が断るなら覗き込まない。
+        private bool IsHoldingAdsBlockingAkimbo()
+        {
+            var spec = WeaponSource?.Invoke();
+            return spec != null && spec.IsAkimbo && spec.Akimbo.BlocksAds;
+        }
+
         public void Tick(bool isPressed, bool wasPressedThisFrame, InputDeviceKind device, float deltaSeconds)
         {
             EnsureInitialized();
@@ -194,7 +201,7 @@ namespace Shooter.Runtime
             var wasAiming = IsAiming;
             _aimState.Mode = mode;
             _aimState.Update(isPressed, wasPressedThisFrame);
-            _blocked = (AdsBlocker != null && AdsBlocker()) || IsHoldingMeleeWeapon();
+            _blocked = (AdsBlocker != null && AdsBlocker()) || IsHoldingMeleeWeapon() || IsHoldingAdsBlockingAkimbo();
             var aiming = IsAiming;
             if (aiming != wasAiming)
             {
