@@ -1,0 +1,8 @@
+{
+  "mode.vip.waiting": "VIP の選出待ち",
+  "mode.vip.youAreVip": "あなたが VIP: 脱出地点へ向かう",
+  "mode.vip.escort": "VIP を脱出させよ",
+  "mode.vip.eliminate": "VIP を倒せ",
+  "mode.vip.escaping": "VIP 脱出中 {0}%",
+  "mode.vip.rounds": "ラウンド {0} - {1}"
+}
