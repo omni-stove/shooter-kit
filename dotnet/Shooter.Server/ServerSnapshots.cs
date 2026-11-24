@@ -50,6 +50,9 @@ namespace Shooter.Server
 
         public AntiCheatTuning AntiCheat { get; }
 
+        // 書き足す順。後の部品は前の部品が書いた欄に書き足すので、並びが意味を持つ
+        public IReadOnlyList<ISnapshotContributor> Contributors => _contributors;
+
         public int SentCount { get; private set; }
 
         public int SentReliableCount { get; private set; }
