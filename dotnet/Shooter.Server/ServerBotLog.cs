@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using Shooter.Core;
+using Shooter.Protocol;
 
 namespace Shooter.Server
 {
@@ -14,6 +15,15 @@ namespace Shooter.Server
         public static string GoalCleared(int playerId)
         {
             return ServerBots.LogTag + " goal player=" + Text(playerId) + " cleared";
+        }
+
+        // 鳴らした人が分からない音 (仕掛けた人が抜けた後の爆薬) は by=none と書く
+        public static string NoiseHeard(int playerId, int sourceId, SoundStimulus sound)
+        {
+            var at = sound.Position;
+            return ServerBots.LogTag + " noise player=" + Text(playerId) + " kind=" + sound.Kind
+                + " by=" + (sourceId == PlayerIds.None ? "none" : Text(sourceId))
+                + " x=" + F2(at.X) + " y=" + F2(at.Y) + " z=" + F2(at.Z);
         }
 
         public static string CoverFound(int playerId, int points)
