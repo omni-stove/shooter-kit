@@ -165,6 +165,48 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void TheVipModeTextsAreReadFromTheModesVipTableOfEveryLanguage()
+        {
+            var keysByLanguage = new List<string[]>();
+            foreach (var language in GameLanguages.All)
+            {
+                var modes = JapaneseGameTextSetUp.LoadLayers(language)
+                    .Single(layer => layer.Key.EndsWith("modes-vip.json", StringComparison.Ordinal))
+                    .Value;
+                var code = GameLanguages.Code(language);
+
+                Assert.That(modes.Keys.All(key => key.StartsWith("mode.vip.", StringComparison.Ordinal)), Is.True, code);
+                Assert.That(modes.Contains("mode.vip.escort"), Is.True, code);
+                Assert.That(modes.Contains("mode.vip.eliminate"), Is.True, code);
+                Assert.That(modes.Contains("mode.vip.youAreVip"), Is.True, code);
+                Assert.That(modes.Contains("mode.vip.escaping"), Is.True, code);
+                Assert.That(modes.Contains("mode.vip.rounds"), Is.True, code);
+                Assert.That(modes.Get("mode.vip.escort"), Is.Not.EqualTo(modes.Get("mode.vip.eliminate")), code);
+                keysByLanguage.Add(modes.Keys.OrderBy(key => key, StringComparer.Ordinal).ToArray());
+            }
+
+            Assert.That(keysByLanguage.Skip(1), Has.All.EqualTo(keysByLanguage[0]));
+
+            var english = JapaneseGameTextSetUp.LoadLayers(GameLanguage.English)
+                .Single(layer => layer.Key.EndsWith("modes-vip.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(english.Get("mode.vip.escort"), Is.EqualTo("Get the VIP to the exit"));
+            Assert.That(english.Get("mode.vip.eliminate"), Is.EqualTo("Take down the VIP"));
+            Assert.That(english.Get("mode.vip.youAreVip"), Is.EqualTo("You are the VIP: reach the exit"));
+            Assert.That(english.Get("mode.vip.escaping"), Is.EqualTo("VIP escaping {0}%"));
+            Assert.That(english.Get("mode.vip.rounds"), Is.EqualTo("Rounds {0} - {1}"));
+
+            var japanese = JapaneseGameTextSetUp.LoadLayers(GameLanguage.Japanese)
+                .Single(layer => layer.Key.EndsWith("modes-vip.json", StringComparison.Ordinal))
+                .Value;
+            Assert.That(japanese.Get("mode.vip.escort"), Is.EqualTo("VIP を脱出させよ"));
+            Assert.That(japanese.Get("mode.vip.eliminate"), Is.EqualTo("VIP を倒せ"));
+            Assert.That(japanese.Get("mode.vip.youAreVip"), Is.EqualTo("あなたが VIP: 脱出地点へ向かう"));
+            Assert.That(japanese.Get("mode.vip.escaping"), Is.EqualTo("VIP 脱出中 {0}%"));
+            Assert.That(japanese.Get("mode.vip.rounds"), Is.EqualTo("ラウンド {0} - {1}"));
+        }
+
+        [Test]
         public void ThePayloadModeTextsAreReadFromTheModesPayloadTableOfEveryLanguage()
         {
             foreach (var language in GameLanguages.All)
