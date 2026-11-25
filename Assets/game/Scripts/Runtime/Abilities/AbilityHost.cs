@@ -278,6 +278,12 @@ namespace Shooter.Runtime
             return _slots[index];
         }
 
+        public IAbility Ability(int index)
+        {
+            RequireIndex(index);
+            return _abilities[index];
+        }
+
         public bool IsRunning(int index)
         {
             RequireIndex(index);

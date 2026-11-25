@@ -93,6 +93,19 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void AColliderInADisabledGroupIsNotEnabled()
+        {
+            Assert.That(_world.IsColliderEnabled(_crateId), Is.True);
+            Assert.That(_world.IsColliderEnabled(_wallId), Is.True);
+
+            _world.SetGroupEnabled(_crateGroup, false);
+
+            Assert.That(_world.IsColliderEnabled(_crateId), Is.False);
+            Assert.That(_world.IsColliderEnabled(_wallId), Is.True, "only the group's colliders are turned off");
+            Assert.That(_world.IsColliderEnabled(-12345), Is.False, "an unknown id is not there");
+        }
+
+        [Test]
         public void RayShorterThanTheFloorMisses()
         {
             Assert.That(_world.Raycast(new Vector3(1f, 2f, -1f), -Vector3.UnitY, 1.9f, _everything, out var hit), Is.False);

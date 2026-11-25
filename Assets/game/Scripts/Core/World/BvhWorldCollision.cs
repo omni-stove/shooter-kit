@@ -89,6 +89,11 @@ namespace Shooter.Core
             return _groupColliders.TryGetValue(group, out var members) && _colliderEnabled[members[0]];
         }
 
+        public bool IsColliderEnabled(int colliderId)
+        {
+            return _colliderIndices.TryGetValue(colliderId, out var collider) && _colliderEnabled[collider];
+        }
+
         public bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, int layerMask, out WorldHit hit)
         {
             hit = default;
