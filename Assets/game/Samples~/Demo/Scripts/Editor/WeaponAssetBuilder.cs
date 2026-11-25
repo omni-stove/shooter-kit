@@ -248,6 +248,7 @@ namespace Shooter.Editor
             BuildFromJsonAt(ReferenceJsonFolder, ReferenceFolder, ReferenceWeaponsPath);
             BuildFromJsonAt(RealisticJsonFolder, RealisticFolder, RealisticWeaponsPath);
             WindUpSoundAssetBuilder.Build();
+            ProjectileLookAssetBuilder.Build();
 
             // 既定の武器はコードの値でなく JSON から作ったアセットを並べ、JSON を直せば既定の武器も変わるようにする。
             BuildCatalogAndLoadoutAt(
