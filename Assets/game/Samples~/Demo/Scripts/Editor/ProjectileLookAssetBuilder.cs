@@ -214,6 +214,12 @@ namespace Shooter.Editor
                     GameObject visual = null;
                     if (kind != ProjectileLookKind.None)
                     {
+                        if (look.Visual != null && !IsBuiltHere(look.Visual, folder))
+                        {
+                            // ゲームが自分で差した見た目は遅い弾でも残す。
+                            continue;
+                        }
+
                         if (!prefabs.TryGetValue(kind, out visual))
                         {
                             visual = PresentationAssetBuilder.SavePrefab(folder, PrefabName(kind), root => BuildLook(root, kind, paint, trailMaterial));
