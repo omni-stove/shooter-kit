@@ -133,6 +133,14 @@ namespace Shooter.Server
                     return false;
                 }
 
+                // 掛けた部品が壊れたら離す (オフラインの GrappleAbility と同じ Lost)。続けると、消えた先へ引かれて宙で止まる。
+                // ふつうの移動に戻すので、引かれていた勢い (previous.Velocity) はそのまま残り、ぶら下がっていたなら落ちる
+                if (!_context.Map.Collision.IsColliderEnabled(mover.Hook.Target.ColliderId))
+                {
+                    ReleaseGrapple(mover, GrappleEnd.Lost, frame.Tick, previous.Velocity.Length());
+                    return false;
+                }
+
                 current = ContinueGrapple(mover, frame.Tick, previous, jumpPressed);
                 return true;
             }

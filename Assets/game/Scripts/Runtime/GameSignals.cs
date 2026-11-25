@@ -108,6 +108,9 @@ namespace Shooter.Runtime
 
         public static GameSignal<StaminaStatus?> Stamina { get; } = new GameSignal<StaminaStatus?>(nameof(Stamina));
 
+        // 手元のプレイヤーがグラップルを持ち、縄に掛かっていない間だけ出す。見せ方は受け取る UI に任せ、ここは掛かるかと掛かる先だけを持つ。
+        public static GameSignal<GrappleAimStatus?> GrappleAim { get; } = new GameSignal<GrappleAimStatus?>(nameof(GrappleAim));
+
         public static GameSignal<LockOnWarningStatus?> LockOnWarning { get; } = new GameSignal<LockOnWarningStatus?>(nameof(LockOnWarning));
 
         public static GameSignal<IEmoteControl> Emotes { get; } = new GameSignal<IEmoteControl>(nameof(Emotes));
@@ -202,6 +205,7 @@ namespace Shooter.Runtime
             Account.Reset();
             AccountControl.Reset();
             Stamina.Reset();
+            GrappleAim.Reset();
             LockOnWarning.Reset();
             Emotes.Reset();
             Holster.Reset();

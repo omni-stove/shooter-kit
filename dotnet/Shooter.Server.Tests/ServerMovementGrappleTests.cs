@@ -31,6 +31,8 @@ namespace Shooter.Server.Tests
         private ServerMovement _movement;
         private bool _equipped;
         private int _nextInputTick;
+        private ServerMapData _map;
+        private int _wallGroup = WorldCollider.StaticGroup;
 
         [SetUp]
         public void SetUp()
@@ -407,6 +409,69 @@ namespace Shooter.Server.Tests
             Assert.That(ServerGrappleLog.Loaded(grapple, null), Is.EqualTo("[Grapple] grapple id=grapple range=2-30 charges=2 from -"));
         }
 
+        [Test]
+        public void AWallPieceBrokenDuringThePullLetsGoWithThePullMomentum()
+        {
+            _wallGroup = MapColliderGroups.Piece(0, 0);
+            Start();
+            Settle();
+            Send(InputButtons.Grapple);
+            for (var i = 0; i < 5; i++)
+            {
+                Send(InputButtons.None);
+            }
+
+            Assert.That(_movement.IsGrappling(1), Is.True);
+            Assert.That(_movement.IsHanging(1), Is.False, "still being pulled");
+            _movement.TryGetState(1, out var pulled);
+
+            Assert.That(_map.Collision.SetGroupEnabled(_wallGroup, false), Is.True);
+            Send(InputButtons.None);
+
+            Assert.That(_movement.IsGrappling(1), Is.False);
+            Assert.That(_log.ToString(), Does.Match(@"\[Grapple\] released reason=Lost speed=\d+\.\d\d owner=1"));
+            Assert.That(_log.ToString(), Does.Not.Contain("released reason=Lost speed=0.00"), "the pull's speed is kept");
+            _movement.TryGetState(1, out var after);
+            Assert.That(after.Position.Z, Is.GreaterThan(pulled.Position.Z), "the player keeps flying forward");
+            Assert.That(after.Velocity.Z, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void AWallPieceBrokenWhileHangingDropsThePlayer()
+        {
+            _wallGroup = MapColliderGroups.Piece(0, 0);
+            Start();
+            Settle();
+            Send(InputButtons.Grapple);
+            var hanging = PullUntilHanging();
+
+            _map.Collision.SetGroupEnabled(_wallGroup, false);
+            Send(InputButtons.None);
+
+            Assert.That(_movement.IsGrappling(1), Is.False);
+            Assert.That(_log.ToString(), Does.Contain("[Grapple] released reason=Lost speed=0.00 owner=1"));
+            for (var i = 0; i < 10; i++)
+            {
+                Send(InputButtons.None);
+            }
+
+            _movement.TryGetState(1, out var after);
+            Assert.That(after.Position.Y, Is.LessThan(hanging.Position.Y), "nothing holds the player in the air");
+        }
+
+        [Test]
+        public void AnIntactWallPieceHoldsTheHook()
+        {
+            _wallGroup = MapColliderGroups.Piece(0, 0);
+            Start();
+            Settle();
+            Send(InputButtons.Grapple);
+
+            PullUntilHanging();
+
+            Assert.That(_log.ToString(), Does.Not.Contain("reason=Lost"));
+        }
+
         private CharacterMotorState PullUntilHanging(InputButtons held = InputButtons.None)
         {
             for (var i = 0; i < _maxPullTicks && !_movement.IsHanging(1); i++)
@@ -459,8 +524,8 @@ namespace Shooter.Server.Tests
             _host.Register(_movement);
             _host.Register(snapshots);
             var options = new NetLaunchOptions(NetLaunchMode.Server, NetLaunchOptions.AnyAddress, NetLaunchOptions.DefaultPort);
-            var map = new ServerMapData("NetTest", World(), TestMaps.NavMesh(), "memory");
-            var context = new ServerContext(options, "0.2.0", _log, map, _match, new ServerMessenger(_transport), new StubControl());
+            _map = new ServerMapData("NetTest", World(_wallGroup), TestMaps.NavMesh(), "memory");
+            var context = new ServerContext(options, "0.2.0", _log, _map, _match, new ServerMessenger(_transport), new StubControl());
             _host.Start(context);
             _match.Join(_owner, "owner");
             _host.OnConnected(_owner);
@@ -469,12 +534,12 @@ namespace Shooter.Server.Tests
             _nextInputTick = 0;
         }
 
-        private static WorldMap World()
+        private static WorldMap World(int wallGroup)
         {
             return new WorldMap(new[]
             {
                 WorldCollider.Box(1, 0, WorldCollider.StaticGroup, Vector3.Zero, new Vector3(20f, 0.5f, 20f), Quaternion.Identity),
-                WorldCollider.Box(2, 0, WorldCollider.StaticGroup, new Vector3(0f, 1.75f, 8f), new Vector3(10f, 1.25f, 0.5f), Quaternion.Identity),
+                WorldCollider.Box(2, 0, wallGroup, new Vector3(0f, 1.75f, 8f), new Vector3(10f, 1.25f, 0.5f), Quaternion.Identity),
             });
         }
 

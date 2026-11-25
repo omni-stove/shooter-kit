@@ -47,14 +47,7 @@ namespace Shooter.Runtime
         public bool CanUse(AbilityContext context)
         {
             _pendingAim = null;
-            var mover = context.Mover;
-            if (mover == null || !mover.IsInitialized)
-            {
-                return Refuse(GrappleMiss.NoMover, null, null, context.Owner);
-            }
-
-            ResolveAim(context.Owner, out var origin, out var direction);
-            var miss = TryAim(context.Owner.transform, origin, direction, out var aim);
+            var miss = Preview(context.Owner, context.Mover, out var aim);
             if (miss != GrappleMiss.None)
             {
                 return Refuse(miss, aim.Surface != null ? aim.Surface.name : null, aim.Surface != null ? aim.Distance : (float?)null, context.Owner);
@@ -163,6 +156,24 @@ namespace Shooter.Runtime
             context.StopMovementOverride();
             _surface = null;
             _pendingAim = null;
+        }
+
+        // 撃つときと同じ狙いで、今撃ったら掛かるかを調べる。ログも枠も触らないので、毎フレーム呼んでよい。
+        public GrappleMiss Preview(GameObject owner, PlayerController mover, out GrappleAim aim)
+        {
+            if (owner == null)
+            {
+                throw new ArgumentNullException(nameof(owner));
+            }
+
+            aim = default;
+            if (mover == null || !mover.IsInitialized)
+            {
+                return GrappleMiss.NoMover;
+            }
+
+            ResolveAim(owner, out var origin, out var direction);
+            return TryAim(owner.transform, origin, direction, out aim);
         }
 
         // 掴めない面が手前にあれば、その奥に掴める面があっても刺さらない (縄は面を抜けない)。

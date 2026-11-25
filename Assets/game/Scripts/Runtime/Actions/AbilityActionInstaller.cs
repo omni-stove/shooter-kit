@@ -13,6 +13,7 @@ namespace Shooter.Runtime
         public void Install(GameObject player, GameRules rules)
         {
             PlayerActions.GetOrAdd<AbilityHost>(player).Configure(rules);
+            PlayerActions.GetOrAdd<GrappleAimPublisher>(player);
         }
     }
 }
