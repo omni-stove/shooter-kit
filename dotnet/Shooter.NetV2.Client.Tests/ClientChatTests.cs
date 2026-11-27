@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Protocol;
-using CoreChatChannel = Shooter.Core.ChatChannel;
+using CoreChatChannel = GameKit.Core.ChatChannel;
 using WireChatChannel = Shooter.Protocol.ChatChannel;
 
 namespace Shooter.NetV2.Tests

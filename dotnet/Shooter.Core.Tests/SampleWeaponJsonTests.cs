@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using GameKit.Core.Tests;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -343,14 +344,14 @@ namespace Shooter.Core.Tests
         {
             for (var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); directory != null; directory = directory.Parent)
             {
-                var candidate = Path.Combine(directory.FullName, "Assets", "game", "Samples~", "Demo", "Weapons", "Json");
+                var candidate = Path.Combine(directory.FullName, "Assets", "kits", "shooter", "Samples~", "Demo", "Weapons", "Json");
                 if (Directory.Exists(candidate))
                 {
                     return candidate;
                 }
             }
 
-            Assert.Fail("Assets/game/Samples~/Demo/Weapons/Json is not above " + TestContext.CurrentContext.TestDirectory);
+            Assert.Fail("Assets/kits/shooter/Samples~/Demo/Weapons/Json is not above " + TestContext.CurrentContext.TestDirectory);
             return null;
         }
     }

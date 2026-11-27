@@ -1,0 +1,24 @@
+{
+    "name": "Shooter.Protocol",
+    "rootNamespace": "Shooter.Protocol",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "GameKit.World",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Vehicle",
+        "GameKit.Net"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

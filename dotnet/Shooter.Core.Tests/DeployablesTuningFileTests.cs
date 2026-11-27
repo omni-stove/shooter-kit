@@ -68,7 +68,7 @@ namespace Shooter.Core.Tests
             var root = RepositoryRoot();
             var turret = Read(root).All.Single(t => t.Role == DeployRole.Turret);
             var samples = _sampleWeaponFolders
-                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", folder), "*.json"))
+                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Weapons", folder), "*.json"))
                 .Select(path => WeaponSpecJson.Parse(File.ReadAllText(path), path))
                 .ToDictionary(spec => spec.Id);
 
@@ -89,7 +89,7 @@ namespace Shooter.Core.Tests
                     continue;
                 }
 
-                var asset = File.ReadAllText(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Abilities", _assetNames[i] + ".asset"));
+                var asset = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Abilities", _assetNames[i] + ".asset"));
                 var type = catalog.All[i];
                 Assert.That(asset, Does.Contain("  _overflow: " + Text((int)type.Deploy.Overflow) + "\n"), _assetNames[i]);
                 var deploy = type.Deploy;
@@ -114,8 +114,8 @@ namespace Shooter.Core.Tests
             var catalog = Read(root);
             var mine = catalog.All.Single(t => t.Role == DeployRole.Mine);
             var charge = catalog.All.Single(t => t.Role == DeployRole.RemoteCharge);
-            var mineAsset = File.ReadAllText(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Abilities", "DeployMine.asset"));
-            var chargeAsset = File.ReadAllText(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Abilities", "DeployRemoteCharge.asset"));
+            var mineAsset = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Abilities", "DeployMine.asset"));
+            var chargeAsset = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Abilities", "DeployRemoteCharge.asset"));
 
             Assert.That(mineAsset, Does.Contain("  _armSeconds: " + Text(mine.Mine.ArmSeconds) + "\n"));
             Assert.That(mineAsset, Does.Contain("  _triggerRadius: " + Text(mine.Mine.TriggerRadius) + "\n"));

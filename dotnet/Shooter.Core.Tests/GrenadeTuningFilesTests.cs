@@ -16,7 +16,7 @@ namespace Shooter.Core.Tests
         {
             var root = RepositoryRoot();
             var server = File.ReadAllText(Path.Combine(root, "server-data", "tuning", "grenade.json"));
-            var unity = File.ReadAllText(Path.Combine(root, "Assets", "game", "Resources", "Tuning", "grenade.json"));
+            var unity = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Resources", "Tuning", "grenade.json"));
 
             Assert.That(server, Is.EqualTo(unity));
         }
@@ -25,7 +25,7 @@ namespace Shooter.Core.Tests
         public void OnlyTheFragGrenadeIsCarriedAndItIsUnchanged()
         {
             var catalog = TuningJson.ParseGrenades(
-                File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "game", "Resources", "Tuning", "grenade.json")), "grenade.json");
+                File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "kits", "shooter", "Resources", "Tuning", "grenade.json")), "grenade.json");
 
             Assert.That(
                 catalog.Types.Select(t => t.NameKey),
@@ -48,7 +48,7 @@ namespace Shooter.Core.Tests
         public void TheFlashBlindsAndDoesNotExplode()
         {
             var catalog = TuningJson.ParseGrenades(
-                File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "game", "Resources", "Tuning", "grenade.json")), "grenade.json");
+                File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "kits", "shooter", "Resources", "Tuning", "grenade.json")), "grenade.json");
 
             var flash = catalog.Types.Single(t => t.NameKey == "grenade.flash");
             Assert.That(flash.Impact.Blind, Is.Not.Null);

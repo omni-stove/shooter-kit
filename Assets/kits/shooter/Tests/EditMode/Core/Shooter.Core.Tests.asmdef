@@ -1,0 +1,35 @@
+{
+    "name": "Shooter.Core.Tests",
+    "rootNamespace": "Shooter.Core.Tests",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "GameKit.World",
+        "Shooter.Core.Grapple",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.CoopHold",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

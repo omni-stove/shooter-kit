@@ -1,0 +1,23 @@
+{
+    "name": "Shooter.Stealth",
+    "rootNamespace": "Shooter.Runtime",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "Shooter.Core.Presentation",
+        "Shooter.Stealth.Core",
+        "Shooter.Runtime",
+        "Unity.InputSystem",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

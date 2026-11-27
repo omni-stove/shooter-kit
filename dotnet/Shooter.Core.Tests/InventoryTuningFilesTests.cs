@@ -179,7 +179,7 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(root)), "inventory.json");
             foreach (var language in _languages)
             {
-                var table = File.ReadAllText(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Resources", "Localization", language, "items.json"));
+                var table = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Resources", "Localization", language, "items.json"));
                 foreach (var item in catalog.Items)
                 {
                     Assert.That(table, Does.Contain("\"" + item.NameKey + "\":"), language + " names " + item.NameKey);
@@ -191,14 +191,14 @@ namespace Shooter.Core.Tests
         private static System.Collections.Generic.Dictionary<string, WeaponSpec> SampleWeapons(string root)
         {
             return _sampleWeaponFolders
-                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "game", "Samples~", "Demo", "Weapons", folder), "*.json"))
+                .SelectMany(folder => Directory.GetFiles(Path.Combine(root, "Assets", "kits", "shooter", "Samples~", "Demo", "Weapons", folder), "*.json"))
                 .Select(path => WeaponSpecJson.Parse(File.ReadAllText(path), path))
                 .ToDictionary(spec => spec.Id);
         }
 
         private static string UnityPath(string root)
         {
-            return Path.Combine(root, "Assets", "game", "Resources", "Tuning", "inventory.json");
+            return Path.Combine(root, "Assets", "kits", "shooter", "Resources", "Tuning", "inventory.json");
         }
 
         private static string RepositoryRoot()

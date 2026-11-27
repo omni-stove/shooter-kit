@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using GameKit.Core;
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

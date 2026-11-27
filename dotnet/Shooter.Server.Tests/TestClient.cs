@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using GameKit.Net;
 using Shooter.Protocol;
 
 namespace Shooter.Server.Tests

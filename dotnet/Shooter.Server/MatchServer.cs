@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;
 
@@ -382,7 +383,7 @@ namespace Shooter.Server
             {
                 Reject(
                     connection,
-                    UdpMatchTransport.ProtocolMismatchReason,
+                    DisconnectNotice.ProtocolMismatchReason,
                     "protocol version mismatch (client " + request.ProtocolVersion.ToString(CultureInfo.InvariantCulture)
                         + ", server " + MatchProtocol.Version.ToString(CultureInfo.InvariantCulture) + ")");
                 return;

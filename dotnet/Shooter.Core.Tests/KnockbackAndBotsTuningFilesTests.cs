@@ -11,7 +11,7 @@ namespace Shooter.Core.Tests
         {
             var root = RepositoryRoot();
             var server = File.ReadAllText(Path.Combine(root, "server-data", "tuning", "knockback.json"));
-            var unity = File.ReadAllText(Path.Combine(root, "Assets", "game", "Resources", "Tuning", "knockback.json"));
+            var unity = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Resources", "Tuning", "knockback.json"));
 
             Assert.That(server, Is.EqualTo(unity));
             Assert.That(TuningJson.ParseKnockback(server, "knockback.json").Explosion.Speed, Is.EqualTo(8f));
@@ -22,7 +22,7 @@ namespace Shooter.Core.Tests
         {
             var root = RepositoryRoot();
             var server = File.ReadAllText(Path.Combine(root, "server-data", "tuning", "bots.json"));
-            var unity = File.ReadAllText(Path.Combine(root, "Assets", "game", "Resources", "Tuning", "bots.json"));
+            var unity = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Resources", "Tuning", "bots.json"));
 
             Assert.That(server, Is.EqualTo(unity));
             var spec = TuningJson.ParseBots(server, "bots.json");

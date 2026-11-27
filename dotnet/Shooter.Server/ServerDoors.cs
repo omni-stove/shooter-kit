@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using GameKit.Net;
+using GameKit.World;
 using Shooter.Core;
 using Shooter.Protocol;
 

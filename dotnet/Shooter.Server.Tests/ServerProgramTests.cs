@@ -4,10 +4,10 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.EosSdk;
-using Shooter.Protocol;
 
 namespace Shooter.Server.Tests
 {

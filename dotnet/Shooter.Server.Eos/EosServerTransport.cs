@@ -1,8 +1,11 @@
 using System;
 using System.IO;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.EosSdk;
+#if EOS_SDK
 using Shooter.Protocol;
+#endif
 
 namespace Shooter.Server.Eos
 {

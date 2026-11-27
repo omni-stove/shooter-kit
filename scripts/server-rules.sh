@@ -6,7 +6,7 @@
 # 使い方: sh scripts/server-rules.sh [<Demo の Rules> <server-data/rules>]
 set -eu
 cd "$(dirname "$0")/.."
-assets="${1:-Assets/game/Samples~/Demo/Rules}"
+assets="${1:-Assets/kits/shooter/Samples~/Demo/Rules}"
 server="${2:-server-data/rules}"
 list="$server/hand-written.txt"
 match="$assets/NetMatch.asset"

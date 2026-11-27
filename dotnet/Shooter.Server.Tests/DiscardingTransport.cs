@@ -1,5 +1,5 @@
 using System;
-using Shooter.Protocol;
+using GameKit.Net;
 
 namespace Shooter.Server.Tests
 {

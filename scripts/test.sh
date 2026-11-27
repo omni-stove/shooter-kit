@@ -9,7 +9,7 @@ if [ "${1:-}" = "--since" ]; then
 	[ "$(bash scripts/affected.sh "${2:?--since には比べる先のコミットを渡す}" | sed -n 's/^test=//p')" = true ] || exit 0
 fi
 
-if ! out="$(dotnet test dotnet/Shooter.slnx -v q --nologo --logger 'console;verbosity=normal' 2>&1)"; then
+if ! out="$(dotnet test dotnet/GameKit.slnx -v q --nologo --logger 'console;verbosity=normal' 2>&1)"; then
 	# 失敗したテストのブロックは "  Failed <name>" から次のテスト結果か集計までで、ビルドエラーは 1 行ずつ出る。
 	printf '%s\n' "$out" | awk '
 		/^  Failed / { block = 1 }

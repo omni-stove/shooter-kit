@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.EosSdk;
-using Shooter.Protocol;
 using Shooter.Server.Eos;
 
 namespace Shooter.Server

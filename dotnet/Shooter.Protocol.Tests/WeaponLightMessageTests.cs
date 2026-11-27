@@ -1,3 +1,4 @@
+using GameKit.Net;
 using NUnit.Framework;
 
 namespace Shooter.Protocol.Tests

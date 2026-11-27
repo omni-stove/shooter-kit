@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server.Tests
 {

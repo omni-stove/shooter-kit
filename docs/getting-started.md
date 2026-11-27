@@ -11,16 +11,17 @@
 1. `Packages/manifest.json` の `dependencies` に足し、`Packages/packages-lock.json` もコミットする。
 
    ```json
-   "com.omnistove.shooter-kit": "https://github.com/omni-stove/shooter-kit.git?path=/Assets/game#v0.1.0"
+   "com.omnistove.game-kit": "https://github.com/omni-stove/game-kit.git?path=/Assets/kits/core#v0.1.0",
+   "com.omnistove.game-kit.shooter": "https://github.com/omni-stove/game-kit.git?path=/Assets/kits/shooter#v0.1.0"
    ```
 
 2. **Edit > Project Settings > Player > Active Input Handling** を `Input System Package (New)` か `Both` にする。
 3. **Window > Package Manager** で Shooter Kit の **Samples** から **Demo Game** を **Import** する。
-   取り込み先は `Assets/Samples/Shooter Kit/<版>/Demo Game/` (以下 `<Demo>`。このリポジトリでは `Assets/Samples/ShooterKitDemo/` で、中身は `Assets/game/Samples~/Demo`)。
+   取り込み先は `Assets/Samples/Shooter Kit/<版>/Demo Game/` (以下 `<Demo>`。このリポジトリでは `Assets/Samples/ShooterKitDemo/` で、中身は `Assets/kits/shooter/Samples~/Demo`)。
 4. **Shooter > Build All Scenes** を一度実行する (`make build-scenes` でもよい)。
 5. `<Demo>/Scenes/Bootstrap.unity` (射撃場) を開いて Play する。左クリックで撃ち、`2` と `1` で武器を持ち替えられれば入っている。
 
-Editor のスクリプトが作るアセットとシーンの置き場 (出力先) は、Demo を入れていれば `<Demo>`、無ければ `Assets/game`。各タスクの `--root <dir>` (`-shooterKitRoot`) で替えられる。
+Editor のスクリプトが作るアセットとシーンの置き場 (出力先) は、Demo を入れていれば `<Demo>`、無ければ `Assets/kits/shooter`。各タスクの `--root <dir>` (`-shooterKitRoot`) で替えられる。
 
 ## 2. Demo の武器を 1 つ差し替える
 
@@ -118,7 +119,7 @@ Editor のスクリプトが作るアセットとシーンの置き場 (出力�
 
 - 見た目と音は `GameContent` の「見た目・音」の欄のカタログ (各 `*Catalog`) に入れる。武器のものは武器の `id` ごとに引く。空ならキットがコードで仮の形を作るか、出さない。
 - プレイヤーと敵の体は `GameContent` の **Character Rig** (根に Animator)。
-- 画面 (HUD・メニュー) はキットに無い。Demo の `Shooter.Runtime.UI` を写して直すか、`GameSignals` と `CombatEvents` を読む自分の画面を作る ([Assets/game/README.md](../Assets/game/README.md) の「画面」)。
+- 画面 (HUD・メニュー) はキットに無い。Demo の `Shooter.Runtime.UI` を写して直すか、`GameSignals` と `CombatEvents` を読む自分の画面を作る ([Assets/kits/shooter/README.md](../Assets/kits/shooter/README.md) の「画面」)。
 - 文言は `<Demo>/Resources/Localization/<言語>/*.json` に、どの言語にも同じキーで書く。
 
 ## 7. オフラインで動かす

@@ -18,12 +18,12 @@ make export-server-rules    # ルールと調整値 → server-data/rules/、ser
 
 | ファイル | 正 | 作り方 |
 | --- | --- | --- |
-| `ping`・`grenade`・`inventory`・`knockback`・`bots`・`assist`・`loot`・`melee`・`streaks`・`extraction`・`stash`・`holster`・`breach` (`.json`) | `Assets/game/Resources/Tuning/` (入口 `GameContent` の欄があればそちら) | `make export-server-rules` で写す |
+| `ping`・`grenade`・`inventory`・`knockback`・`bots`・`assist`・`loot`・`melee`・`streaks`・`extraction`・`stash`・`holster`・`breach` (`.json`) | `Assets/kits/shooter/Resources/Tuning/` (入口 `GameContent` の欄があればそちら) | `make export-server-rules` で写す |
 | `economy.json` | `server-data` | 手で書く。オンラインのルールの武器の一覧 (`catalog`) にある武器だけを、買える品と値段として置く。財布の額は試合の設定 (`match.economy`) から読む |
 | `chat-words.json` | `server-data` | 手で書く。チャットはオンラインだけなので、伏せる語はサーバーの分を置く |
 | `anticheat`・`deployables`・`battle-royale` (`.json`) | `server-data` | 手で書く。クライアントに同じ名前のファイルは無い |
 | `pickup-drops.json` | `server-data` | 手で書く (無ければ Core の `PickupDropSpec` の既定)。倒れた人が落とす武器・予備弾・消えるまでの秒数。オフラインではプレイヤーの `DropOnDeath` に置く値 |
-| `mutators.json` | `Assets/game/Resources/Tuning/` | 使うときだけ写す。無ければオンラインの変則ルールは無し |
+| `mutators.json` | `Assets/kits/shooter/Resources/Tuning/` | 使うときだけ写す。無ければオンラインの変則ルールは無し |
 | `emotes.json` | 入口 `GameContent` の `EmotesTuning` (キットの `Resources/Tuning/` には無い) | `make export-server-rules` で写す。無ければ `{}` (エモート無し) を置き、サーバーはどの Id の要求も断る |
 
 `server-data/tuning/` と `Resources/Tuning/` の両方にある同じ名前のファイルは、`economy.json`・`chat-words.json` を除き、中身が同じでないと `scripts/lint.sh` (CI の lint) が落ちる (`scripts/server-tuning.sh`)。片方にしか無いファイルも、`scripts/server-tuning.txt` に `server-only`・`resources-only` として書いていなければ落ちる。サーバー用に別の中身を持たせるファイル (`server-owned`) や片方にだけ置くファイルを増やすときは、その一覧とこの表に足す。

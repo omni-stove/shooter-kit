@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Shooter.Core;
+using GameKit.World;
 
 namespace Shooter.Server
 {

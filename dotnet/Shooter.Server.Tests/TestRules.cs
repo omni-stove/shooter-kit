@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Server.Tests

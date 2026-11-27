@@ -1,8 +1,8 @@
 using System;
 using System.Globalization;
 using System.Net;
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

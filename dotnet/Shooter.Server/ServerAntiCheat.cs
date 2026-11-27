@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;
 using Shooter.Server.Eos;

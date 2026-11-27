@@ -1,0 +1,417 @@
+using System;
+using GameKit.Core;
+using NUnit.Framework;
+
+namespace Shooter.Core.Tests
+{
+    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    public sealed class TuningJsonTests
+    {
+        private const string _frag = GrenadeSpec.DefaultId;
+        private const string _smoke = "ecaf6e57-cb77-4707-9321-6ea5b659408f";
+        private const string _flash = "bcc273d5-24a8-42f4-bb3c-b054d001434d";
+
+        private static readonly string[] _expectedGrenadeItemNames =
+        {
+            "id", "nameKey", "fuseSeconds", "throwSeconds", "throwSpeed", "throwLiftSpeed",
+            "maxDamage", "damageRadius", "fullDamageRadius", "structureDamageAtCenter", "impact", "stickiness", "rollDamping",
+            "bodyRadius", "mass", "bounciness", "friction", "angularDamping", "releaseDistance",
+        };
+
+        private static readonly string[] _expectedPingItemNames =
+        {
+            "lifetimeSeconds", "maxMarkers", "maxDistance", "enemyAimToleranceDegrees", "minIntervalSeconds",
+        };
+
+        private static readonly string[] _expectedKnockbackItemNames =
+        {
+            "explosionSpeed", "explosionUpwardRatio", "explosionWeightFactor",
+            "meleeSpeed", "meleeUpwardRatio", "meleeWeightFactor",
+            "chargeSpeed", "chargeUpwardRatio", "chargeWeightFactor",
+            "minSpeed", "minAirSeconds", "maxAirSeconds", "airControl", "gravity", "recoverSeconds", "landingSnapRadius",
+            "playerWeight", "enemyWeight",
+        };
+
+        [Test]
+        public void ReadsEveryGrenadeItem()
+        {
+            var spec = TuningJson.ParseGrenade(
+                "{\"fuseSeconds\": 1.5, \"throwSeconds\": 0.4, \"throwSpeed\": 20, \"throwLiftSpeed\": 2.5, \"rollDamping\": 1.5,"
+                + " \"maxDamage\": 90, \"damageRadius\": 8, \"fullDamageRadius\": 2, \"structureDamageAtCenter\": 60}",
+                "grenade.json");
+
+            Assert.That(spec.FuseSeconds, Is.EqualTo(1.5f));
+            Assert.That(spec.ThrowSeconds, Is.EqualTo(0.4f));
+            Assert.That(spec.ThrowSpeed, Is.EqualTo(20f));
+            Assert.That(spec.ThrowLiftSpeed, Is.EqualTo(2.5f));
+            Assert.That(spec.RollDamping, Is.EqualTo(1.5f));
+            Assert.That(spec.MaxDamage, Is.EqualTo(90));
+            Assert.That(spec.DamageRadius, Is.EqualTo(8f));
+            Assert.That(spec.FullDamageRadius, Is.EqualTo(2f));
+            Assert.That(spec.StructureDamageAtCenter, Is.EqualTo(60));
+        }
+
+        [Test]
+        public void OmittedGrenadeItemsUseTheDefaults()
+        {
+            var spec = TuningJson.ParseGrenade("{\"damageRadius\": 9}", "grenade.json");
+
+            Assert.That(spec.DamageRadius, Is.EqualTo(9f));
+            Assert.That(spec.FuseSeconds, Is.EqualTo(GrenadeSpec.DefaultFuseSeconds));
+            Assert.That(spec.ThrowSpeed, Is.EqualTo(GrenadeSpec.DefaultThrowSpeed));
+            Assert.That(spec.MaxDamage, Is.EqualTo(GrenadeSpec.DefaultMaxDamage));
+            Assert.That(spec.FullDamageRadius, Is.EqualTo(GrenadeSpec.DefaultFullDamageRadius));
+        }
+
+        [Test]
+        public void AnEmptyObjectIsTheDefaultSpec()
+        {
+            var grenade = TuningJson.ParseGrenade("﻿{ }", "grenade.json");
+            var ping = TuningJson.ParsePing("{}", "ping.json");
+
+            Assert.That(grenade.FuseSeconds, Is.EqualTo(GrenadeSpec.DefaultFuseSeconds));
+            Assert.That(grenade.StructureDamageAtCenter, Is.EqualTo(GrenadeSpec.DefaultStructureDamageAtCenter));
+            Assert.That(ping.LifetimeSeconds, Is.EqualTo(PingSpec.DefaultLifetimeSeconds));
+            Assert.That(ping.MinIntervalSeconds, Is.EqualTo(PingSpec.DefaultMinIntervalSeconds));
+        }
+
+        [Test]
+        public void ReadsAListOfGrenadeTypesAndWhichAreCarried()
+        {
+            var catalog = TuningJson.ParseGrenades(
+                "{\"types\": ["
+                + "{\"id\": \"" + _frag + "\", \"nameKey\": \"grenade.frag\", \"damageRadius\": 5},"
+                + "{\"id\": \"" + _smoke + "\", \"nameKey\": \"grenade.smoke\", \"fuseSeconds\": 1, \"stickiness\": \"Surfaces\","
+                + " \"impact\": {\"damage\": 0, \"areaEffect\": {\"radius\": 5, \"durationSeconds\": 15, \"tickSeconds\": 0.5, \"damagePerTick\": 0, \"visualId\": \"smoke\"}}}"
+                + "], \"carried\": [\"" + _smoke + "\", \"" + _frag + "\"]}",
+                "grenade.json");
+
+            Assert.That(catalog.Types.Count, Is.EqualTo(2));
+            Assert.That(catalog.Types[0].DamageRadius, Is.EqualTo(5f));
+            Assert.That(catalog.Types[0].MaxDamage, Is.EqualTo(GrenadeSpec.DefaultMaxDamage));
+            var smoke = catalog.Carried[0];
+            Assert.That(smoke.Id, Is.EqualTo(_smoke));
+            Assert.That(smoke.NameKey, Is.EqualTo("grenade.smoke"));
+            Assert.That(smoke.FuseSeconds, Is.EqualTo(1f));
+            Assert.That(smoke.Stickiness, Is.EqualTo(GrenadeStickiness.Surfaces));
+            Assert.That(smoke.Explosion, Is.Null);
+            Assert.That(smoke.Impact.AreaEffect.Radius, Is.EqualTo(5f));
+            Assert.That(smoke.Impact.AreaEffect.VisualId, Is.EqualTo("smoke"));
+            Assert.That(catalog.Carried[1].Id, Is.EqualTo(_frag));
+        }
+
+        [Test]
+        public void AFlashTypeReadsHowItBlinds()
+        {
+            var catalog = TuningJson.ParseGrenades(
+                "{\"types\": [{\"id\": \"" + _flash + "\", \"impact\": {\"damage\": 0, \"blind\": {\"radius\": 12, \"durationSeconds\": 3, \"backFraction\": 0.2}}}]}",
+                "grenade.json");
+
+            var blind = catalog.Types[0].Impact.Blind;
+            Assert.That(blind.Radius, Is.EqualTo(12f));
+            Assert.That(blind.DurationSeconds, Is.EqualTo(3f));
+            Assert.That(blind.BackFraction, Is.EqualTo(0.2f));
+            Assert.That(catalog.Types[0].Explosion, Is.Null);
+        }
+
+        [Test]
+        public void ABadBlindNamesTheItem()
+        {
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades(
+                    "{\"types\": [{\"id\": \"" + _flash + "\", \"impact\": {\"blind\": {\"radius\": 12, \"durationSeconds\": 3, \"backFraction\": 2}}}]}", "g")).Item,
+                Is.EqualTo("types[0].impact.blind.backFraction"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades(
+                    "{\"types\": [{\"id\": \"" + _flash + "\", \"impact\": {\"blind\": {\"radius\": 12, \"durationSeconds\": 3}}}]}", "g")).Item,
+                Is.EqualTo("types[0].impact.blind.backFraction"));
+        }
+
+        [Test]
+        public void WithoutCarriedOnlyTheFirstTypeIsCarried()
+        {
+            var catalog = TuningJson.ParseGrenades(
+                "{\"types\": [{\"id\": \"" + _frag + "\"}, {\"id\": \"" + _smoke + "\", \"impact\": {\"damage\": 0}}]}", "g");
+
+            Assert.That(catalog.Carried.Count, Is.EqualTo(1));
+            Assert.That(catalog.Carried[0].Id, Is.EqualTo(_frag));
+        }
+
+        [Test]
+        public void TheOneTypeFormIsReadAsTheOnlyCarriedType()
+        {
+            var catalog = TuningJson.ParseGrenades("{\"damageRadius\": 9}", "grenade.json");
+
+            Assert.That(catalog.Types.Count, Is.EqualTo(1));
+            Assert.That(catalog.Carried[0].Id, Is.EqualTo(GrenadeSpec.DefaultId));
+            Assert.That(catalog.Carried[0].DamageRadius, Is.EqualTo(9f));
+        }
+
+        [Test]
+        public void ABadGrenadeListNamesTheItem()
+        {
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"id\": \"" + _frag + "\", \"fuseSeconds\": -1}]}", "g")).Item,
+                Is.EqualTo("types[0].fuseSeconds"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"id\": \"frag\"}]}", "g")).Item,
+                Is.EqualTo("types[0].id"),
+                "ids are UUIDs like the weapons'");
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"id\": \"" + _frag + "\"}], \"carried\": [\"" + _smoke + "\"]}", "g")).Item,
+                Is.EqualTo("carried"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"id\": \"" + _frag + "\"}, {\"id\": \"" + _frag + "\"}]}", "g")).Item,
+                Is.EqualTo("types"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": []}", "g")).Item,
+                Is.EqualTo("types"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"maxDamage\": 10, \"impact\": {}}]}", "g")).Item,
+                Is.EqualTo("types[0].maxDamage"),
+                "an explosion written both flat and in impact is ambiguous");
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"impact\": {\"blast\": 1}}]}", "g")).Item,
+                Is.EqualTo("types[0].impact.blast"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenades("{\"types\": [{\"stickiness\": \"Glue\"}]}", "g")).Item,
+                Is.EqualTo("types[0].stickiness"));
+        }
+
+        [Test]
+        public void ReadsEveryPingItem()
+        {
+            var spec = TuningJson.ParsePing(
+                "{\"lifetimeSeconds\": 10, \"maxMarkers\": 5, \"maxDistance\": 80.5, \"enemyAimToleranceDegrees\": 4, \"minIntervalSeconds\": 1.25}",
+                "ping.json");
+
+            Assert.That(spec.LifetimeSeconds, Is.EqualTo(10f));
+            Assert.That(spec.MaxMarkers, Is.EqualTo(5));
+            Assert.That(spec.MaxDistance, Is.EqualTo(80.5f));
+            Assert.That(spec.EnemyAimToleranceDegrees, Is.EqualTo(4f));
+            Assert.That(spec.MinIntervalSeconds, Is.EqualTo(1.25f));
+        }
+
+        [Test]
+        public void TheItemNamesAreTheConstructorArguments()
+        {
+            Assert.That(TuningJson.GrenadeItemNames, Is.EqualTo(_expectedGrenadeItemNames));
+            Assert.That(TuningJson.PingItemNames, Is.EqualTo(_expectedPingItemNames));
+            Assert.That(TuningJson.KnockbackItemNames, Is.EqualTo(_expectedKnockbackItemNames));
+        }
+
+        [Test]
+        public void ReadsEveryKnockbackItem()
+        {
+            var spec = TuningJson.ParseKnockback(
+                "{\"explosionSpeed\": 12, \"explosionUpwardRatio\": 0.6, \"explosionWeightFactor\": 0.5,"
+                + " \"meleeSpeed\": 3, \"meleeUpwardRatio\": 0.1, \"meleeWeightFactor\": 0,"
+                + " \"chargeSpeed\": 9, \"chargeUpwardRatio\": 0.3, \"chargeWeightFactor\": 2,"
+                + " \"minSpeed\": 2, \"minAirSeconds\": 0.2, \"maxAirSeconds\": 4, \"airControl\": 0.5,"
+                + " \"gravity\": 15, \"recoverSeconds\": 0.8, \"landingSnapRadius\": 6,"
+                + " \"playerWeight\": 1.5, \"enemyWeight\": 3}",
+                "knockback.json");
+
+            Assert.That(spec.Explosion.Speed, Is.EqualTo(12f));
+            Assert.That(spec.Explosion.UpwardRatio, Is.EqualTo(0.6f));
+            Assert.That(spec.Explosion.WeightFactor, Is.EqualTo(0.5f));
+            Assert.That(spec.Melee.Speed, Is.EqualTo(3f));
+            Assert.That(spec.Melee.UpwardRatio, Is.EqualTo(0.1f));
+            Assert.That(spec.Melee.WeightFactor, Is.EqualTo(0f));
+            Assert.That(spec.Charge.Speed, Is.EqualTo(9f));
+            Assert.That(spec.Charge.UpwardRatio, Is.EqualTo(0.3f));
+            Assert.That(spec.Charge.WeightFactor, Is.EqualTo(2f));
+            Assert.That(spec.MinSpeed, Is.EqualTo(2f));
+            Assert.That(spec.MinAirSeconds, Is.EqualTo(0.2f));
+            Assert.That(spec.MaxAirSeconds, Is.EqualTo(4f));
+            Assert.That(spec.AirControl, Is.EqualTo(0.5f));
+            Assert.That(spec.Gravity, Is.EqualTo(15f));
+            Assert.That(spec.RecoverSeconds, Is.EqualTo(0.8f));
+            Assert.That(spec.LandingSnapRadius, Is.EqualTo(6f));
+            Assert.That(spec.PlayerWeight, Is.EqualTo(1.5f));
+            Assert.That(spec.EnemyWeight, Is.EqualTo(3f));
+        }
+
+        [Test]
+        public void OmittedKnockbackItemsUseTheDefaults()
+        {
+            var spec = TuningJson.ParseKnockback("{\"explosionSpeed\": 10, \"enemyWeight\": 2}", "knockback.json");
+
+            Assert.That(spec.Explosion.Speed, Is.EqualTo(10f));
+            Assert.That(spec.Explosion.UpwardRatio, Is.EqualTo(KnockbackSpec.DefaultExplosionUpwardRatio));
+            Assert.That(spec.Explosion.WeightFactor, Is.EqualTo(KnockbackSpec.DefaultExplosionWeightFactor));
+            Assert.That(spec.Melee.Speed, Is.EqualTo(KnockbackSpec.DefaultMeleeSpeed));
+            Assert.That(spec.Charge.Speed, Is.EqualTo(KnockbackSpec.DefaultChargeSpeed));
+            Assert.That(spec.Gravity, Is.EqualTo(KnockbackSpec.DefaultGravity));
+            Assert.That(spec.PlayerWeight, Is.EqualTo(KnockbackSpec.DefaultWeight));
+            Assert.That(spec.EnemyWeight, Is.EqualTo(2f));
+
+            var empty = TuningJson.ParseKnockback("{}", "knockback.json");
+            Assert.That(empty.Explosion.Speed, Is.EqualTo(KnockbackSpec.DefaultExplosionSpeed));
+            Assert.That(empty.LandingSnapRadius, Is.EqualTo(KnockbackSpec.DefaultLandingSnapRadius));
+        }
+
+        [Test]
+        public void AnInvalidForceNamesItsKindAndPart()
+        {
+            var speed = Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"meleeSpeed\": -1}", "knockback.json"));
+            var upward = Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"chargeUpwardRatio\": 1.5}", "knockback.json"));
+            var factor = Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"explosionWeightFactor\": -0.5}", "knockback.json"));
+
+            Assert.That(speed.Item, Is.EqualTo("meleeSpeed"));
+            Assert.That(speed.SourceName, Is.EqualTo("knockback.json"));
+            Assert.That(speed.Message, Does.Contain("knockback.json").And.Contain("meleeSpeed"));
+            Assert.That(speed.InnerException, Is.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(upward.Item, Is.EqualTo("chargeUpwardRatio"));
+            Assert.That(factor.Item, Is.EqualTo("explosionWeightFactor"));
+        }
+
+        [Test]
+        public void AnInvalidKnockbackValueNamesTheItem()
+        {
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"playerWeight\": 0}", "k")).Item,
+                Is.EqualTo("playerWeight"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"gravity\": -1}", "k")).Item,
+                Is.EqualTo("gravity"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"minAirSeconds\": 5}", "k")).Item,
+                Is.EqualTo("minAirSeconds"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"enemyWeight\": \"2\"}", "k")).Item,
+                Is.EqualTo("enemyWeight"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"weight\": 2}", "k")).Item,
+                Is.EqualTo("weight"));
+            Assert.Throws<ArgumentNullException>(() => TuningJson.ParseKnockback(null, "k"));
+        }
+
+        [Test]
+        public void AnInvalidValueNamesTheFileAndTheItem()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"damageRadius\": 0}", "grenade.json"));
+
+            Assert.That(e.SourceName, Is.EqualTo("grenade.json"));
+            Assert.That(e.Item, Is.EqualTo("damageRadius"));
+            Assert.That(e.Message, Does.Contain("grenade.json").And.Contain("damageRadius"));
+            Assert.That(e.InnerException, Is.InstanceOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void AFullDamageRadiusOutsideTheDefaultRadiusIsRejected()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"fullDamageRadius\": 7}", "grenade.json"));
+
+            Assert.That(e.Item, Is.EqualTo("fullDamageRadius"));
+        }
+
+        [Test]
+        public void AnInvalidPingValueNamesTheItem()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"maxMarkers\": 0}", "ping.json"));
+
+            Assert.That(e.Item, Is.EqualTo("maxMarkers"));
+            Assert.That(e.Message, Does.Contain("ping.json"));
+        }
+
+        [Test]
+        public void AnUnknownItemIsRejected()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"lifetime\": 3}", "ping.json"));
+
+            Assert.That(e.Item, Is.EqualTo("lifetime"));
+            Assert.That(e.Message, Does.Contain("lifetimeSeconds"), "the message lists the known items");
+        }
+
+        [Test]
+        public void WrongTypesAreRejected()
+        {
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"fuseSeconds\": \"2\"}", "g")).Item,
+                Is.EqualTo("fuseSeconds"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"maxDamage\": 1.5}", "g")).Item,
+                Is.EqualTo("maxDamage"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"maxDamage\": 1e2}", "g")).Item,
+                Is.EqualTo("maxDamage"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"maxMarkers\": 99999999999}", "p")).Item,
+                Is.EqualTo("maxMarkers"));
+            Assert.That(
+                Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"lifetimeSeconds\": null}", "p")).Item,
+                Is.EqualTo("lifetimeSeconds"));
+        }
+
+        [Test]
+        public void ATooLargeNumberIsRejectedWithTheItem()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"throwSpeed\": 1e999}", "g"));
+
+            Assert.That(e.Item, Is.EqualTo("throwSpeed"));
+        }
+
+        [Test]
+        public void BrokenJsonIsRejectedWithoutAnItem()
+        {
+            foreach (var text in new[] { "", "{", "{\"fuseSeconds\": 1,}", "[]", "3", "{\"fuseSeconds\": 1, \"fuseSeconds\": 2}" })
+            {
+                var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade(text, "grenade.json"));
+                Assert.That(e.Item, Is.Null, text);
+                Assert.That(e.SourceName, Is.EqualTo("grenade.json"), text);
+            }
+        }
+
+        [Test]
+        public void AMissingSourceNameIsDescribed()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{", null));
+
+            Assert.That(e.SourceName, Does.Contain("ping JSON"));
+            Assert.Throws<ArgumentNullException>(() => TuningJson.ParseGrenade(null, "g"));
+            Assert.Throws<ArgumentNullException>(() => TuningJson.ParsePing(null, "p"));
+        }
+
+        [Test]
+        public void FlatTuningErrorMessagesKeepTheirWording()
+        {
+            var unknown = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"lifetime\": 3}", "ping.json"));
+            Assert.That(unknown.Message, Does.StartWith("ping JSON 'ping.json': unknown item 'lifetime' (line 1, column "));
+            Assert.That(unknown.Message, Does.Contain("; known items are lifetimeSeconds, maxMarkers, "));
+
+            var notNumber = Assert.Throws<TuningJsonException>(() => TuningJson.ParseKnockback("{\"gravity\": \"down\"}", "k"));
+            Assert.That(notNumber.Item, Is.EqualTo("gravity"));
+            Assert.That(notNumber.Message, Does.StartWith("knockback JSON 'k' item 'gravity' must be a number, but is the string \"down\" ("));
+
+            var notText = Assert.Throws<TuningJsonException>(() => TuningJson.ParseBots("{\"archetype\": 1}", "b"));
+            Assert.That(notText.Item, Is.EqualTo("archetype"));
+            Assert.That(notText.Message, Does.StartWith("bots JSON 'b' item 'archetype' must be a string, but is the number 1 ("));
+
+            var unknownName = Assert.Throws<TuningJsonException>(() => TuningJson.ParseBots("{\"archetype\": \"Nobody\"}", "b"));
+            Assert.That(unknownName.Message, Does.StartWith("bots JSON 'b' item 'archetype' must be one of "));
+            Assert.That(unknownName.Message, Does.Contain(", but is \"Nobody\" ("));
+
+            var notObject = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("[]", "p"));
+            Assert.That(notObject.Item, Is.Null);
+            Assert.That(notObject.Message, Is.EqualTo("ping JSON 'p': the top level must be an object, but is an array (line 1, column 1)"));
+        }
+
+        [Test]
+        public void TheGrenadeListKeepsItsNestedWording()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParseGrenade("{\"fuse\": 1}", "g"));
+
+            Assert.That(e.Message, Does.Contain("; known items here are id, nameKey, "));
+        }
+
+        [Test]
+        public void ARejectedPingValueKeepsTheArgumentExceptionInside()
+        {
+            var e = Assert.Throws<TuningJsonException>(() => TuningJson.ParsePing("{\"maxMarkers\": 0}", "p"));
+
+            Assert.That(e.Item, Is.EqualTo("maxMarkers"));
+            Assert.That(e.InnerException, Is.InstanceOf<ArgumentException>());
+        }
+    }
+}

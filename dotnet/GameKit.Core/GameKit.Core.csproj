@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Unity の GameKit.Core・GameKit.World・GameKit.Navigation (Assets/kits/core/Scripts/Core) を Unity 抜きでビルドする。ソースは Assets 側が正 -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- JSON の種類と値の型 (JsonNodeKind.Object・JsonWriter.Float など) は JSON の語のまま公開の名前にするので、型名を含む識別子を断る CA1720 は外す -->
+    <NoWarn>$(NoWarn);CA1720</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/kits/core/Scripts/Core/**/*.cs" />
+  </ItemGroup>
+</Project>

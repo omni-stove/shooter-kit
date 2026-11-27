@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;
 using Shooter.Server.Eos;
@@ -67,7 +68,7 @@ namespace Shooter.Server
                 new PosixStopSignal(),
                 ServerMapData.DefaultSearchRoots(),
                 ServerMapData.DefaultSearchRoots(),
-                () => new UdpMatchTransport(),
+                () => new UdpMatchTransport(MatchProtocol.TransportOptions()),
                 builtVersion: ServerBuildVersion.Embedded(),
                 input: Console.In);
         }

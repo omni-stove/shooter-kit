@@ -303,7 +303,7 @@ namespace Shooter.Server.Tests
         {
             Assert.That(ServerRulesData.TryLoad("Infected", Roots(), out var data, out var error), Is.True, error);
             Assert.That(ServerMapData.TryLoad(_map, Roots(), out var map, out error), Is.True, error);
-            var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "infected.json");
+            var tuningPath = Path.Combine(Roots()[0], "Assets", "kits", "shooter", "Resources", "Tuning", "infected.json");
             var offline = InfectedJson.Parse(File.ReadAllText(tuningPath), tuningPath);
 
             Assert.That(data.Rules.Objective, Is.EqualTo(MatchObjective.Infected));
@@ -357,7 +357,7 @@ namespace Shooter.Server.Tests
         public void TheJuggernautExampleCarriesTheOfflineTuningAndPlaysOnTheExampleMap()
         {
             Assert.That(ServerRulesData.TryLoad("Juggernaut", Roots(), out var data, out var error), Is.True, error);
-            var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "juggernaut.json");
+            var tuningPath = Path.Combine(Roots()[0], "Assets", "kits", "shooter", "Resources", "Tuning", "juggernaut.json");
             var offline = JuggernautJson.Parse(File.ReadAllText(tuningPath), tuningPath);
 
             Assert.That(data.File.Name, Is.EqualTo("Juggernaut"));
@@ -391,7 +391,7 @@ namespace Shooter.Server.Tests
         public void TheVipExampleCarriesTheOfflineTuningAndPlaysOnTheMapWithExits()
         {
             Assert.That(ServerRulesData.TryLoad("Vip", Roots(), out var data, out var error), Is.True, error);
-            var tuningPath = Path.Combine(Roots()[0], "Assets", "game", "Resources", "Tuning", "vip.json");
+            var tuningPath = Path.Combine(Roots()[0], "Assets", "kits", "shooter", "Resources", "Tuning", "vip.json");
             var offline = VipJson.Parse(File.ReadAllText(tuningPath), tuningPath);
 
             Assert.That(data.File.Name, Is.EqualTo("Vip"));

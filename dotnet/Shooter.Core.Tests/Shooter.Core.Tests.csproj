@@ -7,8 +7,10 @@
     <ProjectReference Include="../Shooter.Core/Shooter.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Unity の EditMode テスト (Assets/game/Tests/EditMode/Core) も同じソースで dotnet test から回す -->
-    <Compile Include="../../Assets/game/Tests/EditMode/Core/**/*.cs" Link="EditMode/%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Unity の EditMode テスト (Assets/kits/shooter/Tests/EditMode/Core) も同じソースで dotnet test から回す -->
+    <Compile Include="../../Assets/kits/shooter/Tests/EditMode/Core/**/*.cs" Link="EditMode/%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- 弾道や誘導のテストも地形の代役を使うので、game-kit のテストと同じものをリンクして共有する -->
+    <Compile Include="../GameKit.Core.Tests/FakeWorldCollision.cs" Link="GameKit/FakeWorldCollision.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.1" />

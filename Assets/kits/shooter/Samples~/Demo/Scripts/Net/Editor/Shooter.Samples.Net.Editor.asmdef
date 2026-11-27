@@ -1,0 +1,32 @@
+{
+    "name": "Shooter.Samples.Net.Editor",
+    "rootNamespace": "Shooter.Editor",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Editor",
+        "Shooter.NetV2.Client",
+        "Shooter.Protocol",
+        "Shooter.Samples.Editor",
+        "Shooter.Runtime",
+        "Shooter.Interaction",
+        "Shooter.Runtime.UI",
+        "Unity.AI.Navigation",
+        "GameKit.Net",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

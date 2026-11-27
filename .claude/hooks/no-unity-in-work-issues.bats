@@ -34,7 +34,7 @@ passed() {
 }
 
 @test "dotnet tests, lint and git inside a work-issues worktree pass" {
-  for c in "mise run test" "mise run lint" "make test" "mise run server-dotnet" "git commit -m x" "grep -rn unity_ Assets" "cat Assets/game/Scripts/UnityBridge.cs"; do
+  for c in "mise run test" "mise run lint" "make test" "mise run server-dotnet" "git commit -m x" "grep -rn unity_ Assets" "cat Assets/kits/shooter/Scripts/UnityBridge.cs"; do
     run bash_cmd "cd /repo/.git/work-issues/618 && $c"
     passed
   done

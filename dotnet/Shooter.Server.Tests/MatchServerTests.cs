@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Protocol;
@@ -177,7 +178,7 @@ namespace Shooter.Server.Tests
             var client = Request("0.2.0", protocol: MatchProtocol.Version + 1);
 
             Assert.That(_log.ToString(), Does.Contain("[Net] rejected client 1: protocol version mismatch"));
-            Assert.That(client.DisconnectReason, Is.EqualTo(UdpMatchTransport.ProtocolMismatchReason));
+            Assert.That(client.DisconnectReason, Is.EqualTo(DisconnectNotice.ProtocolMismatchReason));
         }
 
         [Test]

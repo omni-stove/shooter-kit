@@ -1,0 +1,47 @@
+{
+    "name": "Shooter.Tests.EditMode",
+    "rootNamespace": "Shooter.Tests.EditMode",
+    "references": [
+        "Shooter.Tests.Support",
+        "Shooter.Tests.Components",
+        "GameKit.Core",
+        "Shooter.Core",
+        "GameKit.World",
+        "GameKit.Navigation",
+        "Shooter.Core.Grapple",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.Spectate",
+        "Shooter.Core.CoopHold",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "Shooter.Runtime",
+        "Shooter.Telemetry",
+        "Shooter.Interaction",
+        "Shooter.Services",
+        "Shooter.Vision",
+        "Shooter.Editor",
+        "Unity.InputSystem",
+        "Unity.AI.Navigation",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

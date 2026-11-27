@@ -8,7 +8,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void TheShippedFileHoldsTheDefaults()
         {
-            var path = Path.Combine(RepositoryRoot(), "Assets", "game", "Resources", "Tuning", "assist.json");
+            var path = Path.Combine(RepositoryRoot(), "Assets", "kits", "shooter", "Resources", "Tuning", "assist.json");
 
             var spec = AssistJson.Parse(File.ReadAllText(path), "assist.json");
 

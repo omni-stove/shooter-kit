@@ -1,0 +1,27 @@
+{
+    "name": "Shooter.NetV2.Client",
+    "rootNamespace": "Shooter.NetV2",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "GameKit.World",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.Spectate",
+        "Shooter.Core.Telemetry",
+        "Shooter.Core.Vehicle",
+        "Shooter.Protocol",
+        "GameKit.Net"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

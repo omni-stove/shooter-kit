@@ -1,4 +1,5 @@
 using System.IO;
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -130,7 +131,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void ThePackagedBotsAreTheDefaults()
         {
-            var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "game", "Resources", "Tuning", "bots.json"));
+            var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "Assets", "kits", "shooter", "Resources", "Tuning", "bots.json"));
             var spec = TuningJson.ParseBots(text, "bots.json");
             var expected = NetBotSpec.Default;
 

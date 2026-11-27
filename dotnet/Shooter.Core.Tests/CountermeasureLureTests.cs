@@ -1,4 +1,5 @@
 using System.Numerics;
+using GameKit.Core.Tests;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests

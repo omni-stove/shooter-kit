@@ -7,6 +7,8 @@ using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Threading;
+using GameKit.Net;
+using GameKit.World;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Protocol;

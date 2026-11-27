@@ -1,12 +1,12 @@
 #!/bin/sh
-# server-data/tuning の JSON が、同じ名前の Assets/game/Resources/Tuning の JSON と同じ中身かを確かめる。
+# server-data/tuning の JSON が、同じ名前の Assets/kits/shooter/Resources/Tuning の JSON と同じ中身かを確かめる。
 # 両方にあるファイルは Resources を正とし、サーバーへは make export-server-rules (ServerRulesExporter) で写す。
 # 片方にしか無いファイルと、名前は同じでもサーバー用に別の中身を持つファイルは、一覧 (scripts/server-tuning.txt) に書いたものだけを通す。
 # 引数でディレクトリと一覧を替えられるのは、scripts/server-tuning-test.sh が作ったもので確かめるため。
 # 使い方: sh scripts/server-tuning.sh [<Resources/Tuning> <server-data/tuning> [<一覧>]]
 set -eu
 cd "$(dirname "$0")/.."
-resources="${1:-Assets/game/Resources/Tuning}"
+resources="${1:-Assets/kits/shooter/Resources/Tuning}"
 server="${2:-server-data/tuning}"
 list="${3:-scripts/server-tuning.txt}"
 

@@ -1,4 +1,5 @@
 using System.Linq;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 

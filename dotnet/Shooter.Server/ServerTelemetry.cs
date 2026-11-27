@@ -3,8 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using GameKit.Core;
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

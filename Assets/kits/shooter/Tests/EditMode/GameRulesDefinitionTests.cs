@@ -1,0 +1,664 @@
+using System;
+using System.Collections.Generic;
+using GameKit.Core;
+using NUnit.Framework;
+using Shooter.Core;
+using Shooter.Runtime;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace Shooter.Tests.EditMode
+{
+    public sealed class GameRulesDefinitionTests
+    {
+        private readonly List<Object> _created = new List<Object>();
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var created in _created)
+            {
+                if (created != null)
+                {
+                    Object.DestroyImmediate(created);
+                }
+            }
+
+            _created.Clear();
+        }
+
+        [Test]
+        public void DefaultsMatchGameRulesDefault()
+        {
+            var rules = NewDefinition("Default").ToRules();
+            var expected = GameRules.Default;
+
+            AssertSameRules(rules, expected);
+        }
+
+        [Test]
+        public void ToRulesCopiesEveryField()
+        {
+            var definition = NewDefinition("Custom");
+            definition.FriendlyFire = FriendlyFire.Reflect;
+            definition.RespawnMode = RespawnMode.Wave;
+            definition.WaveIntervalSeconds = 15f;
+            definition.RegenDelaySeconds = 4f;
+            definition.RegenPerSecond = 20f;
+            definition.DeathBody = DeathBody.Collapse;
+            definition.DeathCamera = DeathCamera.Killer;
+            definition.InfiniteReserve = true;
+            definition.ReserveAmmoMultiplier = 0.6f;
+            definition.Destruction = Destruction.On;
+            definition.Downed = Downed.Revive;
+            definition.DownedBleedoutSeconds = 20f;
+            definition.DownedHealthFraction = 0.5f;
+            definition.ReviveSeconds = 4f;
+            definition.Cover = Cover.On;
+            definition.BlindFire = BlindFire.On;
+            definition.ActiveReload = ActiveReload.On;
+            definition.Dodge = Dodge.On;
+            definition.Vault = Vault.On;
+            definition.Grenade = Grenade.On;
+            definition.GrenadeCount = 2;
+            definition.Melee = Melee.On;
+            definition.Takedown = Takedown.On;
+            definition.Stagger = Stagger.On;
+            definition.Slide = Slide.On;
+            definition.Mantle = Mantle.On;
+            definition.Prone = Prone.On;
+            definition.Ladder = Ladder.On;
+            definition.Zipline = Zipline.On;
+            definition.Parachute = Parachute.On;
+            definition.Stealth = Stealth.On;
+            definition.Suppression = Suppression.On;
+            definition.Ping = Shooter.Core.Ping.On;
+            definition.Abilities = Abilities.On;
+            definition.SlowMotion = SlowMotion.On;
+            definition.AimToFire = AimToFire.On;
+            definition.Jump = Jump.Off;
+            definition.SpawnProtectionSeconds = 1.5f;
+            definition.FallDamage = FallDamage.On;
+            definition.HudDensity = HudDensity.Minimal;
+            definition.Objective = MatchObjective.Domination;
+            definition.MinPlayers = 6;
+            definition.IdleKickSeconds = 45f;
+            definition.IdleWarningSeconds = 20f;
+            definition.MaxWeapons = 2;
+            definition.ReloadMode = ReloadMode.Manual;
+            definition.ViewMode = ViewMode.ThirdPerson;
+            definition.AdsEyeView = AdsEyeView.Always;
+            definition.Streaks = Streaks.Off;
+            definition.TextChat = TextChat.Off;
+            definition.Spectating = Spectating.Off;
+            definition.Emote = Emote.On;
+            definition.Stamina = Stamina.On;
+            definition.ReloadInterruptedBy = new[] { ReloadInterrupt.Grenade, ReloadInterrupt.Aim };
+            definition.AimWhileReloading = AimWhileReloading.Off;
+            definition.Jam = WeaponJam.On;
+            definition.RespawnAnchors = new[] { RespawnAnchor.Beacon, RespawnAnchor.Base };
+
+            var rules = definition.ToRules();
+
+            Assert.That(rules.FriendlyFire, Is.EqualTo(FriendlyFire.Reflect));
+            Assert.That(rules.RespawnMode, Is.EqualTo(RespawnMode.Wave));
+            Assert.That(rules.WaveIntervalSeconds, Is.EqualTo(15f));
+            Assert.That(rules.RegenDelaySeconds, Is.EqualTo(4f));
+            Assert.That(rules.RegenPerSecond, Is.EqualTo(20f));
+            Assert.That(rules.DeathBody, Is.EqualTo(DeathBody.Collapse));
+            Assert.That(rules.DeathCamera, Is.EqualTo(DeathCamera.Killer));
+            Assert.That(rules.InfiniteReserve, Is.True);
+            Assert.That(rules.ReserveAmmoMultiplier, Is.EqualTo(0.6f));
+            Assert.That(rules.Destruction, Is.EqualTo(Destruction.On));
+            Assert.That(rules.Actions.Downed, Is.EqualTo(Downed.Revive));
+            Assert.That(rules.Actions.DownedBleedoutSeconds, Is.EqualTo(20f));
+            Assert.That(rules.Actions.DownedHealthFraction, Is.EqualTo(0.5f));
+            Assert.That(rules.Actions.ReviveSeconds, Is.EqualTo(4f));
+            Assert.That(rules.Actions.Cover, Is.EqualTo(Cover.On));
+            Assert.That(rules.Actions.BlindFire, Is.EqualTo(BlindFire.On));
+            Assert.That(rules.Actions.ActiveReload, Is.EqualTo(ActiveReload.On));
+            Assert.That(rules.Actions.Dodge, Is.EqualTo(Dodge.On));
+            Assert.That(rules.Actions.Vault, Is.EqualTo(Vault.On));
+            Assert.That(rules.Actions.Grenade, Is.EqualTo(Grenade.On));
+            Assert.That(rules.Actions.GrenadeCount, Is.EqualTo(2));
+            Assert.That(rules.Actions.Melee, Is.EqualTo(Melee.On));
+            Assert.That(rules.Actions.Takedown, Is.EqualTo(Takedown.On));
+            Assert.That(rules.Actions.Stagger, Is.EqualTo(Stagger.On));
+            Assert.That(rules.Actions.Slide, Is.EqualTo(Slide.On));
+            Assert.That(rules.Actions.Mantle, Is.EqualTo(Mantle.On));
+            Assert.That(rules.Actions.Prone, Is.EqualTo(Prone.On));
+            Assert.That(rules.Actions.Ladder, Is.EqualTo(Ladder.On));
+            Assert.That(rules.Actions.Zipline, Is.EqualTo(Zipline.On));
+            Assert.That(rules.Actions.Parachute, Is.EqualTo(Parachute.On));
+            Assert.That(rules.Actions.Stealth, Is.EqualTo(Stealth.On));
+            Assert.That(rules.Actions.Suppression, Is.EqualTo(Suppression.On));
+            Assert.That(rules.Actions.Ping, Is.EqualTo(Shooter.Core.Ping.On));
+            Assert.That(rules.Actions.Abilities, Is.EqualTo(Abilities.On));
+            Assert.That(rules.Actions.SlowMotion, Is.EqualTo(SlowMotion.On));
+            Assert.That(rules.Actions.AimToFire, Is.EqualTo(AimToFire.On));
+            Assert.That(rules.Actions.Jump, Is.EqualTo(Jump.Off));
+            Assert.That(rules.SpawnProtectionSeconds, Is.EqualTo(1.5f));
+            Assert.That(rules.FallDamage, Is.EqualTo(FallDamage.On));
+            Assert.That(rules.HudDensity, Is.EqualTo(HudDensity.Minimal));
+            Assert.That(rules.Objective, Is.EqualTo(MatchObjective.Domination));
+            Assert.That(rules.MinPlayers, Is.EqualTo(6));
+            Assert.That(rules.IdleKickSeconds, Is.EqualTo(45f));
+            Assert.That(rules.IdleWarningSeconds, Is.EqualTo(20f));
+            Assert.That(rules.MaxWeapons, Is.EqualTo(2));
+            Assert.That(rules.ReloadMode, Is.EqualTo(ReloadMode.Manual));
+            Assert.That(rules.ViewMode, Is.EqualTo(ViewMode.ThirdPerson));
+            Assert.That(rules.AdsEyeView, Is.EqualTo(AdsEyeView.Always));
+            Assert.That(rules.Streaks, Is.EqualTo(Streaks.Off));
+            Assert.That(rules.TextChat, Is.EqualTo(TextChat.Off));
+            Assert.That(rules.Spectating, Is.EqualTo(Spectating.Off));
+            Assert.That(rules.Actions.Emote, Is.EqualTo(Emote.On));
+            Assert.That(rules.Actions.Stamina, Is.EqualTo(Stamina.On));
+            Assert.That(rules.Actions.ReloadInterruptedBy, Is.EqualTo(new[] { ReloadInterrupt.Grenade, ReloadInterrupt.Aim }));
+            Assert.That(rules.Actions.AimWhileReloading, Is.EqualTo(AimWhileReloading.Off));
+            Assert.That(rules.Actions.Jam, Is.EqualTo(WeaponJam.On));
+            Assert.That(rules.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Beacon, RespawnAnchor.Base }));
+            Assert.That(definition.ToRules(), Is.Not.SameAs(rules));
+        }
+
+        [Test]
+        public void ANewDefinitionRespawnsAtTheBaseOnlyAndLeavesEmoteAndStaminaOff()
+        {
+            var definition = NewDefinition("Fresh");
+
+            Assert.That(definition.Emote, Is.EqualTo(Emote.Off));
+            Assert.That(definition.Stamina, Is.EqualTo(Stamina.Off));
+            Assert.That(definition.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Base }));
+            Assert.That(definition.ReloadInterruptedBy, Is.EqualTo(new[] { ReloadInterrupt.Melee, ReloadInterrupt.Grenade }));
+            Assert.That(definition.AimWhileReloading, Is.EqualTo(AimWhileReloading.On));
+            Assert.That(definition.Jam, Is.EqualTo(WeaponJam.Off));
+            Assert.That(definition.ToRules().Actions.Jam, Is.EqualTo(WeaponJam.Off));
+        }
+
+        [Test]
+        public void ANewDefinitionLeavesTakedownsOff()
+        {
+            var definition = NewDefinition("FreshTakedown");
+
+            Assert.That(definition.Takedown, Is.EqualTo(Takedown.Off));
+            Assert.That(definition.ToRules().Actions.Takedown, Is.EqualTo(Takedown.Off));
+        }
+
+        [Test]
+        public void TheTakedownFieldHasATooltipForTheInspector()
+        {
+            var field = typeof(GameRulesDefinition).GetField("_takedown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.That(field, Is.Not.Null);
+            Assert.That(field.FieldType, Is.EqualTo(typeof(Takedown)));
+            Assert.That(field.GetCustomAttributes(typeof(SerializeField), false), Is.Not.Empty);
+            var tooltip = (TooltipAttribute[])field.GetCustomAttributes(typeof(TooltipAttribute), false);
+            Assert.That(tooltip, Has.Length.EqualTo(1));
+            Assert.That(tooltip[0].tooltip, Is.Not.Empty);
+        }
+
+        [Test]
+        public void AnEmptyReloadInterruptedByLetsNothingInterruptAReload()
+        {
+            var definition = NewDefinition("NoInterrupts");
+            definition.ReloadInterruptedBy = new ReloadInterrupt[0];
+
+            Assert.That(definition.ToRules().Actions.ReloadInterruptedBy, Is.Empty);
+
+            definition.ReloadInterruptedBy = new[] { ReloadInterrupt.Melee, ReloadInterrupt.Melee };
+            Assert.Throws<GameRulesDefinitionException>(() => definition.ToRules());
+        }
+
+        [Test]
+        public void ANewDefinitionWarnsFifteenSecondsBeforeTheIdleKick()
+        {
+            var definition = NewDefinition("FreshIdle");
+
+            Assert.That(definition.IdleWarningSeconds, Is.EqualTo(GameRules.DefaultIdleWarningSeconds));
+            Assert.That(definition.ToRules().IdleWarningSeconds, Is.EqualTo(15f));
+        }
+
+        [Test]
+        public void ANewDefinitionFollowsEachWeaponForTheAdsEyeView()
+        {
+            var definition = NewDefinition("FreshAdsEyeView");
+
+            Assert.That(definition.AdsEyeView, Is.EqualTo(AdsEyeView.PerWeapon));
+            Assert.That(definition.ToRules().AdsEyeView, Is.EqualTo(AdsEyeView.PerWeapon));
+        }
+
+        [Test]
+        public void TheRespawnAnchorsAreCopiedInAndOut()
+        {
+            var definition = NewDefinition("Anchors");
+            var given = new[] { RespawnAnchor.Squad, RespawnAnchor.Base };
+            definition.RespawnAnchors = given;
+
+            given[0] = RespawnAnchor.Beacon;
+            definition.RespawnAnchors[1] = RespawnAnchor.Beacon;
+
+            Assert.That(definition.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Squad, RespawnAnchor.Base }));
+        }
+
+        [TestCase(new RespawnAnchor[0])]
+        [TestCase(new[] { RespawnAnchor.Base, RespawnAnchor.Base })]
+        [TestCase(new[] { (RespawnAnchor)99 })]
+        public void ToRulesRejectsUnusableRespawnAnchorsWithTheAssetName(RespawnAnchor[] anchors)
+        {
+            var definition = NewDefinition("BrokenAnchors");
+            definition.RespawnAnchors = anchors;
+
+            var e = Assert.Throws<GameRulesDefinitionException>(() => definition.ToRules());
+            Assert.That(e.Message, Does.Contain("BrokenAnchors"));
+            Assert.That(e.InnerException, Is.InstanceOf<ArgumentException>());
+        }
+
+        [Test]
+        public void ToRulesRejectsAMissingRespawnAnchorListInsteadOfFallingBackToTheBase()
+        {
+            var definition = NewDefinition("NoAnchors");
+            definition.RespawnAnchors = null;
+
+            Assert.Throws<GameRulesDefinitionException>(() => definition.ToRules());
+        }
+
+        [Test]
+        public void CopyFromRoundTripsThroughToRules()
+        {
+            var source = new GameRules(
+                FriendlyFire.On,
+                RespawnMode.None,
+                7f,
+                2f,
+                30f,
+                DeathBody.Collapse,
+                DeathCamera.Killer,
+                true,
+                2f,
+                Destruction.On,
+                new ActionRules(
+                    Downed.Revive,
+                    12f,
+                    0.25f,
+                    2.5f,
+                    Cover.On,
+                    BlindFire.On,
+                    ActiveReload.On,
+                    Dodge.On,
+                    Vault.On,
+                    Grenade.On,
+                    3,
+                    Melee.On,
+                    Stagger.On,
+                    Slide.On,
+                    Mantle.On,
+                    Prone.On,
+                    Ladder.On,
+                    Zipline.On,
+                    Parachute.On,
+                    Stealth.On,
+                    Suppression.On,
+                    Shooter.Core.Ping.On,
+                    Abilities.On,
+                    SlowMotion.On,
+                    AimToFire.On,
+                    Jump.Off,
+                    emote: Emote.On,
+                    stamina: Stamina.On,
+                    reloadInterruptedBy: new[] { ReloadInterrupt.Grenade },
+                    jam: WeaponJam.On,
+                    takedown: Takedown.On),
+                2f,
+                FallDamage.On,
+                HudDensity.Hardcore,
+                MatchObjective.Domination,
+                8,
+                120f,
+                3,
+                ReloadMode.Manual,
+                ViewMode.ThirdPerson)
+                .WithStreaks(Streaks.Off)
+                .WithTextChat(TextChat.Off)
+                .WithSpectating(Spectating.Off)
+                .WithRespawnAnchors(new[] { RespawnAnchor.Squad, RespawnAnchor.Beacon, RespawnAnchor.Base })
+                .WithIdleWarningSeconds(30f)
+                .WithAdsEyeView(AdsEyeView.Never);
+            var definition = NewDefinition("Copied");
+
+            definition.CopyFrom(source);
+
+            AssertSameRules(definition.ToRules(), source);
+            Assert.Throws<ArgumentNullException>(() => definition.CopyFrom(null));
+        }
+
+        [TestCase("FriendlyFire")]
+        [TestCase("RespawnMode")]
+        [TestCase("WaveIntervalSeconds")]
+        [TestCase("RegenDelaySeconds")]
+        [TestCase("RegenPerSecond")]
+        [TestCase("DeathBody")]
+        [TestCase("DeathCamera")]
+        [TestCase("ReserveAmmoMultiplier")]
+        [TestCase("Destruction")]
+        [TestCase("Downed")]
+        [TestCase("DownedBleedoutSeconds")]
+        [TestCase("DownedHealthFraction")]
+        [TestCase("ReviveSeconds")]
+        [TestCase("Cover")]
+        [TestCase("BlindFire")]
+        [TestCase("BlindFireWithoutCover")]
+        [TestCase("ActiveReload")]
+        [TestCase("Dodge")]
+        [TestCase("Vault")]
+        [TestCase("Grenade")]
+        [TestCase("GrenadeCount")]
+        [TestCase("Melee")]
+        [TestCase("Takedown")]
+        [TestCase("Stagger")]
+        [TestCase("Slide")]
+        [TestCase("Mantle")]
+        [TestCase("Prone")]
+        [TestCase("Ladder")]
+        [TestCase("Zipline")]
+        [TestCase("Parachute")]
+        [TestCase("Stealth")]
+        [TestCase("Suppression")]
+        [TestCase("Ping")]
+        [TestCase("Abilities")]
+        [TestCase("SlowMotion")]
+        [TestCase("AimToFire")]
+        [TestCase("Jump")]
+        [TestCase("SpawnProtectionSeconds")]
+        [TestCase("FallDamage")]
+        [TestCase("HudDensity")]
+        [TestCase("Objective")]
+        [TestCase("MinPlayers")]
+        [TestCase("IdleKickSeconds")]
+        [TestCase("IdleWarningSeconds")]
+        [TestCase("MaxWeapons")]
+        [TestCase("ReloadMode")]
+        [TestCase("ViewMode")]
+        [TestCase("AdsEyeView")]
+        [TestCase("Streaks")]
+        [TestCase("TextChat")]
+        [TestCase("Spectating")]
+        public void ToRulesRejectsInvalidValuesWithTheAssetName(string field)
+        {
+            var definition = NewBroken("BrokenRules", field);
+
+            var e = Assert.Throws<GameRulesDefinitionException>(() => definition.ToRules());
+            Assert.That(e.Message, Does.Contain("BrokenRules"));
+            Assert.That(e.InnerException, Is.InstanceOf<ArgumentException>());
+        }
+
+        [TestCase("FriendlyFire")]
+        [TestCase("WaveIntervalSeconds")]
+        [TestCase("RegenPerSecond")]
+        [TestCase("ReserveAmmoMultiplier")]
+        public void TryToRulesReportsInvalidValuesWithoutThrowing(string field)
+        {
+            var definition = NewBroken("BrokenRules", field);
+
+            Assert.That(definition.TryToRules(out var rules, out var error), Is.False);
+            Assert.That(rules, Is.Null);
+            Assert.That(error, Does.Contain("BrokenRules"));
+        }
+
+        [Test]
+        public void TryToRulesReturnsTheRulesWhenValid()
+        {
+            var definition = NewDefinition("Valid");
+            definition.RegenPerSecond = 10f;
+
+            Assert.That(definition.TryToRules(out var rules, out var error), Is.True);
+            Assert.That(error, Is.Null);
+            Assert.That(rules, Is.Not.Null);
+            Assert.That(rules.RegenPerSecond, Is.EqualTo(10f));
+        }
+
+        [Test]
+        public void AnUnnamedDefinitionStillNamesItselfInTheError()
+        {
+            var definition = NewDefinition(string.Empty);
+            definition.ReserveAmmoMultiplier = -1f;
+
+            var e = Assert.Throws<GameRulesDefinitionException>(() => definition.ToRules());
+            Assert.That(e.Message, Does.Contain("(unnamed game rules)"));
+        }
+
+        private static void AssertSameRules(GameRules actual, GameRules expected)
+        {
+            Assert.That(actual.FriendlyFire, Is.EqualTo(expected.FriendlyFire));
+            Assert.That(actual.RespawnMode, Is.EqualTo(expected.RespawnMode));
+            Assert.That(actual.WaveIntervalSeconds, Is.EqualTo(expected.WaveIntervalSeconds));
+            Assert.That(actual.RegenDelaySeconds, Is.EqualTo(expected.RegenDelaySeconds));
+            Assert.That(actual.RegenPerSecond, Is.EqualTo(expected.RegenPerSecond));
+            Assert.That(actual.DeathBody, Is.EqualTo(expected.DeathBody));
+            Assert.That(actual.DeathCamera, Is.EqualTo(expected.DeathCamera));
+            Assert.That(actual.InfiniteReserve, Is.EqualTo(expected.InfiniteReserve));
+            Assert.That(actual.ReserveAmmoMultiplier, Is.EqualTo(expected.ReserveAmmoMultiplier));
+            Assert.That(actual.Destruction, Is.EqualTo(expected.Destruction));
+            Assert.That(actual.Actions.Downed, Is.EqualTo(expected.Actions.Downed));
+            Assert.That(actual.Actions.DownedBleedoutSeconds, Is.EqualTo(expected.Actions.DownedBleedoutSeconds));
+            Assert.That(actual.Actions.DownedHealthFraction, Is.EqualTo(expected.Actions.DownedHealthFraction));
+            Assert.That(actual.Actions.ReviveSeconds, Is.EqualTo(expected.Actions.ReviveSeconds));
+            Assert.That(actual.Actions.Cover, Is.EqualTo(expected.Actions.Cover));
+            Assert.That(actual.Actions.BlindFire, Is.EqualTo(expected.Actions.BlindFire));
+            Assert.That(actual.Actions.ActiveReload, Is.EqualTo(expected.Actions.ActiveReload));
+            Assert.That(actual.Actions.Dodge, Is.EqualTo(expected.Actions.Dodge));
+            Assert.That(actual.Actions.Vault, Is.EqualTo(expected.Actions.Vault));
+            Assert.That(actual.Actions.Grenade, Is.EqualTo(expected.Actions.Grenade));
+            Assert.That(actual.Actions.GrenadeCount, Is.EqualTo(expected.Actions.GrenadeCount));
+            Assert.That(actual.Actions.Melee, Is.EqualTo(expected.Actions.Melee));
+            Assert.That(actual.Actions.Takedown, Is.EqualTo(expected.Actions.Takedown));
+            Assert.That(actual.Actions.Stagger, Is.EqualTo(expected.Actions.Stagger));
+            Assert.That(actual.Actions.Slide, Is.EqualTo(expected.Actions.Slide));
+            Assert.That(actual.Actions.Mantle, Is.EqualTo(expected.Actions.Mantle));
+            Assert.That(actual.Actions.Prone, Is.EqualTo(expected.Actions.Prone));
+            Assert.That(actual.Actions.Ladder, Is.EqualTo(expected.Actions.Ladder));
+            Assert.That(actual.Actions.Zipline, Is.EqualTo(expected.Actions.Zipline));
+            Assert.That(actual.Actions.Parachute, Is.EqualTo(expected.Actions.Parachute));
+            Assert.That(actual.Actions.Stealth, Is.EqualTo(expected.Actions.Stealth));
+            Assert.That(actual.Actions.Suppression, Is.EqualTo(expected.Actions.Suppression));
+            Assert.That(actual.Actions.Ping, Is.EqualTo(expected.Actions.Ping));
+            Assert.That(actual.Actions.Abilities, Is.EqualTo(expected.Actions.Abilities));
+            Assert.That(actual.Actions.SlowMotion, Is.EqualTo(expected.Actions.SlowMotion));
+            Assert.That(actual.Actions.AimToFire, Is.EqualTo(expected.Actions.AimToFire));
+            Assert.That(actual.Actions.Jump, Is.EqualTo(expected.Actions.Jump));
+            Assert.That(actual.SpawnProtectionSeconds, Is.EqualTo(expected.SpawnProtectionSeconds));
+            Assert.That(actual.FallDamage, Is.EqualTo(expected.FallDamage));
+            Assert.That(actual.HudDensity, Is.EqualTo(expected.HudDensity));
+            Assert.That(actual.Objective, Is.EqualTo(expected.Objective));
+            Assert.That(actual.MinPlayers, Is.EqualTo(expected.MinPlayers));
+            Assert.That(actual.IdleKickSeconds, Is.EqualTo(expected.IdleKickSeconds));
+            Assert.That(actual.IdleWarningSeconds, Is.EqualTo(expected.IdleWarningSeconds));
+            Assert.That(actual.MaxWeapons, Is.EqualTo(expected.MaxWeapons));
+            Assert.That(actual.ReloadMode, Is.EqualTo(expected.ReloadMode));
+            Assert.That(actual.ViewMode, Is.EqualTo(expected.ViewMode));
+            Assert.That(actual.AdsEyeView, Is.EqualTo(expected.AdsEyeView));
+            Assert.That(actual.Streaks, Is.EqualTo(expected.Streaks));
+            Assert.That(actual.TextChat, Is.EqualTo(expected.TextChat));
+            Assert.That(actual.Spectating, Is.EqualTo(expected.Spectating));
+            Assert.That(actual.Actions.Emote, Is.EqualTo(expected.Actions.Emote));
+            Assert.That(actual.Actions.Stamina, Is.EqualTo(expected.Actions.Stamina));
+            Assert.That(actual.Actions.ReloadInterruptedBy, Is.EqualTo(expected.Actions.ReloadInterruptedBy));
+            Assert.That(actual.Actions.Jam, Is.EqualTo(expected.Actions.Jam));
+            Assert.That(actual.RespawnAnchors, Is.EqualTo(expected.RespawnAnchors));
+        }
+
+        private GameRulesDefinition NewBroken(string assetName, string field)
+        {
+            var definition = NewDefinition(assetName);
+            switch (field)
+            {
+                case "FriendlyFire":
+                    definition.FriendlyFire = (FriendlyFire)99;
+                    break;
+                case "RespawnMode":
+                    definition.RespawnMode = (RespawnMode)99;
+                    break;
+                case "WaveIntervalSeconds":
+                    definition.WaveIntervalSeconds = 0f;
+                    break;
+                case "RegenDelaySeconds":
+                    definition.RegenDelaySeconds = float.NaN;
+                    break;
+                case "RegenPerSecond":
+                    definition.RegenPerSecond = float.PositiveInfinity;
+                    break;
+                case "DeathBody":
+                    definition.DeathBody = (DeathBody)99;
+                    break;
+                case "DeathCamera":
+                    definition.DeathCamera = (DeathCamera)99;
+                    break;
+                case "ReserveAmmoMultiplier":
+                    definition.ReserveAmmoMultiplier = -0.1f;
+                    break;
+                case "Destruction":
+                    definition.Destruction = (Destruction)99;
+                    break;
+                case "Downed":
+                    definition.Downed = (Downed)99;
+                    break;
+                case "DownedBleedoutSeconds":
+                    definition.DownedBleedoutSeconds = 0f;
+                    break;
+                case "DownedHealthFraction":
+                    definition.DownedHealthFraction = 1.5f;
+                    break;
+                case "ReviveSeconds":
+                    definition.ReviveSeconds = float.PositiveInfinity;
+                    break;
+                case "Cover":
+                    definition.Cover = (Cover)99;
+                    break;
+                case "BlindFire":
+                    definition.Cover = Cover.On;
+                    definition.BlindFire = (BlindFire)99;
+                    break;
+                case "BlindFireWithoutCover":
+                    definition.Cover = Cover.Off;
+                    definition.BlindFire = BlindFire.On;
+                    break;
+                case "ActiveReload":
+                    definition.ActiveReload = (ActiveReload)99;
+                    break;
+                case "Dodge":
+                    definition.Dodge = (Dodge)99;
+                    break;
+                case "Vault":
+                    definition.Vault = (Vault)99;
+                    break;
+                case "Grenade":
+                    definition.Grenade = (Grenade)99;
+                    break;
+                case "GrenadeCount":
+                    definition.GrenadeCount = -1;
+                    break;
+                case "Melee":
+                    definition.Melee = (Melee)99;
+                    break;
+                case "Takedown":
+                    definition.Takedown = (Takedown)99;
+                    break;
+                case "Stagger":
+                    definition.Stagger = (Stagger)99;
+                    break;
+                case "Slide":
+                    definition.Slide = (Slide)99;
+                    break;
+                case "Mantle":
+                    definition.Mantle = (Mantle)99;
+                    break;
+                case "Prone":
+                    definition.Prone = (Prone)99;
+                    break;
+                case "Ladder":
+                    definition.Ladder = (Ladder)99;
+                    break;
+                case "Zipline":
+                    definition.Zipline = (Zipline)99;
+                    break;
+                case "Parachute":
+                    definition.Parachute = (Parachute)99;
+                    break;
+                case "Stealth":
+                    definition.Stealth = (Stealth)99;
+                    break;
+                case "Suppression":
+                    definition.Suppression = (Suppression)99;
+                    break;
+                case "Ping":
+                    definition.Ping = (Shooter.Core.Ping)99;
+                    break;
+                case "Abilities":
+                    definition.Abilities = (Abilities)99;
+                    break;
+                case "SlowMotion":
+                    definition.SlowMotion = (SlowMotion)99;
+                    break;
+                case "AimToFire":
+                    definition.AimToFire = (AimToFire)99;
+                    break;
+                case "Jump":
+                    definition.Jump = (Jump)99;
+                    break;
+                case "SpawnProtectionSeconds":
+                    definition.SpawnProtectionSeconds = float.NaN;
+                    break;
+                case "FallDamage":
+                    definition.FallDamage = (FallDamage)99;
+                    break;
+                case "HudDensity":
+                    definition.HudDensity = (HudDensity)99;
+                    break;
+                case "Objective":
+                    definition.Objective = (MatchObjective)99;
+                    break;
+                case "MinPlayers":
+                    definition.MinPlayers = -1;
+                    break;
+                case "IdleKickSeconds":
+                    definition.IdleKickSeconds = float.NegativeInfinity;
+                    break;
+                case "IdleWarningSeconds":
+                    definition.IdleWarningSeconds = 0f;
+                    break;
+                case "MaxWeapons":
+                    definition.MaxWeapons = -1;
+                    break;
+                case "ReloadMode":
+                    definition.ReloadMode = (ReloadMode)99;
+                    break;
+                case "ViewMode":
+                    definition.ViewMode = (ViewMode)99;
+                    break;
+                case "AdsEyeView":
+                    definition.AdsEyeView = (AdsEyeView)99;
+                    break;
+                case "Streaks":
+                    definition.Streaks = (Streaks)99;
+                    break;
+                case "TextChat":
+                    definition.TextChat = (TextChat)99;
+                    break;
+                case "Spectating":
+                    definition.Spectating = (Spectating)99;
+                    break;
+                default:
+                    Assert.Fail("unknown field " + field);
+                    break;
+            }
+
+            return definition;
+        }
+
+        private GameRulesDefinition NewDefinition(string assetName)
+        {
+            var definition = ScriptableObject.CreateInstance<GameRulesDefinition>();
+            definition.name = assetName;
+            _created.Add(definition);
+            return definition;
+        }
+    }
+}

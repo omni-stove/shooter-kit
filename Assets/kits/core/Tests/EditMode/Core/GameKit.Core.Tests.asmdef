@@ -1,0 +1,27 @@
+{
+    "name": "GameKit.Core.Tests",
+    "rootNamespace": "GameKit.Core.Tests",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "GameKit.Net",
+        "GameKit.World",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

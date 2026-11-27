@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using GameKit.Core;
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 using Shooter.Server.Eos;
 
 namespace Shooter.Server

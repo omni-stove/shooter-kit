@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
+using GameKit.Core;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Protocol;

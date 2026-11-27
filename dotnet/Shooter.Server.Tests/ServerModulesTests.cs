@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using GameKit.World;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.EosSdk;

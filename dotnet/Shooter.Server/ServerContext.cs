@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using GameKit.Navigation;
+using GameKit.Net;
+using GameKit.World;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

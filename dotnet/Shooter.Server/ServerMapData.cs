@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using GameKit.Core;
+using GameKit.Navigation;
+using GameKit.World;
 using Shooter.Core;
-using Shooter.Core.Navigation;
 
 namespace Shooter.Server
 {

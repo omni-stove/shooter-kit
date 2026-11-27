@@ -1,5 +1,5 @@
+using GameKit.Net;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server
 {

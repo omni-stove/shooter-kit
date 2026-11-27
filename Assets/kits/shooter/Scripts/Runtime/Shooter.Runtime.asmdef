@@ -1,0 +1,28 @@
+{
+    "name": "Shooter.Runtime",
+    "rootNamespace": "Shooter.Runtime",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "GameKit.World",
+        "Shooter.Core.Grapple",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.Spectate",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "Unity.InputSystem",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

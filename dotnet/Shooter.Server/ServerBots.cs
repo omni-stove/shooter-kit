@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Numerics;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;
 
@@ -138,7 +139,7 @@ namespace Shooter.Server
             if (!_hasNavMesh)
             {
                 _log.WriteLine(LogTag + " no NavMesh near the spawn points of " + map.Name
-                    + "; bots walk straight to their goals. Export " + map.Name + Shooter.Core.Navigation.NavMeshFile.Extension
+                    + "; bots walk straight to their goals. Export " + map.Name + GameKit.Navigation.NavMeshFile.Extension
                     + " with make export-server-data");
             }
 

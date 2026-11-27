@@ -1,0 +1,36 @@
+{
+    "name": "Shooter.NetEos",
+    "rootNamespace": "Shooter.NetEos",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "Shooter.NetV2",
+        "Shooter.NetV2.Client",
+        "Shooter.Protocol",
+        "Shooter.Runtime",
+        "Shooter.Services",
+        "com.Epic.OnlineServices",
+        "com.playeveryware.eos.core",
+        "GameKit.Net",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "SHOOTER_EOS",
+        "!EOS_DISABLE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.playeveryware.eos",
+            "expression": "0.0.0",
+            "define": "SHOOTER_EOS"
+        }
+    ],
+    "noEngineReferences": false
+}

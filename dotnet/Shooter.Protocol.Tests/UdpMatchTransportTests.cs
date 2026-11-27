@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
 
@@ -206,6 +207,21 @@ namespace Shooter.Protocol.Tests
         [Test]
         public void ClientWithAnotherKeyIsRejectedAsProtocolMismatch()
         {
+            var server = Track(new UdpMatchTransport(MatchProtocol.TransportOptions()));
+            server.Listen(_loopback, 0);
+            var client = Track(new UdpMatchTransport(new UdpTransportOptions { ConnectionKey = "other-game" }));
+
+            client.Connect(_loopback, (ushort)server.LocalPort);
+
+            var clientEvent = WaitFor(client, TransportEventKind.Disconnected, server);
+            Assert.That(clientEvent.Reason, Is.EqualTo(DisconnectNotice.ProtocolMismatchReason));
+            Assert.That(DisconnectNotice.Classify(clientEvent.Reason, false, null).Kind, Is.EqualTo(DisconnectKind.Rejected));
+            Assert.That(server.TryReceive(out _), Is.False);
+        }
+
+        [Test]
+        public void ServerWithTheDefaultOptionsRejectsWithTheGameKitReason()
+        {
             var server = Track(new UdpMatchTransport());
             server.Listen(_loopback, 0);
             var client = Track(new UdpMatchTransport(new UdpTransportOptions { ConnectionKey = "other-game" }));
@@ -213,9 +229,17 @@ namespace Shooter.Protocol.Tests
             client.Connect(_loopback, (ushort)server.LocalPort);
 
             var clientEvent = WaitFor(client, TransportEventKind.Disconnected, server);
-            Assert.That(clientEvent.Reason, Is.EqualTo(UdpMatchTransport.ProtocolMismatchReason));
-            Assert.That(DisconnectNotice.Classify(clientEvent.Reason, false, null).Kind, Is.EqualTo(DisconnectKind.Rejected));
-            Assert.That(server.TryReceive(out _), Is.False);
+            Assert.That(clientEvent.Reason, Is.EqualTo(UdpTransportOptions.DefaultProtocolMismatchReason));
+        }
+
+        [Test]
+        public void ShooterTransportOptionsUseTheShooterKeyAndReason()
+        {
+            var options = MatchProtocol.TransportOptions();
+
+            Assert.That(options.ConnectionKey, Is.EqualTo("shooter-match"));
+            Assert.That(options.ProtocolMismatchReason, Is.EqualTo("shooter:rejected:protocol-mismatch"));
+            Assert.That(options.ConnectionKey, Is.Not.EqualTo(UdpTransportOptions.DefaultConnectionKey));
         }
 
         [Test]

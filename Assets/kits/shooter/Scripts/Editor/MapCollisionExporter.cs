@@ -1,0 +1,848 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using GameKit.Navigation;
+using GameKit.World;
+using Shooter.Core;
+using Shooter.Runtime;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using SceneLadder = Shooter.Runtime.Traversal.Ladder;
+using SceneWater = Shooter.Runtime.Traversal.Water;
+using NumericsQuaternion = System.Numerics.Quaternion;
+using NumericsVector3 = System.Numerics.Vector3;
+
+namespace Shooter.Editor
+{
+    public static class MapCollisionExporter
+    {
+        public const string MenuPath = "Shooter/Net/Export Server Data";
+        public const string LogTag = "[MapCollision]";
+        public const string ScenesArgument = "-mapScenes";
+        public const string OutputFolder = MapCollisionFiles.ServerDataFolder;
+        public const string FileExtension = ShooterMapFile.Extension;
+
+        private static readonly string[] _builtInExtensions =
+        {
+            FileExtension, NavMeshFile.Extension, NetMapStructures.Extension, NetMapLadders.Extension, NetMapWater.Extension, NetMapVehicles.Extension,
+            NetMapPickups.Extension, NetMapDoors.Extension,
+        };
+
+        private static readonly Dictionary<string, Func<IReadOnlyList<GameObject>, string>> _sceneData =
+            new Dictionary<string, Func<IReadOnlyList<GameObject>, string>>(StringComparer.Ordinal);
+
+        private static Func<IReadOnlyList<string>> _mapScenes;
+
+        public static string OutputDirectory => MapCollisionFiles.ServerDataDirectory;
+
+        public static IReadOnlyCollection<string> SceneDataExtensions => _sceneData.Keys;
+
+        // マップの一覧はゲーム (取り込んだサンプルなど) が持つので、キットはその読み込み時に渡してもらう。
+        // 渡す側はシーンが無ければ作ってから一覧を返してよい。
+        public static void UseMapScenes(Func<IReadOnlyList<string>> provider)
+        {
+            _mapScenes = provider;
+        }
+
+        // 当たりや NavMesh のほかにシーンから書き出すマップのデータ (<マップ><extension>) を、ゲームが読み込み時に足す。
+        // 拡張子ごとに 1 つにするのは、スクリプトの読み込み直しで同じ書き手が登録し直しても 2 度書かないため。
+        public static void UseSceneData(string extension, Func<IReadOnlyList<GameObject>, string> write)
+        {
+            if (string.IsNullOrWhiteSpace(extension) || !extension.StartsWith(".", StringComparison.Ordinal) || extension.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                throw new ArgumentException(LogTag + " '" + extension + "' is not a file extension starting with '.'", nameof(extension));
+            }
+
+            if (Array.IndexOf(_builtInExtensions, extension) >= 0)
+            {
+                throw new ArgumentException(LogTag + " " + extension + " is already written by the exporter", nameof(extension));
+            }
+
+            _sceneData[extension] = write ?? throw new ArgumentNullException(nameof(write));
+        }
+
+        [MenuItem(MenuPath)]
+        public static void Export()
+        {
+            // 一覧を作る側 (シーンの自動生成) は保存の確認なしにシーンを開き直すので、確認と構成の控えはその前に済ませる
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.Log(LogTag + " export canceled");
+                return;
+            }
+
+            var setup = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                var scenes = ParseScenesArgument(Environment.GetCommandLineArgs()) ?? _mapScenes?.Invoke();
+                if (scenes == null || scenes.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        LogTag + " no map scenes to export; pass " + ScenesArgument + " <a.unity,b.unity> or register them with UseMapScenes");
+                }
+
+                var written = ExportScenes(scenes, OutputDirectory);
+                RemoveStaleFiles(OutputDirectory, written);
+            }
+            finally
+            {
+                RestoreSetup(setup);
+            }
+        }
+
+        private static void RestoreSetup(SceneSetup[] setup)
+        {
+            // Untitled のシーンは戻せないので、保存済みのシーンだけのときに開き直す
+            if (setup.Length > 0 && Array.TrueForAll(setup, s => !string.IsNullOrEmpty(s.path)))
+            {
+                EditorSceneManager.RestoreSceneManagerSetup(setup);
+            }
+        }
+
+        public static IReadOnlyList<string> ParseScenesArgument(IReadOnlyList<string> args)
+        {
+            if (args == null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < args.Count; i++)
+            {
+                if (!string.Equals(args[i], ScenesArgument, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (i + 1 >= args.Count || string.IsNullOrWhiteSpace(args[i + 1]) || args[i + 1].StartsWith("-", StringComparison.Ordinal))
+                {
+                    throw new ArgumentException(LogTag + " " + ScenesArgument + " needs comma-separated scene paths", nameof(args));
+                }
+
+                var scenes = new List<string>();
+                foreach (var part in args[i + 1].Split(','))
+                {
+                    if (!string.IsNullOrWhiteSpace(part))
+                    {
+                        scenes.Add(part.Trim());
+                    }
+                }
+
+                return scenes;
+            }
+
+            return null;
+        }
+
+        public static string MapName(string scenePath)
+        {
+            if (string.IsNullOrWhiteSpace(scenePath) || !scenePath.EndsWith(".unity", StringComparison.Ordinal))
+            {
+                throw new ArgumentException(LogTag + " '" + scenePath + "' is not a scene path", nameof(scenePath));
+            }
+
+            return Path.GetFileNameWithoutExtension(scenePath);
+        }
+
+        public static IReadOnlyList<string> ExportScenes(IReadOnlyList<string> scenePaths, string outputDirectory)
+        {
+            if (scenePaths == null)
+            {
+                throw new ArgumentNullException(nameof(scenePaths));
+            }
+
+            if (string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                throw new ArgumentException("output directory must not be empty", nameof(outputDirectory));
+            }
+
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var scenePath in scenePaths)
+            {
+                if (!names.Add(MapName(scenePath)))
+                {
+                    throw new ArgumentException(LogTag + " two scenes are named " + MapName(scenePath), nameof(scenePaths));
+                }
+
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+                {
+                    throw new FileNotFoundException(LogTag + " scene " + scenePath + " does not exist", scenePath);
+                }
+            }
+
+            Directory.CreateDirectory(outputDirectory);
+            var setup = EditorSceneManager.GetSceneManagerSetup();
+            var written = new List<string>();
+            try
+            {
+                foreach (var scenePath in scenePaths)
+                {
+                    var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+                    var map = Collect(scene);
+                    var path = Path.Combine(outputDirectory, MapName(scenePath) + FileExtension);
+                    WriteFile(path, map);
+                    written.Add(path);
+                    Debug.Log(LogTag + " wrote " + path + " from " + scenePath + " (" + Describe(map) + ")");
+
+                    var navMesh = NavMeshExporter.Capture(scene);
+                    var navMeshPath = Path.Combine(outputDirectory, MapName(scenePath) + NavMeshFile.Extension);
+                    NavMeshExporter.Write(navMesh, navMeshPath);
+                    written.Add(navMeshPath);
+                    Debug.Log(NavMeshExporter.LogTag + " wrote " + navMeshPath + " from " + scenePath + " (" + navMesh.Vertices.Count
+                        + " vertices, " + navMesh.Triangles.Count + " triangles, " + navMesh.Links.Count + " links)");
+
+                    // サーバーは .fpsmap から部品の形しか分からないので、同じ耐久値と崩れ方で壊せるよう並びも書く
+                    var structures = CollectStructures(scene.GetRootGameObjects());
+                    var structuresPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapStructures.Extension);
+                    File.WriteAllText(structuresPath, NetMapStructures.Write(structures));
+                    written.Add(structuresPath);
+                    Debug.Log(LogTag + " wrote " + structuresPath + " (" + structures.Structures.Count + " structures)");
+
+                    var ladders = CollectLadders(scene.GetRootGameObjects());
+                    var laddersPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapLadders.Extension);
+                    WriteText(laddersPath, NetMapLadders.Write(ladders));
+                    written.Add(laddersPath);
+                    Debug.Log(LogTag + " wrote " + laddersPath + " from " + scenePath + " (" + ladders.Ladders.Count + " ladders)");
+
+                    var doors = CollectDoors(scene.GetRootGameObjects());
+                    var doorsPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapDoors.Extension);
+                    WriteText(doorsPath, NetMapDoors.Write(doors));
+                    written.Add(doorsPath);
+                    Debug.Log(LogTag + " wrote " + doorsPath + " from " + scenePath + " (" + doors.Doors.Count + " doors)");
+
+                    var water = CollectWater(scene.GetRootGameObjects());
+                    var waterPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapWater.Extension);
+                    WriteText(waterPath, NetMapWater.Write(water));
+                    written.Add(waterPath);
+                    Debug.Log(LogTag + " wrote " + waterPath + " from " + scenePath + " (" + water.Water.Count + " water volumes)");
+
+                    var vehicles = MapVehicleExporter.Collect(scene.GetRootGameObjects());
+                    var vehiclesPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapVehicles.Extension);
+                    WriteText(vehiclesPath, NetMapVehicles.Write(vehicles));
+                    written.Add(vehiclesPath);
+                    Debug.Log(LogTag + " wrote " + vehiclesPath + " from " + scenePath + " (" + vehicles.Vehicles.Count + " vehicles)");
+
+                    var pickups = MapPickupExporter.Collect(scene.GetRootGameObjects());
+                    var pickupsPath = Path.Combine(outputDirectory, MapName(scenePath) + NetMapPickups.Extension);
+                    WriteText(pickupsPath, NetMapPickups.Write(pickups));
+                    written.Add(pickupsPath);
+                    Debug.Log(LogTag + " wrote " + pickupsPath + " from " + scenePath + " (" + pickups.Pickups.Count + " pickups, "
+                        + pickups.AmmoCrates.Count + " ammo crates)");
+
+                    foreach (var data in _sceneData)
+                    {
+                        var dataPath = Path.Combine(outputDirectory, MapName(scenePath) + data.Key);
+                        WriteText(dataPath, data.Value(scene.GetRootGameObjects()));
+                        written.Add(dataPath);
+                        Debug.Log(LogTag + " wrote " + dataPath + " from " + scenePath);
+                    }
+                }
+            }
+            finally
+            {
+                RestoreSetup(setup);
+            }
+
+            return written;
+        }
+
+        public static void WriteFile(string path, WorldMap map)
+        {
+            if (map == null)
+            {
+                throw new ArgumentNullException(nameof(map));
+            }
+
+            // 書きかけのファイルをサーバーやテストが読まないよう、隣に書いてから置き換える
+            var temporary = path + ".tmp";
+            using (var stream = File.Create(temporary))
+            {
+                ShooterMapFile.Write(stream, map);
+            }
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            File.Move(temporary, path);
+        }
+
+        public static void WriteText(string path, string text)
+        {
+            // 書きかけのファイルをサーバーやテストが読まないよう、隣に書いてから置き換える
+            var temporary = path + ".tmp";
+            File.WriteAllText(temporary, text);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            File.Move(temporary, path);
+        }
+
+        // スナップショットははしごをこの並びの番号で指すので、サーバーとクライアントは同じファイルを読む。
+        // 無効なはしごはプレイ中につかまれない (Ladder.Enabled に載らない) ので書き出さない。
+        public static NetMapLadders CollectLadders(IReadOnlyList<GameObject> roots)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            var ladders = new List<MapLadder>();
+            var invalid = new List<string>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var ladder in root.GetComponentsInChildren<SceneLadder>(false))
+                {
+                    if (!ladder.enabled)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        ladders.Add(new MapLadder(ladder.Span, ladder.CreateSpec()));
+                    }
+                    catch (ArgumentException e)
+                    {
+                        invalid.Add(PathOf(ladder.transform) + " (" + e.Message + ")");
+                    }
+                }
+            }
+
+            // 書き出さないと、サーバーとクライアントの予測でだけつかまれないはしごになる
+            if (invalid.Count > 0)
+            {
+                throw new InvalidOperationException(LogTag + " these ladders have invalid settings: " + string.Join(", ", invalid));
+            }
+
+            return new NetMapLadders(ladders);
+        }
+
+        // 番号は Collect が板の当たりに付ける組 (MapColliderGroups.Door) と同じく、有効で動いているドアだけをシーンの並び順で数える。
+        // 無効なドアはプレイ中に破れないので、板はただの壁として動かない物の当たりに入る。
+        public static NetMapDoors CollectDoors(IReadOnlyList<GameObject> roots)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            var sources = ExportedDoors(roots);
+            if (sources.Count > MapColliderGroups.MaxDoors)
+            {
+                throw new InvalidOperationException(LogTag + " the scene has " + sources.Count + " doors; at most " + MapColliderGroups.MaxDoors + " can be exported");
+            }
+
+            var doors = new List<MapDoor>(sources.Count);
+            var invalid = new List<string>();
+            var owners = new Dictionary<Transform, Component>();
+            var allPanels = new HashSet<Transform>();
+            foreach (var candidate in sources)
+            {
+                if (candidate.Panel != null)
+                {
+                    allPanels.Add(candidate.Panel);
+                }
+            }
+
+            for (var i = 0; i < sources.Count; i++)
+            {
+                var source = sources[i];
+                var component = (Component)source;
+                var panel = source.Panel;
+                if (panel == null)
+                {
+                    invalid.Add(PathOf(component.transform) + " (has no panel)");
+                    continue;
+                }
+
+                if (owners.TryGetValue(panel, out var owner))
+                {
+                    invalid.Add(PathOf(component.transform) + " (shares its panel " + PathOf(panel) + " with " + PathOf(owner.transform) + ")");
+                    continue;
+                }
+
+                owners.Add(panel, component);
+
+                // 当たりの無い板はサーバーで道を塞がず、破っても外す物が無い
+                // GroupOf は入れ子の板の当たりを近い方のドアの組に入れるので、ここも近い板がこのドアの当たりだけ数える
+                if (!Array.Exists(panel.GetComponentsInChildren<Collider>(true), c => IsExported(c) && ToWorldCollider(c, 0, 0) != null && NearestPanel(c, allPanels) == panel))
+                {
+                    invalid.Add(PathOf(component.transform) + " (its panel " + PathOf(panel) + " has no enabled, non-trigger collider)");
+                    continue;
+                }
+
+                try
+                {
+                    doors.Add(new MapDoor(ToNumerics(source.PanelCenter), ToNumerics(source.PanelFacing), ToNumerics(source.PanelSize), MapColliderGroups.Door(i)));
+                }
+                catch (ArgumentException e)
+                {
+                    invalid.Add(PathOf(component.transform) + " (" + e.Message + ")");
+                }
+            }
+
+            // 書き出さないと、オフラインでだけ破れて、サーバーでは通れないままのドアになる
+            if (invalid.Count > 0)
+            {
+                throw new InvalidOperationException(LogTag + " these doors have invalid settings: " + string.Join(", ", invalid));
+            }
+
+            return new NetMapDoors(doors);
+        }
+
+        private static Transform NearestPanel(Collider collider, HashSet<Transform> panels)
+        {
+            for (var parent = collider.transform; parent != null; parent = parent.parent)
+            {
+                if (panels.Contains(parent))
+                {
+                    return parent;
+                }
+            }
+
+            return null;
+        }
+
+        private static List<IBreachDoorSource> ExportedDoors(IReadOnlyList<GameObject> roots)
+        {
+            var doors = new List<IBreachDoorSource>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var door in root.GetComponentsInChildren<IBreachDoorSource>(true))
+                {
+                    var component = door as Component;
+                    if (component == null || !component.gameObject.activeInHierarchy || (component is Behaviour behaviour && !behaviour.enabled))
+                    {
+                        continue;
+                    }
+
+                    doors.Add(door);
+                }
+            }
+
+            return doors;
+        }
+
+        private static Dictionary<Transform, int> DoorPanels(IReadOnlyList<GameObject> roots)
+        {
+            var panels = new Dictionary<Transform, int>();
+            var doors = ExportedDoors(roots);
+            for (var i = 0; i < doors.Count && i < MapColliderGroups.MaxDoors; i++)
+            {
+                var panel = doors[i].Panel;
+                if (panel != null && !panels.ContainsKey(panel))
+                {
+                    panels.Add(panel, i);
+                }
+            }
+
+            return panels;
+        }
+
+        private static bool IsExported(Collider collider)
+        {
+            // 乗り物は動くので、サーバーは .fpsmap の形ではなく乗り物の書き出し (MapVehicleExporter) の車体で当てる
+            return collider.enabled && collider.gameObject.activeInHierarchy && !collider.isTrigger
+                && !(collider is CharacterController) && !(collider is WheelCollider) && collider.GetComponentInParent<Vehicle>(true) == null;
+        }
+
+        // 無効な水はプレイ中に泳げない (Water.Enabled に載らない) ので書き出さない。
+        public static NetMapWater CollectWater(IReadOnlyList<GameObject> roots)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            var water = new List<MapWater>();
+            var invalid = new List<string>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var volume in root.GetComponentsInChildren<SceneWater>(false))
+                {
+                    if (!volume.enabled)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        water.Add(new MapWater(volume.Box));
+                    }
+                    catch (ArgumentException e)
+                    {
+                        invalid.Add(PathOf(volume.transform) + " (" + e.Message + ")");
+                    }
+                }
+            }
+
+            // 書き出さないと、オフラインでだけ泳げる水になる
+            if (invalid.Count > 0)
+            {
+                throw new InvalidOperationException(LogTag + " these water volumes have invalid settings: " + string.Join(", ", invalid));
+            }
+
+            return new NetMapWater(water);
+        }
+
+        public static WorldMap ReadFile(string path)
+        {
+            using (var stream = File.OpenRead(path))
+            {
+                return ShooterMapFile.Read(stream);
+            }
+        }
+
+        public static IReadOnlyList<string> RemoveStaleFiles(string outputDirectory, IReadOnlyCollection<string> keep)
+        {
+            if (keep == null)
+            {
+                throw new ArgumentNullException(nameof(keep));
+            }
+
+            var removed = new List<string>();
+            if (!Directory.Exists(outputDirectory))
+            {
+                return removed;
+            }
+
+            var kept = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var path in keep)
+            {
+                kept.Add(Path.GetFullPath(path));
+            }
+
+            var files = new List<string>();
+            foreach (var extension in _builtInExtensions)
+            {
+                files.AddRange(Directory.GetFiles(outputDirectory, "*" + extension));
+            }
+
+            foreach (var extension in _sceneData.Keys)
+            {
+                files.AddRange(Directory.GetFiles(outputDirectory, "*" + extension));
+            }
+
+            foreach (var path in files)
+            {
+                if (kept.Contains(Path.GetFullPath(path)))
+                {
+                    continue;
+                }
+
+                File.Delete(path);
+                removed.Add(path);
+                Debug.Log(LogTag + " removed " + path + " (not one of the exported maps)");
+            }
+
+            return removed;
+        }
+
+        public static WorldMap Collect(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                throw new ArgumentException(LogTag + " the scene is not loaded", nameof(scene));
+            }
+
+            return Collect(scene.GetRootGameObjects());
+        }
+
+        public static WorldMap Collect(IReadOnlyList<GameObject> roots, List<Collider> sourcesById = null)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            sourcesById?.Clear();
+            var structures = new Dictionary<DestructibleStructure, int>();
+            var bodies = new Dictionary<Rigidbody, int>();
+            var colliders = new List<Collider>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                // 番号はサーバーが同じ並びで数え直せるよう、有効・無効を問わずシーンの並び順で振る
+                foreach (var structure in root.GetComponentsInChildren<DestructibleStructure>(true))
+                {
+                    structures.Add(structure, structures.Count);
+                }
+
+                foreach (var body in root.GetComponentsInChildren<Rigidbody>(true))
+                {
+                    bodies.Add(body, bodies.Count);
+                }
+
+                colliders.AddRange(root.GetComponentsInChildren<Collider>(true));
+            }
+
+            var doorPanels = DoorPanels(roots);
+            var shapes = new List<WorldCollider>();
+            var unsupported = new List<string>();
+            foreach (var collider in colliders)
+            {
+                if (!IsExported(collider))
+                {
+                    continue;
+                }
+
+                var id = shapes.Count;
+                var shape = ToWorldCollider(collider, id, GroupOf(collider, doorPanels, structures, bodies));
+                if (shape == null)
+                {
+                    if (!(collider is MeshCollider) && !(collider is BoxCollider) && !(collider is SphereCollider) && !(collider is CapsuleCollider))
+                    {
+                        unsupported.Add(PathOf(collider.transform) + " (" + collider.GetType().Name + ")");
+                    }
+
+                    continue;
+                }
+
+                shapes.Add(shape);
+                sourcesById?.Add(collider);
+            }
+
+            // 書き出さないと、サーバーでだけ通り抜けられる床や壁になる
+            if (unsupported.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    LogTag + " these colliders cannot be exported (use Mesh/Box/Sphere/Capsule colliders): " + string.Join(", ", unsupported));
+            }
+
+            return new WorldMap(shapes);
+        }
+
+        // 番号は Collect と同じく、有効・無効を問わずシーンの並び順で振る。
+        // 防衛物は HordeRunner が無効の物を拾わない (FindObjectsInactive.Exclude) のに合わせ、有効なものだけを書く
+        public static NetMapStructures CollectStructures(IReadOnlyList<GameObject> roots)
+        {
+            if (roots == null)
+            {
+                throw new ArgumentNullException(nameof(roots));
+            }
+
+            var layouts = new List<StructureLayout>();
+            var fortifications = new List<MapFortification>();
+            foreach (var root in roots)
+            {
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var structure in root.GetComponentsInChildren<DestructibleStructure>(true))
+                {
+                    var fortification = structure.GetComponent<HordeFortification>();
+                    if (fortification != null && fortification.enabled && fortification.gameObject.activeInHierarchy)
+                    {
+                        fortifications.Add(new MapFortification(
+                            layouts.Count, ToNumerics(fortification.transform.position), fortification.StartsBuilt, fortification.name));
+                    }
+
+                    layouts.Add(structure.Integrity.Layout);
+                }
+            }
+
+            return new NetMapStructures(layouts, fortifications);
+        }
+
+        // ドアの板は破ったときにサーバーが外すので、板が剛体や壊せる建物の部品の下にあってもドアの組を先にする。
+        // 板の中に入れ子の板があれば、近い方のドアの組にする
+        private static int GroupOf(
+            Collider collider, Dictionary<Transform, int> doorPanels, Dictionary<DestructibleStructure, int> structures, Dictionary<Rigidbody, int> bodies)
+        {
+            for (var parent = collider.transform; parent != null && doorPanels.Count > 0; parent = parent.parent)
+            {
+                if (doorPanels.TryGetValue(parent, out var doorIndex))
+                {
+                    return MapColliderGroups.Door(doorIndex);
+                }
+            }
+
+            var piece = collider.GetComponentInParent<DestructiblePiece>(true);
+            if (piece != null)
+            {
+                var structure = piece.GetComponentInParent<DestructibleStructure>(true);
+                if (structure != null && structures.TryGetValue(structure, out var structureIndex))
+                {
+                    return MapColliderGroups.Piece(structureIndex, piece.Index);
+                }
+            }
+
+            var body = collider.GetComponentInParent<Rigidbody>(true);
+            if (body != null && bodies.TryGetValue(body, out var bodyIndex))
+            {
+                return MapColliderGroups.Body(bodyIndex);
+            }
+
+            return MapColliderGroups.Static;
+        }
+
+        private static WorldCollider ToWorldCollider(Collider collider, int id, int group)
+        {
+            var transform = collider.transform;
+            var layer = collider.gameObject.layer;
+            var scale = Abs(transform.lossyScale);
+            switch (collider)
+            {
+                case BoxCollider box:
+                    var half = Vector3.Scale(Abs(box.size), scale) * 0.5f;
+                    return WorldCollider.Box(id, layer, group, ToNumerics(transform.TransformPoint(box.center)), ToNumerics(half), ToNumerics(transform.rotation));
+                case SphereCollider sphere:
+                    var sphereRadius = Mathf.Abs(sphere.radius) * Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+                    if (!(sphereRadius > 0f))
+                    {
+                        return null;
+                    }
+
+                    return WorldCollider.Sphere(id, layer, group, ToNumerics(transform.TransformPoint(sphere.center)), sphereRadius);
+                case CapsuleCollider capsule:
+                    return ToCapsule(capsule, id, layer, group, scale);
+                case MeshCollider meshCollider:
+                    return ToMesh(meshCollider, id, layer, group);
+                default:
+                    return null;
+            }
+        }
+
+        private static WorldCollider ToCapsule(CapsuleCollider capsule, int id, int layer, int group, Vector3 scale)
+        {
+            var axis = Mathf.Clamp(capsule.direction, 0, 2);
+            var axisScale = scale[axis];
+            var radiusScale = Mathf.Max(scale[(axis + 1) % 3], scale[(axis + 2) % 3]);
+            var radius = Mathf.Abs(capsule.radius) * radiusScale;
+            if (!(radius > 0f))
+            {
+                return null;
+            }
+
+            var halfSegment = Mathf.Max(0f, (Mathf.Abs(capsule.height) * axisScale * 0.5f) - radius);
+            var localAxis = Vector3.zero;
+            localAxis[axis] = 1f;
+            var transform = capsule.transform;
+            var center = transform.TransformPoint(capsule.center);
+            var worldAxis = transform.rotation * localAxis;
+            return WorldCollider.Capsule(
+                id, layer, group, ToNumerics(center - (worldAxis * halfSegment)), ToNumerics(center + (worldAxis * halfSegment)), radius);
+        }
+
+        // convex の MeshCollider も元のメッシュの三角形のまま書き出す。凸なメッシュなら PhysX の凸包と同じ面になり、
+        // 凸包を作り直すと PhysX の簡略化 (面の数の上限) と食い違うため
+        private static WorldCollider ToMesh(MeshCollider meshCollider, int id, int layer, int group)
+        {
+            var mesh = meshCollider.sharedMesh;
+            if (mesh == null)
+            {
+                return null;
+            }
+
+            var matrix = meshCollider.transform.localToWorldMatrix;
+            var localVertices = mesh.vertices;
+            var vertices = new NumericsVector3[localVertices.Length];
+            for (var i = 0; i < localVertices.Length; i++)
+            {
+                vertices[i] = ToNumerics(matrix.MultiplyPoint3x4(localVertices[i]));
+            }
+
+            // 裏返しの拡大縮小では PhysX が面の向きを保つので、三角形の巡りを逆にして表を外へ向けたままにする
+            var mirrored = matrix.determinant < 0f;
+            var indices = new List<int>();
+            for (var subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+            {
+                if (mesh.GetTopology(subMesh) != MeshTopology.Triangles)
+                {
+                    continue;
+                }
+
+                var triangles = mesh.GetTriangles(subMesh);
+                for (var i = 0; i + 2 < triangles.Length; i += 3)
+                {
+                    indices.Add(triangles[i]);
+                    indices.Add(mirrored ? triangles[i + 2] : triangles[i + 1]);
+                    indices.Add(mirrored ? triangles[i + 1] : triangles[i + 2]);
+                }
+            }
+
+            return indices.Count == 0 ? null : WorldCollider.Mesh(id, layer, group, vertices, indices);
+        }
+
+        private static string Describe(WorldMap map)
+        {
+            var statics = 0;
+            var pieces = 0;
+            var bodies = 0;
+            var doors = 0;
+            foreach (var collider in map.Colliders)
+            {
+                if (MapColliderGroups.IsPiece(collider.Group))
+                {
+                    pieces++;
+                }
+                else if (MapColliderGroups.IsDoor(collider.Group))
+                {
+                    doors++;
+                }
+                else if (MapColliderGroups.IsBody(collider.Group))
+                {
+                    bodies++;
+                }
+                else
+                {
+                    statics++;
+                }
+            }
+
+            return map.Colliders.Count + " colliders: " + statics + " static, " + pieces + " destructible pieces, " + bodies + " on rigidbodies, " + doors + " on door panels";
+        }
+
+        private static string PathOf(Transform transform)
+        {
+            var path = transform.name;
+            for (var parent = transform.parent; parent != null; parent = parent.parent)
+            {
+                path = parent.name + "/" + path;
+            }
+
+            return path;
+        }
+
+        private static Vector3 Abs(Vector3 v)
+        {
+            return new Vector3(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
+        }
+
+        private static NumericsVector3 ToNumerics(Vector3 v)
+        {
+            return new NumericsVector3(v.x, v.y, v.z);
+        }
+
+        private static NumericsQuaternion ToNumerics(Quaternion q)
+        {
+            return NumericsQuaternion.Normalize(new NumericsQuaternion(q.x, q.y, q.z, q.w));
+        }
+    }
+}

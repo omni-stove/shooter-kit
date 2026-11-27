@@ -17,7 +17,7 @@ namespace Shooter.Core.Tests
         {
             var root = RepositoryRoot();
             var server = File.ReadAllText(Path.Combine(root, "server-data", "tuning", fileName));
-            var unity = File.ReadAllText(Path.Combine(root, "Assets", "game", "Resources", "Tuning", fileName));
+            var unity = File.ReadAllText(Path.Combine(root, "Assets", "kits", "shooter", "Resources", "Tuning", fileName));
 
             Assert.That(server, Is.EqualTo(unity));
         }

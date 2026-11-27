@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # <base> から今の作業ツリーまでに変わったファイル (未追跡の新規ファイルを含む) から、CI の lint と test のどこまでを回すかを決める。
 #   scripts/affected.sh <base>       full= test= format= を true か false で 1 行ずつ出す ($GITHUB_OUTPUT にそのまま足せる形)
-#   scripts/affected.sh --cs <base>  変わって今もある Assets/game と dotnet の .cs を 1 行ずつ出す (lint.sh --since が書式を見る範囲)
+#   scripts/affected.sh --cs <base>  変わって今もある Assets/kits の下のキットと dotnet の .cs を 1 行ずつ出す (lint.sh --since が書式を見る範囲)
 # full: 全部の検査の前提 (ビルド設定・書式の規則・CI とそのスクリプト) が変わったか、<base> を引けないとき。
 # test: dotnet のテストに影響しないと確かなファイル (no_test_effect) の外が変わったとき。full なら true。
 # format: .cs が変わったとき。full なら true。
@@ -66,7 +66,7 @@ changed="$(
 if [ "$mode" = cs ]; then
 	printf '%s\n' "$changed" | while IFS= read -r path; do
 		case "$path" in
-		Assets/game/*.cs | dotnet/*.cs)
+		Assets/kits/*.cs | dotnet/*.cs)
 			if [ -f "$path" ]; then printf "%s\n" "$path"; fi
 			;;
 		esac

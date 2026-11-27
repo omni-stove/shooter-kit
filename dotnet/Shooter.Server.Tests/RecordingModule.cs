@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Shooter.Protocol;
+using GameKit.Net;
 
 namespace Shooter.Server.Tests
 {

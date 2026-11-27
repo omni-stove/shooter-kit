@@ -6,9 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server.Tests
 {

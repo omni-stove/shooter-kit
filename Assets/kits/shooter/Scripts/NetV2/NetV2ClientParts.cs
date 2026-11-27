@@ -1,0 +1,322 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using GameKit.Net;
+using Shooter.Core;
+using Shooter.Protocol;
+using Shooter.Runtime;
+
+namespace Shooter.NetV2
+{
+    public sealed class NetV2ClientPartsContext
+    {
+        public NetV2ClientPartsContext(MatchClient client, Func<IMessage, bool> send, Action<string> log)
+        {
+            Client = client ?? throw new ArgumentNullException(nameof(client));
+            Send = send ?? throw new ArgumentNullException(nameof(send));
+            Log = log ?? throw new ArgumentNullException(nameof(log));
+        }
+
+        public MatchClient Client { get; }
+
+        public Func<IMessage, bool> Send { get; }
+
+        public Action<string> Log { get; }
+
+        public SharedPingMarkers Pings { get; set; } = new SharedPingMarkers();
+
+        public MinimapSpec Minimap { get; set; } = MinimapSpec.Default;
+
+        public Func<int, Vector3?> ControlPointPosition { get; set; } = _ => null;
+
+        public Action<string> MapDecided { get; set; }
+
+        public Func<NetV2LocalPlayer> LocalPlayer { get; set; }
+
+        // 今のマップの当たり (予測と同じもの)。マップに入る前と出た後は null を返す。null ならマップの当たりを使う部品はマップに入らない
+        public Func<ClientWorld> World { get; set; }
+
+        public IVoiceSession Voice { get; set; }
+
+        public string VoiceLobbyId { get; set; }
+
+        public VoiceRoster VoiceRoster { get; set; } = new VoiceRoster();
+
+        public VoiceSettingsStore VoiceSettings { get; set; } = new VoiceSettingsStore();
+
+        public Func<bool> PushToTalkHeld { get; set; }
+
+        public BlockListStore Blocks { get; set; } = new BlockListStore();
+
+        // NetV2PlayerNamesPart が埋め、キルカメラと HUD が同じものを引く。null なら部品の中で作る
+        public ClientPlayerNames Names { get; set; } = new ClientPlayerNames();
+
+        // null ならオフラインと同じ Resources の調整値 (melee・streaks の JSON) を使う
+        public MeleeSpec Melee { get; set; }
+
+        // スナップショットの武器の Id から武器を引く。近接の部品が、ルールの Melee が Off でも近接武器なら振ると決めるため。null なら近接武器を引かない
+        public Func<string, WeaponSpec> FindWeapon { get; set; }
+
+        // 自分の武器に付けた物の Id。ウェポンライトの部品が、ライトの無い武器で断られると分かっている要求を送らないため。null なら何も付けていないとみなす
+        public Func<string, IReadOnlyList<string>> OwnAttachments { get; set; }
+
+        public StreakSpec Streaks { get; set; }
+
+        // ロードアウトの能力の並び。つないだ直後の Ability1・Ability2 で置く種類をここから引く
+        public IReadOnlyList<AbilityDefinition> Abilities { get; set; } = Array.Empty<AbilityDefinition>();
+
+        // 装備画面で選べる能力の一覧。誰かが選んで置いた物の見た目と、受け入れられた選択の枠の定義をここから引く。null なら能力を選ばせないゲーム
+        public AbilityCatalogAsset AbilityCatalog { get; set; }
+
+        // 受け入れられた能力の選択を出す側。null なら枠はロードアウトの能力のまま
+        internal NetV2LoadoutChooser Loadout { get; set; }
+
+        public float KillCamSpeed { get; set; } = 1f;
+
+        // 回線の値 (GameSignals.NetStats) を出し直す間隔 (秒)
+        public float NetStatsIntervalSeconds { get; set; } = NetV2NetStatsPart.DefaultIntervalSeconds;
+
+        // ファイルから再生する (ReplayTransport) か。再生では通報を送る相手がいないので通報の口を出さず、見方の部品を足す
+        public bool Replay { get; set; }
+
+        // 再生の自由なカメラの速さ (m/s)。プレイヤーは後から現れるので毎回読む。null なら既定
+        public Func<float> ReplayFreeSpeed { get; set; }
+
+        // null なら天候の部品がシーンの WeatherController を探す
+        public Func<WeatherController> Weather { get; set; }
+
+        // 箱・物資投下・倒れた人の箱・脱出地点の差し替えの見た目。null なら NetV2LootPart がコードで形を作る
+        public NetV2LootVisuals LootVisuals { get; set; }
+
+        // 地面の拾い物と弾薬箱の差し替えの見た目。null なら NetV2PickupPart がコードで形を作る
+        public NetV2PickupVisuals PickupVisuals { get; set; }
+
+        // null ならエリアの部品がシーンの ShrinkingZone を探して見た目を引き継ぐ
+        public Func<ShrinkingZone> ZoneLook { get; set; }
+
+        // Guardian のリーダーの頭上の目印の見た目 (GuardianRunner.LeaderMarkerPrefab と同じ作り)。null なら仮の菱形を作る
+        public UnityEngine.GameObject LeaderMarkerVisual { get; set; }
+
+        // Juggernaut のジャガーノートの頭上の目印の見た目 (JuggernautRunner.MarkerPrefab と同じ作り)。null なら仮の菱形を作る
+        public UnityEngine.GameObject JuggernautMarkerVisual { get; set; }
+
+        // VIP 護衛の VIP の頭上の目印の見た目 (VipRunner.MarkerPrefab と同じ作り)。null なら仮の菱形を作る
+        public UnityEngine.GameObject VipMarkerVisual { get; set; }
+    }
+
+    public static class NetV2ClientParts
+    {
+        // 後から足す部品は Create の本体を書き換えず、ここに 1 行ずつ並べる。null を返した登録は、その試合では部品を出さない (再生では送れない口など)。
+        // 組み込みの部品の後ろ、声の部品の前に、並べた順で足す
+        internal static readonly IReadOnlyList<Func<NetV2ClientPartsContext, INetV2ClientPart>> Registered =
+            new Func<NetV2ClientPartsContext, INetV2ClientPart>[]
+            {
+                NetV2GuardianLeaderPart.Create,
+                NetV2PickupPart.Create,
+                NetV2EmotePart.Create,
+                NetV2DronePart.Create,
+                NetV2VisionPart.Create,
+                NetV2HordePart.Create,
+                NetV2HolsterPart.Create,
+                NetV2WeaponLightPart.Create,
+                NetV2DoorsPart.Create,
+                NetV2JuggernautPart.Create,
+                NetV2VipPart.Create,
+            };
+
+        public static List<INetV2ClientPart> Create(NetV2ClientPartsContext context)
+        {
+            return Create(context, Registered);
+        }
+
+        internal static List<INetV2ClientPart> Create(
+            NetV2ClientPartsContext context, IReadOnlyList<Func<NetV2ClientPartsContext, INetV2ClientPart>> registered)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            if (registered == null)
+            {
+                throw new ArgumentNullException(nameof(registered));
+            }
+
+            for (var i = 0; i < registered.Count; i++)
+            {
+                if (registered[i] == null)
+                {
+                    throw new ArgumentException("registered part " + i + " is null", nameof(registered));
+                }
+            }
+
+            var client = context.Client;
+            var names = new NetV2PlayerNamesPart(context.Names);
+            var blocks = new NetV2BlockPart(
+                client, context.VoiceRoster, context.Blocks ?? new BlockListStore(), context.Voice == null, context.Log);
+            var deployables = new NetV2DeployablesPart(
+                context.Send, () => client.PlayerId, DeployDefinitionsOf(context.Abilities, context.AbilityCatalog), context.Log);
+            var deployInput = new NetV2DeployInputPart(
+                deployables, NetV2DeployInputPart.SlotsOf(context.Abilities), () => CanAct(client), context.LocalPlayer);
+            if (context.Loadout != null)
+            {
+                deployInput.Follow(context.Loadout, context.AbilityCatalog, context.Log);
+            }
+
+            var parts = new List<INetV2ClientPart>
+            {
+                blocks,
+                new NetV2MinimapPart(() => client.PlayerId, context.Pings, context.Minimap, context.ControlPointPosition),
+                new NetV2ChatPart(context.Send, ClientChat.DefaultCapacity, context.Log, blocks.Blocks),
+                new NetV2MapVotePart(context.Send, context.Log, context.MapDecided),
+                new NetV2SpectatePart(client, context.Send, context.LocalPlayer),
+
+                // ストリークと近接の規則はスナップショットの MatchRulesSync で届くので、最後に届いた値で決める
+                new NetV2StreakPart(client, context.Send, () => StreaksRule(client), context.Log, context.Streaks, context.LocalPlayer),
+                new NetV2MeleePart(client, context.Melee, context.LocalPlayer, context.Log, context.FindWeapon),
+                deployables,
+                deployInput,
+                new NetV2KillCamPart(client, context.KillCamSpeed, context.LocalPlayer, context.Log, names.Names),
+
+                // 天候と時刻もスナップショットの MatchRulesSync で届くので、マップを替えるたびにシーンの空へ当て直す
+                new NetV2WeatherPart(context.Weather, context.Log),
+
+                // 箱とエリアは、スナップショットに箱・脱出地点・エリアの欄が無ければ何も出さないので、目的で分けずに並べる。
+                // 再生では開ける要求を受ける相手がいないので、箱は見せるだけにする
+                new NetV2LootPart(
+                    context.Send,
+                    () => !context.Replay && CanAct(client),
+                    context.LootVisuals,
+                    () => LocalPositionOf(context.LocalPlayer),
+                    log: context.Log),
+                new NetV2ZonePart(context.ZoneLook),
+                names,
+            };
+
+            if (context.Replay)
+            {
+                parts.Add(new NetV2ReplayViewPart(client, context.ReplayFreeSpeed ?? (() => DeathCamFraming.DefaultFreeSpeed)));
+            }
+            else
+            {
+                // 通報と同じく、投票と購入も送る相手 (サーバー) のいない再生では口を出さない
+                parts.Add(new NetV2ReportPart(context.Send, context.Log));
+                parts.Add(new NetV2VoteKickPart(context.Send, context.Log));
+                parts.Add(new NetV2BuyPart(context.Send, context.Log));
+
+                // 再生の通信路はファイルを読むだけで Ping もロスも無いので、回線の値は試合中だけ出す
+                parts.Add(new NetV2NetStatsPart(client, context.NetStatsIntervalSeconds));
+
+                // 再生は誰かの試合を見返すだけなので、試合の結果を出して XP と腕前を動かすのは試合中だけにする
+                parts.Add(new NetV2MatchResultPart(client));
+            }
+
+            AddRegistered(parts, context, registered);
+
+            if (context.Voice != null)
+            {
+                parts.Add(new NetV2VoicePart(
+                    context.Client,
+                    context.Voice,
+                    context.VoiceLobbyId,
+                    context.VoiceRoster,
+                    context.VoiceSettings,
+                    context.Log,
+                    context.PushToTalkHeld,
+                    blocks.Blocks));
+            }
+
+            return parts;
+        }
+
+        // 途中の登録が投げたら、それまでに作った部品を捨てずに返すと誰も Dispose しないので、ここで片付けてから投げ直す
+        private static void AddRegistered(
+            List<INetV2ClientPart> parts, NetV2ClientPartsContext context, IReadOnlyList<Func<NetV2ClientPartsContext, INetV2ClientPart>> registered)
+        {
+            for (var i = 0; i < registered.Count; i++)
+            {
+                INetV2ClientPart part;
+                try
+                {
+                    part = registered[i](context);
+                }
+                catch
+                {
+                    foreach (var made in parts)
+                    {
+                        made.Dispose();
+                    }
+
+                    throw;
+                }
+
+                if (part != null)
+                {
+                    parts.Add(part);
+                }
+            }
+        }
+
+        public static Streaks StreaksRule(MatchClient client)
+        {
+            var latest = client?.LatestSnapshot;
+            return latest != null ? latest.Match.Rules.Streaks : Streaks.Off;
+        }
+
+        // 置く要求はサーバーが確かめ直すので、ここでは試合中に自分が立っているときだけ送り、倒れている間の空の要求で拒まれるログを増やさない
+        public static bool CanAct(MatchClient client)
+        {
+            var latest = client?.LatestSnapshot;
+            if (latest == null || latest.Match.State != GameModeState.Playing)
+            {
+                return false;
+            }
+
+            var own = latest.Players.IndexOf(client.PlayerId);
+            if (own < 0)
+            {
+                return false;
+            }
+
+            var row = latest.Players[own];
+            return row.Health > 0 && !row.Downed.IsDowned;
+        }
+
+        // 破棄済みの Unity の参照も無いものとして扱うため、?. ではなく != null で確かめる
+        private static UnityEngine.Vector3? LocalPositionOf(Func<NetV2LocalPlayer> localPlayer)
+        {
+            var local = localPlayer?.Invoke();
+            return local != null ? local.transform.position : (UnityEngine.Vector3?)null;
+        }
+
+        // 他の人はカタログのどの置く物を選んでいてもよいので、ロードアウトの能力だけでなくカタログ全部の置く物を渡す。
+        // 同じ Id はロードアウトのものを先に置き、NetV2DeployablesPart が最初の 1 つだけを使う
+        internal static List<DeployAbilityDefinition> DeployDefinitionsOf(IReadOnlyList<AbilityDefinition> abilities, AbilityCatalogAsset catalog)
+        {
+            var definitions = new List<DeployAbilityDefinition>();
+            AddDeploys(definitions, abilities);
+            if (catalog != null)
+            {
+                AddDeploys(definitions, catalog.Abilities);
+            }
+
+            return definitions;
+        }
+
+        private static void AddDeploys(List<DeployAbilityDefinition> definitions, IReadOnlyList<AbilityDefinition> abilities)
+        {
+            if (abilities == null)
+            {
+                return;
+            }
+
+            foreach (var ability in abilities)
+            {
+                if (ability is DeployAbilityDefinition deploy)
+                {
+                    definitions.Add(deploy);
+                }
+            }
+        }
+    }
+}

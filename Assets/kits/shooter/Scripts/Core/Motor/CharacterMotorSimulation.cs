@@ -1,0 +1,1182 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using GameKit.World;
+
+namespace Shooter.Core
+{
+    // 予測・再シミュレーション・サーバーで同じ処理を通すので、同じ状態と入力と世界からは同じ結果になるようにする。
+    // 姿勢の判断は状態と入力だけから行い、体に残った前の tick の姿勢には頼らない (巻き戻しで状態が飛んでも同じ答えにするため)。
+    // カバー中に寄せるときに向きを回さないのは、向きは持ち主の視点操作が決めて入力に乗せるもので、シミュレーションからは書けないため。
+    public sealed partial class CharacterMotorSimulation
+    {
+        public const string ReasonDowned = "downed";
+
+        // KnockbackMovement の着地と同じ。着地した tick に動かさないと床に触れず、次の tick で接地が外れて落ち始める。
+        private static readonly Vector3 _knockbackSettle = new Vector3(0f, -0.05f, 0f);
+
+        private readonly PlayerMotor _motor;
+        private readonly CharacterCoverSensor _coverSensor;
+        private readonly CharacterWallSensor _wallSensor;
+
+        // 状態から毎 tick 戻して使う作業用。tick をまたいで中身を持ち越さない
+        private readonly CoverState _cover;
+        private readonly DodgeMotion _dodge;
+
+        private readonly ProneInput _proneInput = new ProneInput();
+        private readonly ProneDive _dive;
+        private readonly KnockbackFlight _knockback = new KnockbackFlight();
+        private KnockbackSpec _knockbackSpec = KnockbackSpec.Default;
+
+        private IReadOnlyList<MapLadder> _ladders = Array.Empty<MapLadder>();
+
+        // この tick に床に運ばれた速さ。tick をまたいで持ち越さない
+        private Vector3 _rideVelocity;
+
+        private IWaterVolumes _water = NoWaterVolumes.Instance;
+        private SwimTuning _swim = SwimTuning.Default;
+        private WallRunTuning _wallRun = WallRunTuning.Default;
+        private ParachuteTuning _parachuteTuning = ParachuteTuning.Default;
+
+        // 状態から毎 tick 戻して使う作業用。tick をまたいで中身を持ち越さない
+        private ParachuteMotion _parachute = NewParachute(ParachuteTuning.Default);
+
+        // この tick の頭で開いていたか。どの道筋で閉じても Finish で閉じた理由を残すため
+        private bool _parachuteWasOpen;
+
+        public CharacterMotorSimulation(CharacterBody body, PlayerMotor motor, float tickSeconds, float killPlaneY)
+            : this(body, motor, tickSeconds, killPlaneY, ProneSpec.Default)
+        {
+        }
+
+        public CharacterMotorSimulation(CharacterBody body, PlayerMotor motor, float tickSeconds, float killPlaneY, ProneSpec prone)
+        {
+            Body = body ?? throw new ArgumentNullException(nameof(body));
+            _motor = motor ?? throw new ArgumentNullException(nameof(motor));
+            if (!(tickSeconds > 0f) || float.IsInfinity(tickSeconds))
+            {
+                throw new ArgumentOutOfRangeException(nameof(tickSeconds), tickSeconds, "tickSeconds must be positive and finite");
+            }
+
+            if (float.IsNaN(killPlaneY))
+            {
+                throw new ArgumentOutOfRangeException(nameof(killPlaneY), killPlaneY, "killPlaneY must not be NaN");
+            }
+
+            TickSeconds = tickSeconds;
+            KillPlaneY = killPlaneY;
+            _coverSensor = new CharacterCoverSensor(body);
+            _vaultSensor = new CharacterVaultSensor(body);
+            _wallSensor = new CharacterWallSensor(body);
+            _dodge = new DodgeMotion(motor.Spec);
+            _cover = new CoverState(motor.Spec);
+            ProneSpec = prone ?? throw new ArgumentNullException(nameof(prone));
+            _dive = new ProneDive(prone);
+        }
+
+        public CharacterBody Body { get; }
+
+        public MotorSpec Spec => _motor.Spec;
+
+        public ProneSpec ProneSpec { get; }
+
+        // 状態ははしごをこの並びの番号で指すので、予測とサーバーで同じ並びを渡す。
+        public IReadOnlyList<MapLadder> Ladders
+        {
+            get => _ladders;
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                for (var i = 0; i < value.Count; i++)
+                {
+                    if (value[i] == null)
+                    {
+                        throw new ArgumentException("ladders must not contain null", nameof(value));
+                    }
+                }
+
+                _ladders = value;
+            }
+        }
+
+        public KnockbackSpec Knockback
+        {
+            get => _knockbackSpec;
+            set => _knockbackSpec = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        // 予測とサーバーで同じ水を渡す。片方だけ水があると、泳ぐかが毎 tick 食い違う。
+        public IWaterVolumes Water
+        {
+            get => _water;
+            set => _water = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        public SwimTuning Swim
+        {
+            get => _swim;
+            set => _swim = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        public WallRunTuning WallRun
+        {
+            get => _wallRun;
+            set => _wallRun = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        // 予測とサーバーで同じ値を渡す。開ける高さや降りる速さが違うと、開いたかと位置が毎 tick 食い違う。
+        public ParachuteTuning Parachute
+        {
+            get => _parachuteTuning;
+            set
+            {
+                _parachuteTuning = value ?? throw new ArgumentNullException(nameof(value));
+                _parachute = NewParachute(value);
+            }
+        }
+
+        // 開こうとした tick だけ値を持つ。ログと見た目は呼び手が読んで出す (シミュレーションは予測のやり直しでも呼ばれるため)
+        public ParachuteOpenVerdict? LastParachuteVerdict { get; private set; }
+
+        public float LastParachuteHeight { get; private set; }
+
+        public ParachuteCloseReason? LastParachuteClose { get; private set; }
+
+        public float TickSeconds { get; }
+
+        public float KillPlaneY { get; }
+
+        public Vector3 SpawnPosition { get; set; }
+
+        public CharacterCoverSensor CoverSensor => _coverSensor;
+
+        public CharacterWallSensor WallSensor => _wallSensor;
+
+        // 床を止めることも視点を回すこともシミュレーションからはできないので、床と視点を持つ呼び手が読んで行う。
+        public PlatformRide LastRide { get; private set; }
+
+        public static Vector3 YawForward(float yaw)
+        {
+            return new Vector3(MathF.Sin(yaw), 0f, MathF.Cos(yaw));
+        }
+
+        // 速さは KnockbackSpec.TryGetVelocity で決める (オフラインの吹き飛ばしと同じ計算にするため)。
+        public static CharacterMotorState Launch(CharacterMotorState state, Vector3 velocity)
+        {
+            return state.WithKnockback(state.Knockback.Launch(velocity));
+        }
+
+        // 入力を待たずにサーバーが開く口 (高い所に置いて降ろすとき)。ルールと高さの判定は入力で開くときと同じにする。
+        // 動くのは次の入力からにし、持ち主の予測がその状態から入力をやり直せるようにする。
+        public CharacterMotorState Deploy(CharacterMotorState state, bool allowed)
+        {
+            LastParachuteVerdict = null;
+            LastParachuteClose = null;
+            ClearSlideReport();
+            ClearLedgeHangReport();
+            Place(state);
+            var busy = state.IsDodging || state.IsVaulting || state.IsDiving || state.IsProne || state.IsClimbing || state.IsKnockedBack
+                || state.IsSwimming || state.Cover.IsInCover;
+            if (!TryOpenParachute(allowed, state.IsParachuting, busy, state.Velocity))
+            {
+                return state;
+            }
+
+            return state.WithParachute(CharacterParachuteState.Open(_parachute.HorizontalVelocity));
+        }
+
+        // オフラインの ParachuteMovement.MeasureHeightAboveGround と同じく、足元の少し上から真下へ地面を探す。
+        public float MeasureHeightAboveGround()
+        {
+            var position = Body.Position;
+            var origin = new Vector3(position.X, Body.FeetY(position) + ParachuteMotion.ProbeLift, position.Z);
+            if (!Body.World.Raycast(origin, -Vector3.UnitY, ParachuteMotion.ProbeDistance + ParachuteMotion.ProbeLift, Body.LayerMask, out var hit))
+            {
+                return float.PositiveInfinity;
+            }
+
+            return Math.Max(0f, hit.Distance - ParachuteMotion.ProbeLift);
+        }
+
+        public CharacterMotorState Step(CharacterMotorState state, CharacterMotorInput input)
+        {
+            input = input.Restrained();
+            LastParachuteVerdict = null;
+            LastParachuteClose = null;
+            _parachuteWasOpen = state.IsParachuting;
+            ClearSlideReport();
+            _slideBefore = state.Slide;
+            _groundedBefore = state.IsGrounded;
+            ClearLedgeHangReport();
+            BeginLandingRoll();
+            Place(state);
+            Ride(state, input.Platform);
+
+            _dodge.Restore(state.Dodge);
+            RestoreProne(state.Prone);
+            var vault = state.Vault;
+            var startVelocity = state.Velocity;
+            var ladder = AdvanceRegrab(state.Ladder);
+            var swim = SwimStep.Step(state.Swim, state.Position, state.IsGrounded, Body.Geometry, _water, _swim, TickSeconds);
+            var traversal = new TraversalStates(
+                LeanStep.Step(state, input, swim, Body, _motor.Spec, TickSeconds),
+                swim,
+                WallRunStep.Stop(state.WallRun, state.IsGrounded),
+                state.AirJumpsUsed);
+            if (state.IsKnockedBack)
+            {
+                return StepKnockback(state, input, ladder, traversal);
+            }
+
+            if (input.Downed)
+            {
+                _dodge.Cancel();
+                if (vault.IsVaulting)
+                {
+                    // オフラインの FinishVault と同じく、やめた所から速度 0 で落ちる
+                    vault = CharacterVaultState.None;
+                    startVelocity = Vector3.Zero;
+                }
+            }
+
+            if (!input.ProneAllowed)
+            {
+                ReleaseProne();
+            }
+
+            if (ladder.IsClimbing && (!input.LadderAllowed || ladder.Index >= _ladders.Count))
+            {
+                ladder = Leave(ladder);
+            }
+
+            // はしごにつかまったまま水に下りても泳ぎに替えない。はしごの位置に置き直す動きと浮く動きがぶつかるため
+            if (traversal.Swim.IsSwimming && !ladder.IsClimbing)
+            {
+                return StepSwim(state, input, vault, ladder, startVelocity, traversal);
+            }
+
+            var wasProne = _proneInput.IsActive || state.IsProne;
+
+            // 回避・乗り越え・伏せ・はしご・パラシュートの最中はカバーに入らない (寄せる動きと転がり・乗り越えの軌跡がぶつかるため。CoverController と同じ)
+            // 滑っている間も、オフラインで SlideMovement が移動を横取りしている間と同じく、カバー・回避・伏せを始めない
+            // 受け身で転がっている間も、オフラインの PlayerController が転がる間に回避・伏せ・滑りを断るのと同じく、カバー・回避・伏せ・滑りを始めない
+            // ぶら下がっている間も、カバーの寄せる動きがふちに置き直す動きとぶつかるのでカバーに入らない
+            var sliding = state.IsSliding;
+            var landingRolling = state.Parkour.Move == ParkourMove.LandingRoll;
+            var busy = _dodge.IsRolling || vault.IsVaulting || wasProne || _dive.IsDiving || ladder.IsClimbing || state.IsParachuting || sliding
+                || landingRolling || state.Parkour.IsHangingOnLedge;
+            var cover = StepCover(state.Cover, busy && !state.Cover.IsInCover ? input.WithoutCover() : input);
+
+            if (input.Dodge && state.IsGrounded && !vault.IsVaulting && !cover.IsInCover && _dodge.IsReady
+                && !ladder.IsClimbing && !wasProne && !_dive.IsDiving && !sliding && !landingRolling)
+            {
+                _dodge.TryStart(DodgeMotion.ResolveDirection(input.Move, input.Yaw));
+            }
+
+            UpdateProne(state, input, ladder.IsClimbing || cover.IsInCover || sliding || landingRolling, startVelocity);
+
+            var move = input.Move;
+            var sprint = input.Sprint;
+            var jump = input.Jump && !wasProne;
+            var wantsCrouch = input.Crouch;
+
+            // オフラインの PlayerController.FilterInputForLandingRoll と同じく、転がる間はダッシュ・ジャンプ・しゃがみを読まない
+            if (_dodge.IsRolling || vault.IsVaulting || landingRolling)
+            {
+                sprint = false;
+                jump = false;
+                wantsCrouch = false;
+            }
+
+            // PlayerController の FilterInputForProne と同じく、伏せている (伏せたい) 間はダッシュもジャンプもしない
+            if (state.IsProne || _proneInput.IsActive)
+            {
+                sprint = false;
+                jump = false;
+            }
+
+            var placed = ladder.IsClimbing;
+            // カバーに張り付いている間は、寄せる動きとはしごの置き直しがぶつかるのでつかまらない
+            if (!ladder.IsClimbing && input.LadderAllowed && ladder.RegrabRemaining <= 0f && !cover.IsInCover)
+            {
+                ladder = Grab(startVelocity);
+                if (ladder.IsClimbing)
+                {
+                    // LadderMovement が選ばれたときの PlayerController.BeginMovementOverride と同じく、回避・乗り越え・伏せをやめる
+                    _dodge.Cancel();
+                    vault = CharacterVaultState.None;
+                    ReleaseProne();
+                }
+            }
+
+            if (ladder.IsClimbing)
+            {
+                // 回避は選ばれた時点でやめているので、ここで進むのは次の回避までの待ち時間だけ
+                _dodge.Step(TickSeconds);
+                var climbed = Climb(state.Stance, ladder, move.Y, jump, placed, state.IsGrounded, out var climbVelocity);
+                return Finish(climbVelocity, Body.Stance, cover, vault, input, climbed, traversal);
+            }
+
+            // オフラインの ParachuteMovement ははしご (LadderMovement) より低い移動の横取りなので、はしごの後に見る。
+            // 開いた tick から開いた動きにするのは、オフラインでも PlayerController より先にジャンプを読んで開くため。
+            var parachute = UpdateParachute(state, input, vault, startVelocity, wasProne);
+            if (parachute.IsOpen)
+            {
+                // 回避は空中では始まらないので、ここで進むのは次の回避までの待ち時間だけ
+                _dodge.Step(TickSeconds);
+                var upright = ResolveStance(state.Stance, false, false);
+                var glide = Glide(parachute, input.Move, input.Yaw, out parachute);
+
+                // オフラインの PlayerController.FinishTraversal は移動の横取りの間、空中ジャンプの数を戻す
+                return Finish(glide, upright, cover, vault, input, ladder, traversal.WithParachute(parachute).WithAirJumpsUsed(0));
+            }
+
+            if (cover.IsInCover)
+            {
+                sprint = false;
+                jump = false;
+                if (cover.Height == CoverHeight.Low)
+                {
+                    wantsCrouch = !cover.IsPeeking;
+                }
+            }
+
+            var slideBusy = _dodge.IsRolling || vault.IsVaulting || wasProne || _proneInput.IsActive || _dive.IsDiving || cover.IsInCover
+                || landingRolling;
+            var slide = UpdateSlide(state, input, slideBusy, startVelocity, jump, out var slideJumped);
+            if (slide.IsSliding)
+            {
+                // SlideMovement の Step が crouched を返すのと同じく、滑っている間はしゃがんだ姿勢にし、ダッシュは読まない
+                sprint = false;
+                wantsCrouch = true;
+            }
+            else if (slideJumped)
+            {
+                // SlideMovement の Jump が crouched: false を返すのと同じく、跳んだ tick は立ち上がる。ジャンプは滑りの跳び方で使い切る
+                wantsCrouch = false;
+                jump = false;
+            }
+
+            var stance = ResolveStance(state.Stance, wantsCrouch, _proneInput.IsActive);
+            var crouched = stance == PlayerStance.Crouching;
+            if (cover.IsInCover)
+            {
+                // 寄せている途中と覗いている間は動かさない
+                move = cover.Phase == CoverPhase.In ? AlongWall(cover.Normal, input.Move.X, input.Yaw, crouched) : Vector2.Zero;
+            }
+
+            if (jump && input.VaultAllowed && state.IsGrounded && stance == PlayerStance.Standing && !cover.IsInCover)
+            {
+                vault = TryStartVault(input.Yaw);
+                if (vault.IsVaulting)
+                {
+                    jump = false;
+                }
+            }
+
+            // 乗り越えとはしごに使い終えてから消す。ルールで跳べなくても Jump はそれらの入力として残すため。
+            if (!input.JumpAllowed)
+            {
+                jump = false;
+            }
+
+            Vector3 velocity;
+            if (vault.IsVaulting)
+            {
+                velocity = FollowVault(ref vault);
+            }
+            else if (_dodge.IsRolling)
+            {
+                velocity = Roll(startVelocity, state.IsGrounded);
+            }
+            else if (_dive.IsDiving)
+            {
+                _dodge.Step(TickSeconds);
+                velocity = Dive(startVelocity, state.IsGrounded);
+            }
+            else if (slide.IsSliding)
+            {
+                _dodge.Step(TickSeconds);
+                velocity = SlideAlong(ref slide, state);
+            }
+            else if (slideJumped)
+            {
+                _dodge.Step(TickSeconds);
+                velocity = SlideJump(state.Slide);
+            }
+            else
+            {
+                // 転がっていない間も待ち時間を減らす
+                _dodge.Step(TickSeconds);
+                _motor.SetVelocity(startVelocity);
+                var canWallRun = stance == PlayerStance.Standing && !cover.IsInCover && !input.Downed;
+
+                // 壁走りと同じ条件を渡すのは、壁蹴り・壁登り・ぶら下がりも、立って、カバーに入っておらず、倒れていないときだけ始めるため
+                var parkour = state.Parkour;
+                var parkourMoved = TryMoveParkour(state, move, input.Yaw, jump, wantsCrouch, canWallRun, ref parkour, out var parkourVelocity);
+                vault = TakeWallClimbMantle(vault);
+                traversal = traversal.WithParkour(parkour);
+                var run = parkourMoved
+                    ? WallRunResult.Resting(WallRunStep.Stop(state.WallRun, state.IsGrounded))
+                    : StepWallRun(state.WallRun, startVelocity, move, input.Yaw, jump, state.IsGrounded, canWallRun);
+                traversal = traversal.WithWallRun(run.State);
+                if (parkourMoved)
+                {
+                    velocity = parkourVelocity;
+                }
+                else if (run.Motion != WallRunMotion.None)
+                {
+                    velocity = MoveOnWall(run, ref traversal);
+                }
+                else
+                {
+                    // 猶予を持ち越すのはこの道だけにする。回避・乗り越え・壁・はしご・泳ぎ・吹き飛ばしで宙に出たときまで残すと、歩いて縁を離れたのでないのに地上のジャンプができるため
+                    var inGrace = state.IsInJumpGrace;
+                    traversal = traversal.WithAirJumpsUsed(
+                        _motor.StepAirJump(traversal.AirJumpsUsed, jump, state.IsGrounded, move, input.Yaw, inGrace));
+                    traversal = traversal.WithJumpGraceLeft(
+                        JumpGraceStep.Step(state.JumpGraceLeft, state.IsGrounded, jump, _motor.Spec, TickSeconds));
+                    var displacement = stance == PlayerStance.Prone
+                        ? _motor.StepProne(move, input.Yaw, ProneSpec.Speed, state.IsGrounded, TickSeconds, input.CarrySpeedMultiplier)
+                        : _motor.Step(move, input.Yaw, sprint, crouched, jump, state.IsGrounded, TickSeconds, input.CarrySpeedMultiplier, inGrace);
+                    Body.Move(displacement);
+                    velocity = _motor.Velocity;
+                }
+            }
+
+            return Finish(velocity, stance, cover, vault, input, ladder, traversal.WithSlide(slide));
+        }
+
+        // オフラインの KnockbackMovement は、はしごより優先の移動の横取り (PlayerController.BeginMovementOverride) なので、
+        // 同じく回避・乗り越え・伏せ・はしご・カバーをやめさせてから飛ばす。
+        private CharacterMotorState StepKnockback(
+            CharacterMotorState state, CharacterMotorInput input, CharacterLadderState ladder, TraversalStates traversal)
+        {
+            _dodge.Cancel();
+            ReleaseProne();
+            if (ladder.IsClimbing)
+            {
+                ladder = Leave(ladder);
+            }
+
+            _dodge.Step(TickSeconds);
+            var stance = ResolveStance(state.Stance, input.Crouch, false);
+            var spec = _knockbackSpec;
+            _knockback.Restore(state.Knockback);
+            Vector3 velocity;
+            if (state.IsGrounded && _knockback.CanLand(spec.MinAirSeconds))
+            {
+                _knockback.Land();
+                Body.Move(_knockbackSettle);
+                velocity = Vector3.Zero;
+            }
+            else if (_knockback.HasTimedOut(spec.MaxAirSeconds))
+            {
+                // 落ちている速さは PlayerMotor に引き継ぎ、そのまま落ち続けさせる (落下のダメージもそちらで決まる)
+                velocity = _knockback.Velocity;
+                _knockback.Land();
+                Body.Move(Vector3.Zero);
+            }
+            else
+            {
+                var steer = Vector2.Zero;
+                var airControl = 0f;
+
+                // 入力が無いときまで寄せると、手を離しているだけで空中で止まってしまう
+                if (input.Move.LengthSquared() > 1e-4f)
+                {
+                    var forward = YawForward(input.Yaw);
+                    var right = new Vector3(forward.Z, 0f, -forward.X);
+                    var wish = ((right * input.Move.X) + (forward * input.Move.Y)) * _motor.Spec.WalkSpeed;
+                    steer = new Vector2(wish.X, wish.Z);
+                    airControl = spec.AirControl;
+                }
+
+                var contacts = Body.Move(_knockback.Step(TickSeconds, spec.Gravity, steer, airControl));
+                if ((contacts & CapsuleContacts.Above) != 0)
+                {
+                    _knockback.StopRising();
+                }
+
+                velocity = _knockback.Velocity;
+            }
+
+            return Finish(velocity, stance, CharacterCoverState.Out, CharacterVaultState.None, input, ladder, traversal, _knockback.Capture());
+        }
+
+        // 回避・伏せ・しゃがみ・カバーは水の中では使えないので、吹き飛ばしと同じくやめさせてから泳がせる。
+        // ダッシュは泳ぐ速さが 1 つなので読まない。撃つ構えはシミュレーションが持たないので CharacterMotorState.CanAimDownSights で止める。
+        private CharacterMotorState StepSwim(
+            CharacterMotorState state, CharacterMotorInput input, CharacterVaultState vault, CharacterLadderState ladder, Vector3 startVelocity,
+            TraversalStates traversal)
+        {
+            _dodge.Cancel();
+            ReleaseProne();
+            _dodge.Step(TickSeconds);
+            var stance = ResolveStance(state.Stance, false, false);
+
+            // 縁に手が届くかは地上と同じ乗り越えの調べで決め、上がる動きも同じ軌跡にする (予測とサーバーで同じ答えにするため)
+            if (!vault.IsVaulting && input.Jump && input.VaultAllowed && stance == PlayerStance.Standing)
+            {
+                vault = TryStartVault(input.Yaw);
+            }
+
+            var velocity = vault.IsVaulting
+                ? FollowVault(ref vault)
+                : Paddle(state.Swim.IsSwimming, input, startVelocity, traversal.Swim.SurfaceY);
+            return Finish(velocity, stance, CharacterCoverState.Out, vault, input, ladder, traversal);
+        }
+
+        // 縦は重力の代わりに浮く力で、水面が胸に来る高さへ寄せる。ジャンプで寄る速さを泳ぐ速さにし、しゃがみで潜る。
+        // 倒れている間は Restrained がしゃがみを入れるが、潜らせると倒れただけで溺れるので潜らせない
+        private Vector3 Paddle(bool wasSwimming, CharacterMotorInput input, Vector3 startVelocity, float surfaceY)
+        {
+            var gap = SwimStep.FloatY(surfaceY, Body.Geometry) - Body.Position.Y;
+            var velocity = SwimStep.Paddle(
+                wasSwimming,
+                input.Move,
+                input.Yaw,
+                input.Crouch && !input.Downed,
+                input.Jump,
+                startVelocity.Y,
+                gap,
+                input.CarrySpeedMultiplier,
+                _swim,
+                TickSeconds,
+                out var displacement);
+            var contacts = Body.Move(displacement);
+            if ((velocity.Y < 0f && (contacts & CapsuleContacts.Below) != 0) || (velocity.Y > 0f && (contacts & CapsuleContacts.Above) != 0))
+            {
+                velocity = new Vector3(velocity.X, 0f, velocity.Z);
+            }
+
+            return velocity;
+        }
+
+        // 落下の下限を確かめ、作業用に戻した回避・伏せの中身を状態へ写す
+        private CharacterMotorState Finish(
+            Vector3 velocity, PlayerStance stance, CharacterCoverState cover, CharacterVaultState vault, CharacterMotorInput input,
+            CharacterLadderState ladder, TraversalStates traversal, CharacterKnockbackState knockback = default)
+        {
+            var position = Body.Position;
+            var grounded = Body.IsGrounded;
+
+            // 床の上での速さは床に対するものなので、床を離れた tick に床の速さを足して世界の速さにする
+            if (!grounded && !ladder.IsClimbing && !traversal.Swim.IsSwimming && !knockback.IsFlying && _rideVelocity != Vector3.Zero)
+            {
+                velocity = new Vector3(velocity.X + _rideVelocity.X, velocity.Y + _rideVelocity.Y, velocity.Z + _rideVelocity.Z);
+            }
+
+            if (position.Y < KillPlaneY)
+            {
+                position = SpawnPosition;
+                velocity = Vector3.Zero;
+                grounded = false;
+                stance = PlayerStance.Standing;
+                cover = CharacterCoverState.Out;
+                _dodge.Reset();
+                vault = CharacterVaultState.None;
+                ReleaseProne();
+                ladder = CharacterLadderState.None;
+                knockback = CharacterKnockbackState.None;
+                traversal = default;
+                Place(new CharacterMotorState(position, velocity, grounded, false));
+            }
+
+            traversal = traversal.WithParkour(SettleParkour(traversal.Parkour, input, velocity, grounded));
+
+            // 跳んだ tick に着地・つかまったときも 0 にするので、tick の頭で数える AirJumpStep ではなく終わりで戻す
+            if (grounded || ladder.IsClimbing || traversal.Swim.IsSwimming || traversal.WallRun.IsRunning || traversal.Parkour.IsHangingOnLedge)
+            {
+                traversal = traversal.WithAirJumpsUsed(0);
+            }
+
+            // 泳いでいる間に水底へ触れても地上と数えないのは、オフラインの PlayerController が着地を数えないのと同じく、水から出た縁で地上のジャンプをさせないため
+            if (grounded && !traversal.Swim.IsSwimming)
+            {
+                traversal = traversal.WithJumpGraceLeft(_motor.Spec.JumpGraceSeconds);
+            }
+
+            // 吹き飛ばし・泳ぎ・はしご・落下の下限は開いたままにせず閉じる (オフラインでより高い移動の横取りに替わったときと同じ)
+            if (_parachuteWasOpen && !traversal.Parachute.IsOpen && !LastParachuteClose.HasValue)
+            {
+                LastParachuteClose = ParachuteCloseReason.Interrupted;
+            }
+
+            // 吹き飛ばし・泳ぎ・はしご・パラシュート・落下の下限に替わった滑りは、オフラインで End が呼ばれたときと同じく取り消しにする
+            if (_slideBefore.IsSliding && !traversal.Slide.IsSliding && LastSlideEnd == SlideEnd.None)
+            {
+                ReportSlideEnd(SlideEnd.Cancelled, _slideBefore.Speed, _slideBefore.Elapsed, _slideBefore.Distance);
+            }
+
+            var prone = new CharacterProneState(
+                _proneInput.IsActive, _proneInput.WasSprinting, input.Crouch, _dive.IsDiving, _dive.Direction, _dive.Elapsed);
+            return new CharacterMotorState(
+                position,
+                velocity,
+                grounded,
+                stance,
+                cover,
+                _dodge.Capture(),
+                vault,
+                prone,
+                ladder,
+                knockback,
+                traversal.Lean,
+                traversal.Swim,
+                traversal.WallRun,
+                traversal.AirJumpsUsed,
+                traversal.JumpGraceLeft,
+                traversal.Parachute,
+                traversal.Slide,
+                traversal.Parkour);
+        }
+
+        // 前の tick を床に立って終えたときだけ運ぶ。はしご・泳ぎ・吹き飛ばしの間は床に立っていない。
+        // 運ぶのを他の動きと別の Move にするのは、上がる床で頭上に塞がれたことを他の動きの当たりと分けて知るため。
+        private void Ride(CharacterMotorState state, PlatformMotion platform)
+        {
+            LastRide = PlatformRide.None;
+            _rideVelocity = Vector3.Zero;
+            if (!state.IsGrounded || state.IsClimbing || state.IsSwimming || state.IsKnockedBack || platform.IsStill)
+            {
+                return;
+            }
+
+            var intended = platform.Displacement(Body.Position);
+            var contacts = Body.Move(intended);
+            LastRide = new PlatformRide(platform, intended, (contacts & CapsuleContacts.Above) != 0);
+            _rideVelocity = LastRide.Velocity(TickSeconds);
+        }
+
+        // オフラインの ParachuteMovement.Update と同じく、接地中とルールで切ってある間は開けるかを調べない (空振りのたびに判定を残さないため)。
+        private CharacterParachuteState UpdateParachute(
+            CharacterMotorState state, CharacterMotorInput input, CharacterVaultState vault, Vector3 startVelocity, bool wasProne)
+        {
+            var parachute = state.Parachute;
+            if (parachute.IsOpen)
+            {
+                if (!input.ParachuteAllowed)
+                {
+                    LastParachuteClose = ParachuteCloseReason.RuleOff;
+                    return CharacterParachuteState.None;
+                }
+
+                if (input.CloseParachute)
+                {
+                    LastParachuteClose = ParachuteCloseReason.Released;
+                    return CharacterParachuteState.None;
+                }
+
+                return parachute;
+            }
+
+            if (!input.OpenParachute || !input.ParachuteAllowed || state.IsGrounded)
+            {
+                return CharacterParachuteState.None;
+            }
+
+            var busy = _dodge.IsRolling || vault.IsVaulting || _dive.IsDiving || wasProne || state.Cover.IsInCover;
+            return TryOpenParachute(true, false, busy, startVelocity)
+                ? CharacterParachuteState.Open(_parachute.HorizontalVelocity)
+                : CharacterParachuteState.None;
+        }
+
+        private bool TryOpenParachute(bool allowed, bool isOpen, bool busy, Vector3 velocity)
+        {
+            var height = MeasureHeightAboveGround();
+            var verdict = _parachute.Evaluate(allowed ? Shooter.Core.Parachute.On : Shooter.Core.Parachute.Off, isOpen, busy, height);
+            LastParachuteVerdict = verdict;
+            LastParachuteHeight = height;
+            if (verdict != ParachuteOpenVerdict.Open)
+            {
+                return false;
+            }
+
+            _parachute.Open(new Vector2(velocity.X, velocity.Z));
+            return true;
+        }
+
+        // 着地は動かした後の接地で見る (ParachuteMovement と同じく、開いてから 1 度は動かしてから閉じる)。
+        // 返す下向きの速さを落下ダメージの閾値までに抑えるのは ParachuteMovement.Step と同じく、降りる速さを閾値より速く設定されても
+        // 開いている間はダメージを受けないという約束を守るため (動く量はそのまま)。
+        private Vector3 Glide(CharacterParachuteState parachute, Vector2 move, float yaw, out CharacterParachuteState after)
+        {
+            _parachute.Restore(parachute.HorizontalVelocity);
+            var velocity = _parachute.Step(move, yaw, TickSeconds);
+            Body.Move(velocity * TickSeconds);
+            var reported = new Vector3(velocity.X, -Math.Min(_parachute.DescentSpeed, _motor.Spec.SafeFallSpeed), velocity.Z);
+            if (Body.IsGrounded)
+            {
+                _parachute.Reset();
+                LastParachuteClose = ParachuteCloseReason.Landed;
+                after = CharacterParachuteState.None;
+                return reported;
+            }
+
+            after = CharacterParachuteState.Open(_parachute.HorizontalVelocity);
+            return reported;
+        }
+
+        private static ParachuteMotion NewParachute(ParachuteTuning tuning)
+        {
+            return new ParachuteMotion(tuning.MinOpenHeight, tuning.DescentSpeed, tuning.HorizontalSpeed, tuning.SteerAcceleration);
+        }
+
+        public void Place(CharacterMotorState state)
+        {
+            if (Body.Stance != state.Stance)
+            {
+                Body.ApplyStance(state.Stance);
+            }
+
+            Body.Place(state.Position, state.IsGrounded);
+        }
+
+        // 切ってある・接地している・壁走りできない姿勢のときは壁を調べない (使わないゲームと地上の tick に Raycast を払わせない)
+        private WallRunResult StepWallRun(
+            CharacterWallRunState wallRun, Vector3 velocity, Vector2 move, float yaw, bool jump, bool grounded, bool allowed)
+        {
+            if (!allowed)
+            {
+                return WallRunResult.Resting(WallRunStep.Stop(wallRun, grounded));
+            }
+
+            var wall = !_wallRun.Enabled || grounded
+                ? WallContact.None
+                : wallRun.IsRunning
+                    ? _wallSensor.Follow(Body.Position, wallRun.Side, wallRun.Normal)
+                    : _wallSensor.Probe(Body.Position, yaw);
+            return WallRunStep.Step(wallRun, wall, velocity, move, jump, grounded, _motor.Spec, _wallRun, TickSeconds);
+        }
+
+        private Vector3 MoveOnWall(WallRunResult run, ref TraversalStates traversal)
+        {
+            if (run.Motion == WallRunMotion.JumpedOff)
+            {
+                _motor.JumpWith(run.Velocity);
+                traversal = traversal.WithAirJumpsUsed(0);
+            }
+
+            var before = Body.Position;
+            var contacts = Body.Move(run.Displacement);
+            var velocity = run.Velocity;
+            if (run.Motion == WallRunMotion.Running)
+            {
+                // 壁沿いの出っ張りに止められたとき、次の tick に速さが落ちたとして終えるよう、進めた分だけを横の速さにする
+                var moved = Body.Position - before;
+                velocity = new Vector3(moved.X / TickSeconds, velocity.Y, moved.Z / TickSeconds);
+            }
+
+            if ((contacts & CapsuleContacts.Above) != 0 && velocity.Y > 0f)
+            {
+                velocity = new Vector3(velocity.X, 0f, velocity.Z);
+            }
+
+            return velocity;
+        }
+
+        // 縦は PlayerMotor と同じ扱い (接地中は地面へ吸着、空中は重力の台形則) にし、段差から転がり落ちても浮かない。
+        // 転がり終えて空中にいたら、その勢いのまま次の tick から PlayerMotor の空中制御に引き継がせる (PlayerController と同じ)
+        private Vector3 Roll(Vector3 startVelocity, bool grounded)
+        {
+            var horizontalVelocity = _dodge.Velocity;
+            var horizontal = _dodge.Step(TickSeconds);
+            var verticalStart = grounded ? PlayerMotor.GroundedVerticalSpeed : startVelocity.Y;
+            var verticalEnd = grounded ? verticalStart : verticalStart - (_motor.Spec.Gravity * TickSeconds);
+            Body.Move(new Vector3(horizontal.X, (verticalStart + verticalEnd) * 0.5f * TickSeconds, horizontal.Y));
+            return new Vector3(horizontalVelocity.X, verticalEnd, horizontalVelocity.Y);
+        }
+
+        // 体は Place(state) で前の tick の位置にある
+        private CharacterCoverState StepCover(CharacterCoverState previous, CharacterMotorInput input)
+        {
+            if (!previous.IsInCover && !input.Cover)
+            {
+                return previous;
+            }
+
+            _cover.Restore(previous.Snapshot);
+            if (input.Downed)
+            {
+                _cover.Release(ReasonDowned);
+                return new CharacterCoverState(_cover.Capture(), 0f, CoverEdge.None, 0f);
+            }
+
+            var position = Body.Position;
+            var appliedPeek = previous.AppliedPeek;
+            var facing = Vector3.Zero;
+            CoverProbeResult probe;
+            float topY;
+            if (previous.IsInCover)
+            {
+                // 端から横に出ている間は、出る前の位置で壁を調べる (出た先にはもう壁が無い)
+                var into = -previous.Normal;
+                var right = CoverProbe.RightAlong(previous.Normal);
+                probe = _coverSensor.Probe(position - (right * appliedPeek), into, into, _motor.Spec, out topY);
+            }
+            else
+            {
+                facing = YawForward(input.Yaw);
+                probe = _coverSensor.Probe(position, facing, facing, _motor.Spec, out topY);
+            }
+
+            _cover.BodyRadius = Body.Radius;
+            var transition = _cover.Step(input.Cover, input.Aim, input.Move, probe, TickSeconds);
+            if (!_cover.IsInCover)
+            {
+                // 横に出たまま出ても戻さない (撃ち合いの最中に勝手に動かさない。CoverController と同じ)
+                return new CharacterCoverState(_cover.Capture(), 0f, CoverEdge.None, 0f);
+            }
+
+            var normal = _cover.Normal;
+            if (transition == CoverTransition.Enter)
+            {
+                appliedPeek = CoverProbe.EnterSideOffset(facing, normal, probe.Distance);
+            }
+            else if (_cover.EnterTurn > 0f)
+            {
+                appliedPeek = SlideIn(normal, appliedPeek);
+            }
+            else
+            {
+                appliedPeek = SlidePeek(normal, appliedPeek, _cover.PeekOffset);
+            }
+
+            return new CharacterCoverState(_cover.Capture(), topY, probe.Edges, appliedPeek);
+        }
+
+        // 横のずれは壁へ寄せるのと同じ割合で詰め、着いたときに当たり点の正面に来るようにする (CoverController と同じ)
+        private float SlideIn(Vector3 normal, float applied)
+        {
+            var right = CoverProbe.RightAlong(normal);
+            var delta = (-normal * _cover.EnterStep) + (right * (-applied * _cover.EnterTurn));
+            if (delta == Vector3.Zero)
+            {
+                return applied;
+            }
+
+            var before = Body.Position;
+            Body.Move(delta);
+            var moved = Body.Position - before;
+            return applied + (moved.X * right.X) + (moved.Y * right.Y) + (moved.Z * right.Z);
+        }
+
+        // 横に障害物があれば出られた分だけを覚え、戻るときに出た分だけ戻す
+        private float SlidePeek(Vector3 normal, float applied, float target)
+        {
+            if (Approximately(target, applied))
+            {
+                return applied;
+            }
+
+            var speed = _motor.Spec.CoverPeekSideDistance / _motor.Spec.CoverPeekSlideSeconds;
+            var step = MoveTowards(applied, target, speed * TickSeconds) - applied;
+            var right = CoverProbe.RightAlong(normal);
+            var before = Body.Position;
+            Body.Move(right * step);
+            var moved = Body.Position - before;
+            return applied + (moved.X * right.X) + (moved.Y * right.Y) + (moved.Z * right.Z);
+        }
+
+        // 壁沿いの横の入力を、yaw で回す前の移動入力 (X 右・Y 前) にする。立ったまま動く (高い壁) ときもしゃがみの速さにする
+        private Vector2 AlongWall(Vector3 normal, float side, float yaw, bool crouched)
+        {
+            var along = CoverProbe.RightAlong(normal) * Math.Max(-1f, Math.Min(1f, side));
+            var forward = YawForward(yaw);
+            var right = new Vector3(forward.Z, 0f, -forward.X);
+            var local = new Vector2(
+                (along.X * right.X) + (along.Y * right.Y) + (along.Z * right.Z),
+                (along.X * forward.X) + (along.Y * forward.Y) + (along.Z * forward.Z));
+            return local * SpeedScale(crouched);
+        }
+
+        private float SpeedScale(bool crouched)
+        {
+            var spec = _motor.Spec;
+            if (crouched)
+            {
+                return 1f;
+            }
+
+            return spec.WalkSpeed > 0f ? Math.Min(1f, spec.CrouchSpeed / spec.WalkSpeed) : 0f;
+        }
+
+        // PlayerController.UpdateStance と同じく、低い姿勢へはすぐ移り、高い姿勢へは望む高さから順に、頭上が空いている最も高いものへ戻る
+        private PlayerStance ResolveStance(PlayerStance current, bool wantsCrouch, bool wantsProne)
+        {
+            var target = wantsProne ? PlayerStance.Prone : wantsCrouch ? PlayerStance.Crouching : PlayerStance.Standing;
+            if (target == current)
+            {
+                return current;
+            }
+
+            if (target > current)
+            {
+                Body.ApplyStance(target);
+                return target;
+            }
+
+            for (var stance = target; stance < current; stance++)
+            {
+                if (Body.HasHeadroomFor(stance))
+                {
+                    Body.ApplyStance(stance);
+                    return stance;
+                }
+            }
+
+            return current;
+        }
+
+        private void RestoreProne(CharacterProneState prone)
+        {
+            _proneInput.Restore(prone.IsActive, prone.WasSprinting);
+            _dive.Restore(prone.IsDiving, prone.DiveDirection, prone.DiveElapsed);
+        }
+
+        // ProneInput.Release と同じく頭上は確かめない。実際に起き上がるのは頭上が空いているとき (ResolveStance)
+        private void ReleaseProne()
+        {
+            _proneInput.Restore(false, _proneInput.WasSprinting);
+            _dive.Cancel();
+        }
+
+        // PlayerController.UpdateProne と同じ。しゃがみの押下は、しゃがみの入力が立ち上がった tick とみなす
+        private void UpdateProne(CharacterMotorState state, CharacterMotorInput input, bool held, Vector3 startVelocity)
+        {
+            var canStart = input.ProneAllowed && state.IsGrounded && !_dodge.IsRolling && !state.Vault.IsVaulting && !_dive.IsDiving && !held;
+            var crouchPressed = input.Crouch && !state.Prone.WasCrouching;
+            var wasActive = _proneInput.IsActive;
+            _proneInput.Update(canStart, input.Prone, crouchPressed, input.Jump, input.Sprint, out var dive);
+            if (wasActive && !_proneInput.IsActive)
+            {
+                _dive.Cancel();
+            }
+
+            if (dive)
+            {
+                StartDive(startVelocity, input.Move, input.Yaw);
+            }
+        }
+
+        // 勢いがあればその向き、無ければ移動入力、それも無ければ向いている前へ飛び込む (PlayerController.StartDive と同じ)
+        private void StartDive(Vector3 velocity, Vector2 move, float yaw)
+        {
+            if (_dive.Distance <= 0f)
+            {
+                return;
+            }
+
+            var direction = new Vector2(velocity.X, velocity.Z);
+            if (direction.LengthSquared() < 1e-4f)
+            {
+                var input = move.LengthSquared() > 1e-4f ? move : new Vector2(0f, 1f);
+                direction = DodgeMotion.ResolveDirection(input, yaw);
+            }
+
+            _dive.TryStart(direction);
+        }
+
+        // 縦は回避と同じく PlayerMotor の扱い (接地中は地面へ吸着、空中は重力の台形則) にする
+        private Vector3 Dive(Vector3 startVelocity, bool grounded)
+        {
+            var horizontalVelocity = _dive.Velocity;
+            var horizontal = _dive.Step(TickSeconds);
+            var verticalStart = grounded ? PlayerMotor.GroundedVerticalSpeed : startVelocity.Y;
+            var verticalEnd = grounded ? verticalStart : verticalStart - (_motor.Spec.Gravity * TickSeconds);
+            Body.Move(new Vector3(horizontal.X, (verticalStart + verticalEnd) * 0.5f * TickSeconds, horizontal.Y));
+            return new Vector3(horizontalVelocity.X, verticalEnd, horizontalVelocity.Y);
+        }
+
+        private CharacterLadderState AdvanceRegrab(CharacterLadderState ladder)
+        {
+            if (ladder.IsClimbing || ladder.RegrabRemaining <= 0f)
+            {
+                return ladder;
+            }
+
+            return CharacterLadderState.Off(Math.Max(0f, ladder.RegrabRemaining - TickSeconds));
+        }
+
+        private CharacterLadderState Leave(CharacterLadderState ladder)
+        {
+            var regrab = ladder.IsClimbing && ladder.Index < _ladders.Count ? _ladders[ladder.Index].Spec.RegrabSeconds : 0f;
+            return CharacterLadderState.Off(regrab);
+        }
+
+        // LadderMovement.FindLadder と同じく、並びの先頭からつかまれる最初のはしごにつかまる
+        private CharacterLadderState Grab(Vector3 velocity)
+        {
+            var feet = Feet();
+            for (var i = 0; i < _ladders.Count; i++)
+            {
+                var ladder = _ladders[i];
+                var entry = ladder.Span.Probe(feet, velocity, Body.Radius, ladder.Spec.GrabDistance, _motor.Spec);
+                if (entry == LadderEntry.None)
+                {
+                    continue;
+                }
+
+                var climb = new LadderClimb(ladder.Span, ladder.Spec, entry, ladder.Span.HeightOf(feet), _motor.Spec);
+                return CharacterLadderState.Climbing(i, climb.Entry, climb.Height, climb.IsInputLatched, climb.LatchedDownSign);
+            }
+
+            return CharacterLadderState.Off(0f);
+        }
+
+        // LadderMovement.Step と同じ動き。つかまった tick は足元をはしごの前へ置き直し、以後ははしごの前の足元へ向けて動かす。
+        // 向きは持ち主の視点操作が決めるので、オフラインのようにはしごへ向き直らせない
+        private CharacterLadderState Climb(
+            PlayerStance stance, CharacterLadderState state, float forward, bool jump, bool placed, bool grounded, out Vector3 velocity)
+        {
+            var ladder = _ladders[state.Index];
+            var span = ladder.Span;
+            var radius = Body.Radius;
+            var climb = LadderClimb.Resume(span, ladder.Spec, state.Entry, state.Height, state.IsInputLatched, state.LatchedDownSign, _motor.Spec);
+            // 置く前の接地は、つかまる前に立っていた床 (上の足場など) のものなので読まない
+            var outcome = climb.Step(forward, jump, placed && grounded, TickSeconds);
+            ResolveStance(stance, false, false);
+            switch (outcome)
+            {
+                case LadderOutcome.ExitTop:
+                    Land(span.TopExit(radius));
+                    velocity = Vector3.Zero;
+                    return Leave(state);
+                case LadderOutcome.ExitBottom:
+                    Land(climb.Feet(radius));
+                    velocity = Vector3.Zero;
+                    return Leave(state);
+                case LadderOutcome.JumpOff:
+                    velocity = span.JumpOffVelocity(ladder.Spec.JumpOffSpeed);
+                    Body.Move(velocity * TickSeconds);
+                    return Leave(state);
+                default:
+                    var target = climb.Feet(radius);
+                    velocity = LadderSpan.Up * climb.VerticalSpeed;
+                    if (placed)
+                    {
+                        Body.Move(target - Feet());
+                    }
+                    else
+                    {
+                        Body.Place(RootFor(target), false);
+                        Body.Move(Vector3.Zero);
+                    }
+
+                    return CharacterLadderState.Climbing(state.Index, climb.Entry, climb.Height, climb.IsInputLatched, climb.LatchedDownSign);
+            }
+        }
+
+        // 降りた足元を床から少し浮かせて置き、下へ動かして床に着ける (LadderMovement と同じ)
+        private void Land(Vector3 feet)
+        {
+            Body.Place(RootFor(feet + (LadderSpan.Up * LadderClimb.LandingLift)), false);
+            Body.Move(-LadderSpan.Up * LadderClimb.LandingDrop);
+        }
+
+        private Vector3 Feet()
+        {
+            var position = Body.Position;
+            return new Vector3(position.X, Body.FeetY(position), position.Z);
+        }
+
+        // 足元と本体の差は姿勢を変えても保たれる (低い姿勢は足元を残して縮む)
+        private Vector3 RootFor(Vector3 feet)
+        {
+            return new Vector3(feet.X, feet.Y - Body.Current.BottomY, feet.Z);
+        }
+
+        // Unity の Mathf.Approximately と同じ判定にして、Unity 版と同じ tick で覗きの寄せを止める
+        private static bool Approximately(float a, float b)
+        {
+            return Math.Abs(b - a) < Math.Max(1e-6f * Math.Max(Math.Abs(a), Math.Abs(b)), float.Epsilon * 8f);
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            return Math.Abs(target - current) <= maxDelta ? target : current + (Math.Sign(target - current) * maxDelta);
+        }
+
+        // Finish までの道筋 (はしご・吹き飛ばし・パラシュート・ふつうの移動) のどれを通っても同じく状態へ写すため、8 つの段の結果をまとめて運ぶ。
+        // パラシュートを閉じた既定で始めるのは、開いたまま運ぶのをパラシュートの道筋だけにし、ほかの道筋に替わったら閉じるため。
+        // パルクールも同じく何もしていない既定で始め、続けるのをふつうの移動の道筋だけにする。
+        private readonly struct TraversalStates
+        {
+            public TraversalStates(CharacterLeanState lean, CharacterSwimState swim, CharacterWallRunState wallRun, int airJumpsUsed)
+                : this(lean, swim, wallRun, airJumpsUsed, 0f, CharacterParachuteState.None, CharacterSlideState.None, CharacterParkourState.None)
+            {
+            }
+
+            private TraversalStates(
+                CharacterLeanState lean,
+                CharacterSwimState swim,
+                CharacterWallRunState wallRun,
+                int airJumpsUsed,
+                float jumpGraceLeft,
+                CharacterParachuteState parachute,
+                CharacterSlideState slide,
+                CharacterParkourState parkour)
+            {
+                Lean = lean;
+                Swim = swim;
+                WallRun = wallRun;
+                AirJumpsUsed = airJumpsUsed;
+                JumpGraceLeft = jumpGraceLeft;
+                Parachute = parachute;
+                Slide = slide;
+                Parkour = parkour;
+            }
+
+            public CharacterLeanState Lean { get; }
+
+            public CharacterSwimState Swim { get; }
+
+            public CharacterWallRunState WallRun { get; }
+
+            public int AirJumpsUsed { get; }
+
+            public float JumpGraceLeft { get; }
+
+            public CharacterParachuteState Parachute { get; }
+
+            public CharacterSlideState Slide { get; }
+
+            public CharacterParkourState Parkour { get; }
+
+            public TraversalStates WithAirJumpsUsed(int airJumpsUsed)
+            {
+                return new TraversalStates(Lean, Swim, WallRun, airJumpsUsed, JumpGraceLeft, Parachute, Slide, Parkour);
+            }
+
+            public TraversalStates WithWallRun(CharacterWallRunState wallRun)
+            {
+                return new TraversalStates(Lean, Swim, wallRun, AirJumpsUsed, JumpGraceLeft, Parachute, Slide, Parkour);
+            }
+
+            public TraversalStates WithJumpGraceLeft(float jumpGraceLeft)
+            {
+                return new TraversalStates(Lean, Swim, WallRun, AirJumpsUsed, jumpGraceLeft, Parachute, Slide, Parkour);
+            }
+
+            public TraversalStates WithParachute(CharacterParachuteState parachute)
+            {
+                return new TraversalStates(Lean, Swim, WallRun, AirJumpsUsed, JumpGraceLeft, parachute, Slide, Parkour);
+            }
+
+            public TraversalStates WithSlide(CharacterSlideState slide)
+            {
+                return new TraversalStates(Lean, Swim, WallRun, AirJumpsUsed, JumpGraceLeft, Parachute, slide, Parkour);
+            }
+
+            public TraversalStates WithParkour(CharacterParkourState parkour)
+            {
+                return new TraversalStates(Lean, Swim, WallRun, AirJumpsUsed, JumpGraceLeft, Parachute, Slide, parkour);
+            }
+        }
+    }
+}

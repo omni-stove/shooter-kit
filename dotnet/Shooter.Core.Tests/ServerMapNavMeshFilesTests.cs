@@ -1,7 +1,7 @@
 using System.IO;
 using System.Numerics;
+using GameKit.Navigation;
 using NUnit.Framework;
-using Shooter.Core.Navigation;
 
 namespace Shooter.Core.Tests
 {

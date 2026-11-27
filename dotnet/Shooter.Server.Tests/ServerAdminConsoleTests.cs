@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
-using Shooter.Protocol;
 
 namespace Shooter.Server.Tests
 {

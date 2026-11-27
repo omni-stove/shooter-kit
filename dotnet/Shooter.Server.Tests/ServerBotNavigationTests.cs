@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using GameKit.Navigation;
+using GameKit.World;
 using NUnit.Framework;
 using Shooter.Core;
-using Shooter.Core.Navigation;
 
 namespace Shooter.Server.Tests
 {

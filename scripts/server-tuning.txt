@@ -1,5 +1,5 @@
 # scripts/server-tuning.sh が読む一覧。1 行に「種類 ファイル名」を書く。# から行末までは読まない。
-# ここに無い名前は server-data/tuning と Assets/game/Resources/Tuning の両方にあって、同じ中身でないと照合が落ちる。
+# ここに無い名前は server-data/tuning と Assets/kits/shooter/Resources/Tuning の両方にあって、同じ中身でないと照合が落ちる。
 # 足すときは docs/dedicated-server.md の表にも理由を書く。
 
 # server-owned: 両方にあるが、サーバー用に別の中身を持つ。

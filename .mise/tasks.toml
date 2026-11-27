@@ -1,5 +1,5 @@
 [install]
-description = "Restore the NuGet packages of dotnet/Shooter.slnx"
+description = "Restore the NuGet packages of dotnet/GameKit.slnx"
 run = "scripts/install.sh"
 quiet = true
 
@@ -38,7 +38,7 @@ description = "Pull skill-kit and re-sync this repo"
 run = "skill-kit game update"
 
 [lint]
-description = "Check C# formatting, style and analyzers (Unity-independent code via dotnet/Shooter.slnx, all of Assets/game for whitespace) and that every tracked file/folder under Assets has a tracked .meta and vice versa"
+description = "Check C# formatting, style and analyzers (Unity-independent code via dotnet/GameKit.slnx, all of Assets/kits/shooter for whitespace) and that every tracked file/folder under Assets has a tracked .meta and vice versa"
 run = "scripts/lint.sh"
 quiet = true
 
@@ -48,7 +48,7 @@ run = "scripts/lint.sh --fix"
 quiet = true
 
 [test]
-description = "Run the Unity-independent C# unit tests (every test project in dotnet/Shooter.slnx) with dotnet test"
+description = "Run the Unity-independent C# unit tests (every test project in dotnet/GameKit.slnx) with dotnet test"
 run = "scripts/test.sh"
 quiet = true
 
@@ -181,9 +181,13 @@ description = "Run the tests of how the tasks call the Unity CLI (never as the E
 run = "sh scripts/tasks-test.sh"
 
 [server-tuning-test]
-description = "Run the tests of scripts/server-tuning.sh, which checks that each server-data/tuning JSON equals the Assets/game/Resources/Tuning file of the same name, and that a file on one side only, or one the server keeps its own copy of, is listed in scripts/server-tuning.txt"
+description = "Run the tests of scripts/server-tuning.sh, which checks that each server-data/tuning JSON equals the Assets/kits/shooter/Resources/Tuning file of the same name, and that a file on one side only, or one the server keeps its own copy of, is listed in scripts/server-tuning.txt"
 run = "sh scripts/server-tuning-test.sh"
 
 [server-rules-test]
 description = "Run the tests of scripts/server-rules.sh, which checks that each server-data/rules JSON is one make export-server-rules writes (a rules asset listed in the net match, or one with an objective) or is listed in server-data/rules/hand-written.txt"
 run = "sh scripts/server-rules-test.sh"
+
+[docker-sources-test]
+description = "Run the tests of scripts/docker-sources.sh, which checks that docker/server/Dockerfile copies, and its dockerignore keeps, every Assets folder a non-test dotnet project compiles"
+run = "sh scripts/docker-sources-test.sh"

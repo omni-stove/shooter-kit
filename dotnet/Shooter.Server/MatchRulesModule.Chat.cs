@@ -1,3 +1,5 @@
+using GameKit.Core;
+using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;
 
@@ -28,7 +30,7 @@ namespace Shooter.Server
                 return RefuseChat(playerId, ChatRefusal.RuleOff);
             }
 
-            var refusal = _chatGate.TryAccept(playerId, (Shooter.Core.ChatChannel)(int)channel, text, _now, out var accepted);
+            var refusal = _chatGate.TryAccept(playerId, (GameKit.Core.ChatChannel)(int)channel, text, _now, out var accepted);
             if (refusal != ChatRefusal.None)
             {
                 return RefuseChat(playerId, refusal);
@@ -43,7 +45,7 @@ namespace Shooter.Server
             _chatMessage.SenderId = line.SenderId;
             _chatMessage.Channel = (Shooter.Protocol.ChatChannel)(int)line.Channel;
             _chatMessage.Text = line.Text;
-            if (line.Channel == Shooter.Core.ChatChannel.Team)
+            if (line.Channel == GameKit.Core.ChatChannel.Team)
             {
                 SendToTeam(_session.GetTeam(playerId), TransportChannel.Reliable, _chatMessage);
             }
@@ -69,7 +71,7 @@ namespace Shooter.Server
 
         private void PrepareChat(NetMatchSettings settings, ChatWordFilterSpec words)
         {
-            _chatGate = new ChatGate(settings);
+            _chatGate = new ChatGate(settings.ChatIntervalSeconds, settings.MaxChatLength);
             _chatWordFilter = new ChatWordFilter(words);
             _log.WriteLine(ChatLog.Gate(_chatGate));
             _log.WriteLine(ChatLog.WordFilter(_chatWordFilter));

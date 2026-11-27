@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using GameKit.Navigation;
 using Shooter.Core;
 
 namespace Shooter.Server

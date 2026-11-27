@@ -11,9 +11,11 @@ WORKDIR /src
 # EOS の SDK のソースをアナライザの対象から外す設定がここにあり、無いと警告がエラーになってビルドが通らない
 COPY .editorconfig ./
 COPY dotnet/ dotnet/
-COPY Assets/game/Scripts/Core/ Assets/game/Scripts/Core/
-COPY Assets/game/Scripts/Stealth/Core/ Assets/game/Scripts/Stealth/Core/
-COPY Assets/game/Scripts/Protocol/ Assets/game/Scripts/Protocol/
+COPY Assets/kits/core/Scripts/Core/ Assets/kits/core/Scripts/Core/
+COPY Assets/kits/core/Scripts/Net/ Assets/kits/core/Scripts/Net/
+COPY Assets/kits/shooter/Scripts/Core/ Assets/kits/shooter/Scripts/Core/
+COPY Assets/kits/shooter/Scripts/Stealth/Core/ Assets/kits/shooter/Scripts/Stealth/Core/
+COPY Assets/kits/shooter/Scripts/Protocol/ Assets/kits/shooter/Scripts/Protocol/
 RUN case "$TARGETARCH" in \
       amd64) rid=linux-x64 ;; \
       arm64) rid=linux-arm64 ;; \

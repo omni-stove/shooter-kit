@@ -1,0 +1,56 @@
+{
+    "name": "Shooter.Samples.Net.Tests",
+    "rootNamespace": "Shooter.Net.Tests",
+    "references": [
+        "GameKit.Core",
+        "Shooter.Core",
+        "GameKit.World",
+        "GameKit.Navigation",
+        "Shooter.Core.BattleRoyale",
+        "Shooter.Core.Extraction",
+        "Shooter.Core.Party",
+        "Shooter.Core.Spectate",
+        "Shooter.Core.Presentation",
+        "Shooter.Core.Vehicle",
+        "Shooter.Aircraft.Core",
+        "Shooter.Aircraft",
+        "Shooter.Campaign.Core",
+        "Shooter.Campaign",
+        "Shooter.Stealth.Core",
+        "Shooter.Stealth",
+        "Shooter.Progression.Core",
+        "Shooter.Progression",
+        "Shooter.Editor",
+        "Shooter.Samples.Editor",
+        "Shooter.Tests.Components",
+        "Shooter.Samples.Net.Editor",
+        "Shooter.Runtime",
+        "Shooter.Interaction",
+        "Shooter.Vision",
+        "Shooter.Runtime.UI",
+        "Shooter.Protocol",
+        "Shooter.NetV2",
+        "Shooter.NetV2.Client",
+        "Unity.AI.Navigation",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "GameKit.Net",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

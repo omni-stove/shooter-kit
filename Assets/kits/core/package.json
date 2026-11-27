@@ -1,0 +1,9 @@
+{
+  "name": "com.omnistove.game-kit",
+  "version": "0.1.0",
+  "displayName": "Game Kit",
+  "description": "The game-independent base every game of the kits builds on: JSON reading and writing, the data loading and checks of the tuning files, time-scale arbitration, the input-device and control-value models, the world collision (map file, BVH, capsule mover) and the mesh navigation. It knows no genre: each genre kit (com.omnistove.game-kit.<genre>, such as com.omnistove.game-kit.shooter) depends on it. The engine-free assemblies (GameKit.Core, GameKit.World, GameKit.Navigation) also build with dotnet for the dedicated server.",
+  "unity": "6000.6",
+  "documentationUrl": "https://github.com/omni-stove/game-kit/blob/main/Assets/kits/core/README.md",
+  "dependencies": {}
+}

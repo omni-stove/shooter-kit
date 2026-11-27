@@ -1,0 +1,225 @@
+using System;
+using System.Collections.Generic;
+using GameKit.Net;
+using Shooter.Protocol;
+using Shooter.Runtime;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace Shooter.NetV2
+{
+    // オフラインの AbilityHost と同じく、能力の並び (つないだときはロードアウトの能力、受け入れられた後はその選択) の n 番目を Ability(n+1) の入力で使う。置く物の能力だけを
+    // 置く要求 (NetV2DeployablesPart.Deploy) にし、それ以外の能力はサーバーが扱わないので押しても何もしない
+    public sealed class NetV2DeployInputPart : INetV2ClientPart
+    {
+        private static readonly string[] _slotPaths = { InputActionPaths.Ability1, InputActionPaths.Ability2 };
+
+        private readonly NetV2DeployablesPart _deployables;
+        private IReadOnlyList<DeployAbilityDefinition> _slots;
+        private readonly Func<NetV2LocalPlayer> _localPlayer;
+        private readonly Func<int, bool> _slotPressed;
+        private readonly Func<bool> _canAct;
+        private InputAction[] _actions;
+        private NetV2LoadoutChooser _chooser;
+        private AbilityCatalogAsset _catalog;
+        private Action<string> _log;
+        private bool _abilitiesOn;
+        private bool _disposed;
+
+        // slots は能力の枠の順で、置く物でない枠は null。押したかを引く口は、テストや別の入力から差し替えられるよう受け取る
+        public NetV2DeployInputPart(
+            NetV2DeployablesPart deployables,
+            IReadOnlyList<DeployAbilityDefinition> slots,
+            Func<bool> canAct,
+            Func<NetV2LocalPlayer> localPlayer = null,
+            Func<int, bool> slotPressed = null)
+        {
+            _deployables = deployables ?? throw new ArgumentNullException(nameof(deployables));
+            _slots = CopySlots(slots ?? throw new ArgumentNullException(nameof(slots)));
+            _canAct = canAct ?? throw new ArgumentNullException(nameof(canAct));
+            _localPlayer = localPlayer ?? (() => NetV2Client.Current != null ? NetV2Client.Current.LocalPlayer : null);
+            _slotPressed = slotPressed ?? ReadSlotPressed;
+        }
+
+        public static int SlotCount => _slotPaths.Length;
+
+        // ロードアウトの能力の並びを、枠ごとの置く物の定義にする。枠の数を超えた能力は使う入力が無いので外す
+        public static IReadOnlyList<DeployAbilityDefinition> SlotsOf(IReadOnlyList<AbilityDefinition> abilities)
+        {
+            var slots = new DeployAbilityDefinition[SlotCount];
+            if (abilities == null)
+            {
+                return slots;
+            }
+
+            for (var i = 0; i < slots.Length && i < abilities.Count; i++)
+            {
+                slots[i] = abilities[i] as DeployAbilityDefinition;
+            }
+
+            return slots;
+        }
+
+        // 受け入れられた能力の選択 (枠の順の Id、「なし」は空の Id) を、カタログで引いた置く物の定義にする。
+        // カタログに無い Id と置く物でない能力の枠は null。カタログが壊れていれば AbilityCatalogAsset.TryFind の例外をそのまま投げる
+        public static IReadOnlyList<DeployAbilityDefinition> SlotsOf(IReadOnlyList<string> abilityIds, AbilityCatalogAsset catalog)
+        {
+            var slots = new DeployAbilityDefinition[SlotCount];
+            if (abilityIds == null || catalog == null)
+            {
+                return slots;
+            }
+
+            for (var i = 0; i < slots.Length && i < abilityIds.Count; i++)
+            {
+                slots[i] = catalog.TryFind(abilityIds[i], out var definition) ? definition as DeployAbilityDefinition : null;
+            }
+
+            return slots;
+        }
+
+        // 枠の順で、置く物でない枠は null
+        public IReadOnlyList<DeployAbilityDefinition> Slots => _slots;
+
+        // つないだときのロードアウトの枠を、サーバーに受け入れられた能力の選択で後から差し替えるための口
+        public void SetSlots(IReadOnlyList<DeployAbilityDefinition> slots)
+        {
+            _slots = CopySlots(slots ?? throw new ArgumentNullException(nameof(slots)));
+        }
+
+        // 受け入れられた能力の選択が出るたびに、catalog で引いた定義で枠を差し替える。受け入れられるまではつないだときの枠のまま。
+        // 選んだ選択を持つ側 (NetV2LoadoutChooser) は部品より長く生きるので、Dispose で外す
+        internal void Follow(NetV2LoadoutChooser chooser, AbilityCatalogAsset catalog, Action<string> log)
+        {
+            if (chooser == null)
+            {
+                throw new ArgumentNullException(nameof(chooser));
+            }
+
+            Unfollow();
+            if (_disposed)
+            {
+                return;
+            }
+
+            _chooser = chooser;
+            _catalog = catalog;
+            _log = log ?? (line => Debug.Log(line));
+            _chooser.AbilitiesAccepted += HandleAbilitiesAccepted;
+        }
+
+        public bool Handle(IMessage message)
+        {
+            return false;
+        }
+
+        // サーバーも同じルールの値で断るので、届いたスナップショットの値で送るかを決める
+        public void Apply(SnapshotMessage snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _abilitiesOn = snapshot.Match.Rules.Abilities == Shooter.Core.Abilities.On;
+        }
+
+        public void Tick(float deltaSeconds)
+        {
+            if (_disposed || !_abilitiesOn || GameUi.IsPauseOpen)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _slots.Count; i++)
+            {
+                if (!_slotPressed(i))
+                {
+                    continue;
+                }
+
+                var definition = _slots[i];
+                var local = _localPlayer();
+                if (definition == null || local == null || !_canAct())
+                {
+                    continue;
+                }
+
+                _deployables.Deploy(definition.Id, local.transform, local.EyePosition, local.AimDirection);
+            }
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
+            Unfollow();
+        }
+
+        // サーバーは受け入れた能力を持たせているので、引けなかった枠に前の種類を残すと断られる要求を送ることになる。だから枠を空にする
+        private void HandleAbilitiesAccepted(IReadOnlyList<string> abilityIds)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            IReadOnlyList<DeployAbilityDefinition> slots;
+            try
+            {
+                slots = SlotsOf(abilityIds, _catalog);
+            }
+            catch (AbilityDefinitionException e)
+            {
+                _log(ClientDeployLog.SlotsNotResolved(e.Message));
+                slots = new DeployAbilityDefinition[SlotCount];
+            }
+
+            SetSlots(slots);
+            var kinds = new string[_slots.Count];
+            for (var i = 0; i < kinds.Length; i++)
+            {
+                kinds[i] = _slots[i] != null ? _slots[i].Id : null;
+            }
+
+            _log(ClientDeployLog.Slots(kinds));
+        }
+
+        private void Unfollow()
+        {
+            if (_chooser != null)
+            {
+                _chooser.AbilitiesAccepted -= HandleAbilitiesAccepted;
+            }
+
+            _chooser = null;
+            _catalog = null;
+        }
+
+        // 渡した側が後から並びを書き換えても、差し替えたとき (SetSlots) 以外に枠が変わらないよう写しを持つ
+        private static IReadOnlyList<DeployAbilityDefinition> CopySlots(IReadOnlyList<DeployAbilityDefinition> slots)
+        {
+            var copy = new DeployAbilityDefinition[slots.Count];
+            for (var i = 0; i < copy.Length; i++)
+            {
+                copy[i] = slots[i];
+            }
+
+            return Array.AsReadOnly(copy);
+        }
+
+        private bool ReadSlotPressed(int slot)
+        {
+            if (_actions == null)
+            {
+                _actions = new InputAction[_slotPaths.Length];
+                var asset = InputSystem.actions;
+                for (var i = 0; i < _slotPaths.Length && asset != null; i++)
+                {
+                    _actions[i] = asset.FindAction(_slotPaths[i]);
+                }
+            }
+
+            return slot >= 0 && slot < _actions.Length && _actions[slot] != null && _actions[slot].WasPressedThisFrame();
+        }
+    }
+}

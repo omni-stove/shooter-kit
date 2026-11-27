@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Net;
 using Shooter.Protocol;
 
 namespace Shooter.Server.Tests

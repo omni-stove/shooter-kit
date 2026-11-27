@@ -1,7 +1,7 @@
 # make export-server-rules (ServerRulesExporter) が書き出さず、手で保つルールの名前を 1 行に 1 つ書く。# から行末までは読まない。
 # ここに名前のあるルールは、Demo のルールアセットに目的 (Objective) があっても書き出しが上書きしない。
 # ここにも無く、書き出しの対象でもない *.json がこのフォルダーにあると、書き出しと scripts/server-rules.sh (lint) が落ちる。
-# 手で保つファイルは、下に書いた項目のほかを Demo の同じ名前のルールアセット (Assets/game/Samples~/Demo/Rules) と同じ値にしておく。
+# 手で保つファイルは、下に書いた項目のほかを Demo の同じ名前のルールアセット (Assets/kits/shooter/Samples~/Demo/Rules) と同じ値にしておく。
 # アセットがオンラインの値を全部持つようになったら、その名前をここから消して書き出しに任せる。
 
 # 同じ名前のアセットが無い。

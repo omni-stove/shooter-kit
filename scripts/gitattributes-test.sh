@@ -12,22 +12,22 @@ check() {
 	fi
 }
 
-check Assets/game/A.cs text auto
-check Assets/game/A.cs eol lf
-check Assets/game/Scenes/A.unity text auto
-check Assets/game/Scenes/A.unity eol lf
-check Assets/game/A.prefab diff unspecified
-check Assets/game/Rules/NetMatch.asset text auto
-check Assets/game/Scenes/NetTest/NavMesh-Floor.asset text unset
-check Assets/game/Scenes/NetTest/NavMesh-Floor.asset diff unset
-check Assets/game/Scenes/NetTest/NavMesh-Floor.asset merge unset
+check Assets/kits/shooter/A.cs text auto
+check Assets/kits/shooter/A.cs eol lf
+check Assets/kits/shooter/Scenes/A.unity text auto
+check Assets/kits/shooter/Scenes/A.unity eol lf
+check Assets/kits/shooter/A.prefab diff unspecified
+check Assets/kits/shooter/Rules/NetMatch.asset text auto
+check Assets/kits/shooter/Scenes/NetTest/NavMesh-Floor.asset text unset
+check Assets/kits/shooter/Scenes/NetTest/NavMesh-Floor.asset diff unset
+check Assets/kits/shooter/Scenes/NetTest/NavMesh-Floor.asset merge unset
 check ProjectSettings/NavMeshAreas.asset diff unspecified
-check Assets/game/Scenes/A/LightingData.asset text unset
-check Assets/game/Audio/A.wav text unset
-check Assets/game/Audio/A.wav diff unset
-check Assets/game/A.png diff unset
-check Assets/game/A.fbx diff unset
-check Assets/game/A.ttf diff unset
+check Assets/kits/shooter/Scenes/A/LightingData.asset text unset
+check Assets/kits/shooter/Audio/A.wav text unset
+check Assets/kits/shooter/Audio/A.wav diff unset
+check Assets/kits/shooter/A.png diff unset
+check Assets/kits/shooter/A.fbx diff unset
+check Assets/kits/shooter/A.ttf diff unset
 check Assets/Plugins/A.dll diff unset
 check server-data/maps/NetTest.fpsmap text unset
 check server-data/maps/NetTest.fpsnav merge unset

@@ -8,8 +8,8 @@
     <ProjectReference Include="../Shooter.Stealth.Core/Shooter.Stealth.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Unity の EditMode テスト (Assets/game/Tests/EditMode/Stealth/Core) も同じソースで dotnet test から回す -->
-    <Compile Include="../../Assets/game/Tests/EditMode/Stealth/Core/**/*.cs" Link="EditMode/%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Unity の EditMode テスト (Assets/kits/shooter/Tests/EditMode/Stealth/Core) も同じソースで dotnet test から回す -->
+    <Compile Include="../../Assets/kits/shooter/Tests/EditMode/Stealth/Core/**/*.cs" Link="EditMode/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.1" />

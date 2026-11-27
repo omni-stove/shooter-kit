@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Protocol;
 using CoreReportReason = Shooter.Core.ReportReason;

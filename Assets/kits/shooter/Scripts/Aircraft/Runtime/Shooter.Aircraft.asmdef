@@ -1,0 +1,23 @@
+{
+    "name": "Shooter.Aircraft",
+    "rootNamespace": "Shooter.Runtime",
+    "references": [
+        "GameKit.Core",
+        "GameKit.Navigation",
+        "Shooter.Core",
+        "Shooter.Core.Vehicle",
+        "Shooter.Aircraft.Core",
+        "Shooter.Runtime",
+        "Unity.InputSystem",
+        "GameKit.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

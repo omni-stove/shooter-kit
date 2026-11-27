@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Numerics;
 using System.Text;
+using GameKit.Net;
+using GameKit.World;
 using Shooter.Core;
 using Shooter.Protocol;
 
