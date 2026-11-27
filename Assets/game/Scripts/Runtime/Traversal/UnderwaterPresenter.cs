@@ -360,18 +360,18 @@ namespace Shooter.Runtime.Traversal
         {
             if (_muffle != null && _muffleAdded)
             {
-                DestroyObject(_muffle);
+                DestroyOwned(_muffle);
                 _muffle = null;
             }
 
             if (_placeholder != null)
             {
-                DestroyObject(_placeholder);
+                DestroyOwned(_placeholder);
                 _placeholder = null;
             }
         }
 
-        private static void DestroyObject(UnityEngine.Object target)
+        private static void DestroyOwned(UnityEngine.Object target)
         {
             if (Application.isPlaying)
             {
