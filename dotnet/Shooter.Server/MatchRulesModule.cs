@@ -91,18 +91,18 @@ namespace Shooter.Server
                 + " timeLimit=" + Text(_session.Spec.TimeLimitSeconds) + "s respawn=" + Text(_session.Spec.RespawnSeconds)
                 + "s restartDelay=" + Text(_match.RestartDelaySeconds) + "s reconnectGrace=" + Text(settings.ReconnectGraceSeconds)
                 + "s spawnPoints=" + Text(points.SpawnPoints.Count));
-            _log.WriteLine(MatchLog.Rules(_data.File.Name.Length > 0 ? _data.File.Name : _data.Name, rules));
+            _log.WriteLine(MatchSetupLog.Rules(_data.File.Name.Length > 0 ? _data.File.Name : _data.Name, rules));
             _log.WriteLine(NetDownedLog.Settings(rules.Actions, rules.Actions.ReviveRange));
             WarnUnsupportedActions();
-            _log.WriteLine(MatchLog.Loadout(_data.File.LoadoutName, _loadout));
+            _log.WriteLine(MatchSetupLog.Loadout(_data.File.LoadoutName, _loadout));
             for (var i = 0; i < _loadout.Weapons.Count; i++)
             {
-                _log.WriteLine(MatchLog.Weapon(i, _loadout.Weapons[i]));
+                _log.WriteLine(MatchSetupLog.Weapon(i, _loadout.Weapons[i]));
             }
 
             if (_loadout.Catalog != null)
             {
-                _log.WriteLine(MatchLog.LoadoutCatalog(_data.File.CatalogName, _loadout.Catalog.Count));
+                _log.WriteLine(MatchSetupLog.LoadoutCatalog(_data.File.CatalogName, _loadout.Catalog.Count));
             }
             else
             {

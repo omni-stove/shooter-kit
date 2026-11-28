@@ -1,8 +1,7 @@
 using System;
 using System.Numerics;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct PingMarker : IEquatable<PingMarker>
     {

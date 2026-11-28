@@ -1,4 +1,4 @@
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct PingPlacement
     {

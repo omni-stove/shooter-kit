@@ -1129,5 +1129,39 @@ namespace Shooter.Core.Tests
                 _changed?.Invoke(notice);
             }
         }
+
+        [Test]
+        public void TheGenreNeutralValuesLiveInItsMatchHudAndComeBackAsHudFields()
+        {
+            var model = new HudModel();
+            var changes = new System.Collections.Generic.List<HudField>();
+            model.Changed += changes.Add;
+
+            model.MatchHud.SetHealth(40, 100);
+            model.MatchHud.SetTime(12f);
+            model.MatchHud.SetNotice(HudNotice.IdleWarning(5));
+            model.MatchHud.SetScores(Team.Alpha, 3, 1);
+            model.MatchHud.SetResult(null);
+
+            Assert.That(model.CurrentHealth, Is.EqualTo(40));
+            Assert.That(model.RemainingSeconds, Is.EqualTo(12));
+            Assert.That(model.Notice, Is.EqualTo(HudNotice.IdleWarning(5)));
+            Assert.That(model.FirstScore, Is.EqualTo(3));
+            Assert.That(model.HasResult, Is.True);
+            Assert.That(changes, Is.EqualTo(new[] { HudField.Health, HudField.Time, HudField.Notice, HudField.Score, HudField.Result }));
+        }
+
+        [Test]
+        public void SettingThroughTheModelChangesItsMatchHud()
+        {
+            var model = new HudModel();
+
+            model.SetHealth(70, 120);
+            model.SetRespawnNotice(RespawnMode.None, 0);
+
+            Assert.That(model.MatchHud.CurrentHealth, Is.EqualTo(70));
+            Assert.That(model.MatchHud.MaxHealth, Is.EqualTo(120));
+            Assert.That(model.MatchHud.Notice, Is.EqualTo(HudNotice.NoRespawnUntilNextMatch));
+        }
     }
 }

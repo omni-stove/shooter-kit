@@ -1,6 +1,4 @@
-using GameKit.Core;
-
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct HeldPlayer
     {
@@ -31,8 +29,9 @@ namespace Shooter.Core
 
         public float RemainingSeconds { get; }
 
-        internal HeldPlayer WithRemaining(float remainingSeconds) => new HeldPlayer(PlayerId, Team, Kills, Deaths, Assists, remainingSeconds);
+        // internal にしないのは、GameKit.Core は内部をキットのアセンブリに見せないので、抜けた人を預かるキットのセッション (Shooter.Core.TeamDeathmatchSession など) から呼べなくなるため
+        public HeldPlayer WithRemaining(float remainingSeconds) => new HeldPlayer(PlayerId, Team, Kills, Deaths, Assists, remainingSeconds);
 
-        internal HeldPlayer WithoutStats() => new HeldPlayer(PlayerId, Team, 0, 0, 0, RemainingSeconds);
+        public HeldPlayer WithoutStats() => new HeldPlayer(PlayerId, Team, 0, 0, 0, RemainingSeconds);
     }
 }

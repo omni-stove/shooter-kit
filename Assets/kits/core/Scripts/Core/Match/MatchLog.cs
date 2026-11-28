@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // サーバーとクライアントで同じ書式にし、2 つのログを突き合わせてスコアが合うか確かめられるようにする。
     public static class MatchLog
@@ -205,11 +204,6 @@ namespace Shooter.Core
             return Tag + " map changed from=" + fromMap + " to=" + toMap;
         }
 
-        public static string RulesChanged(MatchObjective fromObjective, MatchObjective toObjective)
-        {
-            return Tag + " rules changed objective from=" + fromObjective + " to=" + toObjective;
-        }
-
         public static string NextMatch(float delaySeconds)
         {
             if (!(delaySeconds >= 0f) || float.IsInfinity(delaySeconds))
@@ -218,84 +212,6 @@ namespace Shooter.Core
             }
 
             return Tag + " next match in=" + delaySeconds.ToString("F1", CultureInfo.InvariantCulture) + "s";
-        }
-
-        public static string Loadout(string name, ServerLoadout loadout)
-        {
-            if (loadout == null)
-            {
-                throw new ArgumentNullException(nameof(loadout));
-            }
-
-            return Tag + " loadout name=" + (string.IsNullOrWhiteSpace(name) ? "-" : name)
-                + " slots=" + loadout.Weapons.Count.ToString(CultureInfo.InvariantCulture)
-                + " switch=" + Seconds(loadout.SwitchSeconds);
-        }
-
-        public static string LoadoutCatalog(string name, int weaponCount)
-        {
-            return Tag + " loadout catalog name=" + (string.IsNullOrWhiteSpace(name) ? "-" : name)
-                + " weapons=" + weaponCount.ToString(CultureInfo.InvariantCulture);
-        }
-
-        public static string Rules(string name, GameRules rules)
-        {
-            if (rules == null)
-            {
-                throw new ArgumentNullException(nameof(rules));
-            }
-
-            return Tag + " rules name=" + (string.IsNullOrWhiteSpace(name) ? "-" : name)
-                + " friendlyFire=" + rules.FriendlyFire
-                + " respawnMode=" + rules.RespawnMode
-                + " waveInterval=" + Seconds(rules.WaveIntervalSeconds)
-                + " regenDelay=" + Seconds(rules.RegenDelaySeconds)
-                + " regenPerSecond=" + rules.RegenPerSecond.ToString("F2", CultureInfo.InvariantCulture)
-                + " deathBody=" + rules.DeathBody
-                + " deathCamera=" + rules.DeathCamera
-                + " infiniteReserve=" + (rules.InfiniteReserve ? "true" : "false")
-                + " reserveMultiplier=" + rules.ReserveAmmoMultiplier.ToString("F2", CultureInfo.InvariantCulture)
-                + " destruction=" + rules.Destruction;
-        }
-
-        public static string Weapon(int slot, WeaponSpec weapon)
-        {
-            if (weapon == null)
-            {
-                throw new ArgumentNullException(nameof(weapon));
-            }
-
-            return Tag + " weapon slot=" + slot.ToString(CultureInfo.InvariantCulture)
-                + " name=" + weapon.LogName
-                + " id=" + weapon.Id
-                + " category=" + weapon.Category
-                + " mode=" + weapon.FireMode
-                + " damage=" + weapon.Damage.ToString(CultureInfo.InvariantCulture)
-                + " range=" + weapon.Range.ToString("F1", CultureInfo.InvariantCulture) + "m"
-                + " falloff=" + Falloff(weapon.Falloff)
-                + " fireInterval=" + Seconds(weapon.FireInterval)
-                + " magazine=" + weapon.MagazineSize.ToString(CultureInfo.InvariantCulture)
-                + " reserve=" + weapon.ReserveAmmo.ToString(CultureInfo.InvariantCulture)
-                + " reload=" + Seconds(weapon.ReloadSeconds);
-        }
-
-        // key=value を空白で区切って読めるよう、値に空白を入れない形にする。
-        private static string Falloff(DamageFalloff falloff)
-        {
-            // DamageFalloff.None は float.MaxValue の距離を持つので、そのまま書くと読めない
-            if (falloff.MinMultiplier >= 1f)
-            {
-                return "none";
-            }
-
-            return falloff.StartDistance.ToString("F1", CultureInfo.InvariantCulture)
-                + "-" + falloff.EndDistance.ToString("F1", CultureInfo.InvariantCulture)
-                + "m*" + falloff.MinMultiplier.ToString("F2", CultureInfo.InvariantCulture);
-        }
-
-        private static string Seconds(float seconds)
-        {
-            return seconds.ToString("F2", CultureInfo.InvariantCulture) + "s";
         }
 
         private static string SoloStateName(Match match)
@@ -313,7 +229,8 @@ namespace Shooter.Core
             }
         }
 
-        internal static string TeamName(Team team)
+        // internal にしないのは、GameKit.Core は内部をキットのアセンブリに見せないので、同じ書式でチームを書くキットのログ (PingLog・ServerEventLog など) から呼べなくなるため
+        public static string TeamName(Team team)
         {
             switch (team)
             {
