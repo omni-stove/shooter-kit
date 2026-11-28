@@ -146,5 +146,15 @@ namespace Shooter.Core.Tests
             Assert.That(deathCam.Update(DeathCamera.Killer, true, false, false), Is.EqualTo(DeathCamTransition.Started));
             return deathCam;
         }
+
+        [TestCase(DeathCamera.Ally, true, DeathCamera.Ally)]
+        [TestCase(DeathCamera.Ally, false, DeathCamera.Free)]
+        [TestCase(DeathCamera.Free, true, DeathCamera.Free)]
+        [TestCase(DeathCamera.Killer, false, DeathCamera.Killer)]
+        [TestCase(DeathCamera.None, false, DeathCamera.None)]
+        public void AllyWithoutAnyoneToWatchFallsBackToFree(DeathCamera rule, bool hasAlly, DeathCamera expected)
+        {
+            Assert.That(DeathCamSwitch.ResolveMode(rule, hasAlly), Is.EqualTo(expected));
+        }
     }
 }

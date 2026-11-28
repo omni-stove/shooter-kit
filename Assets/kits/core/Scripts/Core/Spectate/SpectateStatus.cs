@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 見ている人を名前でなく参加者の Id で持つのは、名前に引くのを UI (IParticipants) に任せるため。
     public readonly struct SpectateStatus : IEquatable<SpectateStatus>

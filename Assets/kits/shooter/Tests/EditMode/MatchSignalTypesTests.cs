@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Linq;
 using GameKit.Core;
-using Shooter.Core;
 using NUnit.Framework;
 
 namespace Shooter.Tests.EditMode
