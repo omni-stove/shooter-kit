@@ -8,6 +8,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Shooter.Core.BattleRoyale")]
 [assembly: InternalsVisibleTo("Shooter.Core.Extraction")]
 [assembly: InternalsVisibleTo("Shooter.Core.CoopHold")]
-[assembly: InternalsVisibleTo("Shooter.Core.Telemetry")]
 [assembly: InternalsVisibleTo("Shooter.Core.Presentation")]
 [assembly: InternalsVisibleTo("Shooter.Core.Vehicle")]

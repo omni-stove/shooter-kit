@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
     // System.Text.Json は Unity に無いので、JSON として読めるかは dotnet のテストでだけ確かめる
     public sealed class ServerEventLogTests

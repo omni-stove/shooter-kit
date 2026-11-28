@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class PacketSplitter
     {

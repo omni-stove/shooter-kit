@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
-    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    // Unity の EditMode テストと dotnet/GameKit.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
     public sealed class TelemetryRecorderTests
     {
         private static readonly DateTime _time = new DateTime(2026, 11, 18, 9, 0, 0, DateTimeKind.Utc);

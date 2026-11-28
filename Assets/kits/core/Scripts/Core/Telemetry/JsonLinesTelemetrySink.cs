@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // クラッシュの行はプロセスが落ちる直前に書くので、ためずに 1 行ごとに書いて Flush する。
     // 大きさの上限に届いたら 1 つ前のファイル (.1) へ移して書き直す。消して書き直すと、上限の直後に起きたクラッシュの前の様子が失われるため。

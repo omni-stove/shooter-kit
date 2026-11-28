@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Shooter.Core;
+using GameKit.Core;
 using UnityEngine;
 
 namespace Shooter.Runtime

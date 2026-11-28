@@ -7,7 +7,6 @@
         "Shooter.Core",
         "GameKit.World",
         "Shooter.Core.Extraction",
-        "Shooter.Core.Telemetry",
         "Shooter.Core.Presentation",
         "Shooter.Core.Vehicle",
         "Shooter.Protocol",

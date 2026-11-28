@@ -170,12 +170,28 @@ namespace GameKit.Core.Tests
             typeof(SpectateReason),
             typeof(SpectateStatus),
             typeof(SpectateTargets),
+            typeof(FlatJsonObject),
+            typeof(HttpTelemetrySink),
+            typeof(ITelemetrySink),
+            typeof(JsonLinesTelemetrySink),
+            typeof(PacketReadResult),
+            typeof(PacketReassembler),
+            typeof(PacketSplitter),
+            typeof(ServerEventLog),
+            typeof(TelemetryJson),
+            typeof(TelemetryLog),
+            typeof(TelemetryMatchSummary),
+            typeof(TelemetryOrigin),
+            typeof(TelemetryRecorder),
+            typeof(TelemetrySink),
+            typeof(TelemetrySinks),
+            typeof(TelemetrySpec),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(162));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(178));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

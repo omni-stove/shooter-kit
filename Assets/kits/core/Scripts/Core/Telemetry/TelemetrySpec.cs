@@ -1,8 +1,7 @@
 using System;
 using System.IO;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public enum TelemetrySink
     {

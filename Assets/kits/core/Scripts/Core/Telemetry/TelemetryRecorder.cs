@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 同意が無いうちは送り先を作らない。作るとファイルが空でも置かれ、同意していない人の手元に記録の跡が残るため。
     // クラッシュはどのスレッドからも届く (Unity のログの受け口・タスクの例外) ので、中身はすべて _gate の中で触る。

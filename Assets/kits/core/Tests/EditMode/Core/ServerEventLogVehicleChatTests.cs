@@ -1,9 +1,9 @@
 using System;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
-    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    // Unity の EditMode テストと dotnet/GameKit.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
     // Chat・Vehicle の enum を使わず文字列だけで呼ぶ。Telemetry がそれらの asmdef なしで使えることをここで確かめるため
     public sealed class ServerEventLogVehicleChatTests
     {
