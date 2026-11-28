@@ -68,12 +68,12 @@ namespace Shooter.Core
         private static BuyItem ReadItem(ServerDataJson.Fields item)
         {
             var id = SpecJsonReader.RequireText(item, IdItem);
-            var kind = item.ToEnum<BuyItemKind>(item.ItemPath(KindItem), item.Require(KindItem));
+            var kind = item.ToName(item.ItemPath(KindItem), item.Require(KindItem), BuyItemKinds.Names);
             var price = item.ToInt(item.ItemPath(PriceItem), item.Require(PriceItem));
             var slot = item.ReadInt(SlotItem, 0);
             var amount = item.ReadInt(AmountItem, 0);
             var nameKey = item.ReadString(NameKeyItem, string.Empty);
-            return new BuyItem(id, kind, price, slot, amount, nameKey);
+            return BuyItemKinds.Create(id, kind, price, slot, amount, nameKey);
         }
     }
 }

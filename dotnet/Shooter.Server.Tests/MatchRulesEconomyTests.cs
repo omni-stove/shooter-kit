@@ -391,12 +391,12 @@ namespace Shooter.Server.Tests
                 new EconomySpec(startMoney: 0, maxMoney: 1000, killReward: 0),
                 new BuyCatalog(new[]
                 {
-                    new BuyItem(_carbineId, BuyItemKind.Weapon, 1000, slot: 0),
-                    new BuyItem(TestRules.RifleId, BuyItemKind.Weapon, 2700, slot: 0),
-                    new BuyItem(_fragId, BuyItemKind.Throwable, 300),
-                    new BuyItem(_ghostId, BuyItemKind.Weapon, 500, slot: 0),
-                    new BuyItem(_spareId, BuyItemKind.Weapon, 500, slot: 2),
-                    new BuyItem(_sideArmId, BuyItemKind.Weapon, 200, slot: 0),
+                    BuyItemKinds.Create(_carbineId, BuyItemKinds.Weapon, 1000, slot: 0),
+                    BuyItemKinds.Create(TestRules.RifleId, BuyItemKinds.Weapon, 2700, slot: 0),
+                    BuyItemKinds.Create(_fragId, BuyItemKinds.Throwable, 300),
+                    BuyItemKinds.Create(_ghostId, BuyItemKinds.Weapon, 500, slot: 0),
+                    BuyItemKinds.Create(_spareId, BuyItemKinds.Weapon, 500, slot: 2),
+                    BuyItemKinds.Create(_sideArmId, BuyItemKinds.Weapon, 200, slot: 0),
                 }));
         }
 

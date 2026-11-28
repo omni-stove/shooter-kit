@@ -588,7 +588,7 @@ namespace Shooter.Server.Tests
             Assert.That(rules.Catalog.Count, Is.GreaterThan(0));
             foreach (var item in rules.Catalog.Items)
             {
-                Assert.That(item.Kind, Is.EqualTo(BuyItemKind.Weapon), item.Id + ": the server only hands out bought weapons");
+                Assert.That(item.Kind, Is.EqualTo(BuyItemKinds.Weapon), item.Id + ": the server only hands out bought weapons");
                 Assert.That(loadout.Catalog.TryGet(item.Id, out _), Is.True, item.Id + " is in the weapon catalog of the rules");
                 Assert.That(item.Slot, Is.LessThan(loadout.Rule.SlotCount), item.Id + " fits a loadout slot");
             }

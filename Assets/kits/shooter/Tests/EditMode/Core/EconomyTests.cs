@@ -208,7 +208,7 @@ namespace Shooter.Core.Tests
             Assert.That(economy.Buy(_alpha0, _rifleId), Is.EqualTo(PurchaseVerdict.NotEnoughMoney));
             Assert.That(economy.Buy(_alpha0, "missing"), Is.EqualTo(PurchaseVerdict.UnknownItem));
             Assert.That(economy.Buy(_alpha0, null), Is.EqualTo(PurchaseVerdict.UnknownItem));
-            Assert.That(economy.Buy(_alpha0, _fragId, i => i.Kind != BuyItemKind.Throwable), Is.EqualTo(PurchaseVerdict.CannotCarry));
+            Assert.That(economy.Buy(_alpha0, _fragId, i => i.Kind != BuyItemKinds.Throwable), Is.EqualTo(PurchaseVerdict.CannotCarry));
             Assert.That(economy.Buy(_alpha0, _armorId, _ => false), Is.EqualTo(PurchaseVerdict.CannotCarry));
             Assert.That(economy.MoneyOf(_alpha0), Is.EqualTo(800));
 
@@ -314,18 +314,18 @@ namespace Shooter.Core.Tests
         [Test]
         public void TheCatalogAndItsItemsRejectBadValues()
         {
-            Assert.Throws<ArgumentException>(() => new BuyItem(" ", BuyItemKind.Weapon, 100));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", BuyItemKind.Weapon, -1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", BuyItemKind.Weapon, 100, slot: -1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", BuyItemKind.Throwable, 100, slot: 1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", BuyItemKind.Armor, 100));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", BuyItemKind.Weapon, 100, amount: 50));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BuyItem("x", (BuyItemKind)9, 100));
-            Assert.Throws<ArgumentException>(() => new BuyCatalog(new[] { new BuyItem("x", BuyItemKind.Weapon, 1), new BuyItem("x", BuyItemKind.Weapon, 2) }));
+            Assert.Throws<ArgumentException>(() => BuyItemKinds.Create(" ", BuyItemKinds.Weapon, 100));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", BuyItemKinds.Weapon, -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", BuyItemKinds.Weapon, 100, slot: -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", BuyItemKinds.Throwable, 100, slot: 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", BuyItemKinds.Armor, 100));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", BuyItemKinds.Weapon, 100, amount: 50));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BuyItemKinds.Create("x", "Grenade", 100));
+            Assert.Throws<ArgumentException>(() => new BuyCatalog(new[] { BuyItemKinds.Create("x", BuyItemKinds.Weapon, 1), BuyItemKinds.Create("x", BuyItemKinds.Weapon, 2) }));
             Assert.Throws<ArgumentException>(() => new BuyCatalog(_noItem));
             Assert.Throws<ArgumentNullException>(() => new Economy(null));
 
-            var armor = new BuyItem(" armor ", BuyItemKind.Armor, 650, amount: 100, nameKey: " buy.armor ");
+            var armor = BuyItemKinds.Create(" armor ", BuyItemKinds.Armor, 650, amount: 100, nameKey: " buy.armor ");
             Assert.That(armor.Id, Is.EqualTo("armor"));
             Assert.That(armor.NameKey, Is.EqualTo("buy.armor"));
             Assert.That(armor.Amount, Is.EqualTo(100));
@@ -355,11 +355,11 @@ namespace Shooter.Core.Tests
         {
             return new BuyCatalog(new[]
             {
-                new BuyItem(_pistolId, BuyItemKind.Weapon, 500, slot: 1),
-                new BuyItem(_rifleId, BuyItemKind.Weapon, 2700, slot: 0),
-                new BuyItem(_sniperId, BuyItemKind.Weapon, 4750, slot: 0),
-                new BuyItem(_fragId, BuyItemKind.Throwable, 300),
-                new BuyItem(_armorId, BuyItemKind.Armor, 650, amount: 100),
+                BuyItemKinds.Create(_pistolId, BuyItemKinds.Weapon, 500, slot: 1),
+                BuyItemKinds.Create(_rifleId, BuyItemKinds.Weapon, 2700, slot: 0),
+                BuyItemKinds.Create(_sniperId, BuyItemKinds.Weapon, 4750, slot: 0),
+                BuyItemKinds.Create(_fragId, BuyItemKinds.Throwable, 300),
+                BuyItemKinds.Create(_armorId, BuyItemKinds.Armor, 650, amount: 100),
             });
         }
     }

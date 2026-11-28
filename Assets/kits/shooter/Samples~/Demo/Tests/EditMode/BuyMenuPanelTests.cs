@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
@@ -33,10 +34,10 @@ namespace Shooter.Tests.EditMode
 
         private static BuyCatalog Catalog() => new BuyCatalog(new[]
         {
-            new BuyItem(PistolId, BuyItemKind.Weapon, 500, slot: 1, nameKey: "weapon.ricochetPistol"),
-            new BuyItem(RifleId, BuyItemKind.Weapon, 2700, slot: 0, nameKey: "weapon.ref.carbine556"),
-            new BuyItem(FragId, BuyItemKind.Throwable, 300, nameKey: "grenade.frag"),
-            new BuyItem(ArmorId, BuyItemKind.Armor, 650, amount: 50),
+            BuyItemKinds.Create(PistolId, BuyItemKinds.Weapon, 500, slot: 1, nameKey: "weapon.ricochetPistol"),
+            BuyItemKinds.Create(RifleId, BuyItemKinds.Weapon, 2700, slot: 0, nameKey: "weapon.ref.carbine556"),
+            BuyItemKinds.Create(FragId, BuyItemKinds.Throwable, 300, nameKey: "grenade.frag"),
+            BuyItemKinds.Create(ArmorId, BuyItemKinds.Armor, 650, amount: 50),
         });
 
         [SetUp]
@@ -126,7 +127,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void AFreeItemIsBoughtWhenTheWalletIsPublishedAgainWithTheSameMoney()
         {
-            var free = new BuyCatalog(new[] { new BuyItem(FragId, BuyItemKind.Throwable, 0, nameKey: "grenade.frag") });
+            var free = new BuyCatalog(new[] { BuyItemKinds.Create(FragId, BuyItemKinds.Throwable, 0, nameKey: "grenade.frag") });
             Open(800, free);
             _sender = PublishSender(free, answersAtOnce: true);
 
@@ -424,14 +425,14 @@ namespace Shooter.Tests.EditMode
                     Assert.That(table.Contains(BuyMenuPanel.VerdictKeyOf(verdict)), Is.True, $"{GameLanguages.Code(language)}: {verdict}");
                 }
 
-                foreach (BuyItemKind kind in Enum.GetValues(typeof(BuyItemKind)))
+                foreach (var kind in BuyItemKinds.Names)
                 {
                     Assert.That(table.Contains(BuyMenuPanel.KindKeyOf(kind)), Is.True, $"{GameLanguages.Code(language)}: {kind}");
                 }
             }
 
             Assert.That(() => BuyMenuPanel.VerdictKeyOf((PurchaseVerdict)99), Throws.InstanceOf<ArgumentOutOfRangeException>());
-            Assert.That(() => BuyMenuPanel.KindKeyOf((BuyItemKind)99), Throws.InstanceOf<ArgumentOutOfRangeException>());
+            Assert.That(() => BuyMenuPanel.KindKeyOf(string.Empty), Throws.InstanceOf<ArgumentException>());
         }
 
         private void Open(int money, BuyCatalog catalog)

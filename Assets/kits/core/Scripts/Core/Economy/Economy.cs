@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // Horde の通貨はチームで 1 つなので使い回さず、人ごとに財布を持つ。
     // 投げ物と防具は使えば減り、残りは持ち主の部品にしか無いので、ここでは持ち続ける武器だけを覚え、持てるかは Buy の canCarry で聞く。
@@ -72,15 +71,15 @@ namespace Shooter.Core
             return _lossStreaks.TryGetValue(side, out var streak) ? streak : 0;
         }
 
-        public string WeaponIn(int playerId, int slot)
+        public string ItemInSlot(int playerId, int slot)
         {
-            return WalletOf(playerId).Weapons.TryGetValue(slot, out var id) ? id : null;
+            return WalletOf(playerId).Slots.TryGetValue(slot, out var id) ? id : null;
         }
 
-        // 枠の番号の順に並べて返すのは、持たせる側が枠の順に武器を並べるため。
-        public IReadOnlyList<KeyValuePair<int, string>> WeaponsOf(int playerId)
+        // 枠の番号の順に並べて返すのは、持たせる側が枠の順に品 (武器など) を並べるため。
+        public IReadOnlyList<KeyValuePair<int, string>> SlotItemsOf(int playerId)
         {
-            var list = new List<KeyValuePair<int, string>>(WalletOf(playerId).Weapons);
+            var list = new List<KeyValuePair<int, string>>(WalletOf(playerId).Slots);
             list.Sort((a, b) => a.Key.CompareTo(b.Key));
             return list;
         }
@@ -150,15 +149,15 @@ namespace Shooter.Core
             ResetWallets();
         }
 
-        public bool LoseWeapons(int playerId)
+        public bool LoseSlotItems(int playerId)
         {
-            var weapons = WalletOf(playerId).Weapons;
-            if (weapons.Count == 0)
+            var slots = WalletOf(playerId).Slots;
+            if (slots.Count == 0)
             {
                 return false;
             }
 
-            weapons.Clear();
+            slots.Clear();
             WalletChanged?.Invoke(playerId);
             return true;
         }
@@ -182,8 +181,8 @@ namespace Shooter.Core
                 return PurchaseVerdict.UnknownItem;
             }
 
-            if (item.Kind == BuyItemKind.Weapon
-                && wallet.Weapons.TryGetValue(item.Slot, out var held)
+            if (item.TakesSlot
+                && wallet.Slots.TryGetValue(item.Slot, out var held)
                 && string.Equals(held, item.Id, StringComparison.Ordinal))
             {
                 return PurchaseVerdict.CannotCarry;
@@ -200,9 +199,9 @@ namespace Shooter.Core
             }
 
             wallet.Money -= item.Price;
-            if (item.Kind == BuyItemKind.Weapon)
+            if (item.TakesSlot)
             {
-                wallet.Weapons[item.Slot] = item.Id;
+                wallet.Slots[item.Slot] = item.Id;
             }
 
             WalletChanged?.Invoke(playerId);
@@ -237,7 +236,7 @@ namespace Shooter.Core
             {
                 var wallet = _wallets[id];
                 wallet.Money = Spec.StartMoney;
-                wallet.Weapons.Clear();
+                wallet.Slots.Clear();
                 WalletChanged?.Invoke(id);
             }
         }
@@ -275,7 +274,7 @@ namespace Shooter.Core
 
             public int Money { get; set; }
 
-            public Dictionary<int, string> Weapons { get; } = new Dictionary<int, string>();
+            public Dictionary<int, string> Slots { get; } = new Dictionary<int, string>();
         }
     }
 }

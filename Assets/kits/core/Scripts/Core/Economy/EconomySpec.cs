@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 人ごとの財布の額だけを持つ。品物の値段は武器や装備ごとに変わるので、ここではなく買える品の一覧のデータに置く。
     public sealed class EconomySpec
