@@ -145,12 +145,15 @@ namespace GameKit.Core.Tests
             typeof(EmoteRefusal),
             typeof(EmoteSpec),
             typeof(EmoteStopReason),
+            typeof(BarkPacing),
+            typeof(BarkSelector),
+            typeof(BarkVerdict),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(137));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(140));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

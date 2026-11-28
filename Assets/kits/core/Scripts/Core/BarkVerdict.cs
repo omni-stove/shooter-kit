@@ -1,4 +1,4 @@
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 値は後ろにだけ足す (前の値の番号を変えない)。
     public enum BarkVerdict

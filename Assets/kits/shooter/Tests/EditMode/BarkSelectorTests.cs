@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Vector3 = System.Numerics.Vector3;
@@ -16,7 +17,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheFirstBarkIsAllowed()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
         }
@@ -24,7 +25,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheSameSpeakerWithinItsCooldownIsSpeakerCooldown()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("a", BarkKind.Reloading, 1f, Origin), Is.EqualTo(BarkVerdict.SpeakerCooldown));
@@ -37,7 +38,7 @@ namespace Shooter.Tests.EditMode
         {
             var asset = UnityEngine.Resources.Load<UnityEngine.TextAsset>(BarkJson.ResourcePath);
             Assert.That(asset, Is.Not.Null, "the kit ships Resources/Tuning/barks.json");
-            var selector = new BarkSelector(BarkJson.Parse(asset.text, "Resources/Tuning/barks.json"));
+            var selector = new BarkSelector(BarkJson.Parse(asset.text, "Resources/Tuning/barks.json").Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("a", BarkKind.Reloading, 1f, Origin), Is.EqualTo(BarkVerdict.SpeakerCooldown));
@@ -47,7 +48,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheSameKindWithinItsCooldownIsKindCooldownEvenFromAnotherSpeaker()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Spotted, 5.5f, Far), Is.EqualTo(BarkVerdict.KindCooldown));
@@ -57,7 +58,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void EachKindUsesItsOwnCooldown()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Grenade, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Grenade, 2.5f, Far), Is.EqualTo(BarkVerdict.KindCooldown));
@@ -67,7 +68,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TheKindCooldownIsCheckedBeforeTheSpeakerCooldown()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0.5f, Origin), Is.EqualTo(BarkVerdict.KindCooldown));
@@ -76,7 +77,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void AnyBarkWithinTheMinimumIntervalIsGlobalInterval()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 0.5f, Far), Is.EqualTo(BarkVerdict.GlobalInterval));
@@ -86,7 +87,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void TooManySpeakersInTheRadiusIsTooManyNearbyUntilOneStops()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 0.75f, new Vector3(5f, 0f, 0f)), Is.EqualTo(BarkVerdict.Allowed));
@@ -101,7 +102,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void SpeakersOutsideTheRadiusAreNotCounted()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 0.75f, Origin), Is.EqualTo(BarkVerdict.Allowed));
@@ -113,7 +114,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void SpeakersExactlyOnTheRadiusAreCounted()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 0.75f, Origin), Is.EqualTo(BarkVerdict.Allowed));
@@ -125,7 +126,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ABlockedBarkIsNotRecorded()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("a", BarkKind.Reloading, 1f, Origin), Is.EqualTo(BarkVerdict.SpeakerCooldown));
@@ -138,9 +139,9 @@ namespace Shooter.Tests.EditMode
         public void TheConfiguredValuesAreUsed()
         {
             var spec = new BarkSpec(speakerCooldownSeconds: 0f, minIntervalSeconds: 0f, maxSpeakersInCrowd: 1, speakSeconds: 1f);
-            var selector = new BarkSelector(spec);
+            var selector = new BarkSelector(spec.Pacing);
 
-            Assert.That(selector.Spec, Is.SameAs(spec));
+            Assert.That(selector.Pacing, Is.SameAs(spec.Pacing));
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 0.5f, Origin), Is.EqualTo(BarkVerdict.TooManyNearby));
             Assert.That(selector.TryBark("b", BarkKind.Reloading, 1f, Origin), Is.EqualTo(BarkVerdict.Allowed));
@@ -150,7 +151,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ZeroSpeakSecondsNeverCountsAnyone()
         {
-            var selector = new BarkSelector(new BarkSpec(minIntervalSeconds: 0f, maxSpeakersInCrowd: 1, speakSeconds: 0f));
+            var selector = new BarkSelector(new BarkSpec(minIntervalSeconds: 0f, maxSpeakersInCrowd: 1, speakSeconds: 0f).Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             Assert.That(selector.CountSpeakingNear(Origin, 0f), Is.EqualTo(0));
@@ -160,7 +161,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ForgetDropsTheSpeakerRecordButKeepsTheKindAndIntervalRecords()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             selector.Forget("a");
@@ -175,7 +176,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void ClearForgetsEverything()
         {
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
 
             Assert.That(selector.TryBark("a", BarkKind.Spotted, 0f, Origin), Is.EqualTo(BarkVerdict.Allowed));
             selector.Clear();
@@ -189,7 +190,7 @@ namespace Shooter.Tests.EditMode
         {
             Assert.Throws<ArgumentNullException>(() => new BarkSelector(null));
 
-            var selector = new BarkSelector(BarkSpec.Default);
+            var selector = new BarkSelector(BarkSpec.Default.Pacing);
             Assert.Throws<ArgumentException>(() => selector.TryBark(null, BarkKind.Spotted, 0f, Origin));
             Assert.Throws<ArgumentException>(() => selector.TryBark(string.Empty, BarkKind.Spotted, 0f, Origin));
             Assert.Throws<ArgumentOutOfRangeException>(() => selector.TryBark("a", (BarkKind)99, 0f, Origin));
