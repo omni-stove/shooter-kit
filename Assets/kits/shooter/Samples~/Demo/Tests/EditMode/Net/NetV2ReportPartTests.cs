@@ -5,7 +5,7 @@ using NUnit.Framework;
 using Shooter.NetV2;
 using Shooter.Protocol;
 using Shooter.Runtime;
-using CoreReportReason = Shooter.Core.ReportReason;
+using CoreReportReason = GameKit.Core.ReportReason;
 using WireReportReason = Shooter.Protocol.ReportReason;
 
 namespace Shooter.Net.Tests

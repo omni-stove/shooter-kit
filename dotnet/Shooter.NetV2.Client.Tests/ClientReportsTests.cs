@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Protocol;
-using CoreReportReason = Shooter.Core.ReportReason;
+using CoreReportReason = GameKit.Core.ReportReason;
 using WireReportReason = Shooter.Protocol.ReportReason;
 
 namespace Shooter.NetV2.Tests

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -17,7 +18,7 @@ namespace Shooter.Tests.EditMode
         private readonly List<GameObject> _objects = new List<GameObject>();
         private float _now;
 
-        private static GameRules PingRules(Shooter.Core.Ping ping)
+        private static GameRules PingRules(GameKit.Core.Ping ping)
         {
             return GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(ping));
         }
@@ -54,7 +55,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(unconfigured.TryPingAlong(_eye, Vector3.forward, out _), Is.False);
             Assert.That(unconfigured.LastRefusal, Is.EqualTo(PingRefusal.RuleOff));
 
-            unconfigured.Configure(PingRules(Shooter.Core.Ping.Off));
+            unconfigured.Configure(PingRules(GameKit.Core.Ping.Off));
             LogAssert.Expect(LogType.Log, PingLog.Refused(PingRefusal.RuleOff));
             Assert.That(unconfigured.TryPingAlong(_eye, Vector3.forward, out _), Is.False);
             Assert.That(unconfigured.Markers, Is.Empty);
@@ -228,10 +229,10 @@ namespace Shooter.Tests.EditMode
             pinger.TryPingAlong(_eye, Vector3.forward, out _);
 
             LogAssert.Expect(LogType.Log, PingLog.Cleared(1));
-            pinger.Configure(PingRules(Shooter.Core.Ping.Off));
+            pinger.Configure(PingRules(GameKit.Core.Ping.Off));
 
             Assert.That(pinger.Markers, Is.Empty);
-            Assert.That(pinger.Rule, Is.EqualTo(Shooter.Core.Ping.Off));
+            Assert.That(pinger.Rule, Is.EqualTo(GameKit.Core.Ping.Off));
         }
 
         [Test]
@@ -283,7 +284,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(heard.Count, Is.EqualTo(2), "an expired mark publishes again");
             Assert.That(GameSignals.Pings.Value, Is.Empty);
 
-            pinger.Configure(PingRules(Shooter.Core.Ping.Off));
+            pinger.Configure(PingRules(GameKit.Core.Ping.Off));
             Assert.That(GameSignals.Pings.Value, Is.Null, "with Ping off nothing is published");
         }
 
@@ -294,10 +295,10 @@ namespace Shooter.Tests.EditMode
             var second = Pinger();
             Assert.That(GameSignals.Pings.Value, Is.SameAs(second.Markers), "the last pinger to change wins");
 
-            first.Configure(PingRules(Shooter.Core.Ping.Off));
+            first.Configure(PingRules(GameKit.Core.Ping.Off));
             Assert.That(GameSignals.Pings.Value, Is.SameAs(second.Markers), "another pinger's marks stay");
 
-            second.Configure(PingRules(Shooter.Core.Ping.Off));
+            second.Configure(PingRules(GameKit.Core.Ping.Off));
             Assert.That(GameSignals.Pings.Value, Is.Null);
         }
 
@@ -309,7 +310,7 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(pinger.Spec.MaxMarkers, Is.EqualTo(PingSpec.DefaultMaxMarkers), "the running spec does not change mid-match");
 
-            pinger.Configure(PingRules(Shooter.Core.Ping.On));
+            pinger.Configure(PingRules(GameKit.Core.Ping.On));
             Assert.That(pinger.Spec.LifetimeSeconds, Is.EqualTo(9f));
             Assert.That(pinger.Spec.MaxMarkers, Is.EqualTo(5));
             Assert.Throws<System.ArgumentNullException>(() => pinger.ApplySpec(null));
@@ -322,7 +323,7 @@ namespace Shooter.Tests.EditMode
             var pinger = Pinger();
             pinger.ApplySpec(new PingSpec(minIntervalSeconds: 2f));
 
-            pinger.Configure(PingRules(Shooter.Core.Ping.On));
+            pinger.Configure(PingRules(GameKit.Core.Ping.On));
 
             Assert.That(pinger.Spec.MinIntervalSeconds, Is.EqualTo(2f));
             Assert.That(pinger.CreateSpec().MinIntervalSeconds, Is.EqualTo(2f), "the applied values are the serialized ones");
@@ -340,7 +341,7 @@ namespace Shooter.Tests.EditMode
             }
 
             pinger.Clock = () => _now;
-            pinger.Configure(PingRules(Shooter.Core.Ping.On));
+            pinger.Configure(PingRules(GameKit.Core.Ping.On));
             return pinger;
         }
 

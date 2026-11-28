@@ -3,7 +3,6 @@ using System.Linq;
 using GameKit.Core;
 using GameKit.Runtime;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.Runtime;
 using UnityEngine;
 using UnityEngine.InputSystem;

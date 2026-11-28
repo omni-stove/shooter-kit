@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using GameKit.Core;
 using GameKit.Net;
 using Shooter.Core;
 using Shooter.Protocol;

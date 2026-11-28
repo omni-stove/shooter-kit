@@ -1,5 +1,5 @@
 using System.Globalization;
-using Shooter.Core;
+using GameKit.Core;
 
 namespace Shooter.NetV2
 {

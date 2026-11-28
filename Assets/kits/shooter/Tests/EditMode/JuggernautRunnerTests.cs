@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;

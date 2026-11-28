@@ -160,7 +160,7 @@ namespace Shooter.Server
             }
 
             var code = JoinCode;
-            if (code == null && Shooter.Core.JoinCode.TryNormalize(rules.JoinCode, out var fromRules))
+            if (code == null && GameKit.Core.JoinCode.TryNormalize(rules.JoinCode, out var fromRules))
             {
                 code = fromRules;
             }
@@ -168,7 +168,7 @@ namespace Shooter.Server
             // コードの無い非公開のサーバーには誰も入れないので、決め忘れても作って入れるようにする
             if (code == null)
             {
-                code = Shooter.Core.JoinCode.Generate(Shooter.Core.JoinCode.DefaultLength, nextIndex);
+                code = GameKit.Core.JoinCode.Generate(GameKit.Core.JoinCode.DefaultLength, nextIndex);
                 generated = true;
             }
 
@@ -430,9 +430,9 @@ namespace Shooter.Server
                 }
 
                 var text = args[++i];
-                if (!Shooter.Core.JoinCode.TryNormalize(text, out joinCode))
+                if (!GameKit.Core.JoinCode.TryNormalize(text, out joinCode))
                 {
-                    error = JoinCodeFlag + " must be " + Shooter.Core.JoinCode.MinLength + "-" + Shooter.Core.JoinCode.MaxLength
+                    error = JoinCodeFlag + " must be " + GameKit.Core.JoinCode.MinLength + "-" + GameKit.Core.JoinCode.MaxLength
                         + " characters of letters, digits, '_' or '-' (got '" + text + "')";
                     return false;
                 }

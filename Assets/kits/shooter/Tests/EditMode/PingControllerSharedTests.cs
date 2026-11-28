@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -77,7 +78,7 @@ namespace Shooter.Tests.EditMode
             shared.Place(1, PingKind.Location, System.Numerics.Vector3.Zero, false, 5f, 0f);
             controller.ShowShared(shared);
 
-            controller.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            controller.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
 
             Assert.That(controller.IsShared, Is.False);
             Assert.That(controller.Markers, Is.Empty);

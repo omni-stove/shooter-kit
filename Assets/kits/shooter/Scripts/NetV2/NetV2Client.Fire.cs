@@ -69,7 +69,7 @@ namespace Shooter.NetV2
         private bool CanPing()
         {
             var latest = _client.LatestSnapshot;
-            if (latest == null || latest.Match.Rules.Ping != Shooter.Core.Ping.On)
+            if (latest == null || latest.Match.Rules.Ping != GameKit.Core.Ping.On)
             {
                 return false;
             }

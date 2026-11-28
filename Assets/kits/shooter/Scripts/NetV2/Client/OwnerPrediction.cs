@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Protocol;
 

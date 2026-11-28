@@ -179,7 +179,7 @@ namespace Shooter.NetEos
         }
 
         public void CreateMemberLobby(
-            string bucketId, int maxMembers, IReadOnlyList<Shooter.Core.LobbyAttribute> attributes, Action<LobbyInfo, string> done)
+            string bucketId, int maxMembers, IReadOnlyList<GameKit.Core.LobbyAttribute> attributes, Action<LobbyInfo, string> done)
         {
             _members.Create(bucketId, maxMembers, attributes, done);
         }
@@ -199,13 +199,13 @@ namespace Shooter.NetEos
             _members.Read(lobbyId, done);
         }
 
-        public void SetMemberAttributes(string lobbyId, IReadOnlyList<Shooter.Core.LobbyAttribute> attributes, Action<string> done)
+        public void SetMemberAttributes(string lobbyId, IReadOnlyList<GameKit.Core.LobbyAttribute> attributes, Action<string> done)
         {
             _members.SetMemberAttributes(lobbyId, attributes, done);
         }
 
         public void ReadMemberAttributes(
-            string lobbyId, string userId, Action<IReadOnlyList<Shooter.Core.LobbyAttribute>, string> done)
+            string lobbyId, string userId, Action<IReadOnlyList<GameKit.Core.LobbyAttribute>, string> done)
         {
             _members.ReadMemberAttributes(lobbyId, userId, done);
         }
@@ -570,7 +570,7 @@ namespace Shooter.NetEos
         }
 
         // 読めない・形の合わない属性は飛ばすだけでロビーごと捨てないのは、クイックマッチの選び方が欠けた属性のロビーを選ばないため。
-        private static List<Shooter.Core.LobbyAttribute> ReadAttributes(LobbyDetails details, string lobbyId)
+        private static List<GameKit.Core.LobbyAttribute> ReadAttributes(LobbyDetails details, string lobbyId)
         {
             var countOptions = new LobbyDetailsGetAttributeCountOptions();
             var count = details.GetAttributeCount(ref countOptions);
@@ -582,7 +582,7 @@ namespace Shooter.NetEos
         }
 
         // 読めない・形の合わない属性はロビーの属性と同じく飛ばす。パーティは欠けた属性を「まだ書いていない」として扱うため。
-        private static List<Shooter.Core.LobbyAttribute> ReadMemberAttributes(LobbyDetails details, ProductUserId member, string lobbyId)
+        private static List<GameKit.Core.LobbyAttribute> ReadMemberAttributes(LobbyDetails details, ProductUserId member, string lobbyId)
         {
             var countOptions = new LobbyDetailsGetMemberAttributeCountOptions { TargetUserId = member };
             var count = details.GetMemberAttributeCount(ref countOptions);
@@ -593,9 +593,9 @@ namespace Shooter.NetEos
             }, lobbyId);
         }
 
-        private static List<Shooter.Core.LobbyAttribute> ReadAttributes(uint count, CopyAttributeAt copy, string lobbyId)
+        private static List<GameKit.Core.LobbyAttribute> ReadAttributes(uint count, CopyAttributeAt copy, string lobbyId)
         {
-            var attributes = new List<Shooter.Core.LobbyAttribute>((int)Math.Min(count, 64u));
+            var attributes = new List<GameKit.Core.LobbyAttribute>((int)Math.Min(count, 64u));
             for (uint i = 0; i < count; i++)
             {
                 var result = copy(i, out var copied);
@@ -612,7 +612,7 @@ namespace Shooter.NetEos
                     continue;
                 }
 
-                // EOS は属性キーの大文字・小文字を区別せず、大文字にして返すことがある。作る側 (Shooter.Core.LobbyAttribute) の表記に戻す
+                // EOS は属性キーの大文字・小文字を区別せず、大文字にして返すことがある。作る側 (GameKit.Core.LobbyAttribute) の表記に戻す
                 key = key.ToLowerInvariant();
                 try
                 {
@@ -622,14 +622,14 @@ namespace Shooter.NetEos
                             var text = Text(data.Value.AsUtf8);
                             if (text != null)
                             {
-                                attributes.Add(Shooter.Core.LobbyAttribute.OfText(key, text));
+                                attributes.Add(GameKit.Core.LobbyAttribute.OfText(key, text));
                             }
 
                             break;
                         case AttributeType.Int64:
                             if (data.Value.AsInt64.HasValue)
                             {
-                                attributes.Add(Shooter.Core.LobbyAttribute.OfNumber(key, data.Value.AsInt64.Value));
+                                attributes.Add(GameKit.Core.LobbyAttribute.OfNumber(key, data.Value.AsInt64.Value));
                             }
 
                             break;
@@ -753,12 +753,12 @@ namespace Shooter.NetEos
                 });
             }
 
-            public void UpdateLobbyAttributes(string lobbyId, IReadOnlyList<Shooter.Core.LobbyAttribute> attributes, Action<string> done)
+            public void UpdateLobbyAttributes(string lobbyId, IReadOnlyList<GameKit.Core.LobbyAttribute> attributes, Action<string> done)
             {
                 Modify(lobbyId, attributes, false, done);
             }
 
-            public void UpdateMemberAttributes(string lobbyId, IReadOnlyList<Shooter.Core.LobbyAttribute> attributes, Action<string> done)
+            public void UpdateMemberAttributes(string lobbyId, IReadOnlyList<GameKit.Core.LobbyAttribute> attributes, Action<string> done)
             {
                 Modify(lobbyId, attributes, true, done);
             }
@@ -806,7 +806,7 @@ namespace Shooter.NetEos
                 return Ready(out error) ? _owner.CopyLobby(lobbyId, out error) : null;
             }
 
-            public IReadOnlyList<Shooter.Core.LobbyAttribute> CopyMemberAttributes(string lobbyId, string userId, out string error)
+            public IReadOnlyList<GameKit.Core.LobbyAttribute> CopyMemberAttributes(string lobbyId, string userId, out string error)
             {
                 if (!Ready(out error))
                 {
@@ -839,7 +839,7 @@ namespace Shooter.NetEos
                 }
             }
 
-            private void Modify(string lobbyId, IReadOnlyList<Shooter.Core.LobbyAttribute> attributes, bool member, Action<string> done)
+            private void Modify(string lobbyId, IReadOnlyList<GameKit.Core.LobbyAttribute> attributes, bool member, Action<string> done)
             {
                 if (!Ready(out var unavailable))
                 {

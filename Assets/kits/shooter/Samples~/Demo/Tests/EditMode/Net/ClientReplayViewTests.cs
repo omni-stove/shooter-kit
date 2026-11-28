@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Numerics;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.NetV2;

@@ -4,6 +4,7 @@ using System.IO;
 using Epic.OnlineServices;
 using Epic.OnlineServices.AntiCheatCommon;
 using Epic.OnlineServices.AntiCheatServer;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Server.Eos

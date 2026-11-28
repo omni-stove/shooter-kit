@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
@@ -101,7 +102,7 @@ namespace Shooter.Tests.EditMode
             var player = Player(Vector3.zero, yaw: 0f, side: 0);
             var pings = player.AddComponent<PingController>();
             pings.Clock = () => _now;
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
             Body("Enemy", new Vector3(0f, 0f, 10f), yaw: 180f, side: 1);
             Body("Dummy", new Vector3(4f, 0f, 10f), yaw: 0f, side: null);
             var publisher = Publisher(player);

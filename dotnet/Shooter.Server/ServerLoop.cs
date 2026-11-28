@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using Shooter.Core;
+using GameKit.Core;
 
 namespace Shooter.Server
 {

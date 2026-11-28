@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using GameKit.Core;
 using GameKit.Net;
 using GameKit.Runtime;
 using Shooter.Core;

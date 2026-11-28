@@ -1,4 +1,5 @@
 using System.Linq;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
@@ -36,14 +37,14 @@ namespace Shooter.Tests.EditMode
         {
             Assert.That(PlayerActions.Installers.OfType<PingActionInstaller>().Count(), Is.EqualTo(1));
 
-            PlayerActions.Attach(_player, GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            PlayerActions.Attach(_player, GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
             var pinger = _player.GetComponent<PingController>();
             Assert.That(pinger, Is.Not.Null);
             Assert.That(pinger.UsesPing, Is.True);
 
             PlayerActions.Attach(_player, GameRules.Default);
             Assert.That(_player.GetComponents<PingController>(), Has.Length.EqualTo(1));
-            Assert.That(pinger.Rule, Is.EqualTo(Shooter.Core.Ping.Off));
+            Assert.That(pinger.Rule, Is.EqualTo(GameKit.Core.Ping.Off));
             Assert.That(pinger.UsesPing, Is.False);
         }
 

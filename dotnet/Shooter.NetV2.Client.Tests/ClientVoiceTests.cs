@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.Protocol;
 
 namespace Shooter.NetV2.Tests

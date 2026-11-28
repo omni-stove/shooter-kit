@@ -1,3 +1,5 @@
+using GameKit.Core;
+
 namespace Shooter.Core
 {
     // オフラインでは進んでいる SearchAndDestroy そのもの、対戦では届いたスナップショットから組み立てた写しが、同じ形で HUD に渡る。

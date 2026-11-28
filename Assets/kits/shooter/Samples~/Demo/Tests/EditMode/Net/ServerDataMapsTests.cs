@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using GameKit.Core;
 using GameKit.World;
 using NUnit.Framework;
 using Shooter.Core;

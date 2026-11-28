@@ -1,3 +1,4 @@
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Editor;
 using NUnit.Framework;

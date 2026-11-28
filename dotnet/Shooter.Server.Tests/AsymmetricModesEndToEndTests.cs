@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
@@ -183,7 +183,7 @@ namespace Shooter.Server.Tests
         private static void LimitJuggernautTime(string root)
         {
             var path = Path.Combine(root, ServerMapData.DataDirectoryName, ServerRulesData.RulesDirectoryName, "Juggernaut" + NetMatchFile.Extension);
-            var file = JsonNode.Parse(File.ReadAllText(path)).AsObject();
+            var file = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path)).AsObject();
             file["match"]["juggernaut"]["timeLimitSeconds"] = _juggernautTimeLimitSeconds;
             File.WriteAllText(path, file.ToJsonString());
         }

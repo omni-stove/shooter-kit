@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
+using GameKit.Core;
 using GameKit.Net;
-using Shooter.Core;
 
 namespace Shooter.Protocol
 {

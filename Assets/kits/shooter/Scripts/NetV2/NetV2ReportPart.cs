@@ -3,7 +3,7 @@ using GameKit.Net;
 using Shooter.Protocol;
 using Shooter.Runtime;
 using UnityEngine;
-using ReportReason = Shooter.Core.ReportReason;
+using ReportReason = GameKit.Core.ReportReason;
 
 namespace Shooter.NetV2
 {

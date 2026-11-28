@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Shooter.Core;
+using GameKit.Core;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;

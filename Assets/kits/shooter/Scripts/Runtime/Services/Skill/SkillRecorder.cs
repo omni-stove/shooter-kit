@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using GameKit.Core;
-using Shooter.Core;
 using UnityEngine;
 
 namespace Shooter.Runtime

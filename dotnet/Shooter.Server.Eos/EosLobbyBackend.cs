@@ -5,11 +5,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Epic.OnlineServices;
 using Epic.OnlineServices.Lobby;
+using GameKit.Core;
 using Shooter.Core;
 // Lobby と Connect の名前空間を両方開くと型名がぶつかりうるので、Connect は別名で参照する
 using EosConnect = Epic.OnlineServices.Connect;
 // SDK の名前空間に同名の型が増えても、こちらを指すようにする
-using LobbyAttribute = Shooter.Core.LobbyAttribute;
+using LobbyAttribute = GameKit.Core.LobbyAttribute;
 using LobbyInfo = Shooter.Core.LobbyInfo;
 
 namespace Shooter.Server.Eos

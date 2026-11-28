@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GameKit.Core;
 using GameKit.Runtime;
-using Shooter.Core;
 using UnityEngine.InputSystem;
 
 namespace Shooter.Runtime

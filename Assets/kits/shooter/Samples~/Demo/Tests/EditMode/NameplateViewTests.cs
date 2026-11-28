@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;

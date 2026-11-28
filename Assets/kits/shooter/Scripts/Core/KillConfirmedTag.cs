@@ -1,3 +1,5 @@
+using GameKit.Core;
+
 namespace Shooter.Core
 {
     public sealed class KillConfirmedTag

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Runtime

@@ -72,7 +72,7 @@ namespace Shooter.Tests.EditMode
             definition.Parachute = Parachute.On;
             definition.Stealth = Stealth.On;
             definition.Suppression = Suppression.On;
-            definition.Ping = Shooter.Core.Ping.On;
+            definition.Ping = GameKit.Core.Ping.On;
             definition.Abilities = Abilities.On;
             definition.SlowMotion = SlowMotion.On;
             definition.AimToFire = AimToFire.On;
@@ -132,7 +132,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(rules.Actions.Parachute, Is.EqualTo(Parachute.On));
             Assert.That(rules.Actions.Stealth, Is.EqualTo(Stealth.On));
             Assert.That(rules.Actions.Suppression, Is.EqualTo(Suppression.On));
-            Assert.That(rules.Actions.Ping, Is.EqualTo(Shooter.Core.Ping.On));
+            Assert.That(rules.Actions.Ping, Is.EqualTo(GameKit.Core.Ping.On));
             Assert.That(rules.Actions.Abilities, Is.EqualTo(Abilities.On));
             Assert.That(rules.Actions.SlowMotion, Is.EqualTo(SlowMotion.On));
             Assert.That(rules.Actions.AimToFire, Is.EqualTo(AimToFire.On));
@@ -297,7 +297,7 @@ namespace Shooter.Tests.EditMode
                     Parachute.On,
                     Stealth.On,
                     Suppression.On,
-                    Shooter.Core.Ping.On,
+                    GameKit.Core.Ping.On,
                     Abilities.On,
                     SlowMotion.On,
                     AimToFire.On,
@@ -589,7 +589,7 @@ namespace Shooter.Tests.EditMode
                     definition.Suppression = (Suppression)99;
                     break;
                 case "Ping":
-                    definition.Ping = (Shooter.Core.Ping)99;
+                    definition.Ping = (GameKit.Core.Ping)99;
                     break;
                 case "Abilities":
                     definition.Abilities = (Abilities)99;

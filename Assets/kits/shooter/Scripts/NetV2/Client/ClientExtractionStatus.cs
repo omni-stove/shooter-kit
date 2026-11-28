@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Protocol;
 using RaidOutcome = Shooter.Core.ExtractionOutcome;

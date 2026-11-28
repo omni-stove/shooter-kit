@@ -1,4 +1,5 @@
 using System.Numerics;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Protocol;

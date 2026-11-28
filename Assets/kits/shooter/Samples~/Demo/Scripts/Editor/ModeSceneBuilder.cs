@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Shooter.Core;
+using GameKit.Core;
 using Shooter.Runtime;
 using Unity.AI.Navigation;
 using UnityEditor;
