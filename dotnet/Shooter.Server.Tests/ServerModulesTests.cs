@@ -118,7 +118,7 @@ namespace Shooter.Server.Tests
         [Test]
         public void ThePlayerStatusIsWiredToTheMovementAndTheCombatWithTheTuning()
         {
-            var playerStatus = new ServerPlayerStatusTuning(stamina: new StaminaSpec(max: 40f));
+            var playerStatus = new ServerPlayerStatusTuning(stamina: StaminaUse.Spec(max: 40f));
             var emotes = new[] { new EmoteSpec("wave") };
             var tuning = new ServerCombatTuning(playerStatus: playerStatus, emotes: emotes, emotesPath: "memory/emotes.json");
             Assert.That(ServerLaunch.TryParse(Array.Empty<string>(), _ => null, out var launch, out var parseError), Is.True, parseError);

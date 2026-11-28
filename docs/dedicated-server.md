@@ -60,7 +60,7 @@ docker compose -f docker/server/compose.yaml up -d
 - 武器を出してはいけない場所 (`WeaponFreeZone`) は `make export-server-rules` がマップごとの `<マップ>.weapon-free-zones.json` に、軸にそろえた箱で書き出す。サーバーは「自動でしまう」と「構えられない」を判定し、「警告してしばらくで敵対」は警告だけにする (オンラインに中立の警備は無い)。Bot には効かない。
 - Bot は人が 1 人もいないと置かれない。試すときはクライアントを 1 人つなぐ。
 - ルールの `actions` は、`stealth` のほかはオフラインと同じくサーバーでも効く。`stealth` を `On` にしたルールで起動すると、サーバーは `[Rules] warning: actions stealth ...` を出してそれを無視する。
-- スタミナの調整値は `server-data/tuning/stamina.json` を置いたときだけ読み、無ければ Core の `StaminaSpec` の既定で動く (Unity にも JSON は無い)。
+- スタミナの調整値は `server-data/tuning/stamina.json` を置いたときだけ読み、無ければ Shooter.Core の `StaminaUse.DefaultSpec` (`StaminaSpec` にスライドと回避の消費を足したもの) で動く (Unity にも JSON は無い)。項目の形 (`slideCost`・`dodgeCost` など) は変わらない。
 - ドローンはサーバーが飛ばすので、使うときは `deployables.json` に `Drone` の種類を足す。暗視とサーマルは手元の画面だけで決まり、サーバーは扱わない。
 - `Horde` で直す・置ける防衛物は、`make export-server-data` がマップの建物と一緒に書き出した `HordeFortification` だけ。書き出す前のマップでは、直す・置く要求をいつも断る。クライアントは波の合間に案内が出ている間だけ、Interact のキーで直す・置く要求を送る。
 - プレイリストでは `match.*` と武器が最初の項目のルールのまま変わらないので、後の項目で使うモードの節も最初の項目に書く。

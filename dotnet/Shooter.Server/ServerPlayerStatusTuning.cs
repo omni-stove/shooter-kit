@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Server
@@ -21,7 +22,7 @@ namespace Shooter.Server
             SuppressionSpec suppression = null,
             string suppressionPath = null)
         {
-            Stamina = stamina ?? StaminaSpec.Default;
+            Stamina = stamina ?? StaminaUse.DefaultSpec;
             StaminaPath = staminaPath;
             Stagger = stagger ?? StaggerTuning.Default;
             StaggerPath = staggerPath;
@@ -50,7 +51,7 @@ namespace Shooter.Server
         {
             ArgumentNullException.ThrowIfNull(searchRoots);
             tuning = null;
-            if (!ServerCombatTuning.TryRead(searchRoots, StaminaFileName, "stamina", StaminaJson.Parse, out var stamina, out var staminaPath, out error)
+            if (!ServerCombatTuning.TryRead(searchRoots, StaminaFileName, "stamina", StaminaUse.Parse, out var stamina, out var staminaPath, out error)
                 || !ServerCombatTuning.TryRead(searchRoots, StaggerFileName, "stagger", StaggerJson.Parse, out var stagger, out var staggerPath, out error)
                 || !ServerCombatTuning.TryRead(
                     searchRoots, SuppressionFileName, "suppression", SuppressionJson.Parse, out var suppression, out var suppressionPath, out error))

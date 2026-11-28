@@ -1,4 +1,5 @@
 using System.Numerics;
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -7,7 +8,7 @@ namespace Shooter.Core.Tests
     {
         private const float _tick = 1f / 60f;
 
-        private static readonly StaminaSpec _smallStamina = new StaminaSpec(
+        private static readonly StaminaSpec _smallStamina = StaminaUse.Spec(
             max: 10f, sprintCostPerSecond: 20f, slideCost: 5f, dodgeCost: 8f, regenPerSecond: 10f, regenDelaySeconds: 0.5f, recoverAmount: 5f);
 
         private static readonly CharacterMotorState _standing = new CharacterMotorState(Vector3.Zero, Vector3.Zero, true, false);

@@ -22,7 +22,7 @@ namespace Shooter.Server.Tests
         private static readonly Vector2 _forward = new Vector2(0f, 1f);
 
         // 毎秒 20 減るので 0.5 秒で尽き、戻りは 0.5 秒待ってから毎秒 10
-        private static readonly StaminaSpec _smallStamina = new StaminaSpec(
+        private static readonly StaminaSpec _smallStamina = StaminaUse.Spec(
             max: 10f, sprintCostPerSecond: 20f, slideCost: 5f, dodgeCost: 8f, regenPerSecond: 10f, regenDelaySeconds: 0.5f, recoverAmount: 5f);
 
         private readonly MessageTable _clientTable = MatchMessages.CreateClientTable();
@@ -230,7 +230,7 @@ namespace Shooter.Server.Tests
         [Test]
         public void TheGivenTuningIsUsed()
         {
-            Start(On(), new ServerPlayerStatusTuning(stamina: new StaminaSpec(max: 40f, recoverAmount: 10f, slideCost: 10f, dodgeCost: 10f)));
+            Start(On(), new ServerPlayerStatusTuning(stamina: StaminaUse.Spec(max: 40f, recoverAmount: 10f, slideCost: 10f, dodgeCost: 10f)));
             Settle();
 
             Assert.That(LastOwner().Stamina.Value.Max, Is.EqualTo(40f));

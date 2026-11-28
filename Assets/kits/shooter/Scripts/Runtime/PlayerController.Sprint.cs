@@ -73,7 +73,7 @@ namespace Shooter.Runtime
         }
 
         // 試すときだけ呼ぶ (断ったことをログに出すので、状態を見るだけの用には使わない)。
-        public bool HasStaminaFor(StaminaUse use)
+        public bool HasStaminaFor(string use)
         {
             var gate = StaminaGate;
             if (gate == null || gate.CanAfford(use))
@@ -85,7 +85,7 @@ namespace Shooter.Runtime
             return false;
         }
 
-        public void SpendStamina(StaminaUse use)
+        public void SpendStamina(string use)
         {
             StaminaGate?.Spend(use);
         }

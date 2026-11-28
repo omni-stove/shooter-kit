@@ -44,7 +44,7 @@ namespace Shooter.Protocol
         public int ExtractionPointId { get; set; }
 
         // ルールで Off なら null。ほかの人の残りは見せないので、人ごとの行 (PlayerSnapshot) に載せず持ち主にだけ送る。
-        public Shooter.Core.StaminaStatus? Stamina { get; set; }
+        public GameKit.Core.StaminaStatus? Stamina { get; set; }
 
         public Shooter.Core.StaggerKind Stagger { get; set; }
 
@@ -388,7 +388,7 @@ namespace Shooter.Protocol
 
             if ((fields & OwnerFields.Stamina) != 0)
             {
-                Stamina = reader.ReadBool() ? ReadStamina(reader) : (Shooter.Core.StaminaStatus?)null;
+                Stamina = reader.ReadBool() ? ReadStamina(reader) : (GameKit.Core.StaminaStatus?)null;
             }
 
             if ((fields & OwnerFields.Stagger) != 0)
@@ -494,7 +494,7 @@ namespace Shooter.Protocol
         }
 
         // StaminaStatus の == (float の ==) で比べないのは、0 と -0 を同じと見て、読んだ側に書いたのと違う値を残さないため
-        private static bool SameStamina(Shooter.Core.StaminaStatus? a, Shooter.Core.StaminaStatus? b)
+        private static bool SameStamina(GameKit.Core.StaminaStatus? a, GameKit.Core.StaminaStatus? b)
         {
             if (a.HasValue != b.HasValue)
             {
@@ -571,7 +571,7 @@ namespace Shooter.Protocol
             return (int)kind >= 0 && (int)kind < _staggerKinds;
         }
 
-        private static Shooter.Core.StaminaStatus ReadStamina(MessageReader reader)
+        private static GameKit.Core.StaminaStatus ReadStamina(MessageReader reader)
         {
             var current = reader.ReadFiniteSingleBetween(0f, float.MaxValue, "stamina");
             var max = reader.ReadFiniteSingleBetween(0f, float.MaxValue, "stamina max");
@@ -581,7 +581,7 @@ namespace Shooter.Protocol
                 throw new MessageReadException("stamina must be between 0 and a positive max");
             }
 
-            return new Shooter.Core.StaminaStatus(current, max, depleted);
+            return new GameKit.Core.StaminaStatus(current, max, depleted);
         }
     }
 }
