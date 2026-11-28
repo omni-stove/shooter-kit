@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
@@ -12,8 +13,8 @@ namespace Shooter.NetV2.Tests
         private const string _herbId = "0d3c6f1a-5b2e-4c7d-8a9f-1e2b3c4d5e6f";
         private const string _caseId = "2f4e6d8c-0b1a-4c3e-8d5f-7a9b1c3d5e7f";
 
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb", maxStack: 5, weight: 0.5f, useHealth: 25);
-        private static readonly ItemSpec _case = new ItemSpec(_caseId, "item.case", weight: 4f, width: 2, height: 1);
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb", maxStack: 5, weight: 0.5f, useHealth: 25);
+        private static readonly ItemSpec _case = ItemSpecs.Create(_caseId, "item.case", weight: 4f, width: 2, height: 1);
         private static readonly InventoryAction[] _useThenDrop = { InventoryAction.Use, InventoryAction.Drop };
         private static readonly InventoryRule _grid = new InventoryRule(gridWidth: 4, gridHeight: 2);
 
@@ -23,8 +24,8 @@ namespace Shooter.NetV2.Tests
         private static readonly string[] _opticSlot = { "optic" };
         private static readonly string[] _scopeOnly = { _scopeId };
         private static readonly InventoryAction[] _attachThenDetach = { InventoryAction.Attach, InventoryAction.Detach };
-        private static readonly ItemSpec _rifleItem = new ItemSpec(_rifleItemId, "weapon.rifle", width: 2, weaponId: _rifleId, attachmentSlots: _opticSlot);
-        private static readonly ItemSpec _scope = new ItemSpec(_scopeId, "item.scope", weight: 0.5f, attachment: new AttachmentSpec("optic"));
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 2, weaponId: _rifleId, attachmentSlots: _opticSlot);
+        private static readonly ItemSpec _scope = ItemSpecs.Create(_scopeId, "item.scope", weight: 0.5f, attachment: new AttachmentSpec("optic"));
 
         private readonly List<InventoryRequestMessage> _sent = new List<InventoryRequestMessage>();
         private bool _connected = true;

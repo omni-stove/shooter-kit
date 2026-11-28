@@ -127,7 +127,7 @@ namespace Shooter.Tests.EditMode
 
         private static ItemCatalog Catalog()
         {
-            return new ItemCatalog(new[] { new ItemSpec(_ammo, maxStack: 60) }, InventoryRule.Default);
+            return new ItemCatalog(new[] { ItemSpecs.Create(_ammo, maxStack: 60) }, InventoryRule.Default);
         }
 
         private static ExtractionSession Session(float openAfterSeconds = 0f)

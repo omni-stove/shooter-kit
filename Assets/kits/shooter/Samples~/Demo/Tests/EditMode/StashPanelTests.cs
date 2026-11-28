@@ -23,7 +23,7 @@ namespace Shooter.Tests.EditMode
         private static ItemCatalog Items()
         {
             return new ItemCatalog(
-                new[] { new ItemSpec(_bandage, "item.bandage", maxStack: 5), new ItemSpec(_ammo, "item.ammo9mm", maxStack: 60) },
+                new[] { ItemSpecs.Create(_bandage, "item.bandage", maxStack: 5), ItemSpecs.Create(_ammo, "item.ammo9mm", maxStack: 60) },
                 InventoryRule.Default);
         }
 

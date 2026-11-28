@@ -19,31 +19,31 @@ namespace Shooter.Core.Tests
         private const string _brakeId = "3a4b5c6d-7e8f-4a9b-8c1d-2e3f4a5b6c7d";
 
         // 小銃は照準器 (optic) と銃口 (muzzle) を持つ。拳銃は照準器だけ
-        private static readonly ItemSpec _rifleItem = new ItemSpec(
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(
             _rifleItemId, "weapon.rifle", width: 2, height: 1, weaponId: _rifleId, attachmentSlots: Strings("optic", "muzzle"));
 
-        private static readonly ItemSpec _pistolItem = new ItemSpec(
+        private static readonly ItemSpec _pistolItem = ItemSpecs.Create(
             _pistolItemId, "weapon.handgun", weaponId: _pistolId, attachmentSlots: Strings("optic"));
 
         // 消音器: 銃声 1/4・射程 0.9 倍・反動 0.8 倍・0.5 kg
-        private static readonly ItemSpec _suppressor = new ItemSpec(
+        private static readonly ItemSpec _suppressor = ItemSpecs.Create(
             _suppressorId, "item.suppressor", maxStack: 2, weight: 0.5f,
             attachment: new AttachmentSpec("muzzle", rangeMultiplier: 0.9f, recoilMultiplier: 0.8f, shotNoiseRadiusMultiplier: 0.25f));
 
         // 補正器: 反動 0.5 倍・0.25 kg
-        private static readonly ItemSpec _compensator = new ItemSpec(
+        private static readonly ItemSpec _compensator = ItemSpecs.Create(
             _compensatorId, "item.compensator", weight: 0.25f, attachment: new AttachmentSpec("muzzle", recoilMultiplier: 0.5f));
 
         // スコープ: ADS の散らばり 0.5 倍・倍率を 30 度と 15 度に置き換え・0.75 kg
-        private static readonly ItemSpec _scope = new ItemSpec(
+        private static readonly ItemSpec _scope = ItemSpecs.Create(
             _scopeId, "item.scope", weight: 0.75f, attachment: new AttachmentSpec("optic", adsSpreadMultiplier: 0.5f, zoomLevels: Floats(30f, 15f)));
 
         // 小銃に無い取り付け口 (magazine) の拡張弾倉
-        private static readonly ItemSpec _magazine = new ItemSpec(
+        private static readonly ItemSpec _magazine = ItemSpecs.Create(
             _magazineId, "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10));
 
         // 拳銃にだけ付く照準器
-        private static readonly ItemSpec _pistolSight = new ItemSpec(
+        private static readonly ItemSpec _pistolSight = ItemSpecs.Create(
             _pistolSightId, "item.pistolSight", attachment: new AttachmentSpec("optic", weaponIds: new[] { _pistolId }));
 
         // 散らばり 腰 4・ADS 1・移動 2、反動 縦 2・横 1、弾倉 30・予備 90・リロード 2 秒、射程 100 m、銃声 50 m、3 kg
@@ -98,7 +98,7 @@ namespace Shooter.Core.Tests
                 ammo: new AmmoSpec(30, 90, 2f),
                 round: new RoundSpec(range: 100f),
                 aim: new AimSpec(moveSpreadDegrees: 2f, adsMoveSpreadDegrees: 0.6f));
-            var brake = new ItemSpec(_brakeId, "item.brake", attachment: new AttachmentSpec("muzzle", moveSpreadMultiplier: 0.5f));
+            var brake = ItemSpecs.Create(_brakeId, "item.brake", attachment: new AttachmentSpec("muzzle", moveSpreadMultiplier: 0.5f));
             var catalog = new ItemCatalog(new[] { _rifleItem, brake }, new InventoryRule(gridWidth: 6, gridHeight: 2));
 
             var spec = WeaponAttachments.Apply(rifle, new[] { _brakeId }, catalog);
@@ -146,8 +146,8 @@ namespace Shooter.Core.Tests
         [Test]
         public void MagazineBonusesAndReloadMultipliersReachTheAmmo()
         {
-            var rifleItem = new ItemSpec(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("magazine"));
-            var fastMagazine = new ItemSpec(_magazineId, attachment: new AttachmentSpec("magazine", reloadSecondsMultiplier: 0.75f, magazineSizeBonus: 10));
+            var rifleItem = ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("magazine"));
+            var fastMagazine = ItemSpecs.Create(_magazineId, attachment: new AttachmentSpec("magazine", reloadSecondsMultiplier: 0.75f, magazineSizeBonus: 10));
             var catalog = new ItemCatalog(new[] { rifleItem, fastMagazine }, InventoryRule.Default);
 
             var spec = WeaponAttachments.Apply(_rifle, new[] { _magazineId }, catalog);
@@ -160,8 +160,8 @@ namespace Shooter.Core.Tests
         [Test]
         public void SpreadAndRecoilStopAt90Degrees()
         {
-            var rifleItem = new ItemSpec(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("stock"));
-            var wild = new ItemSpec(_magazineId, attachment: new AttachmentSpec("stock", hipSpreadMultiplier: 100f, recoilMultiplier: 100f));
+            var rifleItem = ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("stock"));
+            var wild = ItemSpecs.Create(_magazineId, attachment: new AttachmentSpec("stock", hipSpreadMultiplier: 100f, recoilMultiplier: 100f));
             var catalog = new ItemCatalog(new[] { rifleItem, wild }, InventoryRule.Default);
 
             var spec = WeaponAttachments.Apply(_rifle, new[] { _magazineId }, catalog);
@@ -312,10 +312,10 @@ namespace Shooter.Core.Tests
         [Test]
         public void ItemsCheckTheirAttachmentFields()
         {
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_scopeId, weaponId: _rifleId, attachment: new AttachmentSpec("optic")));
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_scopeId, useHealth: 10, attachment: new AttachmentSpec("optic")));
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_scopeId, attachmentSlots: Strings("optic")));
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("optic", "optic")));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_scopeId, weaponId: _rifleId, attachment: new AttachmentSpec("optic")));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_scopeId, useHealth: 10, attachment: new AttachmentSpec("optic")));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_scopeId, attachmentSlots: Strings("optic")));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, attachmentSlots: Strings("optic", "optic")));
             Assert.Throws<ArgumentException>(() => new AttachmentSpec("under-barrel"));
             Assert.Throws<ArgumentException>(() => new AttachmentSpec(" "));
             Assert.Throws<ArgumentException>(() => new AttachmentSpec("optic", zoomLevels: Array.Empty<float>()));
@@ -352,7 +352,7 @@ namespace Shooter.Core.Tests
             var scope = catalog.Items[1];
             Assert.That(scope.IsAttachment, Is.True);
             Assert.That(scope.Weight, Is.EqualTo(0.75f));
-            var a = scope.Attachment;
+            var a = scope.Attachment();
             Assert.That(a.Slot, Is.EqualTo("optic"));
             Assert.That(a.WeaponIds, Is.EqualTo(new[] { _rifleId }));
             Assert.That(a.RangeMultiplier, Is.EqualTo(1.1f));
@@ -372,7 +372,7 @@ namespace Shooter.Core.Tests
         {
             var catalog = InventoryJson.Parse("{ \"items\": [ { \"id\": \"" + _scopeId + "\", \"attachment\": { \"slot\": \"optic\" } } ] }", "inventory.json");
 
-            var a = catalog.Items[0].Attachment;
+            var a = catalog.Items[0].Attachment();
             Assert.That(a.WeaponIds, Is.Empty);
             Assert.That(a.RangeMultiplier, Is.EqualTo(1f));
             Assert.That(a.MagazineSizeBonus, Is.EqualTo(0));
@@ -768,7 +768,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void AnOpticWithASightReplacesTheWeaponsSight()
         {
-            var holo = new ItemSpec(_pistolSightId, "item.holo", attachment: new AttachmentSpec("optic", sight: new SightSpec("holo")));
+            var holo = ItemSpecs.Create(_pistolSightId, "item.holo", attachment: new AttachmentSpec("optic", sight: new SightSpec("holo")));
             var scoped = new WeaponSpec(_rifleId, "weapon.rifle", WeaponCategory.AssaultRifle, aim: new AimSpec(sight: new SightSpec("mildot", scopeOverlay: true)));
             var catalog = new ItemCatalog(new[] { _rifleItem, holo, _suppressor }, InventoryRule.Default);
 
@@ -791,7 +791,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void SwappingTheOpticSwapsTheVisionMode()
         {
-            var thermal = new ItemSpec(
+            var thermal = ItemSpecs.Create(
                 _pistolSightId, "item.thermal", attachment: new AttachmentSpec("optic", sight: new SightSpec("thermal", scopeOverlay: true, visionMode: VisionMode.Thermal)));
             var nightScoped = new WeaponSpec(
                 _rifleId, "weapon.rifle", WeaponCategory.AssaultRifle, aim: new AimSpec(sight: new SightSpec("nv", scopeOverlay: true, visionMode: VisionMode.Night)));

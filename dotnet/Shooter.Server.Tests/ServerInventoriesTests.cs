@@ -28,8 +28,8 @@ namespace Shooter.Server.Tests
         private static readonly Vector3 _alphaSpawn = new Vector3(-5f, 1.6f, 0f);
         private static readonly Vector3 _bravoSpawn = new Vector3(5f, 1.6f, 0f);
 
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb", maxStack: 3, weight: 0.5f, useHealth: 30);
-        private static readonly ItemSpec _case = new ItemSpec(_caseId, "item.case", weight: 4f, width: 2, height: 1);
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb", maxStack: 3, weight: 0.5f, useHealth: 30);
+        private static readonly ItemSpec _case = ItemSpecs.Create(_caseId, "item.case", weight: 4f, width: 2, height: 1);
         private static readonly string[] _rifleSlots = { "muzzle", "magazine" };
 
         private StringWriter _log;
@@ -667,10 +667,10 @@ namespace Shooter.Server.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f),
-                    new ItemSpec(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f),
-                    new ItemSpec(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: TestRules.RifleId, ammoItemId: _rifleAmmoId),
-                    new ItemSpec(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId, ammoItemId: _pistolAmmoId),
+                    ItemSpecs.Create(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f),
+                    ItemSpecs.Create(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: TestRules.RifleId, ammoItemId: _rifleAmmoId),
+                    ItemSpecs.Create(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId, ammoItemId: _pistolAmmoId),
                 },
                 new InventoryRule(gridWidth: 8, gridHeight: 4, countWeightInCarryLoad: true));
         }
@@ -681,14 +681,14 @@ namespace Shooter.Server.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f),
-                    new ItemSpec(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f),
-                    new ItemSpec(
+                    ItemSpecs.Create(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f),
+                    ItemSpecs.Create(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f),
+                    ItemSpecs.Create(
                         _rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: TestRules.RifleId, ammoItemId: _rifleAmmoId,
                         attachmentSlots: _rifleSlots),
-                    new ItemSpec(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId, ammoItemId: _pistolAmmoId),
-                    new ItemSpec(_magazineId, "item.extendedMagazine", weight: 0.3f, attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10)),
-                    new ItemSpec(_suppressorId, "item.suppressor", weight: 0.4f, attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
+                    ItemSpecs.Create(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId, ammoItemId: _pistolAmmoId),
+                    ItemSpecs.Create(_magazineId, "item.extendedMagazine", weight: 0.3f, attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10)),
+                    ItemSpecs.Create(_suppressorId, "item.suppressor", weight: 0.4f, attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
                 },
                 new InventoryRule(gridWidth: 8, gridHeight: 4, countWeightInCarryLoad: true),
                 new[] { new ItemCount(_magazineId, 1), new ItemCount(_suppressorId, 1) });

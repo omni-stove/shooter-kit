@@ -19,9 +19,9 @@ namespace Shooter.Core.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(Ammo, maxStack: 30),
-                    new ItemSpec(Bandage, maxStack: 5),
-                    new ItemSpec(Rifle, weaponId: "rifle"),
+                    ItemSpecs.Create(Ammo, maxStack: 30),
+                    ItemSpecs.Create(Bandage, maxStack: 5),
+                    ItemSpecs.Create(Rifle, weaponId: "rifle"),
                 },
                 InventoryRule.Default);
         }

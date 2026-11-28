@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 
@@ -38,7 +39,7 @@ namespace Shooter.Runtime
                 }
 
                 var anchor = entry != null ? entry.Anchor : AttachmentAnchor.Top;
-                var slot = item.Attachment.Slot;
+                var slot = item.Attachment().Slot;
                 var socket = FindOwnSocket(model, SocketPrefix + slot);
                 var root = new GameObject(RootPrefix + slot).transform;
                 root.SetParent(socket != null ? socket : model, false);

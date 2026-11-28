@@ -17,12 +17,12 @@ namespace Shooter.Core.Tests
         private const string _knifeId = "7a8b9c0d-1e2f-4a3b-8c5d-6e7f8a9b0c1d";
 
         // 9mm: 1x1・30 発で 1 山・1 発 0.01 kg
-        private static readonly ItemSpec _ammo = new ItemSpec(_ammoId, "item.ammo9mm", maxStack: 30, weight: 0.01f);
+        private static readonly ItemSpec _ammo = ItemSpecs.Create(_ammoId, "item.ammo9mm", maxStack: 30, weight: 0.01f);
 
         // 小銃: 4x2、拳銃: 2x1。どちらも 9mm を撃つ。重さは武器の値を使う
-        private static readonly ItemSpec _rifleItem = new ItemSpec(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: _rifleId, ammoItemId: _ammoId);
-        private static readonly ItemSpec _pistolItem = new ItemSpec(_pistolItemId, "weapon.handgun", width: 2, height: 1, weaponId: _pistolId, ammoItemId: _ammoId);
-        private static readonly ItemSpec _bandage = new ItemSpec(_bandageId, "item.bandage", maxStack: 5, weight: 0.1f, useHealth: 15);
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: _rifleId, ammoItemId: _ammoId);
+        private static readonly ItemSpec _pistolItem = ItemSpecs.Create(_pistolItemId, "weapon.handgun", width: 2, height: 1, weaponId: _pistolId, ammoItemId: _ammoId);
+        private static readonly ItemSpec _bandage = ItemSpecs.Create(_bandageId, "item.bandage", maxStack: 5, weight: 0.1f, useHealth: 15);
 
         // 弾倉 10・予備 40・3 kg / 弾倉 6・予備 20・1 kg / 持ち物に無いナイフ
         private static readonly WeaponSpec _rifle = Spec(_rifleId, 10, 40, 3f);

@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -24,10 +25,10 @@ namespace Shooter.Core.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: _rifleSlots),
-                    new ItemSpec(_pistolItemId, "weapon.handgun", weaponId: _pistolId, attachmentSlots: _pistolSlots),
-                    new ItemSpec(_lightId, "item.weaponLight", attachment: new AttachmentSpec("light", light: _light)),
-                    new ItemSpec(_suppressorId, "item.suppressor", attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: _rifleSlots),
+                    ItemSpecs.Create(_pistolItemId, "weapon.handgun", weaponId: _pistolId, attachmentSlots: _pistolSlots),
+                    ItemSpecs.Create(_lightId, "item.weaponLight", attachment: new AttachmentSpec("light", light: _light)),
+                    ItemSpecs.Create(_suppressorId, "item.suppressor", attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
                 },
                 InventoryRule.Default);
         }

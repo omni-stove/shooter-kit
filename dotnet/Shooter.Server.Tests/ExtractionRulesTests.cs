@@ -628,10 +628,10 @@ namespace Shooter.Server.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_herbId, "item.herb", maxStack: 5, weight: 0.1f, useHealth: 30),
-                    new ItemSpec(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: TestRules.RifleId),
-                    new ItemSpec(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId),
-                    new ItemSpec(_shotgunItemId, "weapon.shotgun", width: 4, height: 2, weaponId: _shotgunId),
+                    ItemSpecs.Create(_herbId, "item.herb", maxStack: 5, weight: 0.1f, useHealth: 30),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: TestRules.RifleId),
+                    ItemSpecs.Create(_handgunItemId, "weapon.handgun", width: 2, height: 1, weaponId: TestRules.HandgunId),
+                    ItemSpecs.Create(_shotgunItemId, "weapon.shotgun", width: 4, height: 2, weaponId: _shotgunId),
                 },
                 new InventoryRule(gridWidth: 8, gridHeight: 4),
                 new[] { new ItemCount(_herbId, 2) });

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 
@@ -47,7 +48,7 @@ namespace Shooter.Runtime
             {
                 if (catalog.TryFindAttachment(itemId, out var item))
                 {
-                    specs.Add(item.Attachment);
+                    specs.Add(item.Attachment());
                 }
             }
 

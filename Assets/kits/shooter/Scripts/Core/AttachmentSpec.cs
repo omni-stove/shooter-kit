@@ -6,7 +6,7 @@ using GameKit.Core;
 namespace Shooter.Core
 {
     // 重さは持ち物のマスに置いたときと武器に付けたときで同じにするため、ここには持たずアイテムの重さ (ItemSpec.Weight) を使う
-    public sealed class AttachmentSpec
+    public sealed class AttachmentSpec : IItemPart
     {
         public const float DefaultMultiplier = 1f;
         public const int DefaultMagazineSizeBonus = 0;
@@ -74,6 +74,24 @@ namespace Shooter.Core
         public WeaponLightSpec Light { get; }
 
         public bool IsLight => Light != null;
+
+        public void Check(ItemSpec item)
+        {
+            if (item == null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            if (item.IsHeld || item.IsUsable())
+            {
+                throw Rejected("attachment", "an attachment item cannot be a weapon or be used up (using it attaches it)");
+            }
+        }
+
+        // 付ける武器が表にあるかは、サーバーから届いた一部だけの表でも作れるように、作るときではなく CheckAttachments で読むときに確かめる
+        public void CheckIn(ItemSpec item, ItemCatalog catalog)
+        {
+        }
 
         public bool Fits(string weaponId)
         {
@@ -152,6 +170,12 @@ namespace Shooter.Core
             }
 
             return list.AsReadOnly();
+        }
+
+        // 断る引数名を JSON の項目名 (maxStack・weaponId など) にするのは、InventoryJson がそれで読んだ項目を指して断るため
+        private static ArgumentException Rejected(string paramName, string message)
+        {
+            return new ArgumentException(message, paramName);
         }
     }
 }

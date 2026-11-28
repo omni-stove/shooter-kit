@@ -183,7 +183,7 @@ namespace Shooter.Tests.EditMode
                 InitializeWithRifleAndHandgun(handgun);
                 Assert.That(_controller.SetAttachments(TestWeapons.RifleId, new[] { _lightItemId }), Is.True);
 
-                _controller.AttachmentCatalog = Shooter.Core.ItemCatalog.Empty;
+                _controller.AttachmentCatalog = GameKit.Core.ItemCatalog.Empty;
 
                 Assert.That(_controller.AttachmentsOf(TestWeapons.RifleId), Is.EqualTo(new[] { _lightItemId }));
                 Assert.That(_controller.EquippedAttachmentSpecs, Is.Empty);
@@ -2145,22 +2145,22 @@ namespace Shooter.Tests.EditMode
         }
 
         // 小銃はライトと銃口、拳銃は何も付かない。ライトは 30 m・40 度・見た目 testLight
-        private static Shooter.Core.ItemCatalog LightCatalog()
+        private static GameKit.Core.ItemCatalog LightCatalog()
         {
-            return new Shooter.Core.ItemCatalog(
+            return new GameKit.Core.ItemCatalog(
                 new[]
                 {
-                    new Shooter.Core.ItemSpec(
+                    Shooter.Core.ItemSpecs.Create(
                         _rifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, attachmentSlots: new[] { "muzzle", "light" }),
-                    new Shooter.Core.ItemSpec(_handgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId),
-                    new Shooter.Core.ItemSpec(
+                    Shooter.Core.ItemSpecs.Create(_handgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId),
+                    Shooter.Core.ItemSpecs.Create(
                         _lightItemId,
                         "item.weaponLight",
                         attachment: new Shooter.Core.AttachmentSpec("light", light: new Shooter.Core.WeaponLightSpec(30f, 40f, 2f, "testLight"))),
-                    new Shooter.Core.ItemSpec(
+                    Shooter.Core.ItemSpecs.Create(
                         _suppressorItemId, "item.suppressor", attachment: new Shooter.Core.AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f)),
                 },
-                Shooter.Core.InventoryRule.Default);
+                GameKit.Core.InventoryRule.Default);
         }
 
         private WeaponDefinition CreateHandgun()

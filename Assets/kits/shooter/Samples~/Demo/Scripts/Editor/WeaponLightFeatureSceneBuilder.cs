@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using UnityEditor.SceneManagement;
@@ -134,7 +135,7 @@ namespace Shooter.Editor
 
             foreach (var item in items.Items)
             {
-                if (item.IsAttachment && item.Attachment.IsLight)
+                if (item.IsAttachment() && item.Attachment().IsLight)
                 {
                     return item.Id;
                 }

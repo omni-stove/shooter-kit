@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 
@@ -102,8 +103,8 @@ namespace Shooter.Server.Tests
             var catalog = new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _magazineSlot),
-                    new ItemSpec(_magazine[0], "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10)),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _magazineSlot),
+                    ItemSpecs.Create(_magazine[0], "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10)),
                 },
                 InventoryRule.Default);
             _weapons.Equip(new[] { TestRules.Rifle(), TestRules.Handgun() }, _switchSeconds, GameRules.Default);

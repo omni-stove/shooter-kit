@@ -358,9 +358,9 @@ namespace Shooter.Server.Tests
         {
             var specs = new List<ItemSpec>
             {
-                new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _lightSlots),
-                new ItemSpec(_handgunItemId, "weapon.handgun", weaponId: TestRules.HandgunId),
-                new ItemSpec(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 30f))),
+                ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId, attachmentSlots: _lightSlots),
+                ItemSpecs.Create(_handgunItemId, "weapon.handgun", weaponId: TestRules.HandgunId),
+                ItemSpecs.Create(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 30f))),
             };
             return new ItemCatalog(specs, InventoryRule.Default);
         }

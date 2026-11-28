@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Protocol
@@ -39,9 +40,9 @@ namespace Shooter.Protocol
                 }
 
                 var attached = new List<byte>();
-                if (item.IsWeapon)
+                if (item.IsWeapon())
                 {
-                    foreach (var attachedId in inventory.AttachmentsOf(item.WeaponId))
+                    foreach (var attachedId in inventory.AttachmentsOf(item.WeaponId()))
                     {
                         if (inventory.Catalog.TryFind(attachedId, out var attachedItem))
                         {
@@ -78,7 +79,7 @@ namespace Shooter.Protocol
             for (var i = 0; i < message.EntryCount; i++)
             {
                 var sent = message.EntryAt(i);
-                if (sent.AttachedCount == 0 || !catalog.TryFind(message.ItemAt(sent.ItemIndex).ItemId, out var weapon) || !weapon.IsWeapon)
+                if (sent.AttachedCount == 0 || !catalog.TryFind(message.ItemAt(sent.ItemIndex).ItemId, out var weapon) || !weapon.IsWeapon())
                 {
                     continue;
                 }
@@ -95,7 +96,7 @@ namespace Shooter.Protocol
 
                 if (ids.Count > 0)
                 {
-                    attachments.Add(new KeyValuePair<string, IReadOnlyList<string>>(weapon.WeaponId, ids.AsReadOnly()));
+                    attachments.Add(new KeyValuePair<string, IReadOnlyList<string>>(weapon.WeaponId(), ids.AsReadOnly()));
                 }
             }
 
@@ -133,7 +134,7 @@ namespace Shooter.Protocol
                 local.TryFind(sent.ItemId, out var known);
                 try
                 {
-                    items.Add(new ItemSpec(
+                    items.Add(ItemSpecs.Create(
                         sent.ItemId,
                         known?.NameKey,
                         known?.IconId,
@@ -142,13 +143,13 @@ namespace Shooter.Protocol
                         sent.Weight,
                         sent.Width,
                         sent.Height,
-                        known?.UseHealth ?? 0,
-                        known?.UseArmor ?? 0,
+                        known?.UseHealth() ?? 0,
+                        known?.UseArmor() ?? 0,
                         // 弾薬アイテムは送った中に無いことがあり、表に無い弾薬を指すと表を作れないので、弾薬は付けない (撃つのはサーバー)
-                        known?.WeaponId,
+                        known?.WeaponId(),
                         null,
-                        known?.Attachment,
-                        known?.WeaponId != null ? known.AttachmentSlots : null));
+                        known?.Attachment(),
+                        known?.WeaponId() != null ? known.AttachmentSlots() : null));
                 }
                 catch (ArgumentException)
                 {

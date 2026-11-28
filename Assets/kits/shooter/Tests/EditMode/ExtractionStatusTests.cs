@@ -13,7 +13,7 @@ namespace Shooter.Tests.EditMode
         [Test]
         public void StatusFromValuesIsTheSameAsFromTheSession()
         {
-            var stash = new Stash(10, new ItemCatalog(new[] { new ItemSpec(_ammo, maxStack: 30), new ItemSpec(_bandage, maxStack: 5) }, InventoryRule.Default));
+            var stash = new Stash(10, new ItemCatalog(new[] { ItemSpecs.Create(_ammo, maxStack: 30), ItemSpecs.Create(_bandage, maxStack: 5) }, InventoryRule.Default));
             stash.Add(_ammo, 30);
             var spec = new ExtractionSpec(raidSeconds: 60f, extractHoldSeconds: 5f, openPoints: 1, openAfterSeconds: 10f);
             var session = new ExtractionSession(spec, stash, new[] { "north" }, new[] { new ItemCount(_ammo, 20) });

@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
+using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -256,11 +257,11 @@ namespace Shooter.Tests.EditMode
         {
             var specs = new List<ItemSpec>
             {
-                new ItemSpec(MuzzleItemId, "item.muzzle", attachment: new AttachmentSpec("muzzle")),
+                ItemSpecs.Create(MuzzleItemId, "item.muzzle", attachment: new AttachmentSpec("muzzle")),
             };
             if (withLight)
             {
-                specs.Add(new ItemSpec(LightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 25f))));
+                specs.Add(ItemSpecs.Create(LightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: new WeaponLightSpec(range: 25f))));
             }
 
             return new ItemCatalog(specs, InventoryRule.Default);

@@ -143,7 +143,7 @@ namespace Shooter.Core.Tests
                 + " \"sight\": { \"reticleId\": \"scope4x\", \"scopeOverlay\": true, \"eyeViewInThirdPerson\": true, \"aimedInProgress\": 0.8 } } } ] }",
                 "inventory.json");
 
-            var attachment = catalog.Items[0].Attachment;
+            var attachment = catalog.Items[0].Attachment();
             Assert.That(attachment.IsOptic, Is.True);
             Assert.That(attachment.Sight.ReticleId, Is.EqualTo("scope4x"));
             Assert.That(attachment.Sight.ScopeOverlay, Is.True);
@@ -160,8 +160,8 @@ namespace Shooter.Core.Tests
                 + " \"sight\": { \"scopeOverlay\": true, \"visionMode\": \"Thermal\" } } } ] }",
                 "inventory.json");
 
-            Assert.That(catalog.Items[0].Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
-            Assert.That(catalog.Items[0].Attachment.IsOptic, Is.True);
+            Assert.That(catalog.Items[0].Attachment().Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
+            Assert.That(catalog.Items[0].Attachment().IsOptic, Is.True);
         }
 
         [TestCase("\"Infrared\"")]
@@ -182,8 +182,8 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(
                 "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"muzzle\" } } ] }", "inventory.json");
 
-            Assert.That(catalog.Items[0].Attachment.Sight, Is.Null);
-            Assert.That(catalog.Items[0].Attachment.IsOptic, Is.False);
+            Assert.That(catalog.Items[0].Attachment().Sight, Is.Null);
+            Assert.That(catalog.Items[0].Attachment().IsOptic, Is.False);
         }
 
         [Test]
@@ -210,7 +210,7 @@ namespace Shooter.Core.Tests
                 + " \"light\": { \"range\": 30, \"spotAngle\": 50, \"intensity\": 2, \"visualId\": \"weaponLight\" } } } ] }",
                 "inventory.json");
 
-            var attachment = catalog.Items[0].Attachment;
+            var attachment = catalog.Items[0].Attachment();
             Assert.That(attachment.IsLight, Is.True);
             Assert.That(attachment.IsOptic, Is.False, "a light is not a sight");
             Assert.That(attachment.Slot, Is.EqualTo("light"));
@@ -226,8 +226,8 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(
                 "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\", \"light\": {} } } ] }", "inventory.json");
 
-            var light = catalog.Items[0].Attachment.Light;
-            Assert.That(catalog.Items[0].Attachment.IsLight, Is.True, "an empty light object still makes the attachment a light");
+            var light = catalog.Items[0].Attachment().Light;
+            Assert.That(catalog.Items[0].Attachment().IsLight, Is.True, "an empty light object still makes the attachment a light");
             Assert.That(light.Range, Is.EqualTo(WeaponLightSpec.DefaultRange));
             Assert.That(light.SpotAngle, Is.EqualTo(WeaponLightSpec.DefaultSpotAngle));
             Assert.That(light.Intensity, Is.EqualTo(WeaponLightSpec.DefaultIntensity));
@@ -240,8 +240,8 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(
                 "{ \"items\": [ { \"id\": \"" + _herbId + "\", \"attachment\": { \"slot\": \"light\" } } ] }", "inventory.json");
 
-            Assert.That(catalog.Items[0].Attachment.Light, Is.Null);
-            Assert.That(catalog.Items[0].Attachment.IsLight, Is.False, "the slot name alone does not make a light");
+            Assert.That(catalog.Items[0].Attachment().Light, Is.Null);
+            Assert.That(catalog.Items[0].Attachment().IsLight, Is.False, "the slot name alone does not make a light");
         }
 
         [TestCase("{ \"spotAngle\": 200 }", "items[0].attachment.light.spotAngle")]

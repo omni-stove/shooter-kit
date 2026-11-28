@@ -328,7 +328,7 @@ namespace Shooter.Tests.EditMode
 
         private static ItemCatalog Catalog()
         {
-            return new ItemCatalog(new[] { new ItemSpec(_ammo, maxStack: 30), new ItemSpec(_bandage, maxStack: 5) }, InventoryRule.Default);
+            return new ItemCatalog(new[] { ItemSpecs.Create(_ammo, maxStack: 30), ItemSpecs.Create(_bandage, maxStack: 5) }, InventoryRule.Default);
         }
 
         private static void AssertItems(IReadOnlyList<ItemCount> items, params (string ItemId, int Count)[] expected)

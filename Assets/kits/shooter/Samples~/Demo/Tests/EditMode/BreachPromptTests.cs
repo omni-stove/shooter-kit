@@ -20,7 +20,7 @@ namespace Shooter.Tests.EditMode
             BreachPrompt.NoChargeKey, BreachPrompt.PlantingKey, BreachPrompt.ArmedKey,
         };
 
-        private static readonly ItemCatalog _items = new ItemCatalog(new[] { new ItemSpec(ChargeId, "item.breachCharge") }, InventoryRule.Default);
+        private static readonly ItemCatalog _items = new ItemCatalog(new[] { ItemSpecs.Create(ChargeId, "item.breachCharge") }, InventoryRule.Default);
 
         private GameObject _host;
 
