@@ -1,3 +1,5 @@
+using GameKit.Core;
+
 namespace Shooter.Core
 {
     // HUD が ExecutionSession そのものでなくこれを読むのは、ネット対戦のクライアントがスナップショットから同じ形を作れるようにするため (ISearchAndDestroyView と同じ)

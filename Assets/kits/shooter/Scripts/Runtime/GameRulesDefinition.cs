@@ -113,7 +113,7 @@ namespace Shooter.Runtime
         private Suppression _suppression = Suppression.Off;
 
         [SerializeField, Tooltip("敵や場所に印を付けられるか")]
-        private Shooter.Core.Ping _ping = Shooter.Core.Ping.Off;
+        private GameKit.Core.Ping _ping = GameKit.Core.Ping.Off;
 
         [SerializeField, Tooltip("能力 (回数・待ち時間・入力の枠に乗るもの) を使えるか")]
         private Abilities _abilities = Abilities.Off;
@@ -406,7 +406,7 @@ namespace Shooter.Runtime
             set => _suppression = value;
         }
 
-        public Shooter.Core.Ping Ping
+        public GameKit.Core.Ping Ping
         {
             get => _ping;
             set => _ping = value;

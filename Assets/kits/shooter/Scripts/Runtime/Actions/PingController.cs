@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 
@@ -39,7 +40,7 @@ namespace Shooter.Runtime
         private PingSpec _spec;
         private bool _specApplied;
         private PingBoard _board;
-        private Shooter.Core.Ping _rule = Shooter.Core.Ping.Off;
+        private GameKit.Core.Ping _rule = GameKit.Core.Ping.Off;
         private bool _configured;
         private Damageable _self;
         private ViewRig _rig;
@@ -51,9 +52,9 @@ namespace Shooter.Runtime
 
         public event Action<PingController> Changed;
 
-        public Shooter.Core.Ping Rule => _rule;
+        public GameKit.Core.Ping Rule => _rule;
 
-        public bool UsesPing => _configured && _rule == Shooter.Core.Ping.On;
+        public bool UsesPing => _configured && _rule == GameKit.Core.Ping.On;
 
         public PingSpec Spec => _spec ?? (_spec = CreateSpec());
 
@@ -169,7 +170,7 @@ namespace Shooter.Runtime
             _board = null;
             _shared = markers;
             _sharedVersion = markers.Version;
-            _rule = Shooter.Core.Ping.On;
+            _rule = GameKit.Core.Ping.On;
             _configured = true;
             _lastRefusal = PingRefusal.None;
             _self = GetComponent<Damageable>();

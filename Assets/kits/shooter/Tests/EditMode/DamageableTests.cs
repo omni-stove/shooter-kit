@@ -128,7 +128,7 @@ namespace Shooter.Tests.EditMode
         {
             _damageable.Initialize("dummy", 50);
             _damageable.TakeDamage(45);
-            Shooter.Core.Health reset = null;
+            GameKit.Core.Health reset = null;
             _damageable.HealthReset += health => reset = health;
 
             _damageable.RestoreHealth(30);

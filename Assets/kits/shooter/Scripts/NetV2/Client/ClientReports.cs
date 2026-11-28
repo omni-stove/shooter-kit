@@ -1,7 +1,7 @@
 using System;
 using GameKit.Net;
 using Shooter.Protocol;
-using CoreReportReason = Shooter.Core.ReportReason;
+using CoreReportReason = GameKit.Core.ReportReason;
 using WireReportReason = Shooter.Protocol.ReportReason;
 
 namespace Shooter.NetV2

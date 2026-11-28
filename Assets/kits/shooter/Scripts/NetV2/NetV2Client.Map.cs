@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
-using Shooter.Core;
+using GameKit.Core;
 using Shooter.Protocol;
 using Shooter.Runtime;
 using UnityEngine;

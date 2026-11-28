@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Server.Eos

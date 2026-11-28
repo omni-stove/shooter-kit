@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using UnityEngine;
@@ -152,7 +153,7 @@ namespace Shooter.Editor
             }
 
             var actions = world.Rules.Actions;
-            if (actions.Ping == Shooter.Core.Ping.Off)
+            if (actions.Ping == GameKit.Core.Ping.Off)
             {
                 if (_controller.TryPing(out var unexpected))
                 {
@@ -164,7 +165,7 @@ namespace Shooter.Editor
                     return $"a ping with the rule Off was refused for {_controller.LastRefusal} instead of {PingRefusal.RuleOff}";
                 }
 
-                _controller.Configure(world.Rules.WithActions(actions.WithPing(Shooter.Core.Ping.On)));
+                _controller.Configure(world.Rules.WithActions(actions.WithPing(GameKit.Core.Ping.On)));
                 _reconfigured = true;
             }
 

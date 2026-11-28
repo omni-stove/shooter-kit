@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.NetV2;
 using Shooter.Protocol;
 using Shooter.Runtime;

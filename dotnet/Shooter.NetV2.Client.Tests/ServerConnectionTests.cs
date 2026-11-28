@@ -6,8 +6,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
-using System.Text.Json.Nodes;
 using System.Threading;
+using GameKit.Core;
 using GameKit.Navigation;
 using GameKit.Net;
 using NUnit.Framework;
@@ -474,7 +474,7 @@ namespace Shooter.NetV2.Tests
         private static void TurnOffConcealing(string root)
         {
             var path = Path.Combine(root, "server-data", "tuning", "anticheat.json");
-            var tuning = JsonNode.Parse(File.ReadAllText(path)).AsObject();
+            var tuning = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path)).AsObject();
             tuning["conceal"]["enabled"] = false;
             File.WriteAllText(path, tuning.ToJsonString());
         }

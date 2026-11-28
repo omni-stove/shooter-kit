@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using GameKit.Core;
 using Shooter.Core;
 
 namespace Shooter.Server

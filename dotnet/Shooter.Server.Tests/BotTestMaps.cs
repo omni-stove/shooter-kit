@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
+using GameKit.Core;
 using GameKit.Navigation;
 using GameKit.World;
 using Shooter.Core;

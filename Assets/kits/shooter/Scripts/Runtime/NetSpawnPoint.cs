@@ -1,4 +1,4 @@
-using Shooter.Core;
+using GameKit.Core;
 using UnityEngine;
 
 namespace Shooter.Runtime
@@ -31,14 +31,14 @@ namespace Shooter.Runtime
             return new SpawnPoint(new System.Numerics.Vector3(p.x, p.y, p.z), ToCoreTeam(_team));
         }
 
-        public static Shooter.Core.Team? ToCoreTeam(SpawnTeam team)
+        public static GameKit.Core.Team? ToCoreTeam(SpawnTeam team)
         {
             switch (team)
             {
                 case SpawnTeam.Alpha:
-                    return Shooter.Core.Team.Alpha;
+                    return GameKit.Core.Team.Alpha;
                 case SpawnTeam.Bravo:
-                    return Shooter.Core.Team.Bravo;
+                    return GameKit.Core.Team.Bravo;
                 default:
                     return null;
             }

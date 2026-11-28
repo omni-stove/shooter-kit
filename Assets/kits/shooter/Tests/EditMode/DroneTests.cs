@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -248,7 +249,7 @@ namespace Shooter.Tests.EditMode
         public void ASweepStillRevealsOnTheMinimapWhenThePingRuleIsOff()
         {
             var pings = Pings();
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.Off)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.Off)));
             var near = Body("Near", new Vector3(0f, 1f, 5f), Side.Bravo);
             var drone = Place();
 
@@ -451,7 +452,7 @@ namespace Shooter.Tests.EditMode
         {
             var pings = _owner.AddComponent<PingController>();
             pings.Clock = () => _now;
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
             return pings;
         }
 

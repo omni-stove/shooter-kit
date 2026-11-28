@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Text;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Protocol;
 

@@ -1,6 +1,6 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;

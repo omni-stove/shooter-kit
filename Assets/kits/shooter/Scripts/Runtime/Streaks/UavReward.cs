@@ -43,7 +43,7 @@ namespace Shooter.Runtime
                 {
                     marked++;
                 }
-                else if (pings.LastRefusal != Shooter.Core.PingRefusal.NoTarget)
+                else if (pings.LastRefusal != GameKit.Core.PingRefusal.NoTarget)
                 {
                     marking = false;
                 }

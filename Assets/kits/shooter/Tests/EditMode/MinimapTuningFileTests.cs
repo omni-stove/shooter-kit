@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using UnityEngine;
 
 namespace Shooter.Tests.EditMode

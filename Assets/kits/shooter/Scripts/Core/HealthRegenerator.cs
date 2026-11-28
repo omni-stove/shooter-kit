@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 
 namespace Shooter.Core
 {

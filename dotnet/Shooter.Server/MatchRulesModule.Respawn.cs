@@ -1,5 +1,5 @@
 using System.Numerics;
-using Shooter.Core;
+using GameKit.Core;
 
 namespace Shooter.Server
 {

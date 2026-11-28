@@ -1,3 +1,4 @@
+using GameKit.Core;
 using GameKit.Net;
 using Shooter.Core;
 
@@ -40,7 +41,7 @@ namespace Shooter.Protocol
         {
             writer.WriteUInt16(ProtocolVersion);
             writer.WriteString(ClientVersion, BuildVersion.MaxLength);
-            writer.WriteString(RejoinKey, Shooter.Core.RejoinKey.MaxLength);
+            writer.WriteString(RejoinKey, GameKit.Core.RejoinKey.MaxLength);
             writer.WriteString(DisplayName, MaxDisplayNameBytes);
             if (!HasExtras)
             {
@@ -58,7 +59,7 @@ namespace Shooter.Protocol
         {
             ProtocolVersion = reader.ReadUInt16();
             ClientVersion = reader.ReadString(BuildVersion.MaxLength, ClientVersion);
-            RejoinKey = reader.ReadString(Shooter.Core.RejoinKey.MaxLength, RejoinKey);
+            RejoinKey = reader.ReadString(GameKit.Core.RejoinKey.MaxLength, RejoinKey);
             DisplayName = reader.ReadString(MaxDisplayNameBytes, DisplayName);
 
             // 受け手は 1 つのインスタンスを使い回すので、欄の無いメッセージでは前に読んだ欄を消す

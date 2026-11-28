@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -35,7 +36,7 @@ namespace Shooter.Tests.EditMode
             pingerObject.transform.position = new Vector3(0f, 1f, 0f);
             _pinger = pingerObject.AddComponent<PingController>();
             _pinger.Clock = () => _now;
-            _pinger.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            _pinger.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
 
             var wall = Track(GameObject.CreatePrimitive(PrimitiveType.Cube));
             wall.transform.position = new Vector3(0f, 1f, 10f);
@@ -135,7 +136,7 @@ namespace Shooter.Tests.EditMode
             _view.Bind(CloneLayout());
             Assert.That(_view.TryGetPlacement(marker.Id, out _), Is.True);
 
-            _pinger.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.Off)));
+            _pinger.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.Off)));
             Assert.That(_view.Markers, Is.Null, "turning Ping off clears the signal and the view");
             Assert.That(_view.ShownCount, Is.Zero);
 

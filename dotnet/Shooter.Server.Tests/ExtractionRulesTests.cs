@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using GameKit.Core;
 using GameKit.Net;
 using GameKit.World;
 using NUnit.Framework;

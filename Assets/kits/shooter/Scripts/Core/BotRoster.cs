@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using GameKit.Core;
 
 namespace Shooter.Core
 {
@@ -93,11 +94,11 @@ namespace Shooter.Core
             return playerId - FirstBotPlayerId + 1;
         }
 
-        public static Shooter.Core.ScoreboardName ScoreboardName(int playerId)
+        public static GameKit.Core.ScoreboardName ScoreboardName(int playerId)
         {
             return IsBotId(playerId)
-                ? Shooter.Core.ScoreboardName.Bot(BotNumber(playerId))
-                : Shooter.Core.ScoreboardName.Player(playerId);
+                ? GameKit.Core.ScoreboardName.Bot(BotNumber(playerId))
+                : GameKit.Core.ScoreboardName.Player(playerId);
         }
 
         public static string KillFeedName(int playerId)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using GameKit.Core;
 using GameKit.Net;
 using Shooter.Core;
 using Shooter.EosSdk;

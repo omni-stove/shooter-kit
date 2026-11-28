@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -66,7 +67,7 @@ namespace Shooter.Tests.EditMode
             var pings = User(side: 0);
             var first = Body("A", new Vector3(0f, 1f, 10f), side: 1);
             var second = Body("B", new Vector3(5f, 1f, 10f), side: 1);
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.Off)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.Off)));
 
             Assert.That(UavReward.Use(pings.gameObject, pings, 10f), Is.Zero);
             Assert.That(pings.Markers, Is.Empty);
@@ -167,7 +168,7 @@ namespace Shooter.Tests.EditMode
         {
             var pings = User(side: 0);
             Body("Enemy", new Vector3(0f, 1f, 10f), side: 1);
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.Off)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.Off)));
 
             Assert.That(UavReward.Use(pings.gameObject, pings, 10f), Is.Zero);
             Assert.That(pings.Markers, Is.Empty);
@@ -204,7 +205,7 @@ namespace Shooter.Tests.EditMode
             }
 
             pings.Clock = () => _now;
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
             return pings;
         }
 

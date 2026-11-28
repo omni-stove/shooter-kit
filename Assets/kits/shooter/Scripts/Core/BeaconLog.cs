@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using GameKit.Core;
 
 namespace Shooter.Core
 {

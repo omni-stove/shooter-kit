@@ -91,7 +91,7 @@ namespace Shooter.Tests.EditMode
                 .WithParachute(Parachute.On)
                 .WithStealth(Stealth.On)
                 .WithSuppression(Suppression.On)
-                .WithPing(Shooter.Core.Ping.On)
+                .WithPing(GameKit.Core.Ping.On)
                 .WithAbilities(Abilities.On)
                 .WithSlowMotion(SlowMotion.On));
             var path = WriteJson("Actions.json", GameRulesJson.Write(rules));

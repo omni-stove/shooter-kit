@@ -31,7 +31,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(readme, Does.Contain("`" + nameof(GameSignal<object>.Value) + "`"));
             Assert.That(readme, Does.Contain("`" + nameof(GameSignal<object>.HasValue) + "`"));
             Assert.That(readme, Does.Contain("`" + nameof(GameSignal<object>.Changed) + "`"));
-            Assert.That(readme, Does.Contain("`ModeStatus." + nameof(Shooter.Core.ModeStatus.Detail) + "`"));
+            Assert.That(readme, Does.Contain("`ModeStatus." + nameof(GameKit.Core.ModeStatus.Detail) + "`"));
             Assert.That(readme, Does.Contain("GameSignals.HudModel.Changed += Bind;"));
         }
     }

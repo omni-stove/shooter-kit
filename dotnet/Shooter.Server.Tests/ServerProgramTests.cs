@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;

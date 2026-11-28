@@ -1,4 +1,4 @@
-using Shooter.Core;
+using GameKit.Core;
 
 namespace Shooter.Runtime
 {

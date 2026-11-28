@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
@@ -482,7 +483,7 @@ namespace Shooter.Tests.EditMode
         {
             var pings = streak.gameObject.AddComponent<PingController>();
             pings.Clock = () => _now;
-            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(Shooter.Core.Ping.On)));
+            pings.Configure(GameRules.Default.WithActions(GameRules.Default.Actions.WithPing(GameKit.Core.Ping.On)));
             return pings;
         }
 
