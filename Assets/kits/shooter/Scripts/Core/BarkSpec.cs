@@ -21,42 +21,42 @@ namespace Shooter.Core
 
         public const float DefaultAllyDownCooldownSeconds = 8f;
 
-        public const float DefaultSpeakerCooldownSeconds = 3f;
+        public const float DefaultSpeakerCooldownSeconds = BarkPacing.DefaultSpeakerCooldownSeconds;
 
-        public const float DefaultMinIntervalSeconds = 0.75f;
+        public const float DefaultMinIntervalSeconds = BarkPacing.DefaultMinIntervalSeconds;
 
-        public const float DefaultCrowdRadius = 12f;
+        public const float DefaultCrowdRadius = BarkPacing.DefaultCrowdRadius;
 
-        public const int DefaultMaxSpeakersInCrowd = 2;
+        public const int DefaultMaxSpeakersInCrowd = BarkPacing.DefaultMaxSpeakersInCrowd;
 
-        public const float DefaultHearingDistance = 30f;
+        public const float DefaultHearingDistance = BarkPacing.DefaultHearingDistance;
 
         public const float DefaultGrenadeWarningRadius = 8f;
 
-        // 全体の最小間隔 × 同時発声の上限より長くするのは、短いと上限に届く前に先の声が終わり、同時発声の上限が効かなくなるため。
-        public const float DefaultSpeakSeconds = 2f;
+        public const float DefaultSpeakSeconds = BarkPacing.DefaultSpeakSeconds;
 
         private static readonly BarkKind[] _kinds = (BarkKind[])Enum.GetValues(typeof(BarkKind));
-
-        private readonly float[] _kindCooldownSeconds;
 
         public static BarkSpec Default { get; } = new BarkSpec();
 
         public static IReadOnlyList<BarkKind> Kinds { get; } = Array.AsReadOnly(_kinds);
 
-        public float SpeakerCooldownSeconds { get; }
+        // 間隔と混み具合の決まりはキットの BarkSelector に渡すので、種類を barks.json の項目名と同じキー (KeyOf) で持つ。
+        public BarkPacing Pacing { get; }
 
-        public float MinIntervalSeconds { get; }
+        public float SpeakerCooldownSeconds => Pacing.SpeakerCooldownSeconds;
 
-        public float CrowdRadius { get; }
+        public float MinIntervalSeconds => Pacing.MinIntervalSeconds;
 
-        public int MaxSpeakersInCrowd { get; }
+        public float CrowdRadius => Pacing.CrowdRadius;
 
-        public float HearingDistance { get; }
+        public int MaxSpeakersInCrowd => Pacing.MaxSpeakersInCrowd;
+
+        public float HearingDistance => Pacing.HearingDistance;
 
         public float GrenadeWarningRadius { get; }
 
-        public float SpeakSeconds { get; }
+        public float SpeakSeconds => Pacing.SpeakSeconds;
 
         // 種類の欠けを既定値で埋めるのは、barks.json に一部の種類だけを書いても残りの種類が黙らないようにするため。
         public BarkSpec(
@@ -69,10 +69,10 @@ namespace Shooter.Core
             float grenadeWarningRadius = DefaultGrenadeWarningRadius,
             float speakSeconds = DefaultSpeakSeconds)
         {
-            _kindCooldownSeconds = new float[_kinds.Length];
+            var cooldowns = new Dictionary<string, float>(StringComparer.Ordinal);
             foreach (var kind in _kinds)
             {
-                _kindCooldownSeconds[(int)kind] = DefaultCooldownSecondsFor(kind);
+                cooldowns[KeyOf(kind)] = DefaultCooldownSecondsFor(kind);
             }
 
             if (kindCooldownSeconds != null)
@@ -92,19 +92,36 @@ namespace Shooter.Core
                             string.Format(CultureInfo.InvariantCulture, "kindCooldownSeconds of {0} must be a non-negative finite number", pair.Key));
                     }
 
-                    _kindCooldownSeconds[(int)pair.Key] = pair.Value;
+                    cooldowns[KeyOf(pair.Key)] = pair.Value;
                 }
             }
 
-            SpeakerCooldownSeconds = SpecGuard.NonNegativeFinite(speakerCooldownSeconds, nameof(speakerCooldownSeconds));
-            MinIntervalSeconds = SpecGuard.NonNegativeFinite(minIntervalSeconds, nameof(minIntervalSeconds));
-            CrowdRadius = SpecGuard.NonNegativeFinite(crowdRadius, nameof(crowdRadius));
-
-            // 0 を断るのは、上限 0 が「誰も話さない」になり、声を止めたいときは BarkCatalog を空にすれば済むため。
-            MaxSpeakersInCrowd = SpecGuard.AtLeast(maxSpeakersInCrowd, 1, nameof(maxSpeakersInCrowd));
-            HearingDistance = SpecGuard.PositiveFinite(hearingDistance, nameof(hearingDistance));
+            Pacing = new BarkPacing(cooldowns, speakerCooldownSeconds, minIntervalSeconds, crowdRadius, maxSpeakersInCrowd, hearingDistance, speakSeconds);
             GrenadeWarningRadius = SpecGuard.NonNegativeFinite(grenadeWarningRadius, nameof(grenadeWarningRadius));
-            SpeakSeconds = SpecGuard.NonNegativeFinite(speakSeconds, nameof(speakSeconds));
+        }
+
+        // キーを列挙の名前から作らないのは、BarkKind の名前を変えても barks.json の項目名とキットに渡すキーが変わらないようにするため。
+        public static string KeyOf(BarkKind kind)
+        {
+            switch (kind)
+            {
+                case BarkKind.Spotted:
+                    return "spotted";
+                case BarkKind.LostTarget:
+                    return "lostTarget";
+                case BarkKind.Reloading:
+                    return "reloading";
+                case BarkKind.Grenade:
+                    return "grenade";
+                case BarkKind.TakingFire:
+                    return "takingFire";
+                case BarkKind.MovingToCover:
+                    return "movingToCover";
+                case BarkKind.AllyDown:
+                    return "allyDown";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a BarkKind");
+            }
         }
 
         public static float DefaultCooldownSecondsFor(BarkKind kind)
@@ -137,7 +154,7 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a BarkKind");
             }
 
-            return _kindCooldownSeconds[(int)kind];
+            return Pacing.CooldownSecondsFor(KeyOf(kind));
         }
     }
 }
