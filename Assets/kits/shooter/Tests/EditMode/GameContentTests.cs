@@ -725,7 +725,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("barks"));
             Assert.That(asked, Does.Contain("server-lobby"));
             Assert.That(asked, Does.Contain("juggernaut").And.Contain("vip"));
-            Assert.That(asked, Has.Count.EqualTo(45));
+            Assert.That(asked, Has.Count.EqualTo(47));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]
