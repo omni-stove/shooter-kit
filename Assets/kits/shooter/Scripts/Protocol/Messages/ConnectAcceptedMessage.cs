@@ -40,10 +40,10 @@ namespace Shooter.Protocol
         public void Write(MessageWriter writer)
         {
             writer.WriteInt32(PlayerId);
-            writer.WriteString(ServerVersion, Shooter.Core.BuildVersion.MaxLength);
+            writer.WriteString(ServerVersion, GameKit.Core.BuildVersion.MaxLength);
             writer.WriteInt32(TickRate);
             writer.WriteInt32(ServerTick);
-            writer.WriteString(Map, Shooter.Core.NetLaunchOptions.MaxMapNameLength);
+            writer.WriteString(Map, GameKit.Core.NetLaunchOptions.MaxMapNameLength);
             writer.WriteInt32(MaxHealth);
             WriteMotor(writer, Motor ?? throw new System.InvalidOperationException("motor settings must be set"));
             writer.WriteSingle(KillPlaneY);
@@ -53,11 +53,11 @@ namespace Shooter.Protocol
         public void Read(MessageReader reader)
         {
             PlayerId = reader.ReadInt32AtLeast(0, "player id");
-            ServerVersion = reader.ReadString(Shooter.Core.BuildVersion.MaxLength, ServerVersion);
+            ServerVersion = reader.ReadString(GameKit.Core.BuildVersion.MaxLength, ServerVersion);
             TickRate = reader.ReadInt32AtLeast(1, "tick rate");
             ServerTick = reader.ReadInt32AtLeast(0, "server tick");
-            Map = reader.ReadString(Shooter.Core.NetLaunchOptions.MaxMapNameLength, Map);
-            if (!Shooter.Core.NetLaunchOptions.IsMapName(Map))
+            Map = reader.ReadString(GameKit.Core.NetLaunchOptions.MaxMapNameLength, Map);
+            if (!GameKit.Core.NetLaunchOptions.IsMapName(Map))
             {
                 throw new MessageReadException("map '" + Map + "' is not a scene name");
             }

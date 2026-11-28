@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.NetV2;
 using Shooter.Runtime;
 
@@ -203,7 +202,7 @@ namespace Shooter.Net.Tests
             _partySize = 3;
             _join.Join(_code, _outcomes.Add);
             _backends[0].CompleteLogin(_self);
-            _backends[0].CompleteSearch(new[] { Server("mine", "203.0.113.3:7777", NetMatchSettings.DefaultMaxPlayers - 2, _code) });
+            _backends[0].CompleteSearch(new[] { Server("mine", "203.0.113.3:7777", LobbySettings.DefaultMaxPlayers - 2, _code) });
 
             Assert.That(_outcomes, Is.EqualTo(new[] { JoinCodeOutcome.Full }));
         }
@@ -256,9 +255,9 @@ namespace Shooter.Net.Tests
 
         private static LobbyInfo Server(string id, string endpoint, int players, string code)
         {
-            var match = new NetMatchSettings(privateMatch: true, joinCode: code);
+            var match = new LobbySettings(privateMatch: true, joinCode: code);
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
                 ServerLobby.Attributes(endpoint, _version, players, match));
         }
     }

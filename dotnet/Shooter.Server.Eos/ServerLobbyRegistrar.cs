@@ -206,7 +206,7 @@ namespace Shooter.Server.Eos
         }
 
         // サーバー一覧に今のモードを出すため、次の試合のルールで目的が替わるたびに書き直す。
-        // 地図と同じく null は前の値を載せたままにする。一度も渡されていなければ ServerLobby.Attributes が TeamDeathmatchMode を載せる。
+        // 地図と同じく null は前の値を載せたままにする。一度も渡されていなければ ServerLobby.Attributes が ServerLobby.DefaultMode を載せる。
         public void SetMode(string mode)
         {
             if (mode == null || string.Equals(mode, _mode, StringComparison.Ordinal))
@@ -337,7 +337,7 @@ namespace Shooter.Server.Eos
             _service.CreateLobby(
                 ServerLobby.MaxMembers(_maxPlayers),
                 true,
-                ServerLobby.Attributes(_endpoint, _version, players, _match, skillAverage, _region, map, mode),
+                ServerLobby.Attributes(_endpoint, _version, players, _match.Lobby, skillAverage, _region, map, mode),
                 (lobby, error) => HandleCreated(lobby, error, players, skillAverage, map, mode));
         }
 
@@ -360,7 +360,7 @@ namespace Shooter.Server.Eos
             _publishedSkillAverage = skillAverage;
             _publishedMap = map;
             // 渡されていないときも ServerLobby.Attributes が載せた値を覚え、後から同じモードが渡されても送り直さない
-            _publishedMode = mode ?? ServerLobby.TeamDeathmatchMode;
+            _publishedMode = mode ?? ServerLobby.DefaultMode;
             _updateFailures = 0;
             _nextUpdateTime = _now;
             _lastError = null;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.NetV2;
 using Shooter.Runtime;
 
@@ -163,8 +163,8 @@ namespace Shooter.Net.Tests
         private static LobbyInfo Server(string id, string endpoint, int players)
         {
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
-                ServerLobby.Attributes(endpoint, _version, players, NetMatchSettings.Default));
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
+                ServerLobby.Attributes(endpoint, _version, players, LobbySettings.Default));
         }
     }
 }

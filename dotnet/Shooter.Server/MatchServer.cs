@@ -373,7 +373,7 @@ namespace Shooter.Server
         {
             // Netcode の承認データと同じ形にして Core の判定に渡し、版の違い・読めない・drain 中の断り方と文を今のサーバーとそろえる
             var payload = Encoding.UTF8.GetBytes(request.ClientVersion + ConnectionPayload.Separator + request.RejoinKey + JoinCodeField(request));
-            var verdict = ConnectionApproval.Judge(_launch.ServerVersion, payload, _drain.IsDraining, _rules?.Settings ?? NetMatchSettings.Default);
+            var verdict = ConnectionApproval.Judge(_launch.ServerVersion, payload, _drain.IsDraining, (_rules?.Settings ?? NetMatchSettings.Default).Lobby);
             if (!verdict.Approved)
             {
                 Reject(connection, verdict.RejectReason, verdict.LogText);

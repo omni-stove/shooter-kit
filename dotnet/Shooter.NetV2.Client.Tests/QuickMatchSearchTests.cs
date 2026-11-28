@@ -42,7 +42,7 @@ namespace Shooter.NetV2.Tests
         private static LobbyInfo Server(string id, string endpoint, int players, string version = _version)
         {
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner }, ServerLobby.Attributes(endpoint, version, players));
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner }, ServerLobby.Attributes(endpoint, version, players));
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace Shooter.NetV2.Tests
             {
                 Server("quiet", "203.0.113.1:7777", 1),
                 Server("busy", "203.0.113.2:7790", 4),
-                Server("full", "203.0.113.3:7777", NetMatchSettings.DefaultMaxPlayers),
+                Server("full", "203.0.113.3:7777", LobbySettings.DefaultMaxPlayers),
             });
 
             Assert.That(_failure, Is.Null);
@@ -74,8 +74,8 @@ namespace Shooter.NetV2.Tests
         private static LobbyInfo RatedServer(string id, string endpoint, int players, int? skillAverage)
         {
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
-                ServerLobby.Attributes(endpoint, _version, players, NetMatchSettings.Default, skillAverage));
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
+                ServerLobby.Attributes(endpoint, _version, players, LobbySettings.Default, skillAverage));
         }
 
         [Test]
@@ -135,8 +135,8 @@ namespace Shooter.NetV2.Tests
         private static LobbyInfo RegionServer(string id, string endpoint, int players, string region)
         {
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
-                ServerLobby.Attributes(endpoint, _version, players, NetMatchSettings.Default, null, region));
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
+                ServerLobby.Attributes(endpoint, _version, players, LobbySettings.Default, null, region));
         }
 
         private static List<LobbyInfo> TwoRegions()
@@ -198,7 +198,7 @@ namespace Shooter.NetV2.Tests
             {
                 RegionServer("europe", "203.0.113.2:7777", 1, "europe"),
                 Server("unnamed", "203.0.113.3:7777", 2),
-                RegionServer("na-full", "203.0.113.4:7777", NetMatchSettings.DefaultMaxPlayers, "north-america"),
+                RegionServer("na-full", "203.0.113.4:7777", LobbySettings.DefaultMaxPlayers, "north-america"),
             });
 
             Assert.That(_failure, Is.Null);
@@ -232,8 +232,8 @@ namespace Shooter.NetV2.Tests
             _backend.CompleteLogin(_self);
             _backend.CompleteSearch(new List<LobbyInfo>
             {
-                Server("busy", "203.0.113.1:7777", NetMatchSettings.DefaultMaxPlayers - 2),
-                Server("roomy", "203.0.113.2:7777", NetMatchSettings.DefaultMaxPlayers - 3),
+                Server("busy", "203.0.113.1:7777", LobbySettings.DefaultMaxPlayers - 2),
+                Server("roomy", "203.0.113.2:7777", LobbySettings.DefaultMaxPlayers - 3),
                 Server("quiet", "203.0.113.3:7777", 1),
             });
 
@@ -251,8 +251,8 @@ namespace Shooter.NetV2.Tests
             _backend.CompleteLogin(_self);
             _backend.CompleteSearch(new List<LobbyInfo>
             {
-                Server("busy", "203.0.113.1:7777", NetMatchSettings.DefaultMaxPlayers - 2),
-                Server("full", "203.0.113.2:7777", NetMatchSettings.DefaultMaxPlayers),
+                Server("busy", "203.0.113.1:7777", LobbySettings.DefaultMaxPlayers - 2),
+                Server("full", "203.0.113.2:7777", LobbySettings.DefaultMaxPlayers),
             });
 
             Assert.That(_ready, Is.Null);
@@ -261,7 +261,7 @@ namespace Shooter.NetV2.Tests
 
             search.Tick(5f);
             Assert.That(_backend.Searches, Is.EqualTo(2));
-            _backend.CompleteSearch(new List<LobbyInfo> { Server("busy", "203.0.113.1:7777", NetMatchSettings.DefaultMaxPlayers - 3) });
+            _backend.CompleteSearch(new List<LobbyInfo> { Server("busy", "203.0.113.1:7777", LobbySettings.DefaultMaxPlayers - 3) });
 
             Assert.That(_failure, Is.Null);
             Assert.That(_ready.Address, Is.EqualTo("203.0.113.1"));

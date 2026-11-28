@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;

@@ -54,7 +54,7 @@ namespace Shooter.Core.Tests
                     .Value;
                 foreach (MatchObjective objective in Enum.GetValues(typeof(MatchObjective)))
                 {
-                    var key = ServerBrowserText.ModeNameKeyPrefix + ServerLobby.ModeName(objective);
+                    var key = ServerBrowserText.ModeNameKeyPrefix + ServerLobbyModes.ModeName(objective);
                     Assert.That(browser.Contains(key), Is.True, GameLanguages.Code(language) + ": " + key);
                 }
             }

@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using Shooter.Core;
+using GameKit.Core;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
 

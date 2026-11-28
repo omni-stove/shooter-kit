@@ -14,8 +14,8 @@ namespace Shooter.Core
         public const int DefaultDominationScoreLimit = 100;
         public const float DefaultCaptureSeconds = 8f;
         public const float DefaultPointsPerSecond = 1f;
-        public const int DefaultMaxPlayers = 8;
-        public const int MinMaxPlayers = 1;
+        public const int DefaultMaxPlayers = LobbySettings.DefaultMaxPlayers;
+        public const int MinMaxPlayers = LobbySettings.MinMaxPlayers;
         public const float DefaultMapVoteSeconds = 0f;
         public const int DefaultMaxTeamSizeDifference = 0;
         public const float DefaultChatIntervalSeconds = 1f;
@@ -25,8 +25,7 @@ namespace Shooter.Core
         public const float DefaultRoundTimeLimitSeconds = 120f;
         public const int DefaultMaxDisplayNameLength = 16;
 
-        // Core からは Protocol を参照できないので、Shooter.Protocol.SnapshotMessage.MaxPlayers の値を写す
-        public const int MaxMaxPlayers = 64;
+        public const int MaxMaxPlayers = LobbySettings.MaxMaxPlayers;
 
         // Core からは Protocol を参照できないので、Shooter.Protocol.MapVoteStateMessage.MaxCandidates の値を写す
         public const int MaxMapPoolCount = 16;
@@ -94,24 +93,13 @@ namespace Shooter.Core
             RequirePositive(captureSeconds, nameof(captureSeconds));
             RequirePositive(pointsPerSecond, nameof(pointsPerSecond));
             RequirePositive(maxCapturers, nameof(maxCapturers));
-            if (maxPlayers < MinMaxPlayers || maxPlayers > MaxMaxPlayers)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(maxPlayers), maxPlayers, nameof(maxPlayers) + " must be between " + MinMaxPlayers + " and " + MaxMaxPlayers);
-            }
+            Lobby = new LobbySettings(maxPlayers, privateMatch, joinCode);
 
             RequireNotNegative(mapVoteSeconds, nameof(mapVoteSeconds));
             if (maxTeamSizeDifference < 0)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(maxTeamSizeDifference), maxTeamSizeDifference, nameof(maxTeamSizeDifference) + " must not be negative");
-            }
-
-            joinCode = string.IsNullOrEmpty(joinCode) ? null : joinCode;
-            if (joinCode != null && !ConnectionExtras.IsValidField(joinCode, ConnectionExtras.MaxJoinCodeLength))
-            {
-                throw new ArgumentException(
-                    nameof(joinCode) + " must be 1-" + ConnectionExtras.MaxJoinCodeLength + " characters of [0-9A-Za-z_-]", nameof(joinCode));
             }
 
             RequireNotNegative(chatIntervalSeconds, nameof(chatIntervalSeconds));
@@ -152,8 +140,6 @@ namespace Shooter.Core
             MapPool = CopyMapPool(mapPool);
             MapVoteSeconds = mapVoteSeconds;
             MaxTeamSizeDifference = maxTeamSizeDifference;
-            PrivateMatch = privateMatch;
-            JoinCode = joinCode;
             ChatIntervalSeconds = chatIntervalSeconds;
             MaxChatLength = maxChatLength;
             MaxDisplayNameLength = maxDisplayNameLength;
@@ -169,7 +155,6 @@ namespace Shooter.Core
             CaptureSeconds = captureSeconds;
             PointsPerSecond = pointsPerSecond;
             MaxCapturers = maxCapturers;
-            MaxPlayers = maxPlayers;
             RoundWinsToWin = roundWinsToWin;
             RoundPreparationSeconds = roundPreparationSeconds;
             RoundTimeLimitSeconds = roundTimeLimitSeconds;
@@ -246,7 +231,9 @@ namespace Shooter.Core
 
         public int MaxCapturers { get; }
 
-        public int MaxPlayers { get; }
+        public LobbySettings Lobby { get; }
+
+        public int MaxPlayers => Lobby.MaxPlayers;
 
         public IReadOnlyList<string> MapPool { get; }
 
@@ -254,9 +241,9 @@ namespace Shooter.Core
 
         public int MaxTeamSizeDifference { get; }
 
-        public bool PrivateMatch { get; }
+        public bool PrivateMatch => Lobby.PrivateMatch;
 
-        public string JoinCode { get; }
+        public string JoinCode => Lobby.JoinCode;
 
         public float ChatIntervalSeconds { get; }
 

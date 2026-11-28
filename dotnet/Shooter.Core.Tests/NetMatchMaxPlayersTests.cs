@@ -93,5 +93,51 @@ namespace Shooter.Core.Tests
             Assert.That(NetMatchSettings.MaxMaxPlayers, Is.LessThanOrEqualTo(LobbyLaunchOptions.MaxMaxPlayers));
             Assert.That(LobbyLaunchOptions.DefaultMaxPlayers, Is.EqualTo(NetMatchSettings.DefaultMaxPlayers));
         }
+
+        [Test]
+        public void KeepsTheLobbyValuesInItsLobbySettings()
+        {
+            var settings = new NetMatchSettings(maxPlayers: 12, privateMatch: true, joinCode: "ABC234");
+
+            Assert.That(settings.Lobby.MaxPlayers, Is.EqualTo(12));
+            Assert.That(settings.Lobby.PrivateMatch, Is.True);
+            Assert.That(settings.Lobby.JoinCode, Is.EqualTo("ABC234"));
+            Assert.That(settings.MaxPlayers, Is.EqualTo(12));
+            Assert.That(settings.PrivateMatch, Is.True);
+            Assert.That(settings.JoinCode, Is.EqualTo("ABC234"));
+        }
+
+        [Test]
+        public void WithPrivacyChangesTheLobbySettingsAndKeepsTheRest()
+        {
+            var settings = new NetMatchSettings(scoreLimit: 7, maxPlayers: 12).WithPrivacy(true, "ABC234");
+
+            Assert.That(settings.Lobby.MaxPlayers, Is.EqualTo(12));
+            Assert.That(settings.Lobby.PrivateMatch, Is.True);
+            Assert.That(settings.Lobby.JoinCode, Is.EqualTo("ABC234"));
+            Assert.That(settings.ScoreLimit, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void TheDefaultLobbySettingsMatchTheGameKitDefault()
+        {
+            var lobby = NetMatchSettings.Default.Lobby;
+
+            Assert.That(lobby.MaxPlayers, Is.EqualTo(LobbySettings.Default.MaxPlayers));
+            Assert.That(lobby.PrivateMatch, Is.EqualTo(LobbySettings.Default.PrivateMatch));
+            Assert.That(lobby.JoinCode, Is.EqualTo(LobbySettings.Default.JoinCode));
+            Assert.That(NetMatchSettings.DefaultMaxPlayers, Is.EqualTo(LobbySettings.DefaultMaxPlayers));
+            Assert.That(NetMatchSettings.MinMaxPlayers, Is.EqualTo(LobbySettings.MinMaxPlayers));
+            Assert.That(NetMatchSettings.MaxMaxPlayers, Is.EqualTo(LobbySettings.MaxMaxPlayers));
+        }
+
+        [Test]
+        public void TheRegionRulesOfTheSettingsAreTheServerRegionRules()
+        {
+            Assert.That(ControlSettings.AutoRegion, Is.EqualTo(ServerRegion.Auto));
+            Assert.That(ControlSettings.MaxRegionLength, Is.EqualTo(ServerRegion.MaxLength));
+            Assert.That(ControlSettings.IsValidRegion("north-america"), Is.True);
+            Assert.That(ControlSettings.IsValidRegion("North America"), Is.False);
+        }
     }
 }

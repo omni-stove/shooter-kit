@@ -11,7 +11,7 @@ using Shooter.Core;
 using EosConnect = Epic.OnlineServices.Connect;
 // SDK の名前空間に同名の型が増えても、こちらを指すようにする
 using LobbyAttribute = GameKit.Core.LobbyAttribute;
-using LobbyInfo = Shooter.Core.LobbyInfo;
+using LobbyInfo = GameKit.Core.LobbyInfo;
 
 namespace Shooter.Server.Eos
 {

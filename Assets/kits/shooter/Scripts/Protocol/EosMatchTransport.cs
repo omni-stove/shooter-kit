@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+using GameKit.Core;
 using GameKit.Net;
 using Shooter.Core;
 

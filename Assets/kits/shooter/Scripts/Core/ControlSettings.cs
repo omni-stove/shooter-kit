@@ -12,10 +12,9 @@ namespace Shooter.Core
     {
         public const int CurrentVersion = 14;
 
-        // 保存した文字列を見て地域を決めていないと分かるよう、空文字や null でなく名前で持つ。
-        public const string AutoRegion = "auto";
+        public const string AutoRegion = ServerRegion.Auto;
 
-        public const int MaxRegionLength = 32;
+        public const int MaxRegionLength = ServerRegion.MaxLength;
 
         // 6・7 は画面の言語 (language) も持つが、言語は game 側が自分で保存するので読み飛ばす。
         public const int OldestReadableVersion = 1;
@@ -398,26 +397,7 @@ namespace Shooter.Core
             return _gyro.InvertY ? -lookUp : lookUp;
         }
 
-        // サーバーが --region で載せる名前と突き合わせるので、大文字小文字や空白の揺れで別の地域にならないよう、書ける文字を絞る。
-        public static bool IsValidRegion(string region)
-        {
-            if (string.IsNullOrEmpty(region) || region.Length > MaxRegionLength)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < region.Length; i++)
-            {
-                var c = region[i];
-                var letterOrDigit = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
-                if (!letterOrDigit && (c != '-' || i == 0 || i == region.Length - 1))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        public static bool IsValidRegion(string region) => ServerRegion.IsValid(region);
 
         public ControlSettings With(InputDeviceKind device, HoldAction action, HoldMode mode)
         {

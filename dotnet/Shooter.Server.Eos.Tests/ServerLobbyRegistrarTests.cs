@@ -173,9 +173,9 @@ namespace Shooter.Server.Eos.Tests
             Register();
 
             Assert.That(_registrar.Mode, Is.Null);
-            Assert.That(_registrar.PublishedMode, Is.EqualTo(ServerLobby.TeamDeathmatchMode));
+            Assert.That(_registrar.PublishedMode, Is.EqualTo(ServerLobbyModes.TeamDeathmatchMode));
 
-            _registrar.SetMode(ServerLobby.TeamDeathmatchMode);
+            _registrar.SetMode(ServerLobbyModes.TeamDeathmatchMode);
 
             Assert.That(_backend.Updates, Is.Empty, "the created lobby already carries tdm");
         }
@@ -240,7 +240,7 @@ namespace Shooter.Server.Eos.Tests
             _registrar.SetMode("payload");
             _backend.CompleteUpdate("timed out");
 
-            Assert.That(_registrar.PublishedMode, Is.EqualTo(ServerLobby.TeamDeathmatchMode));
+            Assert.That(_registrar.PublishedMode, Is.EqualTo(ServerLobbyModes.TeamDeathmatchMode));
             _registrar.Tick(_interval - 0.1f);
             Assert.That(_backend.Updates, Has.Count.EqualTo(1));
 

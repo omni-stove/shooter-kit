@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using Epic.OnlineServices;
 using Epic.OnlineServices.Lobby;
 using Epic.OnlineServices.Platform;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.NetV2;
 using UnityEngine;
 // Lobby と Connect の名前空間を両方開くと型名がぶつかりうるので、Connect は別名で参照する
 using EosConnect = Epic.OnlineServices.Connect;
 // SDK の名前空間に同名の型が増えても、こちらを指すようにする
-using LobbyInfo = Shooter.Core.LobbyInfo;
+using LobbyInfo = GameKit.Core.LobbyInfo;
 
 namespace Shooter.NetEos
 {
