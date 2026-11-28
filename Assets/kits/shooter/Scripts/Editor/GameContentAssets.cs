@@ -114,6 +114,7 @@ namespace Shooter.Editor
             new TuningSlot("HolsterTuning", KitTuning.HolsterResourcePath, c => c.HolsterTuning, (c, v) => c.HolsterTuning = v),
             new TuningSlot("BarkTuning", KitTuning.BarksResourcePath, c => c.BarkTuning, (c, v) => c.BarkTuning = v),
             new TuningSlot("BreachTuning", KitTuning.BreachResourcePath, c => c.BreachTuning, (c, v) => c.BreachTuning = v),
+            new TuningSlot("ServerLobbyTuning", KitTuning.ServerLobbyResourcePath, c => c.ServerLobbyTuning, (c, v) => c.ServerLobbyTuning = v),
         };
 
         public static string DefaultPath => ShooterKitRoot.OutputPath("Resources/" + GameContent.ResourceFolder + "/" + FileName);

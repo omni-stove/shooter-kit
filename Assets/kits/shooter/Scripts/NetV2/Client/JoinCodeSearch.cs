@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameKit.Core;
+using Shooter.Core;
 
 namespace Shooter.NetV2
 {
@@ -10,6 +11,7 @@ namespace Shooter.NetV2
     {
         private readonly ILobbyBackend _backend;
         private readonly string _version;
+        private ServerLobbySpec _lobby = ShooterServerLobby.Default;
         private readonly float _timeoutSeconds;
         private readonly Action<string> _log;
         private Action<JoinCodeResult> _done;
@@ -51,7 +53,22 @@ namespace Shooter.NetV2
             Finished,
         }
 
-        public string BucketId => ServerLobby.BucketId(_version);
+        // 既定はシューターキットの値。起動の口 (NetV2) がデータ (KitTuning.ServerLobby) の値を渡す。
+        public ServerLobbySpec Lobby
+        {
+            get => _lobby;
+            set
+            {
+                if (_step != Step.Idle)
+                {
+                    throw new InvalidOperationException("set Lobby before the join code search begins");
+                }
+
+                _lobby = value ?? throw new ArgumentNullException(nameof(value));
+            }
+        }
+
+        public string BucketId => ServerLobby.BucketId(_lobby, _version);
 
         public bool IsFinished => _step == Step.Finished;
 

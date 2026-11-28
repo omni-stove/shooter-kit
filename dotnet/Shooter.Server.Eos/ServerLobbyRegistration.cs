@@ -28,6 +28,7 @@ namespace Shooter.Server.Eos
             IServerLobbyBackend backend,
             string endpoint,
             string version,
+            ServerLobbySpec lobby,
             NetMatchSettings match,
             TextWriter log,
             Func<float> clock,
@@ -37,12 +38,13 @@ namespace Shooter.Server.Eos
             string region = null)
         {
             ArgumentNullException.ThrowIfNull(backend);
+            ArgumentNullException.ThrowIfNull(lobby);
             ArgumentNullException.ThrowIfNull(match);
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
             _sleep = sleep ?? throw new ArgumentNullException(nameof(sleep));
             _failed = failed ?? throw new ArgumentNullException(nameof(failed));
-            _service = new ServerLobbyService(backend, ServerLobby.BucketId(version), log);
+            _service = new ServerLobbyService(backend, ServerLobby.BucketId(lobby, version), log);
             _registrar = new ServerLobbyRegistrar(
                 _service,
                 endpoint,

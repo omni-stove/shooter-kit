@@ -46,6 +46,22 @@ namespace Shooter.NetV2.Tests
         }
 
         [Test]
+        public void SearchesTheConfiguredBucket()
+        {
+            var search = new QuickMatchSearch(_backend, _version, _log.Add);
+            Assert.That(search.Lobby, Is.SameAs(ShooterServerLobby.Default));
+            Assert.That(search.BucketId, Is.EqualTo("shooter-server:0.3.0"));
+
+            search.Lobby = new ServerLobbySpec("arena-server:", "arena-server");
+            search.Begin(0f, options => _ready = options, reason => _failure = reason);
+            _backend.CompleteLogin(_self);
+
+            Assert.That(_backend.SearchedBucket, Is.EqualTo("arena-server:0.3.0"));
+            Assert.Throws<InvalidOperationException>(() => search.Lobby = ShooterServerLobby.Default);
+            Assert.Throws<ArgumentNullException>(() => new QuickMatchSearch(new FakeLobbyBackend(), _version, _log.Add).Lobby = null);
+        }
+
+        [Test]
         public void ConnectsToTheBusiestServerOverUdp()
         {
             var search = Begin();

@@ -147,7 +147,7 @@ namespace Shooter.Server.Eos
             _now = now;
             _schedule.Start(now);
             _step = Step.Waiting;
-            _log.WriteLine(_logPrefix + "registering server=" + _endpoint + " bucket=" + ServerLobby.BucketId(_version) + RegionText());
+            _log.WriteLine(_logPrefix + "registering server=" + _endpoint + " bucket=" + _service.BucketId + RegionText());
             Attempt();
         }
 

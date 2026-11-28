@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.EosSdk;
 
@@ -12,11 +13,13 @@ namespace Shooter.Server.Eos
         public static bool TryPrepare(
             EosCredentials credentials,
             string version,
+            ServerLobbySpec lobby,
             string libraryDirectory,
             out Func<TextWriter, IServerLobbyBackend> createBackend,
             out string error)
         {
             ArgumentNullException.ThrowIfNull(credentials);
+            ArgumentNullException.ThrowIfNull(lobby);
             ArgumentNullException.ThrowIfNull(libraryDirectory);
 
             createBackend = null;
@@ -33,7 +36,7 @@ namespace Shooter.Server.Eos
             }
 
 #if EOS_SDK
-            createBackend = log => new EosLobbyBackend(credentials, version, ServerLobby.DisplayName, log);
+            createBackend = log => new EosLobbyBackend(credentials, version, lobby.DisplayName, log);
             error = null;
             return true;
 #else

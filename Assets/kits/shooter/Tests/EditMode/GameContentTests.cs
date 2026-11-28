@@ -467,6 +467,7 @@ namespace Shooter.Tests.EditMode
                 (() => content.HolsterTuning, v => content.HolsterTuning = v),
                 (() => content.BarkTuning, v => content.BarkTuning = v),
                 (() => content.BreachTuning, v => content.BreachTuning = v),
+                (() => content.ServerLobbyTuning, v => content.ServerLobbyTuning = v),
             };
 
             foreach (var slot in slots)
@@ -722,8 +723,9 @@ namespace Shooter.Tests.EditMode
             Assert.That(asked, Does.Contain("gamepad-layouts"));
             Assert.That(asked, Does.Contain("holster"));
             Assert.That(asked, Does.Contain("barks"));
+            Assert.That(asked, Does.Contain("server-lobby"));
             Assert.That(asked, Does.Contain("juggernaut").And.Contain("vip"));
-            Assert.That(asked, Has.Count.EqualTo(45));
+            Assert.That(asked, Has.Count.EqualTo(47));
         }
 
         [TestCase("Assets/MyGame/Tuning/minimap.json", "minimap", "Packages/com.example.kit/Resources/Tuning", true)]

@@ -32,7 +32,7 @@ namespace GameKit.Core.Tests
         {
             Assert.That(PartyLobby.BucketId("0.3.0"), Is.EqualTo("shooter-party:0.3.0"));
             Assert.That(PartyLobby.BucketId(" "), Is.EqualTo("shooter-party:0"));
-            Assert.That(PartyLobby.BucketId("0.3.0"), Is.Not.EqualTo(ServerLobby.BucketId("0.3.0")));
+            Assert.That(PartyLobby.BucketId("0.3.0"), Is.Not.EqualTo(ServerLobby.BucketId(new ServerLobbySpec("shooter-server:"), "0.3.0")));
         }
 
         [Test]

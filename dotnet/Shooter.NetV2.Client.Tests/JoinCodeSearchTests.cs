@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using GameKit.Core;
 using NUnit.Framework;
+using Shooter.Core;
 
 namespace Shooter.NetV2.Tests
 {
@@ -49,6 +50,22 @@ namespace Shooter.NetV2.Tests
         {
             Assert.That(_results, Has.Count.EqualTo(1));
             return _results[0];
+        }
+
+        [Test]
+        public void SearchesTheConfiguredBucket()
+        {
+            var search = new JoinCodeSearch(_backend, _version, 10f, _log.Add);
+            Assert.That(search.Lobby, Is.SameAs(ShooterServerLobby.Default));
+            Assert.That(search.BucketId, Is.EqualTo("shooter-server:0.3.0"));
+
+            search.Lobby = new ServerLobbySpec("arena-server:", "arena-server");
+            search.Begin(0f, _code, 1, _results.Add);
+            _backend.CompleteLogin(_self);
+
+            Assert.That(_backend.SearchedBucket, Is.EqualTo("arena-server:0.3.0"));
+            Assert.Throws<InvalidOperationException>(() => search.Lobby = ShooterServerLobby.Default);
+            Assert.Throws<ArgumentNullException>(() => new JoinCodeSearch(new FakeLobbyBackend(), _version, _log.Add).Lobby = null);
         }
 
         [Test]
