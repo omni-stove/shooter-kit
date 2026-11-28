@@ -25,7 +25,11 @@ namespace Shooter.NetV2
             _partySize = partySize ?? throw new ArgumentNullException(nameof(partySize));
             _connect = connect ?? throw new ArgumentNullException(nameof(connect));
             _log = log ?? throw new ArgumentNullException(nameof(log));
-            _browser = new ServerBrowser(createBackend, pinger, version, GameSignals.ServerBrowser.Publish, log) { JoinsMatchLobby = true };
+            _browser = new ServerBrowser(createBackend, pinger, version, GameSignals.ServerBrowser.Publish, log)
+            {
+                JoinsMatchLobby = true,
+                Lobby = KitTuning.ServerLobby,
+            };
             GameSignals.ServerBrowserControl.Publish(this);
         }
 

@@ -334,6 +334,7 @@ namespace Shooter.NetV2
             {
                 JoinsMatchLobby = true,
                 PreferredRegion = AppliedControlSettings.Current.QuickMatchRegion,
+                Lobby = KitTuning.ServerLobby,
             };
             var party = NetV2PartyControl.Current;
             _search.Begin(

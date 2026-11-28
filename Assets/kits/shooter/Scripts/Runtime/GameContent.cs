@@ -166,6 +166,8 @@ namespace Shooter.Runtime
         private TextAsset _barkTuning;
         [SerializeField, Tooltip("ドアの突入 (蹴る・爆薬を仕掛ける秒数・届く距離・向こう側の怯み・爆発・音・スローモーション・爆薬の品) の JSON。空なら Resources/Tuning/breach")]
         private TextAsset _breachTuning;
+        [SerializeField, Tooltip("サーバーのロビーのバケットの接頭辞とサーバーの表示名の JSON。空なら Resources/Tuning/server-lobby")]
+        private TextAsset _serverLobbyTuning;
 
         [Header("武器・キャンペーン")]
         [SerializeField, Tooltip("使える武器の一覧")]
@@ -608,6 +610,12 @@ namespace Shooter.Runtime
         {
             get => _breachTuning;
             set => _breachTuning = value;
+        }
+
+        public TextAsset ServerLobbyTuning
+        {
+            get => _serverLobbyTuning;
+            set => _serverLobbyTuning = value;
         }
 
         public WeaponCatalogAsset WeaponCatalog

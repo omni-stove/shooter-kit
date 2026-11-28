@@ -27,7 +27,7 @@ namespace Shooter.Server.Eos.Tests
         {
             _log = new StringWriter();
             _backend = new FakeLobbyBackend();
-            _service = new ServerLobbyService(_backend, ServerLobby.BucketId(_version), _log);
+            _service = new ServerLobbyService(_backend, ServerLobby.BucketId(ShooterServerLobby.Default, _version), _log);
             _registrar = new ServerLobbyRegistrar(_service, _endpoint, _version, _maxPlayers, new RetrySchedule(_interval, _timeout), _log);
             _failure = null;
         }
@@ -71,7 +71,7 @@ namespace Shooter.Server.Eos.Tests
         [Test]
         public void AFullSizedMatchKeepsTheLobbyWithinTheEosMemberLimit()
         {
-            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(_version), _log);
+            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(ShooterServerLobby.Default, _version), _log);
             var registrar = new ServerLobbyRegistrar(
                 service, _endpoint, _version, NetMatchSettings.MaxMaxPlayers, new RetrySchedule(_interval, _timeout), _log);
 
@@ -645,7 +645,7 @@ namespace Shooter.Server.Eos.Tests
         [Test]
         public void APrivateMatchPublishesThePrivateMarkAndTheJoinCode()
         {
-            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(_version), _log);
+            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(ShooterServerLobby.Default, _version), _log);
             var registrar = new ServerLobbyRegistrar(
                 service,
                 _endpoint,
@@ -668,7 +668,7 @@ namespace Shooter.Server.Eos.Tests
         [Test]
         public void ARecreatedPrivateLobbyKeepsTheJoinCode()
         {
-            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(_version), _log);
+            using var service = new ServerLobbyService(_backend, ServerLobby.BucketId(ShooterServerLobby.Default, _version), _log);
             var registrar = new ServerLobbyRegistrar(
                 service,
                 _endpoint,

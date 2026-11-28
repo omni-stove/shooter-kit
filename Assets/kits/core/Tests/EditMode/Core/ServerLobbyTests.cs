@@ -77,8 +77,19 @@ namespace GameKit.Core.Tests
             var attributes = ByKey(ServerLobby.Attributes("203.0.113.10:7777", " ", 0));
 
             Assert.That(attributes["version"].Text, Is.EqualTo("0"));
-            Assert.That(ServerLobby.BucketId(" "), Is.EqualTo("shooter-server:0"));
-            Assert.That(ServerLobby.BucketId("0.3.0"), Is.EqualTo("shooter-server:0.3.0"));
+            Assert.That(ServerLobby.BucketId(ServerLobbySpec.Default, " "), Is.EqualTo("game-server:0"));
+            Assert.That(ServerLobby.BucketId(ServerLobbySpec.Default, "0.3.0"), Is.EqualTo("game-server:0.3.0"));
+        }
+
+        [Test]
+        public void TheBucketStartsWithTheConfiguredPrefix()
+        {
+            var lobby = new ServerLobbySpec("shooter-server:", "shooter-server");
+
+            Assert.That(ServerLobby.BucketId(lobby, "0.3.0"), Is.EqualTo("shooter-server:0.3.0"));
+            Assert.That(ServerLobby.BucketId(lobby, " "), Is.EqualTo("shooter-server:0"));
+            Assert.That(ServerLobby.BucketId(new ServerLobbySpec("arena:"), "1.2"), Is.EqualTo("arena:1.2"));
+            Assert.Throws<ArgumentNullException>(() => ServerLobby.BucketId(null, "0.3.0"));
         }
 
         [Test]

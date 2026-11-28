@@ -198,13 +198,38 @@ namespace Shooter.Server
                 return false;
             }
 
-            if (!EosServerLobby.TryPrepare(credentials, launch.Version, libraryDirectory, out var createBackend, out var sdkError))
+            if (!TryLoadServerLobby(runtime, out var lobby, out error))
+            {
+                return false;
+            }
+
+            if (!EosServerLobby.TryPrepare(credentials, launch.Version, lobby, libraryDirectory, out var createBackend, out var sdkError))
             {
                 error = ServerLobbyService.LogPrefix + flag + " cannot use EOS: " + sdkError;
                 return false;
             }
 
-            modules.Add(new ServerLobbyModule(createBackend, launch.Options.RegisterLobbyEndpoint) { Region = launch.Region, CurrentRules = () => rules.Rules });
+            modules.Add(new ServerLobbyModule(createBackend, launch.Options.RegisterLobbyEndpoint)
+            {
+                Region = launch.Region,
+                CurrentRules = () => rules.Rules,
+                Lobby = lobby,
+            });
+            return true;
+        }
+
+        // クライアントが Resources/Tuning/server-lobby から読むのと同じ値を server-data/tuning から読む。読めないファイルは既定値にせず止める
+        internal static bool TryLoadServerLobby(ServerRuntime runtime, out ServerLobbySpec lobby, out string error)
+        {
+            if (!ServerCombatTuning.TryRead(
+                runtime.MapSearchRoots, ServerLobbyJson.FileName, "server lobby", ShooterServerLobby.Parse, out lobby, out var path, out error))
+            {
+                error = ServerLobbyService.LogPrefix + error;
+                return false;
+            }
+
+            lobby ??= ShooterServerLobby.Default;
+            runtime.Output.WriteLine(ServerLobbyService.LogPrefix + "server lobby tuning " + (path ?? "default") + " bucket prefix=" + lobby.BucketPrefix);
             return true;
         }
 

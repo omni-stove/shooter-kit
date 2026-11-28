@@ -67,6 +67,36 @@ namespace Shooter.Server.Tests
         }
 
         [Test]
+        public void TheDefaultLobbyKeepsTheShooterBucket()
+        {
+            Assert.That(_module.Lobby, Is.SameAs(ShooterServerLobby.Default));
+
+            Register();
+
+            Assert.That(_backend.CreatedBucket, Is.EqualTo("shooter-server:0.3.0"));
+        }
+
+        [Test]
+        public void RegistersInTheConfiguredBucket()
+        {
+            _module.Lobby = new ServerLobbySpec("arena-server:", "arena-server");
+            Start();
+            Tick();
+            _backend.CompleteLogin(_server);
+
+            Assert.That(_backend.CreatedBucket, Is.EqualTo("arena-server:0.3.0"));
+            Assert.That(_log.ToString(), Does.Contain("[Lobby] registering server=" + _endpoint + " bucket=arena-server:0.3.0"));
+            Assert.Throws<InvalidOperationException>(() => _module.Lobby = ShooterServerLobby.Default);
+        }
+
+        [Test]
+        public void ALobbyMustBeGiven()
+        {
+            Assert.Throws<ArgumentNullException>(() => _module.Lobby = null);
+            Assert.That(_module.Lobby, Is.SameAs(ShooterServerLobby.Default));
+        }
+
+        [Test]
         public void PublishesTheConnectedPlayers()
         {
             Register();

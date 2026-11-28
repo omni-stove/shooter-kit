@@ -34,6 +34,8 @@ namespace Shooter.Server.Eos
             _backend.LoggedOut += HandleLoggedOut;
         }
 
+        public string BucketId => _bucketId;
+
         public event Action<string> Removed;
 
         public event Action<string> LoggedOut;

@@ -68,7 +68,7 @@ namespace Shooter.NetV2
             }
 
             Retire();
-            var search = new JoinCodeSearch(backend, _version, _log) { JoinsMatchLobby = true };
+            var search = new JoinCodeSearch(backend, _version, _log) { JoinsMatchLobby = true, Lobby = KitTuning.ServerLobby };
             _search = search;
             search.Begin(_now, code, Math.Max(1, _partySize()), result => Finish(search, result, done));
         }

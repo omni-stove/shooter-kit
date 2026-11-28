@@ -30,20 +30,19 @@ namespace GameKit.Core
 
         public const int MaxModeLength = 32;
 
-        // 同じ EOS のサンドボックスを使う別のゲームのロビーと混ざらないよう、接頭辞を付ける。
-        public const string BucketPrefix = "shooter-server:";
-
-        // プレイヤーと見分けるため、サーバーのユーザーの表示名は分ける。
-        public const string DisplayName = "shooter-server";
-
         public const float RetryIntervalSeconds = 5f;
 
         public const float TimeoutSeconds = 60f;
 
         // 版の違うビルド同士が同じバケットに入らないよう、版を含める。
-        public static string BucketId(string version)
+        public static string BucketId(ServerLobbySpec lobby, string version)
         {
-            return BucketPrefix + LobbyLaunchOptions.BucketVersion(version);
+            if (lobby == null)
+            {
+                throw new ArgumentNullException(nameof(lobby));
+            }
+
+            return lobby.BucketPrefix + LobbyLaunchOptions.BucketVersion(version);
         }
 
         public static IReadOnlyList<LobbyAttribute> Attributes(string endpoint, string version, int players)

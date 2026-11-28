@@ -38,7 +38,12 @@ namespace Shooter.Server.Eos
             _credentials = credentials ?? throw new ArgumentNullException(nameof(credentials));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _version = version;
-            _displayName = string.IsNullOrWhiteSpace(displayName) ? ServerLobby.DisplayName : displayName;
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                throw new ArgumentException("must not be null or blank", nameof(displayName));
+            }
+
+            _displayName = displayName;
         }
 
         public event Action<string, string> Removed;

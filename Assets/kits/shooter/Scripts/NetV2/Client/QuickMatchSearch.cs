@@ -12,6 +12,7 @@ namespace Shooter.NetV2
 
         private readonly ILobbyBackend _backend;
         private readonly string _version;
+        private ServerLobbySpec _lobby = ShooterServerLobby.Default;
         private readonly RetrySchedule _schedule;
         private readonly Action<string> _log;
         private Action<NetLaunchOptions> _ready;
@@ -55,7 +56,22 @@ namespace Shooter.NetV2
             Failed,
         }
 
-        public string BucketId => ServerLobby.BucketId(_version);
+        // 既定はシューターキットの値。起動の口 (NetV2) がデータ (KitTuning.ServerLobby) の値を渡す。
+        public ServerLobbySpec Lobby
+        {
+            get => _lobby;
+            set
+            {
+                if (_step != Step.Idle)
+                {
+                    throw new InvalidOperationException("set Lobby before the quick match search begins");
+                }
+
+                _lobby = value ?? throw new ArgumentNullException(nameof(value));
+            }
+        }
+
+        public string BucketId => ServerLobby.BucketId(_lobby, _version);
 
         public bool IsFinished => _step == Step.Ready || _step == Step.Failed;
 

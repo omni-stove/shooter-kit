@@ -57,6 +57,7 @@ namespace Shooter.Runtime
         public const string HolsterResourcePath = HolsterJson.ResourcePath;
         public const string BarksResourcePath = BarkJson.ResourcePath;
         public const string BreachResourcePath = BreachJson.ResourcePath;
+        public const string ServerLobbyResourcePath = ServerLobbyJson.ResourcePath;
 
         // ドメインの再読み込みを切っているので、Play の開始時に ResetOnPlay で戻す。
         private static readonly Dictionary<string, object> _loaded = new Dictionary<string, object>(StringComparer.Ordinal);
@@ -123,6 +124,9 @@ namespace Shooter.Runtime
 
         public static BreachSpec Breach =>
             Load(c => c.BreachTuning, BreachResourcePath, BreachJson.Parse, BreachSpec.Default);
+
+        public static ServerLobbySpec ServerLobby =>
+            Load(c => c.ServerLobbyTuning, ServerLobbyResourcePath, ShooterServerLobby.Parse, ShooterServerLobby.Default);
 
         public static void Reload()
         {

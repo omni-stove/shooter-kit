@@ -21,6 +21,7 @@ namespace Shooter.Server
         private ServerLobbyRegistration _registration;
         private int? _skillAverage;
         private string _region;
+        private ServerLobbySpec _lobby = ShooterServerLobby.Default;
         private Func<GameRules> _currentRules;
 
         public ServerLobbyModule(Func<TextWriter, IServerLobbyBackend> createBackend, string endpoint)
@@ -62,6 +63,21 @@ namespace Shooter.Server
             }
         }
 
+        // バケットの接頭辞。既定はシューターキットの値で、起動の口 (ServerModules) が server-data/tuning/server-lobby.json の値を渡す。
+        public ServerLobbySpec Lobby
+        {
+            get => _lobby;
+            set
+            {
+                if (_context != null)
+                {
+                    throw new InvalidOperationException("set Lobby before the lobby module starts");
+                }
+
+                _lobby = value ?? throw new ArgumentNullException(nameof(value));
+            }
+        }
+
         // 今の試合のルール。ServerContext.Rules は起動時のルールのままで、次の試合のルール (ServerMatch.RequestNextRules) を映さないので、
         // ルールのモジュールから引く。null なら起動時のルールを使う。
         public Func<GameRules> CurrentRules
@@ -100,6 +116,7 @@ namespace Shooter.Server
                 backend,
                 _endpoint,
                 context.Version,
+                _lobby,
                 context.Rules?.Settings ?? NetMatchSettings.Default,
                 context.Log,
                 _clock,
