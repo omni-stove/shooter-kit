@@ -279,6 +279,37 @@ namespace Shooter.Core.Tests
         }
 
         [Test]
+        public void EachMatchRulesWithReplacesOnlyItsValue()
+        {
+            var match = _rules.Match;
+            var cases = new (string Property, Func<MatchRules, MatchRules> With, object Value)[]
+            {
+                (nameof(MatchRules.FriendlyFire), r => r.WithFriendlyFire(FriendlyFire.Off), FriendlyFire.Off),
+                (nameof(MatchRules.RespawnMode), r => r.WithRespawnMode(RespawnMode.Individual), RespawnMode.Individual),
+                (nameof(MatchRules.WaveIntervalSeconds), r => r.WithWaveIntervalSeconds(30f), 30f),
+                (nameof(MatchRules.RegenDelaySeconds), r => r.WithRegenDelaySeconds(0f), 0f),
+                (nameof(MatchRules.RegenPerSecond), r => r.WithRegenPerSecond(0f), 0f),
+                (nameof(MatchRules.SpawnProtectionSeconds), r => r.WithSpawnProtectionSeconds(0f), 0f),
+                (nameof(MatchRules.MinPlayers), r => r.WithMinPlayers(0), 0),
+                (nameof(MatchRules.IdleKickSeconds), r => r.WithIdleKickSeconds(0f), 0f),
+                (nameof(MatchRules.IdleWarningSeconds), r => r.WithIdleWarningSeconds(30f), 30f),
+                (nameof(MatchRules.PlayerMaxHealth), r => r.WithPlayerMaxHealth(150), 150),
+                (nameof(MatchRules.TextChat), r => r.WithTextChat(TextChat.Off), TextChat.Off),
+                (nameof(MatchRules.Spectating), r => r.WithSpectating(Spectating.Off), Spectating.Off),
+                (nameof(MatchRules.RespawnAnchors), r => r.WithRespawnAnchors(new[] { RespawnAnchor.Beacon }), new[] { RespawnAnchor.Beacon }),
+            };
+
+            AssertEveryPropertyHasACase(typeof(MatchRules), cases.Length);
+            foreach (var c in cases)
+            {
+                var copy = c.With(match);
+
+                Assert.That(copy, Is.Not.SameAs(match), c.Property);
+                AssertReplacedOnly(match, copy, c.Property, c.Value);
+            }
+        }
+
+        [Test]
         public void DefaultActionRulesKeepJumpOn()
         {
             Assert.That(ActionRules.Default.Jump, Is.EqualTo(Jump.On));
@@ -321,9 +352,12 @@ namespace Shooter.Core.Tests
             }
         }
 
+        // GameRules.Match は他の項目から組み直す入れ物で、差し替えるたびに別のインスタンスになるので、項目としては数えない (中身は EachMatchRulesWithReplacesOnlyItsValue で見る)。
         private static PropertyInfo[] InstanceProperties(Type type)
         {
-            return type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            return Array.FindAll(
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance),
+                p => !(type == typeof(GameRules) && p.Name == nameof(GameRules.Match)));
         }
     }
 }

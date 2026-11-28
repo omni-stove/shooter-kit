@@ -1,11 +1,10 @@
 using System;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public static class RespawnPolicy
     {
-        public static IRespawnPolicy FromRules(GameRules rules, float respawnSeconds)
+        public static IRespawnPolicy FromRules(MatchRules rules, float respawnSeconds)
         {
             if (rules == null)
             {
