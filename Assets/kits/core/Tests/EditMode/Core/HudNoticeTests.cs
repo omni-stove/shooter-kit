@@ -1,10 +1,9 @@
 using System;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
-    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    // Unity の EditMode テストと dotnet/GameKit.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
     public sealed class HudNoticeTests
     {
         [Test]
@@ -27,19 +26,22 @@ namespace Shooter.Core.Tests
             Assert.That(HudNotice.Downed(5, 40), Is.Not.EqualTo(HudNotice.Downed(5, 0)));
         }
 
+        // 状態異常の Id はキットのデータ (Shooter.Core.StatusEffectKinds など) が決めるので、core のテストでは Id の文字列をそのまま使う
+        private const string _burn = "burn";
+
         [Test]
         public void StatusEffectNoticesAreEqualByKindAndSeconds()
         {
-            var burning = HudNotice.StatusEffect(StatusEffectKinds.Burn, 3);
+            var burning = HudNotice.StatusEffect(_burn, 3);
             Assert.That(burning.Kind, Is.EqualTo(HudNoticeKind.StatusEffect));
-            Assert.That(burning.KindId, Is.EqualTo(StatusEffectKinds.Burn));
-            Assert.That(burning, Is.EqualTo(HudNotice.StatusEffect(StatusEffectKinds.Burn, 3)));
-            Assert.That(burning.GetHashCode(), Is.EqualTo(HudNotice.StatusEffect(StatusEffectKinds.Burn, 3).GetHashCode()));
+            Assert.That(burning.KindId, Is.EqualTo(_burn));
+            Assert.That(burning, Is.EqualTo(HudNotice.StatusEffect(_burn, 3)));
+            Assert.That(burning.GetHashCode(), Is.EqualTo(HudNotice.StatusEffect(_burn, 3).GetHashCode()));
             Assert.That(burning, Is.Not.EqualTo(HudNotice.StatusEffect("blind", 3)));
-            Assert.That(burning, Is.Not.EqualTo(HudNotice.StatusEffect(StatusEffectKinds.Burn, 2)));
+            Assert.That(burning, Is.Not.EqualTo(HudNotice.StatusEffect(_burn, 2)));
             Assert.That(HudNotice.SpawnProtected(3).KindId, Is.Empty);
             Assert.Throws<ArgumentException>(() => HudNotice.StatusEffect(string.Empty, 1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => HudNotice.StatusEffect(StatusEffectKinds.Burn, -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => HudNotice.StatusEffect(_burn, -1));
         }
 
         [Test]

@@ -6,21 +6,26 @@ namespace Shooter.Core
     // どの項目も文字列にせず数や型の付いた値で持つのは、どう書くか (体力・弾数・残り時間の書式を含む) を HUD に任せるため。
     public sealed class HudModel
     {
-        private Health _health;
         private Weapon _weapon;
         private AkimboHands _akimbo;
-        private Match _match;
-        private IHudNoticeSource _notice;
 
         public event Action<HudField> Changed;
 
-        public int? CurrentHealth { get; private set; }
+        public HudModel()
+        {
+            MatchHud.Changed += OnMatchHudChanged;
+        }
 
-        public int? MaxHealth { get; private set; }
+        // 体力・時間・通知・スコア・結果をここに並べず MatchHud (GameKit.Core) に持たせるのは、武器を持たないジャンルの HUD でも同じ項目を使えるようにするため。
+        public MatchHud MatchHud { get; } = new MatchHud();
 
-        public bool IsHealthLow => CurrentHealth.HasValue && HudFormat.IsLowHealth(CurrentHealth.Value, MaxHealth.Value);
+        public int? CurrentHealth => MatchHud.CurrentHealth;
 
-        public float? HealthFraction => CurrentHealth.HasValue ? Math.Min(1f, (float)CurrentHealth.Value / MaxHealth.Value) : (float?)null;
+        public int? MaxHealth => MatchHud.MaxHealth;
+
+        public bool IsHealthLow => MatchHud.IsHealthLow;
+
+        public float? HealthFraction => MatchHud.HealthFraction;
 
         public int? MagazineAmmo { get; private set; }
 
@@ -42,27 +47,27 @@ namespace Shooter.Core
 
         public WeaponSpec WeaponSpec { get; private set; }
 
-        public int? RemainingSeconds { get; private set; }
+        public int? RemainingSeconds => MatchHud.RemainingSeconds;
 
-        public bool HasTime => RemainingSeconds.HasValue;
+        public bool HasTime => MatchHud.HasTime;
 
-        public HudNotice Notice { get; private set; }
+        public HudNotice Notice => MatchHud.Notice;
 
-        public Team? FirstScoreTeam { get; private set; }
+        public Team? FirstScoreTeam => MatchHud.FirstScoreTeam;
 
-        public int? FirstScore { get; private set; }
+        public int? FirstScore => MatchHud.FirstScore;
 
-        public Team? SecondScoreTeam => FirstScoreTeam.HasValue ? HudFormat.Opponent(FirstScoreTeam.Value) : (Team?)null;
+        public Team? SecondScoreTeam => MatchHud.SecondScoreTeam;
 
-        public int? SecondScore { get; private set; }
+        public int? SecondScore => MatchHud.SecondScore;
 
-        public bool HasResult { get; private set; }
+        public bool HasResult => MatchHud.HasResult;
 
-        public Team? Winner { get; private set; }
+        public Team? Winner => MatchHud.Winner;
 
-        public MatchOutcome? SoloResult { get; private set; }
+        public MatchOutcome? SoloResult => MatchHud.SoloResult;
 
-        public string RestartKey { get; private set; } = string.Empty;
+        public string RestartKey => MatchHud.RestartKey;
 
         public float? ReloadProgress { get; private set; }
 
@@ -99,21 +104,35 @@ namespace Shooter.Core
         // 解除の残りを解除にかかる時間に対する割合 (1 で始めたところ、0 で解き終わる) で持つ。解除していなければ null。
         public float? JamClearRemaining { get; private set; }
 
-        public void BindHealth(Health health)
-        {
-            if (_health != null)
-            {
-                _health.Changed -= OnHealthChanged;
-            }
+        public void BindHealth(Health health) => MatchHud.BindHealth(health);
 
-            _health = health;
-            if (_health != null)
-            {
-                _health.Changed += OnHealthChanged;
-            }
+        public void BindMatch(Match match) => MatchHud.BindMatch(match);
 
-            OnHealthChanged();
-        }
+        public void SetRestartKey(string key) => MatchHud.SetRestartKey(key);
+
+        public void BindNotice(IHudNoticeSource notice) => MatchHud.BindNotice(notice);
+
+        public void SetHealth(int current, int max) => MatchHud.SetHealth(current, max);
+
+        public void ClearHealth() => MatchHud.ClearHealth();
+
+        public void SetTime(float remainingSeconds) => MatchHud.SetTime(remainingSeconds);
+
+        public void ClearTime() => MatchHud.ClearTime();
+
+        public void SetNotice(HudNotice notice) => MatchHud.SetNotice(notice);
+
+        public void ClearNotice() => MatchHud.ClearNotice();
+
+        public void SetRespawnNotice(RespawnMode mode, int seconds) => MatchHud.SetRespawnNotice(mode, seconds);
+
+        public void SetScores(Team ownTeam, int alphaScore, int bravoScore) => MatchHud.SetScores(ownTeam, alphaScore, bravoScore);
+
+        public void ClearScores() => MatchHud.ClearScores();
+
+        public void SetResult(Team? winner) => MatchHud.SetResult(winner);
+
+        public void ClearResult() => MatchHud.ClearResult();
 
         public void BindWeapon(Weapon weapon)
         {
@@ -149,105 +168,10 @@ namespace Shooter.Core
             SetWeaponSpec(_akimbo?.Spec);
         }
 
-        public void BindMatch(Match match)
-        {
-            if (_match != null)
-            {
-                _match.RemainingSecondsChanged -= SetTime;
-                _match.StateChanged -= OnMatchStateChanged;
-            }
-
-            _match = match;
-            if (_match != null)
-            {
-                _match.RemainingSecondsChanged += SetTime;
-                _match.StateChanged += OnMatchStateChanged;
-                if (_match.HasTimeLimit)
-                {
-                    SetTime(_match.RemainingSeconds);
-                }
-                else
-                {
-                    ClearTime();
-                }
-            }
-            else
-            {
-                ClearTime();
-            }
-
-            ApplySoloResult(_match?.Result, RestartKey);
-        }
-
-        public void SetRestartKey(string key)
-        {
-            ApplySoloResult(SoloResult, key ?? string.Empty);
-        }
-
-        public void BindNotice(IHudNoticeSource notice)
-        {
-            // With no source bound before or after, the notice was set directly (a respawn countdown) and is not the source's to clear.
-            if (notice == null && _notice == null)
-            {
-                return;
-            }
-
-            if (_notice != null)
-            {
-                _notice.Changed -= SetNotice;
-            }
-
-            _notice = notice;
-            if (_notice != null)
-            {
-                _notice.Changed += SetNotice;
-            }
-
-            SetNotice(_notice != null ? _notice.Notice : HudNotice.None);
-        }
-
         public void UnbindAll()
         {
-            if (_health != null)
-            {
-                _health.Changed -= OnHealthChanged;
-                _health = null;
-            }
-
+            MatchHud.UnbindAll();
             UnbindWeapon();
-
-            if (_match != null)
-            {
-                _match.RemainingSecondsChanged -= SetTime;
-                _match.StateChanged -= OnMatchStateChanged;
-                _match = null;
-            }
-
-            if (_notice != null)
-            {
-                _notice.Changed -= SetNotice;
-                _notice = null;
-            }
-        }
-
-        public void SetHealth(int current, int max)
-        {
-            if (current < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(current), current, "current must not be negative");
-            }
-
-            if (max < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(max), max, "max must be at least 1");
-            }
-
-            ApplyHealth(current, max);
-        }
-
-        public void ClearHealth()
-        {
-            ApplyHealth(null, null);
         }
 
         public void SetAmmo(int magazine, int reserve, bool reloading)
@@ -338,68 +262,6 @@ namespace Shooter.Core
         public void ClearWeaponSpec()
         {
             SetWeaponSpec(null);
-        }
-
-        public void SetTime(float remainingSeconds)
-        {
-            ApplyTime(HudFormat.DisplayedSeconds(remainingSeconds));
-        }
-
-        public void ClearTime()
-        {
-            ApplyTime(null);
-        }
-
-        public void SetNotice(HudNotice notice)
-        {
-            if (notice == Notice)
-            {
-                return;
-            }
-
-            Notice = notice;
-            Changed?.Invoke(HudField.Notice);
-        }
-
-        public void ClearNotice()
-        {
-            SetNotice(HudNotice.None);
-        }
-
-        public void SetRespawnNotice(RespawnMode mode, int seconds)
-        {
-            SetNotice(HudNotice.ForRespawn(mode, seconds));
-        }
-
-        public void SetScores(Team ownTeam, int alphaScore, int bravoScore)
-        {
-            var opponent = HudFormat.Opponent(ownTeam);
-            if (alphaScore < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(alphaScore), alphaScore, "score must not be negative");
-            }
-
-            if (bravoScore < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bravoScore), bravoScore, "score must not be negative");
-            }
-
-            ApplyScores(ownTeam, ownTeam == Team.Alpha ? alphaScore : bravoScore, opponent == Team.Alpha ? alphaScore : bravoScore);
-        }
-
-        public void ClearScores()
-        {
-            ApplyScores(null, null, null);
-        }
-
-        public void SetResult(Team? winner)
-        {
-            ApplyResult(true, winner);
-        }
-
-        public void ClearResult()
-        {
-            ApplyResult(false, null);
         }
 
         public void SetReloadProgress(float progress, float windowStart, float windowEnd)
@@ -722,18 +584,6 @@ namespace Shooter.Core
             SetAmmoType(_weapon.AmmoTypes.Current);
         }
 
-        private void OnHealthChanged()
-        {
-            if (_health != null)
-            {
-                SetHealth(_health.Current, _health.Max);
-            }
-            else
-            {
-                ClearHealth();
-            }
-        }
-
         private void OnWeaponChanged()
         {
             RefreshAmmo();
@@ -741,18 +591,6 @@ namespace Shooter.Core
             // 次のフレームを待たずに、リロードが終わった・武器が替わった時点で進みを消すため。
             RefreshReloadProgress();
             RefreshWeaponGauges();
-        }
-
-        private void ApplyHealth(int? current, int? max)
-        {
-            if (current == CurrentHealth && max == MaxHealth)
-            {
-                return;
-            }
-
-            CurrentHealth = current;
-            MaxHealth = max;
-            Changed?.Invoke(HudField.Health);
         }
 
         private void RefreshAmmo()
@@ -793,59 +631,6 @@ namespace Shooter.Core
             OffhandMagazineAmmo = offhandMagazine;
             IsOffhandReloading = offhandReloading;
             Changed?.Invoke(HudField.Ammo);
-        }
-
-        private void ApplyTime(int? seconds)
-        {
-            if (seconds == RemainingSeconds)
-            {
-                return;
-            }
-
-            RemainingSeconds = seconds;
-            Changed?.Invoke(HudField.Time);
-        }
-
-        private void OnMatchStateChanged(GameModeState state)
-        {
-            ApplySoloResult(_match?.Result, RestartKey);
-        }
-
-        private void ApplySoloResult(MatchOutcome? result, string restartKey)
-        {
-            if (result == SoloResult && restartKey == RestartKey)
-            {
-                return;
-            }
-
-            SoloResult = result;
-            RestartKey = restartKey;
-            Changed?.Invoke(HudField.Result);
-        }
-
-        private void ApplyScores(Team? firstTeam, int? first, int? second)
-        {
-            if (firstTeam == FirstScoreTeam && first == FirstScore && second == SecondScore)
-            {
-                return;
-            }
-
-            FirstScoreTeam = firstTeam;
-            FirstScore = first;
-            SecondScore = second;
-            Changed?.Invoke(HudField.Score);
-        }
-
-        private void ApplyResult(bool hasResult, Team? winner)
-        {
-            if (hasResult == HasResult && winner == Winner)
-            {
-                return;
-            }
-
-            HasResult = hasResult;
-            Winner = winner;
-            Changed?.Invoke(HudField.Result);
         }
 
         private void ApplyReloadProgress(float? progress, float windowStart, float windowEnd)
@@ -897,6 +682,31 @@ namespace Shooter.Core
         private static bool IsFraction(float value)
         {
             return value >= 0f && value <= 1f;
+        }
+
+        // MatchHudField をそのまま流さず HudField に写すのは、HUD の読み手が 1 つの知らせ (Changed) で武器の項目と一緒に受け取れるようにするため。
+        private void OnMatchHudChanged(MatchHudField field)
+        {
+            switch (field)
+            {
+                case MatchHudField.Health:
+                    Changed?.Invoke(HudField.Health);
+                    break;
+                case MatchHudField.Time:
+                    Changed?.Invoke(HudField.Time);
+                    break;
+                case MatchHudField.Notice:
+                    Changed?.Invoke(HudField.Notice);
+                    break;
+                case MatchHudField.Score:
+                    Changed?.Invoke(HudField.Score);
+                    break;
+                case MatchHudField.Result:
+                    Changed?.Invoke(HudField.Result);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(field), field, "field is not a defined MatchHudField");
+            }
         }
     }
 }

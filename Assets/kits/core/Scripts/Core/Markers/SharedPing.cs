@@ -1,6 +1,5 @@
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct SharedPing
     {

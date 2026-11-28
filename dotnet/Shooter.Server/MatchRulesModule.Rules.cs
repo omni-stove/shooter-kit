@@ -158,8 +158,8 @@ namespace Shooter.Server
             _session = CreateSession(map, points);
             ListenToSession(_session);
 
-            _log.WriteLine(MatchLog.RulesChanged(from, rules.Objective));
-            _log.WriteLine(MatchLog.Rules(_data.File.Name.Length > 0 ? _data.File.Name : _data.Name, rules));
+            _log.WriteLine(MatchSetupLog.RulesChanged(from, rules.Objective));
+            _log.WriteLine(MatchSetupLog.Rules(_data.File.Name.Length > 0 ? _data.File.Name : _data.Name, rules));
             _log.WriteLine(NetDownedLog.Settings(rules.Actions, rules.Actions.ReviveRange));
             WarnUnsupportedActions();
             PreparePings(rules);
