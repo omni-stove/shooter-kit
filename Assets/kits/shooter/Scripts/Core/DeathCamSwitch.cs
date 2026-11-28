@@ -4,7 +4,6 @@ namespace Shooter.Core
     {
         private bool _wasAlive;
 
-        // 味方を映す決まりでも映せる味方がいなければ、自由に見回す視点にする。
         public static DeathCamera ResolveMode(DeathCamera rule, bool hasAlly)
         {
             return rule == DeathCamera.Ally && !hasAlly ? DeathCamera.Free : rule;
