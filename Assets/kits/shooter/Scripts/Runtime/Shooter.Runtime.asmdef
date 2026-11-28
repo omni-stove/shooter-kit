@@ -9,7 +9,6 @@
         "Shooter.Core.Grapple",
         "Shooter.Core.BattleRoyale",
         "Shooter.Core.Extraction",
-        "Shooter.Core.Spectate",
         "Shooter.Core.Presentation",
         "Shooter.Core.Vehicle",
         "Unity.InputSystem",

@@ -636,7 +636,7 @@ namespace Shooter.Runtime
                 }
             }
 
-            if (SpectateTargets.ResolveMode(DeathCamera.Ally, _ally != null) == DeathCamera.Free)
+            if (DeathCamSwitch.ResolveMode(DeathCamera.Ally, _ally != null) == DeathCamera.Free)
             {
                 _view.MoveFree(move, lookDegrees, _freeSpeed, deltaSeconds);
                 return;

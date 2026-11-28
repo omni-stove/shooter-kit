@@ -4,6 +4,12 @@ namespace Shooter.Core
     {
         private bool _wasAlive;
 
+        // 味方を映す決まりでも映せる味方がいなければ、自由に見回す視点にする。
+        public static DeathCamera ResolveMode(DeathCamera rule, bool hasAlly)
+        {
+            return rule == DeathCamera.Ally && !hasAlly ? DeathCamera.Free : rule;
+        }
+
         public bool IsActive { get; private set; }
 
         // 生きていた状態から倒れた瞬間だけで始めるのは、参加前 (体力 0) や視点を得る前から倒れていた分で始めないため。

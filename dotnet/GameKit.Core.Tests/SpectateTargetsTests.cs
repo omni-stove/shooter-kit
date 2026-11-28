@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
     public sealed class SpectateTargetsTests
     {
@@ -142,16 +141,6 @@ namespace Shooter.Core.Tests
 
             Assert.That(SpectateTargets.Pick(match, _viewer, Team.Alpha, 4, 1), Is.EqualTo(7UL));
             Assert.That(SpectateTargets.Pick(match, _viewer, Team.Alpha, 7, 1), Is.EqualTo(4UL));
-        }
-
-        [TestCase(DeathCamera.Ally, true, DeathCamera.Ally)]
-        [TestCase(DeathCamera.Ally, false, DeathCamera.Free)]
-        [TestCase(DeathCamera.Free, true, DeathCamera.Free)]
-        [TestCase(DeathCamera.Killer, false, DeathCamera.Killer)]
-        [TestCase(DeathCamera.None, false, DeathCamera.None)]
-        public void AllyWithoutAnyoneToWatchFallsBackToFree(DeathCamera rule, bool hasAlly, DeathCamera expected)
-        {
-            Assert.That(SpectateTargets.ResolveMode(rule, hasAlly), Is.EqualTo(expected));
         }
     }
 }

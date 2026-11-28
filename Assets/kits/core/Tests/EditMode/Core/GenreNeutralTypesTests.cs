@@ -166,12 +166,16 @@ namespace GameKit.Core.Tests
             typeof(ProgressionLog),
             typeof(ProgressionSpec),
             typeof(ProgressionUnlock),
+            typeof(SpectateCandidate),
+            typeof(SpectateReason),
+            typeof(SpectateStatus),
+            typeof(SpectateTargets),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(158));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(162));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

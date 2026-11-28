@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // どの端末でも同じ順に回るよう、Id の昇順に並べる。
     public static class SpectateTargets
@@ -40,11 +39,6 @@ namespace Shooter.Core
             }
 
             return allies[Wrap((long)start + moves, count)];
-        }
-
-        public static DeathCamera ResolveMode(DeathCamera rule, bool hasAlly)
-        {
-            return rule == DeathCamera.Ally && !hasAlly ? DeathCamera.Free : rule;
         }
 
         private static List<ulong> Allies(IReadOnlyList<SpectateCandidate> candidates, ulong viewer, Team team)
