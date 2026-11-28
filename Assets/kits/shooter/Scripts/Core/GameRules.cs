@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using GameKit.Core;
 
 namespace Shooter.Core
 {
     public sealed class GameRules
     {
-        // Default より先に初期化しないと、Default のコンストラクターが null を受けて既定に置き換えるときに null を写す。
-        public static readonly IReadOnlyList<RespawnAnchor> DefaultRespawnAnchors =
-            new ReadOnlyCollection<RespawnAnchor>(new[] { RespawnAnchor.Base });
+        public static readonly IReadOnlyList<RespawnAnchor> DefaultRespawnAnchors = MatchRules.DefaultRespawnAnchors;
 
         public static readonly GameRules Default = new GameRules(
             FriendlyFire.Off,
@@ -23,28 +20,28 @@ namespace Shooter.Core
             1f,
             Destruction.Off);
 
-        public const float DefaultWaveIntervalSeconds = 10f;
+        public const float DefaultWaveIntervalSeconds = MatchRules.DefaultWaveIntervalSeconds;
 
-        // サーバーが Bot を際限なく足さないよう、MinPlayers に上限を置く。
-        public const int MaxMinPlayers = 64;
+        public const int MaxMinPlayers = MatchRules.MaxMinPlayers;
 
         // 持ち武器を送る電文 (OwnerSnapshot.MaxWeapons) に収まる数にする。
         public const int MaxWeaponsLimit = byte.MaxValue;
 
-        // Core は Runtime の Damageable.DefaultMaxHealth を参照できないので同じ値を持ち、揃っていることは EditMode のテストで確かめる。
-        public const int DefaultPlayerMaxHealth = 100;
+        public const int DefaultPlayerMaxHealth = MatchRules.DefaultPlayerMaxHealth;
 
-        public const float DefaultIdleWarningSeconds = 15f;
+        public const float DefaultIdleWarningSeconds = MatchRules.DefaultIdleWarningSeconds;
 
-        public FriendlyFire FriendlyFire { get; }
+        public MatchRules Match { get; }
 
-        public RespawnMode RespawnMode { get; }
+        public FriendlyFire FriendlyFire => Match.FriendlyFire;
 
-        public float WaveIntervalSeconds { get; }
+        public RespawnMode RespawnMode => Match.RespawnMode;
 
-        public float RegenDelaySeconds { get; }
+        public float WaveIntervalSeconds => Match.WaveIntervalSeconds;
 
-        public float RegenPerSecond { get; }
+        public float RegenDelaySeconds => Match.RegenDelaySeconds;
+
+        public float RegenPerSecond => Match.RegenPerSecond;
 
         public DeathBody DeathBody { get; }
 
@@ -58,7 +55,7 @@ namespace Shooter.Core
 
         public ActionRules Actions { get; }
 
-        public float SpawnProtectionSeconds { get; }
+        public float SpawnProtectionSeconds => Match.SpawnProtectionSeconds;
 
         public FallDamage FallDamage { get; }
 
@@ -66,11 +63,11 @@ namespace Shooter.Core
 
         public MatchObjective Objective { get; }
 
-        public int MinPlayers { get; }
+        public int MinPlayers => Match.MinPlayers;
 
-        public float IdleKickSeconds { get; }
+        public float IdleKickSeconds => Match.IdleKickSeconds;
 
-        public float IdleWarningSeconds { get; }
+        public float IdleWarningSeconds => Match.IdleWarningSeconds;
 
         public int MaxWeapons { get; }
 
@@ -80,18 +77,17 @@ namespace Shooter.Core
 
         public AdsEyeView AdsEyeView { get; }
 
-        public int PlayerMaxHealth { get; }
+        public int PlayerMaxHealth => Match.PlayerMaxHealth;
 
         public ZoneDamageMultipliers ZoneDamage { get; }
 
         public Streaks Streaks { get; }
 
-        public TextChat TextChat { get; }
+        public TextChat TextChat => Match.TextChat;
 
-        public Spectating Spectating { get; }
+        public Spectating Spectating => Match.Spectating;
 
-        // 1 つでなく試す順の並びで持つのは、分隊がいない・ビーコンが無いなどで使えない候補から次の候補へ下がれるようにするため。
-        public IReadOnlyList<RespawnAnchor> RespawnAnchors { get; }
+        public IReadOnlyList<RespawnAnchor> RespawnAnchors => Match.RespawnAnchors;
 
         public GameRules(
             FriendlyFire friendlyFire,
@@ -123,31 +119,20 @@ namespace Shooter.Core
             float idleWarningSeconds = DefaultIdleWarningSeconds,
             AdsEyeView adsEyeView = AdsEyeView.PerWeapon)
         {
-            if (!Enum.IsDefined(typeof(FriendlyFire), friendlyFire))
-            {
-                throw new ArgumentOutOfRangeException(nameof(friendlyFire), friendlyFire, "friendlyFire is not a defined FriendlyFire");
-            }
-
-            if (!Enum.IsDefined(typeof(RespawnMode), respawnMode))
-            {
-                throw new ArgumentOutOfRangeException(nameof(respawnMode), respawnMode, "respawnMode is not a defined RespawnMode");
-            }
-
-            // Wave 以外でも検査するのは、後からモードだけ差し替えた値でも間隔が必ず使える状態にしておくため。
-            if (!(waveIntervalSeconds > 0f) || float.IsInfinity(waveIntervalSeconds))
-            {
-                throw new ArgumentOutOfRangeException(nameof(waveIntervalSeconds), waveIntervalSeconds, "waveIntervalSeconds must be positive and finite");
-            }
-
-            if (!(regenDelaySeconds >= 0f) || float.IsInfinity(regenDelaySeconds))
-            {
-                throw new ArgumentOutOfRangeException(nameof(regenDelaySeconds), regenDelaySeconds, "regenDelaySeconds must be a non-negative finite number");
-            }
-
-            if (!(regenPerSecond >= 0f) || float.IsInfinity(regenPerSecond))
-            {
-                throw new ArgumentOutOfRangeException(nameof(regenPerSecond), regenPerSecond, "regenPerSecond must be a non-negative finite number");
-            }
+            Match = new MatchRules(
+                friendlyFire,
+                respawnMode,
+                waveIntervalSeconds,
+                regenDelaySeconds,
+                regenPerSecond,
+                spawnProtectionSeconds,
+                minPlayers,
+                idleKickSeconds,
+                idleWarningSeconds,
+                playerMaxHealth,
+                textChat,
+                spectating,
+                respawnAnchor);
 
             if (!Enum.IsDefined(typeof(DeathBody), deathBody))
             {
@@ -169,11 +154,6 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(destruction), destruction, "destruction is not a defined Destruction");
             }
 
-            if (!(spawnProtectionSeconds >= 0f) || float.IsInfinity(spawnProtectionSeconds))
-            {
-                throw new ArgumentOutOfRangeException(nameof(spawnProtectionSeconds), spawnProtectionSeconds, "spawnProtectionSeconds must be a non-negative finite number");
-            }
-
             if (!Enum.IsDefined(typeof(FallDamage), fallDamage))
             {
                 throw new ArgumentOutOfRangeException(nameof(fallDamage), fallDamage, "fallDamage is not a defined FallDamage");
@@ -187,22 +167,6 @@ namespace Shooter.Core
             if (!Enum.IsDefined(typeof(MatchObjective), objective))
             {
                 throw new ArgumentOutOfRangeException(nameof(objective), objective, "objective is not a defined MatchObjective");
-            }
-
-            if (minPlayers < 0 || minPlayers > MaxMinPlayers)
-            {
-                throw new ArgumentOutOfRangeException(nameof(minPlayers), minPlayers, "minPlayers must be between 0 and " + MaxMinPlayers);
-            }
-
-            if (!(idleKickSeconds >= 0f) || float.IsInfinity(idleKickSeconds))
-            {
-                throw new ArgumentOutOfRangeException(nameof(idleKickSeconds), idleKickSeconds, "idleKickSeconds must be a non-negative finite number");
-            }
-
-            // 放置で切らないルール (idleKickSeconds が 0) でも検査するのは、後から切る秒だけ差し替えた値でも警告の秒が必ず使える状態にしておくため。
-            if (!(idleWarningSeconds > 0f) || float.IsInfinity(idleWarningSeconds))
-            {
-                throw new ArgumentOutOfRangeException(nameof(idleWarningSeconds), idleWarningSeconds, "idleWarningSeconds must be positive and finite");
             }
 
             if (maxWeapons < 0 || maxWeapons > MaxWeaponsLimit)
@@ -225,56 +189,26 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(adsEyeView), adsEyeView, "adsEyeView is not a defined AdsEyeView");
             }
 
-            if (playerMaxHealth < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(playerMaxHealth), playerMaxHealth, "playerMaxHealth must be at least 1");
-            }
-
             if (!Enum.IsDefined(typeof(Streaks), streaks))
             {
                 throw new ArgumentOutOfRangeException(nameof(streaks), streaks, "streaks is not a defined Streaks");
             }
 
-            if (!Enum.IsDefined(typeof(TextChat), textChat))
-            {
-                throw new ArgumentOutOfRangeException(nameof(textChat), textChat, "textChat is not a defined TextChat");
-            }
-
-            if (!Enum.IsDefined(typeof(Spectating), spectating))
-            {
-                throw new ArgumentOutOfRangeException(nameof(spectating), spectating, "spectating is not a defined Spectating");
-            }
-
-            var anchors = respawnAnchor == null ? DefaultRespawnAnchors : CopyAnchors(respawnAnchor);
-
-            FriendlyFire = friendlyFire;
-            RespawnMode = respawnMode;
-            WaveIntervalSeconds = waveIntervalSeconds;
-            RegenDelaySeconds = regenDelaySeconds;
-            RegenPerSecond = regenPerSecond;
             DeathBody = deathBody;
             DeathCamera = deathCamera;
             InfiniteReserve = infiniteReserve;
             ReserveAmmoMultiplier = reserveAmmoMultiplier;
             Destruction = destruction;
             Actions = actions ?? ActionRules.Default;
-            SpawnProtectionSeconds = spawnProtectionSeconds;
             FallDamage = fallDamage;
             HudDensity = hudDensity;
             Objective = objective;
-            MinPlayers = minPlayers;
-            IdleKickSeconds = idleKickSeconds;
-            IdleWarningSeconds = idleWarningSeconds;
             MaxWeapons = maxWeapons;
             ReloadMode = reloadMode;
             ViewMode = viewMode;
             AdsEyeView = adsEyeView;
-            PlayerMaxHealth = playerMaxHealth;
             ZoneDamage = zoneDamage ?? ZoneDamageMultipliers.Default;
             Streaks = streaks;
-            TextChat = textChat;
-            Spectating = spectating;
-            RespawnAnchors = anchors;
         }
 
         public GameRules WithFriendlyFire(FriendlyFire value) => Copy(friendlyFire: value);
@@ -360,33 +294,15 @@ namespace Shooter.Core
             return Copy(respawnAnchor: value);
         }
 
-        // 呼んだ側が後から配列を書き換えてもルールが変わらないよう、検査した写しを持つ。
-        // 引数名をコンストラクターと同じ respawnAnchor にして、例外の ParamName が項目名になるようにする (GameRulesJson が返す)。
-        private static ReadOnlyCollection<RespawnAnchor> CopyAnchors(IReadOnlyList<RespawnAnchor> respawnAnchor)
+        // WithActions と同じく、差し替えたつもりの値が黙って既定に戻らないよう null を受け付けない。
+        public GameRules WithMatch(MatchRules value)
         {
-            if (respawnAnchor.Count == 0)
+            if (value == null)
             {
-                throw new ArgumentException("respawnAnchor must list at least one anchor", nameof(respawnAnchor));
+                throw new ArgumentNullException(nameof(value));
             }
 
-            var copy = new RespawnAnchor[respawnAnchor.Count];
-            for (var i = 0; i < respawnAnchor.Count; i++)
-            {
-                var anchor = respawnAnchor[i];
-                if (!Enum.IsDefined(typeof(RespawnAnchor), anchor))
-                {
-                    throw new ArgumentOutOfRangeException(nameof(respawnAnchor), anchor, "respawnAnchor has an anchor that is not a defined RespawnAnchor");
-                }
-
-                if (Array.IndexOf(copy, anchor, 0, i) >= 0)
-                {
-                    throw new ArgumentException($"respawnAnchor lists {anchor} more than once", nameof(respawnAnchor));
-                }
-
-                copy[i] = anchor;
-            }
-
-            return new ReadOnlyCollection<RespawnAnchor>(copy);
+            return Copy(match: value);
         }
 
         private GameRules Copy(
@@ -417,36 +333,38 @@ namespace Shooter.Core
             Spectating? spectating = null,
             IReadOnlyList<RespawnAnchor> respawnAnchor = null,
             float? idleWarningSeconds = null,
-            AdsEyeView? adsEyeView = null)
+            AdsEyeView? adsEyeView = null,
+            MatchRules match = null)
         {
+            var m = match ?? Match;
             return new GameRules(
-                friendlyFire ?? FriendlyFire,
-                respawnMode ?? RespawnMode,
-                waveIntervalSeconds ?? WaveIntervalSeconds,
-                regenDelaySeconds ?? RegenDelaySeconds,
-                regenPerSecond ?? RegenPerSecond,
+                friendlyFire ?? m.FriendlyFire,
+                respawnMode ?? m.RespawnMode,
+                waveIntervalSeconds ?? m.WaveIntervalSeconds,
+                regenDelaySeconds ?? m.RegenDelaySeconds,
+                regenPerSecond ?? m.RegenPerSecond,
                 deathBody ?? DeathBody,
                 deathCamera ?? DeathCamera,
                 infiniteReserve ?? InfiniteReserve,
                 reserveAmmoMultiplier ?? ReserveAmmoMultiplier,
                 destruction ?? Destruction,
                 actions ?? Actions,
-                spawnProtectionSeconds ?? SpawnProtectionSeconds,
+                spawnProtectionSeconds ?? m.SpawnProtectionSeconds,
                 fallDamage ?? FallDamage,
                 hudDensity ?? HudDensity,
                 objective ?? Objective,
-                minPlayers ?? MinPlayers,
-                idleKickSeconds ?? IdleKickSeconds,
+                minPlayers ?? m.MinPlayers,
+                idleKickSeconds ?? m.IdleKickSeconds,
                 maxWeapons ?? MaxWeapons,
                 reloadMode ?? ReloadMode,
                 viewMode ?? ViewMode,
-                playerMaxHealth ?? PlayerMaxHealth,
+                playerMaxHealth ?? m.PlayerMaxHealth,
                 zoneDamage ?? ZoneDamage,
                 streaks ?? Streaks,
-                textChat ?? TextChat,
-                spectating ?? Spectating,
-                respawnAnchor ?? RespawnAnchors,
-                idleWarningSeconds ?? IdleWarningSeconds,
+                textChat ?? m.TextChat,
+                spectating ?? m.Spectating,
+                respawnAnchor ?? m.RespawnAnchors,
+                idleWarningSeconds ?? m.IdleWarningSeconds,
                 adsEyeView ?? AdsEyeView);
         }
     }

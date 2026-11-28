@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
-    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    // Unity の EditMode テストと dotnet/GameKit.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
     public sealed class RespawnPolicyTests
     {
         private static readonly int[] _one = { 1 };
@@ -16,9 +15,9 @@ namespace Shooter.Core.Tests
         [Test]
         public void FromRulesPicksThePolicyForTheRespawnMode()
         {
-            var individual = RespawnPolicy.FromRules(GameRules.Default, 3f);
-            var wave = RespawnPolicy.FromRules(GameRules.Default.WithRespawnMode(RespawnMode.Wave).WithWaveIntervalSeconds(7f), 2f);
-            var none = RespawnPolicy.FromRules(GameRules.Default.WithRespawnMode(RespawnMode.None), 3f);
+            var individual = RespawnPolicy.FromRules(MatchRules.Default, 3f);
+            var wave = RespawnPolicy.FromRules(MatchRules.Default.WithRespawnMode(RespawnMode.Wave).WithWaveIntervalSeconds(7f), 2f);
+            var none = RespawnPolicy.FromRules(MatchRules.Default.WithRespawnMode(RespawnMode.None), 3f);
 
             Assert.That(individual, Is.TypeOf<IndividualRespawn>());
             Assert.That(((IndividualRespawn)individual).RespawnSeconds, Is.EqualTo(3f));
@@ -171,15 +170,29 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => new WaveRespawn(1f, 0f));
             Assert.Throws<ArgumentOutOfRangeException>(() => new WaveRespawn(1f, float.PositiveInfinity));
             Assert.Throws<ArgumentNullException>(() => RespawnPolicy.FromRules(null, 1f));
-            Assert.Throws<ArgumentOutOfRangeException>(() => RespawnPolicy.FromRules(GameRules.Default, -1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => RespawnPolicy.FromRules(MatchRules.Default, -1f));
         }
 
         // 部品だけを試すので、リスポーンを扱わないセッションを State の読み先にだけ使う
         private static ModeSession PlayingSession()
         {
-            var session = new ModeSession(new TwoTeams(), 60f, Array.Empty<IScoreRule>(), null, Array.Empty<IWinCondition>());
+            var session = new ModeSession(new TwoSides(), 60f, Array.Empty<IScoreRule>(), null, Array.Empty<IWinCondition>());
             session.Start();
             return session;
+        }
+
+        // シューターの TwoTeams は Shooter.Core にあり GameKit.Core のテストから参照できないので、同じ並びの陣営をここに置く
+        private sealed class TwoSides : ITeamLayout
+        {
+            private static readonly Side[] _sides = { Side.Alpha, Side.Bravo };
+
+            public IReadOnlyList<Side> FixedSides => _sides;
+
+            public int? Capacity => null;
+
+            public bool Contains(Side side) => side.IsTeam;
+
+            public Side? Assign(int joinIndex, Func<Side, int> memberCount) => _sides[joinIndex % _sides.Length];
         }
     }
 }

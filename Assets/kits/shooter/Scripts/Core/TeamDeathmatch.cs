@@ -44,7 +44,7 @@ namespace Shooter.Core
                 : new IWinCondition[] { scoreLimit, timeLimit };
 
             // NoRespawn にすると倒れた人が ModeSession の中で倒れたままになり、次のラウンドのキルを数えなくなるので、出直しの決まりを持たせない
-            var respawn = spec.RespawnsByRound ? null : RespawnPolicy.FromRules(spec.Rules, spec.RespawnSeconds);
+            var respawn = spec.RespawnsByRound ? null : RespawnPolicy.FromRules(spec.Rules.Match, spec.RespawnSeconds);
 
             _session = new ModeSession(
                 new TwoTeams(),

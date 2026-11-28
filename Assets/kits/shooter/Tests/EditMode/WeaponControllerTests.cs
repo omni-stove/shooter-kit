@@ -633,8 +633,8 @@ namespace Shooter.Tests.EditMode
         private static Shooter.Core.GameRules ReserveRules(bool infinite, float multiplier)
         {
             return new Shooter.Core.GameRules(
-                Shooter.Core.FriendlyFire.Off,
-                Shooter.Core.RespawnMode.Individual,
+                GameKit.Core.FriendlyFire.Off,
+                GameKit.Core.RespawnMode.Individual,
                 Shooter.Core.GameRules.DefaultWaveIntervalSeconds,
                 0f,
                 0f,

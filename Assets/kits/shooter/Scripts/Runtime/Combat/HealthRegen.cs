@@ -50,7 +50,7 @@ namespace Shooter.Runtime
             _rules = rules;
             _target.Damaged += OnDamaged;
             _target.HealthReset += OnHealthReset;
-            _regenerator = new HealthRegenerator(_target.Health, _rules);
+            _regenerator = new HealthRegenerator(_target.Health, _rules.Match);
         }
 
         public void Unbind()
@@ -84,7 +84,7 @@ namespace Shooter.Runtime
         private void OnHealthReset(Health health)
         {
             // 作り直しは被弾ではないので、待ち時間なしで回復を始める。
-            _regenerator = new HealthRegenerator(health, _rules);
+            _regenerator = new HealthRegenerator(health, _rules.Match);
         }
     }
 }

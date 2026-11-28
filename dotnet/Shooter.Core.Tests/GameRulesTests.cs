@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -795,6 +796,88 @@ namespace Shooter.Core.Tests
             var spec = new TeamDeathmatchSpec(10, 60f, 3f, rules);
 
             Assert.That(spec.Rules, Is.SameAs(rules));
+        }
+
+        [Test]
+        public void KeepsTheGenreNeutralValuesInItsMatchRules()
+        {
+            var rules = GameRules.Default
+                .WithFriendlyFire(FriendlyFire.On)
+                .WithRespawnMode(RespawnMode.Wave)
+                .WithWaveIntervalSeconds(6f)
+                .WithRegenDelaySeconds(3f)
+                .WithRegenPerSecond(9f)
+                .WithSpawnProtectionSeconds(2f)
+                .WithMinPlayers(5)
+                .WithIdleKickSeconds(45f)
+                .WithIdleWarningSeconds(12f)
+                .WithPlayerMaxHealth(130)
+                .WithTextChat(TextChat.Off)
+                .WithSpectating(Spectating.Off)
+                .WithRespawnAnchors(new[] { RespawnAnchor.Squad, RespawnAnchor.Base });
+
+            var match = rules.Match;
+            Assert.That(match.FriendlyFire, Is.EqualTo(FriendlyFire.On));
+            Assert.That(match.RespawnMode, Is.EqualTo(RespawnMode.Wave));
+            Assert.That(match.WaveIntervalSeconds, Is.EqualTo(6f));
+            Assert.That(match.RegenDelaySeconds, Is.EqualTo(3f));
+            Assert.That(match.RegenPerSecond, Is.EqualTo(9f));
+            Assert.That(match.SpawnProtectionSeconds, Is.EqualTo(2f));
+            Assert.That(match.MinPlayers, Is.EqualTo(5));
+            Assert.That(match.IdleKickSeconds, Is.EqualTo(45f));
+            Assert.That(match.IdleWarningSeconds, Is.EqualTo(12f));
+            Assert.That(match.PlayerMaxHealth, Is.EqualTo(130));
+            Assert.That(match.TextChat, Is.EqualTo(TextChat.Off));
+            Assert.That(match.Spectating, Is.EqualTo(Spectating.Off));
+            Assert.That(match.RespawnAnchors, Is.EqualTo(new[] { RespawnAnchor.Squad, RespawnAnchor.Base }));
+        }
+
+        [Test]
+        public void TheDefaultMatchRulesHaveTheSameValuesAsTheGameKitDefault()
+        {
+            var match = GameRules.Default.Match;
+            var kit = MatchRules.Default;
+
+            Assert.That(match.FriendlyFire, Is.EqualTo(kit.FriendlyFire));
+            Assert.That(match.RespawnMode, Is.EqualTo(kit.RespawnMode));
+            Assert.That(match.WaveIntervalSeconds, Is.EqualTo(kit.WaveIntervalSeconds));
+            Assert.That(match.RegenDelaySeconds, Is.EqualTo(kit.RegenDelaySeconds));
+            Assert.That(match.RegenPerSecond, Is.EqualTo(kit.RegenPerSecond));
+            Assert.That(match.SpawnProtectionSeconds, Is.EqualTo(kit.SpawnProtectionSeconds));
+            Assert.That(match.MinPlayers, Is.EqualTo(kit.MinPlayers));
+            Assert.That(match.IdleKickSeconds, Is.EqualTo(kit.IdleKickSeconds));
+            Assert.That(match.IdleWarningSeconds, Is.EqualTo(kit.IdleWarningSeconds));
+            Assert.That(match.PlayerMaxHealth, Is.EqualTo(kit.PlayerMaxHealth));
+            Assert.That(match.TextChat, Is.EqualTo(kit.TextChat));
+            Assert.That(match.Spectating, Is.EqualTo(kit.Spectating));
+            Assert.That(match.RespawnAnchors, Is.EqualTo(kit.RespawnAnchors));
+            Assert.That(GameRules.DefaultPlayerMaxHealth, Is.EqualTo(MatchRules.DefaultPlayerMaxHealth));
+            Assert.That(GameRules.MaxMinPlayers, Is.EqualTo(MatchRules.MaxMinPlayers));
+        }
+
+        [Test]
+        public void WithMatchReplacesOnlyTheGenreNeutralValues()
+        {
+            var rules = GameRules.Default.WithInfiniteReserve(true).WithStreaks(Streaks.Off).WithObjective(MatchObjective.Elimination);
+            var match = new MatchRules(friendlyFire: FriendlyFire.Reflect, regenPerSecond: 4f, playerMaxHealth: 80);
+
+            var replaced = rules.WithMatch(match);
+
+            Assert.That(replaced.FriendlyFire, Is.EqualTo(FriendlyFire.Reflect));
+            Assert.That(replaced.RegenPerSecond, Is.EqualTo(4f));
+            Assert.That(replaced.PlayerMaxHealth, Is.EqualTo(80));
+            Assert.That(replaced.InfiniteReserve, Is.True);
+            Assert.That(replaced.Streaks, Is.EqualTo(Streaks.Off));
+            Assert.That(replaced.Objective, Is.EqualTo(MatchObjective.Elimination));
+            Assert.Throws<ArgumentNullException>(() => rules.WithMatch(null));
+        }
+
+        [Test]
+        public void RejectsABadGenreNeutralValueWithTheJsonItemName()
+        {
+            var e = Assert.Throws<ArgumentOutOfRangeException>(() => Rules(regenPerSecond: -1f));
+
+            Assert.That(e.ParamName, Is.EqualTo("regenPerSecond"));
         }
     }
 }
