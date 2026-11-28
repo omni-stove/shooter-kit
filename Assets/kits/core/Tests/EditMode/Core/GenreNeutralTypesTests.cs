@@ -139,12 +139,18 @@ namespace GameKit.Core.Tests
             typeof(StaminaMeter),
             typeof(StaminaSpec),
             typeof(StaminaStatus),
+            typeof(Emote),
+            typeof(EmoteJson),
+            typeof(EmoteLog),
+            typeof(EmoteRefusal),
+            typeof(EmoteSpec),
+            typeof(EmoteStopReason),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(131));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(137));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

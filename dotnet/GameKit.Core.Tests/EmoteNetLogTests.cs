@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
     public sealed class EmoteNetLogTests
     {
