@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class BarkSelector
     {
-        private readonly float[] _kindLastAt;
+        private readonly Dictionary<string, float> _kindLastAt = new Dictionary<string, float>(StringComparer.Ordinal);
 
         private readonly Dictionary<string, float> _speakerLastAt = new Dictionary<string, float>(StringComparer.Ordinal);
 
@@ -14,22 +14,25 @@ namespace Shooter.Core
 
         private float _lastAt = float.NegativeInfinity;
 
-        public BarkSelector(BarkSpec spec)
+        public BarkSelector(BarkPacing pacing)
         {
-            Spec = spec ?? throw new ArgumentNullException(nameof(spec));
-            _kindLastAt = new float[BarkSpec.Kinds.Count];
-            ResetKinds();
+            Pacing = pacing ?? throw new ArgumentNullException(nameof(pacing));
         }
 
-        public BarkSpec Spec { get; }
+        public BarkPacing Pacing { get; }
 
         // 通したときだけ記録するのは、止めた掛け声まで間隔を延ばすと、言い続けようとする話し手がいつまでも話せなくなるため。
-        public BarkVerdict TryBark(string speakerId, BarkKind kind, float time, Vector3 position)
+        public BarkVerdict TryBark(string speakerId, string kind, float time, Vector3 position)
         {
             CheckSpeaker(speakerId);
-            if (!Enum.IsDefined(typeof(BarkKind), kind))
+            if (kind == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a BarkKind");
+                throw new ArgumentNullException(nameof(kind));
+            }
+
+            if (!Pacing.Knows(kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind has no cooldown in this pacing");
             }
 
             CheckTime(time);
@@ -55,7 +58,7 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(position), position, "position must be finite");
             }
 
-            var radiusSquared = Spec.CrowdRadius * Spec.CrowdRadius;
+            var radiusSquared = Pacing.CrowdRadius * Pacing.CrowdRadius;
             var count = 0;
             foreach (var speaking in _speaking)
             {
@@ -78,30 +81,30 @@ namespace Shooter.Core
 
         public void Clear()
         {
-            ResetKinds();
+            _kindLastAt.Clear();
             _speakerLastAt.Clear();
             _speaking.Clear();
             _lastAt = float.NegativeInfinity;
         }
 
-        private BarkVerdict Judge(string speakerId, BarkKind kind, float time, Vector3 position)
+        private BarkVerdict Judge(string speakerId, string kind, float time, Vector3 position)
         {
-            if (time - _kindLastAt[(int)kind] < Spec.CooldownSecondsFor(kind))
+            if (_kindLastAt.TryGetValue(kind, out var kindLastAt) && time - kindLastAt < Pacing.CooldownSecondsFor(kind))
             {
                 return BarkVerdict.KindCooldown;
             }
 
-            if (_speakerLastAt.TryGetValue(speakerId, out var speakerLastAt) && time - speakerLastAt < Spec.SpeakerCooldownSeconds)
+            if (_speakerLastAt.TryGetValue(speakerId, out var speakerLastAt) && time - speakerLastAt < Pacing.SpeakerCooldownSeconds)
             {
                 return BarkVerdict.SpeakerCooldown;
             }
 
-            if (time - _lastAt < Spec.MinIntervalSeconds)
+            if (time - _lastAt < Pacing.MinIntervalSeconds)
             {
                 return BarkVerdict.GlobalInterval;
             }
 
-            if (CountSpeakingNear(position, time) >= Spec.MaxSpeakersInCrowd)
+            if (CountSpeakingNear(position, time) >= Pacing.MaxSpeakersInCrowd)
             {
                 return BarkVerdict.TooManyNearby;
             }
@@ -109,9 +112,9 @@ namespace Shooter.Core
             return BarkVerdict.Allowed;
         }
 
-        private void Record(string speakerId, BarkKind kind, float time, Vector3 position)
+        private void Record(string speakerId, string kind, float time, Vector3 position)
         {
-            _kindLastAt[(int)kind] = time;
+            _kindLastAt[kind] = time;
             _speakerLastAt[speakerId] = time;
             _lastAt = time;
 
@@ -123,9 +126,9 @@ namespace Shooter.Core
                 }
             }
 
-            if (Spec.SpeakSeconds > 0f)
+            if (Pacing.SpeakSeconds > 0f)
             {
-                _speaking.Add(new Speaking(speakerId, position, time + Spec.SpeakSeconds));
+                _speaking.Add(new Speaking(speakerId, position, time + Pacing.SpeakSeconds));
             }
         }
 
@@ -137,14 +140,6 @@ namespace Shooter.Core
                 {
                     _speaking.RemoveAt(i);
                 }
-            }
-        }
-
-        private void ResetKinds()
-        {
-            for (var i = 0; i < _kindLastAt.Length; i++)
-            {
-                _kindLastAt[i] = float.NegativeInfinity;
             }
         }
 
