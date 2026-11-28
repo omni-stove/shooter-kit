@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // プレイヤーの Id や名前を持たないのは、同意したのは手元の人だけで、同じ試合のほかの人の分まで残せないため。
     public sealed class TelemetryMatchSummary

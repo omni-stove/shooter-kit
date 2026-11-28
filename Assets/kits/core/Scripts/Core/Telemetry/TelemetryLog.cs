@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 値をすべて文字列で書くのは、通報やイベントの行と同じ FlatJsonObject で書き、同じ読み手で読めるようにするため。
     public static class TelemetryLog

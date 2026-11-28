@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 表示名などの人の名前は出さない。
     public static class ServerEventLog

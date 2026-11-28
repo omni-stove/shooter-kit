@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class PacketReassembler
     {

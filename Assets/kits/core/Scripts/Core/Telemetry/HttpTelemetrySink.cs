@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 1 行ずつ送ると試合中に何度も通信するので、ためた行を Flush でまとめて JSON Lines の本文 1 つで送る。
     // 送るのは別のスレッドで、同時に送るのは 1 本だけにする。返事を待つ間にゲームの更新を止めないため。

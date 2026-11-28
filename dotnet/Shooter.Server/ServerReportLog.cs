@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Shooter.Core;
+using GameKit.Core;
 using ReportReason = Shooter.Protocol.ReportReason;
 
 namespace Shooter.Server
