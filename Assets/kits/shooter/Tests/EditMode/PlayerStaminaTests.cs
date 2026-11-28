@@ -75,7 +75,7 @@ namespace Shooter.Tests.EditMode
             var installers = PlayerActions.Installers.OfType<StaminaActionInstaller>().ToArray();
 
             Assert.That(installers, Has.Length.EqualTo(1));
-            Assert.That(installers[0].Spec, Is.SameAs(StaminaSpec.Default));
+            Assert.That(installers[0].Spec, Is.SameAs(StaminaUse.DefaultSpec));
         }
 
         [Test]
@@ -293,7 +293,7 @@ namespace Shooter.Tests.EditMode
             }
 
             Assert.Throws<System.ArgumentNullException>(() => new StaminaActionInstaller(null));
-            Assert.That(new StaminaActionInstaller().Spec, Is.SameAs(StaminaSpec.Default));
+            Assert.That(new StaminaActionInstaller().Spec, Is.SameAs(StaminaUse.DefaultSpec));
         }
 
         private PlayerStamina Install(Stamina rule, StaminaSpec spec)
