@@ -183,11 +183,11 @@ namespace Shooter.Tests.EditMode
                 Assert.That(roots[6].name, Is.EqualTo(BootstrapSceneBuilder.GearTableName), $"rerun {nameof(BootstrapSceneBuilder)}.Build to add the gear table");
                 var gear = roots[6].GetComponentsInChildren<PickupSpawnPoint>();
                 Assert.That(
-                    gear.Where(p => p.Contents.Kind == PickupKind.Weapon).Select(p => p.Contents.Weapon.Id),
+                    gear.Where(p => p.Contents.Kind == PickupKinds.Weapon).Select(p => p.Contents.Weapon.Id),
                     Is.EqualTo(BootstrapSceneBuilder.GearWeaponIds),
                     $"rerun {nameof(BootstrapSceneBuilder)}.Build");
                 Assert.That(
-                    gear.Where(p => p.Contents.Kind == PickupKind.Item).Select(p => p.Contents.ItemId),
+                    gear.Where(p => p.Contents.Kind == PickupKinds.Item).Select(p => p.Contents.ItemId),
                     Is.EqualTo(BootstrapSceneBuilder.GearItemIds),
                     $"rerun {nameof(BootstrapSceneBuilder)}.Build");
                 Assert.That(
@@ -806,7 +806,7 @@ namespace Shooter.Tests.EditMode
                 Assert.That(points, Has.Length.EqualTo(3));
                 Assert.That(points[0].Contents.Weapon, Is.SameAs(gear[0]));
                 Assert.That(points[1].Contents.Weapon, Is.SameAs(gear[1]));
-                Assert.That(points[2].Contents.Kind, Is.EqualTo(PickupKind.Item));
+                Assert.That(points[2].Contents.Kind, Is.EqualTo(PickupKinds.Item));
                 Assert.That(points[2].Contents.ItemId, Is.EqualTo(BootstrapSceneBuilder.GearItemIds[0]));
                 Assert.That(points[2].Contents.Amount, Is.EqualTo(1));
 

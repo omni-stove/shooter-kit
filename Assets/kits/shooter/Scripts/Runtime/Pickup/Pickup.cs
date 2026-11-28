@@ -201,7 +201,7 @@ namespace Shooter.Runtime
             }
         }
 
-        public static string ObjectName(PickupKind kind)
+        public static string ObjectName(string kind)
         {
             return "Pickup-" + kind;
         }

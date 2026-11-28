@@ -1105,7 +1105,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(rules.ReserveAmmoMultiplier, Is.EqualTo(1f));
             Assert.That(rules.Actions.Grenade, Is.EqualTo(Grenade.On), "throwables are sold");
             Assert.That(rules.RespawnMode, Is.EqualTo(RespawnMode.None), "a fallen player loses the bought weapons until the next round");
-            foreach (var item in economy.Catalog.Items.Where(item => item.Kind == BuyItemKind.Weapon))
+            foreach (var item in economy.Catalog.Items.Where(item => item.Kind == BuyItemKinds.Weapon))
             {
                 Assert.That(item.Slot, Is.LessThan(rules.MaxWeapons), $"{item.Id} goes to slot {item.Slot}");
             }

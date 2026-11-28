@@ -91,15 +91,15 @@ namespace Shooter.NetV2
 
             switch (pickupKind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     return _weaponVisual;
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     return _ammoVisual;
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     return _healthVisual;
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     return _armorVisual;
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     return _itemVisual;
                 default:
                     return null;

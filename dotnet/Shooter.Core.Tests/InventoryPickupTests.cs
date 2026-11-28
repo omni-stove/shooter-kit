@@ -31,7 +31,7 @@ namespace Shooter.Core.Tests
             var outcome = PickupJudge.Judge(PickupSpec.Item(_herbId, 5), collector);
 
             Assert.That(outcome.IsCollected, Is.True);
-            Assert.That(outcome.Kind, Is.EqualTo(PickupKind.Item));
+            Assert.That(outcome.Kind, Is.EqualTo(PickupKinds.Item));
             Assert.That(outcome.ItemId, Is.EqualTo(_herbId));
             Assert.That(outcome.Items, Is.EqualTo(1));
         }

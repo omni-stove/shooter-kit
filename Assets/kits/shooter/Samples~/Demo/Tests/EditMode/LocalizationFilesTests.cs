@@ -354,7 +354,7 @@ namespace Shooter.Core.Tests
                     Assert.That(economy.Contains(BuyMenuPanel.VerdictKeyOf(verdict)), Is.True, $"{code}: {verdict}");
                 }
 
-                foreach (BuyItemKind kind in Enum.GetValues(typeof(BuyItemKind)))
+                foreach (var kind in BuyItemKinds.Names)
                 {
                     Assert.That(economy.Contains(BuyMenuPanel.KindKeyOf(kind)), Is.True, $"{code}: {kind}");
                 }

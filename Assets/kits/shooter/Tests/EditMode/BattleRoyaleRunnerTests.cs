@@ -192,7 +192,7 @@ namespace Shooter.Tests.EditMode
             KillBy(enemy, player);
 
             var dropped = Object.FindObjectsByType<Pickup>(FindObjectsInactive.Include);
-            Assert.That(Array.Exists(dropped, p => p.Spec.Kind == PickupKind.Weapon && p.Spec.WeaponId == handgun.Id), Is.True);
+            Assert.That(Array.Exists(dropped, p => p.Spec.Kind == PickupKinds.Weapon && p.Spec.WeaponId == handgun.Id), Is.True);
             Assert.That(weapons.IsUnarmed, Is.True, "what was dropped is no longer held");
         }
 

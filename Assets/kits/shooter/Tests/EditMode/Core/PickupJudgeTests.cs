@@ -35,7 +35,7 @@ namespace Shooter.Core.Tests
             var outcome = PickupJudge.Judge(PickupSpec.Health(25), new PickupCollector(null, 90, 100));
 
             Assert.That(outcome.IsCollected, Is.True);
-            Assert.That(outcome.Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(outcome.Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(outcome.Health, Is.EqualTo(10));
         }
 
@@ -254,7 +254,7 @@ namespace Shooter.Core.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => new PickupWeaponState(_rifle, -1, 0, false));
             Assert.Throws<ArgumentNullException>(() => PickupJudge.Judge(null, Healthy()));
             Assert.Throws<ArgumentNullException>(() => PickupJudge.Judge(PickupSpec.Health(1), null));
-            Assert.Throws<ArgumentException>(() => PickupOutcome.Rejected(PickupKind.Health, PickupRejection.None));
+            Assert.Throws<ArgumentException>(() => PickupOutcome.Rejected(PickupKinds.Health, PickupRejection.None));
         }
 
         [Test]

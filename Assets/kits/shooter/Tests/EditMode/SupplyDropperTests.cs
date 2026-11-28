@@ -146,8 +146,8 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(crate.IsOpened, Is.True);
             Assert.That(pickups.Count, Is.EqualTo(2));
-            Assert.That(pickups[0].Spec.Kind, Is.EqualTo(PickupKind.Health));
-            Assert.That(pickups[1].Spec.Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+            Assert.That(pickups[0].Spec.Kind, Is.EqualTo(PickupKinds.Health));
+            Assert.That(pickups[1].Spec.Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
             foreach (var pickup in pickups)
             {
                 var flat = new Vector2(pickup.transform.position.x - crate.Position.x, pickup.transform.position.z - crate.Position.z);
@@ -178,10 +178,10 @@ namespace Shooter.Tests.EditMode
             var pickups = _dropper.Open(_dropper.Crates[0], 0);
 
             Assert.That(pickups.Count, Is.EqualTo(2));
-            Assert.That(pickups[0].Spec.Kind, Is.EqualTo(PickupKind.Item));
+            Assert.That(pickups[0].Spec.Kind, Is.EqualTo(PickupKinds.Item));
             Assert.That(pickups[0].Spec.ItemId, Is.EqualTo(_item));
             Assert.That(pickups[0].Spec.Amount, Is.EqualTo(2));
-            Assert.That(pickups[1].Spec.Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(pickups[1].Spec.Kind, Is.EqualTo(PickupKinds.Health));
         }
 
         [Test]

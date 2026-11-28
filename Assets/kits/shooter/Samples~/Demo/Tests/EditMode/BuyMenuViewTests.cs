@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using GameKit.Core;
 using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
@@ -19,7 +20,7 @@ namespace Shooter.Tests.EditMode
 
         private static BuyCatalog Catalog() => new BuyCatalog(new[]
         {
-            new BuyItem(PistolId, BuyItemKind.Weapon, 500, slot: 1, nameKey: "weapon.ricochetPistol"),
+            BuyItemKinds.Create(PistolId, BuyItemKinds.Weapon, 500, slot: 1, nameKey: "weapon.ricochetPistol"),
         });
 
         [SetUp]

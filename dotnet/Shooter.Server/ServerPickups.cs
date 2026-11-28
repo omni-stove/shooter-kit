@@ -256,7 +256,7 @@ namespace Shooter.Server
             {
                 var source = "map:" + point.Id;
                 WeaponSpec weapon = null;
-                if (point.Spec.Kind == PickupKind.Weapon)
+                if (point.Spec.Kind == PickupKinds.Weapon)
                 {
                     weapon = WeaponFor(point.Spec.WeaponId);
                     if (weapon == null)

@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 買える時間かを受け取るのは、買える時間 (ラウンドの初めの数秒・購入の場所の中など) を決めるのがモードとサーバーで、UI は表示を切り替えるだけのため。
     public readonly struct WalletStatus : IEquatable<WalletStatus>

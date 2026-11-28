@@ -204,7 +204,7 @@ namespace Shooter.Server.Tests
             Assert.That(weapons.Specs.Select(s => s.Id), Is.EqualTo(new[] { _shotgunId, TestRules.HandgunId }));
             Assert.That(weapons.CurrentSpec.Id, Is.EqualTo(_shotgunId));
             Assert.That(_pickups.TryGetAvailable(_firstDrop, out var dropped), Is.True);
-            Assert.That(dropped.Kind, Is.EqualTo(PickupKind.Weapon));
+            Assert.That(dropped.Kind, Is.EqualTo(PickupKinds.Weapon));
             Assert.That(dropped.WeaponId, Is.EqualTo(TestRules.RifleId));
             Assert.That(dropped.Amount, Is.EqualTo(30 + 90), "someone who holds a rifle takes all of its ammo");
             var row = Contribute(1).Single(r => r.ItemId == _firstDrop);
@@ -231,7 +231,7 @@ namespace Shooter.Server.Tests
             Assert.That(spec.WeaponId, Is.EqualTo(_shotgunId));
             Assert.That(spec.Amount, Is.EqualTo(9));
             Assert.That(_pickups.TryGetAvailable(_firstDrop + 1, out var ammo), Is.True);
-            Assert.That(ammo.Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+            Assert.That(ammo.Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
             Assert.That(ammo.Amount, Is.EqualTo(PickupDropSpec.DefaultReserveAmmo));
             var weaponDrop = drops.Single(r => r.Kind == ObjectiveItemKind.WeaponPickup);
             var ammoDrop = drops.Single(r => r.Kind == ObjectiveItemKind.AmmoPickup);

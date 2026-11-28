@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -203,11 +204,11 @@ namespace Shooter.Runtime
             return VerdictKeyPrefix + verdict;
         }
 
-        public static string KindKeyOf(BuyItemKind kind)
+        public static string KindKeyOf(string kind)
         {
-            if (!Enum.IsDefined(typeof(BuyItemKind), kind))
+            if (string.IsNullOrEmpty(kind))
             {
-                throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a valid BuyItemKind");
+                throw new ArgumentException("kind must not be empty", nameof(kind));
             }
 
             return KindKeyPrefix + kind;
@@ -233,9 +234,9 @@ namespace Shooter.Runtime
 
             switch (item.Kind)
             {
-                case BuyItemKind.Weapon:
+                case BuyItemKinds.Weapon:
                     return new LocalizedText(KindKeyOf(item.Kind), item.Slot + 1);
-                case BuyItemKind.Armor:
+                case BuyItemKinds.Armor:
                     return new LocalizedText(KindKeyOf(item.Kind), item.Amount);
                 default:
                     return new LocalizedText(KindKeyOf(item.Kind));

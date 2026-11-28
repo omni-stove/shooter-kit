@@ -1,7 +1,6 @@
 using System;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct PickupEligibility : IEquatable<PickupEligibility>
     {

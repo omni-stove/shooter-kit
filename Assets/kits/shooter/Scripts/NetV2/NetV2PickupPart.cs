@@ -235,7 +235,7 @@ namespace Shooter.NetV2
         private static Transform CreatePlaceholder(Transform root, ClientPickupItem item)
         {
             item.TryGetPickupKind(out var kind);
-            if (kind != PickupKind.Weapon)
+            if (kind != PickupKinds.Weapon)
             {
                 var box = CreatePart(Pickup.VisualName, root, Vector3.one * Pickup.VisualSize, Pickup.ColorOf(kind));
                 box.localPosition = new Vector3(0f, Pickup.VisualHeight, 0f);

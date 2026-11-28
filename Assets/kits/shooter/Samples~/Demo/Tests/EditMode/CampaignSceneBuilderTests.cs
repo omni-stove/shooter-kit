@@ -112,10 +112,10 @@ namespace Shooter.Tests.EditMode
             var points = root.GetComponentsInChildren<PickupSpawnPoint>();
             Assert.That(points.Length, Is.EqualTo(3));
             Assert.That(
-                System.Array.Exists(points, p => p.Contents.Kind == PickupKind.Weapon && p.Contents.Weapon.Id == WeaponAssetBuilder.LauncherId),
+                System.Array.Exists(points, p => p.Contents.Kind == PickupKinds.Weapon && p.Contents.Weapon.Id == WeaponAssetBuilder.LauncherId),
                 Is.True,
                 "the launcher can be picked up");
-            Assert.That(System.Array.FindAll(points, p => p.Contents.Kind == PickupKind.ReserveAmmo).Length, Is.EqualTo(2));
+            Assert.That(System.Array.FindAll(points, p => p.Contents.Kind == PickupKinds.ReserveAmmo).Length, Is.EqualTo(2));
             var crate = root.GetComponentInChildren<AmmoCrate>();
             Assert.That(crate, Is.Not.Null, "there is an ammo crate that can be used again and again");
             Assert.That(crate.transform.Find(AmmoCrate.VisualName), Is.Not.Null, "the crate is visible in the editor");

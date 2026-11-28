@@ -57,5 +57,29 @@ namespace Shooter.Tests.EditMode
         {
             return new System.Collections.Generic.KeyValuePair<string, Type>(name, type);
         }
+
+        // 種類が列挙だった頃のシーンとプレハブは "_kind" に数を持つので、型を数のまま名前も替えずに残す
+        [Test]
+        public void TheContentsKeepTheOldKindNumberBesideTheKindKey()
+        {
+            var kindNumber = typeof(PickupContents).GetField("_kind", InstanceFields);
+            var kindKey = typeof(PickupContents).GetField("_kindKey", InstanceFields);
+
+            Assert.That(kindNumber.FieldType, Is.EqualTo(typeof(int)));
+            Assert.That(kindNumber.IsDefined(typeof(SerializeField), false), Is.True);
+            Assert.That(kindKey.FieldType, Is.EqualTo(typeof(string)));
+            Assert.That(kindKey.IsDefined(typeof(SerializeField), false), Is.True);
+        }
+
+        [TestCase("{\"_kind\": 0}", "Weapon")]
+        [TestCase("{\"_kind\": 1}", "ReserveAmmo")]
+        [TestCase("{\"_kind\": 3}", "Armor")]
+        [TestCase("{\"_kind\": 5}", "Item")]
+        [TestCase("{}", "Health")]
+        [TestCase("{\"_kind\": 0, \"_kindKey\": \"Tag\"}", "Tag")]
+        public void AKindSavedAsANumberIsReadInTheOldOrder(string json, string kind)
+        {
+            Assert.That(JsonUtility.FromJson<PickupContents>(json).Kind, Is.EqualTo(kind));
+        }
     }
 }

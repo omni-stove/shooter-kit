@@ -179,7 +179,7 @@ namespace Shooter.Tests.EditMode
 
             var pickup = root.transform.Find(WeaponLightFeatureSceneBuilder.LightPickupName).GetComponent<PickupSpawnPoint>();
             Assert.That(pickup, Is.Not.Null);
-            Assert.That(pickup.Contents.Kind, Is.EqualTo(PickupKind.Item));
+            Assert.That(pickup.Contents.Kind, Is.EqualTo(PickupKinds.Item));
             Assert.That(pickup.Contents.ItemId, Is.EqualTo(LightItemId));
             Assert.That(pickup.Contents.Amount, Is.EqualTo(1));
             Assert.That(pickup.CollectMode, Is.EqualTo(PickupCollectMode.Look));

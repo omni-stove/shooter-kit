@@ -37,7 +37,7 @@ namespace Shooter.Core.Tests
             Assert.That(read.Pickups, Has.Count.EqualTo(6));
             var rifle = read.Pickups[0];
             Assert.That(rifle.Id, Is.EqualTo("Pickups/Rifle"));
-            Assert.That(rifle.Spec.Kind, Is.EqualTo(PickupKind.Weapon));
+            Assert.That(rifle.Spec.Kind, Is.EqualTo(PickupKinds.Weapon));
             Assert.That(rifle.Spec.WeaponId, Is.EqualTo(_rifleId));
             Assert.That(rifle.Spec.Amount, Is.EqualTo(30));
             Assert.That(rifle.Position, Is.EqualTo(new Vector3(1f, 0.5f, -2.25f)));
@@ -47,10 +47,10 @@ namespace Shooter.Core.Tests
             Assert.That(read.Pickups[1].Spec.WeaponId, Is.Null, "ammo without a weapon goes to the weapon in hand");
             Assert.That(read.Pickups[1].Touch, Is.True);
             Assert.That(read.Pickups[2].Spec.WeaponId, Is.EqualTo(_rifleId));
-            Assert.That(read.Pickups[3].Spec.Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(read.Pickups[3].Spec.Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(read.Pickups[3].Spec.Eligibility, Is.EqualTo(PickupEligibility.Only(new Side(1))));
             Assert.That(read.Pickups[3].RespawnSeconds, Is.Zero, "0 means the pickup comes once");
-            Assert.That(read.Pickups[4].Spec.Kind, Is.EqualTo(PickupKind.Armor));
+            Assert.That(read.Pickups[4].Spec.Kind, Is.EqualTo(PickupKinds.Armor));
             Assert.That(read.Pickups[5].Spec.ItemId, Is.EqualTo(_herbId));
             Assert.That(read.Pickups[5].Spec.Amount, Is.EqualTo(3));
             Assert.That(read.Pickups[5].Radius, Is.EqualTo(0.75f));

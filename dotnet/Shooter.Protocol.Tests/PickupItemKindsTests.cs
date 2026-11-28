@@ -6,12 +6,12 @@ namespace Shooter.Protocol.Tests
 {
     public sealed class PickupItemKindsTests
     {
-        [TestCase(PickupKind.Weapon, ObjectiveItemKind.WeaponPickup)]
-        [TestCase(PickupKind.ReserveAmmo, ObjectiveItemKind.AmmoPickup)]
-        [TestCase(PickupKind.Health, ObjectiveItemKind.HealthPickup)]
-        [TestCase(PickupKind.Armor, ObjectiveItemKind.ArmorPickup)]
-        [TestCase(PickupKind.Item, ObjectiveItemKind.ItemPickup)]
-        public void EachPickupKindHasItsItemKindBothWays(PickupKind kind, ObjectiveItemKind itemKind)
+        [TestCase(PickupKinds.Weapon, ObjectiveItemKind.WeaponPickup)]
+        [TestCase(PickupKinds.ReserveAmmo, ObjectiveItemKind.AmmoPickup)]
+        [TestCase(PickupKinds.Health, ObjectiveItemKind.HealthPickup)]
+        [TestCase(PickupKinds.Armor, ObjectiveItemKind.ArmorPickup)]
+        [TestCase(PickupKinds.Item, ObjectiveItemKind.ItemPickup)]
+        public void EachPickupKindHasItsItemKindBothWays(string kind, ObjectiveItemKind itemKind)
         {
             Assert.That(PickupItemKinds.ItemKindOf(kind), Is.EqualTo(itemKind));
             Assert.That(PickupItemKinds.TryGetPickupKind(itemKind, out var back), Is.True);
@@ -23,8 +23,8 @@ namespace Shooter.Protocol.Tests
         [Test]
         public void ATagIsNotSentAsAPickup()
         {
-            Assert.That(PickupItemKinds.TryGetItemKind(PickupKind.Tag, out _), Is.False);
-            Assert.Throws<ArgumentOutOfRangeException>(() => PickupItemKinds.ItemKindOf(PickupKind.Tag));
+            Assert.That(PickupItemKinds.TryGetItemKind(PickupKinds.Tag, out _), Is.False);
+            Assert.Throws<ArgumentOutOfRangeException>(() => PickupItemKinds.ItemKindOf(PickupKinds.Tag));
         }
 
         [TestCase(ObjectiveItemKind.Flag)]

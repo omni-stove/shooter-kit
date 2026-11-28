@@ -1,7 +1,8 @@
 using System;
+using GameKit.Core;
+using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -81,10 +82,10 @@ namespace Shooter.Tests.EditMode
         public void ABuyItemIsNamedByItsKeyOrItsId()
         {
             Assert.That(
-                DisplayNames.Of(new BuyItem("rifle-id", BuyItemKind.Weapon, 2700, nameKey: "weapon.rifle")),
+                DisplayNames.Of(BuyItemKinds.Create("rifle-id", BuyItemKinds.Weapon, 2700, nameKey: "weapon.rifle")),
                 Is.EqualTo(new LocalizedText("weapon.rifle")));
-            Assert.That(DisplayNames.Of(new BuyItem("vest", BuyItemKind.Armor, 650, amount: 50)), Is.EqualTo(LocalizedText.Literal("vest")));
-            Assert.That(Localizer.Resolve(DisplayNames.Of(new BuyItem("rifle-id", BuyItemKind.Weapon, 2700, nameKey: "weapon.ref.carbine556"))), Is.EqualTo("5.56mm カービン"));
+            Assert.That(DisplayNames.Of(BuyItemKinds.Create("vest", BuyItemKinds.Armor, 650, amount: 50)), Is.EqualTo(LocalizedText.Literal("vest")));
+            Assert.That(Localizer.Resolve(DisplayNames.Of(BuyItemKinds.Create("rifle-id", BuyItemKinds.Weapon, 2700, nameKey: "weapon.ref.carbine556"))), Is.EqualTo("5.56mm カービン"));
             Assert.Throws<ArgumentNullException>(() => DisplayNames.Of((BuyItem)null));
         }
 

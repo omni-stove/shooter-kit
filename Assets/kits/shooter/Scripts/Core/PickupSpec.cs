@@ -8,7 +8,7 @@ namespace Shooter.Core
         public const int NoOwner = -1;
 
         private PickupSpec(
-            PickupKind kind, int amount, string weaponId, int tagOwnerId, Side? tagOwnerSide, PickupEligibility eligibility, string itemId = null, float weaponWeight = 0f)
+            string kind, int amount, string weaponId, int tagOwnerId, Side? tagOwnerSide, PickupEligibility eligibility, string itemId = null, float weaponWeight = 0f)
         {
             ItemId = itemId;
             WeaponWeight = weaponWeight;
@@ -20,7 +20,7 @@ namespace Shooter.Core
             Eligibility = eligibility;
         }
 
-        public PickupKind Kind { get; }
+        public string Kind { get; }
 
         public int Amount { get; }
 
@@ -50,13 +50,13 @@ namespace Shooter.Core
             }
 
             SpecGuard.NonNegativeFinite(weaponWeight, nameof(weaponWeight));
-            return new PickupSpec(PickupKind.Weapon, ammoIfOwned, weaponId, NoOwner, null, eligibility, null, weaponWeight);
+            return new PickupSpec(PickupKinds.Weapon, ammoIfOwned, weaponId, NoOwner, null, eligibility, null, weaponWeight);
         }
 
         public static PickupSpec ReserveAmmo(int amount, string weaponId = null, PickupEligibility eligibility = default)
         {
             return new PickupSpec(
-                PickupKind.ReserveAmmo,
+                PickupKinds.ReserveAmmo,
                 RequirePositive(amount, nameof(amount)),
                 string.IsNullOrEmpty(weaponId) ? null : weaponId,
                 NoOwner,
@@ -66,12 +66,12 @@ namespace Shooter.Core
 
         public static PickupSpec Health(int amount, PickupEligibility eligibility = default)
         {
-            return new PickupSpec(PickupKind.Health, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility);
+            return new PickupSpec(PickupKinds.Health, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility);
         }
 
         public static PickupSpec Armor(int amount, PickupEligibility eligibility = default)
         {
-            return new PickupSpec(PickupKind.Armor, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility);
+            return new PickupSpec(PickupKinds.Armor, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility);
         }
 
         public static PickupSpec Tag(int ownerId, Side? ownerSide, PickupEligibility eligibility = default)
@@ -81,7 +81,7 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(ownerId), ownerId, "ownerId must be 0 or more, or NoOwner");
             }
 
-            return new PickupSpec(PickupKind.Tag, 1, null, ownerId, ownerSide, eligibility);
+            return new PickupSpec(PickupKinds.Tag, 1, null, ownerId, ownerSide, eligibility);
         }
 
         public static PickupSpec Item(string itemId, int amount, PickupEligibility eligibility = default)
@@ -91,7 +91,7 @@ namespace Shooter.Core
                 throw new ArgumentException("itemId must not be null or empty", nameof(itemId));
             }
 
-            return new PickupSpec(PickupKind.Item, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility, itemId);
+            return new PickupSpec(PickupKinds.Item, RequirePositive(amount, nameof(amount)), null, NoOwner, null, eligibility, itemId);
         }
 
         public override string ToString()

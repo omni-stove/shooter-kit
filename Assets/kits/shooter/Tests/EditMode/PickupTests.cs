@@ -51,7 +51,7 @@ namespace Shooter.Tests.EditMode
         {
             var pickup = Pickup.Create(PickupContents.ForHealth(25), new Vector3(1f, 0f, 2f), radius: 1.5f);
 
-            Assert.That(pickup.name, Is.EqualTo(Pickup.ObjectName(PickupKind.Health)));
+            Assert.That(pickup.name, Is.EqualTo(Pickup.ObjectName(PickupKinds.Health)));
             Assert.That(pickup.transform.position, Is.EqualTo(new Vector3(1f, 0f, 2f)));
             var trigger = pickup.GetComponent<SphereCollider>();
             Assert.That(trigger.isTrigger, Is.True);
@@ -636,7 +636,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(definition.Radius, Is.EqualTo(Pickup.DefaultRadius));
             Assert.That(definition.LookAngleDegrees, Is.EqualTo(Pickup.DefaultLookAngleDegrees));
             Assert.That(definition.CollectMode, Is.EqualTo(PickupCollectMode.Touch));
-            Assert.That(definition.ToSpec().Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(definition.ToSpec().Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(definition.ToSpec().Amount, Is.EqualTo(PickupContents.DefaultHealthAmount));
             Assert.DoesNotThrow(definition.Validate);
         }

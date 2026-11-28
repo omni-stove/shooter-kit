@@ -10,11 +10,11 @@ namespace Shooter.Tests.EditMode
     // Play Mode に入る通しそのものは -executeMethod Shooter.Editor.SearchAndDestroySmokeRun.Run (または SmokeSuite.RunAll) で確かめる。
     public sealed class SearchAndDestroySmokeRunTests
     {
-        private static readonly BuyItem _pistol = new BuyItem("pistol", BuyItemKind.Weapon, 500, slot: 1);
-        private static readonly BuyItem _rifle = new BuyItem("rifle", BuyItemKind.Weapon, 2700, slot: 0);
-        private static readonly BuyItem _frag = new BuyItem("frag", BuyItemKind.Throwable, 300);
-        private static readonly BuyItem _smoke = new BuyItem("smoke", BuyItemKind.Throwable, 300);
-        private static readonly BuyItem _vest = new BuyItem("vest", BuyItemKind.Armor, 650, amount: 50);
+        private static readonly BuyItem _pistol = BuyItemKinds.Create("pistol", BuyItemKinds.Weapon, 500, slot: 1);
+        private static readonly BuyItem _rifle = BuyItemKinds.Create("rifle", BuyItemKinds.Weapon, 2700, slot: 0);
+        private static readonly BuyItem _frag = BuyItemKinds.Create("frag", BuyItemKinds.Throwable, 300);
+        private static readonly BuyItem _smoke = BuyItemKinds.Create("smoke", BuyItemKinds.Throwable, 300);
+        private static readonly BuyItem _vest = BuyItemKinds.Create("vest", BuyItemKinds.Armor, 650, amount: 50);
 
         [Test]
         public void ClassifiesTheEconomyAndRoundLines()
@@ -78,7 +78,7 @@ namespace Shooter.Tests.EditMode
             UnityEngine.Resources.UnloadAsset(asset);
 
             Assert.That(
-                SearchAndDestroySmokeRun.AffordableByPrice(economy.Catalog, economy.Spec.StartMoney).Any(item => item.Kind == BuyItemKind.Weapon),
+                SearchAndDestroySmokeRun.AffordableByPrice(economy.Catalog, economy.Spec.StartMoney).Any(item => item.Kind == BuyItemKinds.Weapon),
                 Is.True,
                 "the first buy time has a weapon the start money pays for, so the run does not depend on grenades being thrown");
         }

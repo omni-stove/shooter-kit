@@ -182,9 +182,9 @@ namespace Shooter.Runtime
         {
             switch (item.Kind)
             {
-                case BuyItemKind.Weapon:
+                case BuyItemKinds.Weapon:
                     return member.GetComponentInChildren<WeaponController>(true) != null && !HoldsStartWeapon(playerId, item) && FindWeapon(item.Id) != null;
-                case BuyItemKind.Throwable:
+                case BuyItemKinds.Throwable:
                     var grenades = member.GetComponent<GrenadeThrower>();
                     if (grenades == null || !grenades.UsesGrenades)
                     {
@@ -193,7 +193,7 @@ namespace Shooter.Runtime
 
                     var index = grenades.Inventory.IndexOf(item.Id);
                     return index >= 0 && grenades.Inventory.RemainingAt(index) < grenades.Inventory.CapacityAt(index);
-                case BuyItemKind.Armor:
+                case BuyItemKinds.Armor:
                     var armor = member.GetComponent<IArmorHolder>();
                     return armor != null && armor.MaxArmor > 0 && armor.Armor < armor.MaxArmor;
                 default:
@@ -217,14 +217,14 @@ namespace Shooter.Runtime
         {
             switch (item.Kind)
             {
-                case BuyItemKind.Weapon:
+                case BuyItemKinds.Weapon:
                     Equip(playerId);
                     break;
-                case BuyItemKind.Throwable:
+                case BuyItemKinds.Throwable:
                     var grenades = member.GetComponent<GrenadeThrower>();
                     grenades.Inventory.RefillAt(grenades.Inventory.IndexOf(item.Id));
                     break;
-                case BuyItemKind.Armor:
+                case BuyItemKinds.Armor:
                     member.GetComponent<IArmorHolder>().AddArmor(item.Amount);
                     break;
             }

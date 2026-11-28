@@ -341,11 +341,11 @@ namespace Shooter.Tests.EditMode
                 EconomySpec.Default,
                 new BuyCatalog(new[]
                 {
-                    new BuyItem(_rifle.Id, BuyItemKind.Weapon, 2700, slot: 0),
-                    new BuyItem(_launcher.Id, BuyItemKind.Weapon, LauncherPrice, slot: 0),
-                    new BuyItem(_handgun.Id, BuyItemKind.Weapon, HandgunPrice, slot: 1),
-                    new BuyItem(MissingWeaponId, BuyItemKind.Weapon, 100, slot: 0),
-                    new BuyItem(FragId, BuyItemKind.Throwable, 300),
+                    BuyItemKinds.Create(_rifle.Id, BuyItemKinds.Weapon, 2700, slot: 0),
+                    BuyItemKinds.Create(_launcher.Id, BuyItemKinds.Weapon, LauncherPrice, slot: 0),
+                    BuyItemKinds.Create(_handgun.Id, BuyItemKinds.Weapon, HandgunPrice, slot: 1),
+                    BuyItemKinds.Create(MissingWeaponId, BuyItemKinds.Weapon, 100, slot: 0),
+                    BuyItemKinds.Create(FragId, BuyItemKinds.Throwable, 300),
                 }));
         }
 

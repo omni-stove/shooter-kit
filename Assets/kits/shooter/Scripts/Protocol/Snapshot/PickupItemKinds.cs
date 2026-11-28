@@ -7,23 +7,23 @@ namespace Shooter.Protocol
     public static class PickupItemKinds
     {
         // タグはモード (Kill Confirmed) が ObjectiveItemKind.Tag で送るので、ここでは扱わない
-        public static bool TryGetItemKind(PickupKind kind, out ObjectiveItemKind itemKind)
+        public static bool TryGetItemKind(string kind, out ObjectiveItemKind itemKind)
         {
             switch (kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     itemKind = ObjectiveItemKind.WeaponPickup;
                     return true;
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     itemKind = ObjectiveItemKind.AmmoPickup;
                     return true;
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     itemKind = ObjectiveItemKind.HealthPickup;
                     return true;
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     itemKind = ObjectiveItemKind.ArmorPickup;
                     return true;
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     itemKind = ObjectiveItemKind.ItemPickup;
                     return true;
                 default:
@@ -32,7 +32,7 @@ namespace Shooter.Protocol
             }
         }
 
-        public static ObjectiveItemKind ItemKindOf(PickupKind kind)
+        public static ObjectiveItemKind ItemKindOf(string kind)
         {
             if (!TryGetItemKind(kind, out var itemKind))
             {
@@ -42,24 +42,24 @@ namespace Shooter.Protocol
             return itemKind;
         }
 
-        public static bool TryGetPickupKind(ObjectiveItemKind itemKind, out PickupKind kind)
+        public static bool TryGetPickupKind(ObjectiveItemKind itemKind, out string kind)
         {
             switch (itemKind)
             {
                 case ObjectiveItemKind.WeaponPickup:
-                    kind = PickupKind.Weapon;
+                    kind = PickupKinds.Weapon;
                     return true;
                 case ObjectiveItemKind.AmmoPickup:
-                    kind = PickupKind.ReserveAmmo;
+                    kind = PickupKinds.ReserveAmmo;
                     return true;
                 case ObjectiveItemKind.HealthPickup:
-                    kind = PickupKind.Health;
+                    kind = PickupKinds.Health;
                     return true;
                 case ObjectiveItemKind.ArmorPickup:
-                    kind = PickupKind.Armor;
+                    kind = PickupKinds.Armor;
                     return true;
                 case ObjectiveItemKind.ItemPickup:
-                    kind = PickupKind.Item;
+                    kind = PickupKinds.Item;
                     return true;
                 default:
                     kind = default;

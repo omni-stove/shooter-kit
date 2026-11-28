@@ -100,7 +100,7 @@ namespace Shooter.Core
                 var spec = pickup.Spec;
                 writer.BeginElement();
                 writer.String(IdItem, pickup.Id);
-                writer.Enum(KindItem, spec.Kind);
+                writer.String(KindItem, spec.Kind);
                 writer.Int(AmountItem, spec.Amount);
                 if (spec.WeaponId != null)
                 {
@@ -145,7 +145,7 @@ namespace Shooter.Core
         private static NetMapPickup ReadPickup(ServerDataJson.Fields fields, HashSet<string> seen)
         {
             var id = ReadId(fields, seen);
-            var kind = fields.ToEnum<PickupKind>(fields.ItemPath(KindItem), fields.Require(KindItem));
+            var kind = fields.ToName(fields.ItemPath(KindItem), fields.Require(KindItem), PickupKinds.Names);
             var amount = fields.ToInt(fields.ItemPath(AmountItem), fields.Require(AmountItem));
             var weapon = fields.ReadString(WeaponItem, null);
             var item = fields.ReadString(ItemItem, null);
@@ -188,29 +188,29 @@ namespace Shooter.Core
         }
 
         // 種類が使わない欄 (回復の weapon など) が書いてあれば、書き間違いとして断る
-        private static PickupSpec SpecOf(PickupKind kind, int amount, string weaponId, string itemId, PickupEligibility eligibility)
+        private static PickupSpec SpecOf(string kind, int amount, string weaponId, string itemId, PickupEligibility eligibility)
         {
-            if (weaponId != null && kind != PickupKind.Weapon && kind != PickupKind.ReserveAmmo)
+            if (weaponId != null && kind != PickupKinds.Weapon && kind != PickupKinds.ReserveAmmo)
             {
                 throw new ArgumentException("only a Weapon or ReserveAmmo pickup names a weapon", nameof(weaponId));
             }
 
-            if (itemId != null && kind != PickupKind.Item)
+            if (itemId != null && kind != PickupKinds.Item)
             {
                 throw new ArgumentException("only an Item pickup names an item", nameof(itemId));
             }
 
             switch (kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     return PickupSpec.Weapon(weaponId, amount, eligibility);
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     return PickupSpec.ReserveAmmo(amount, weaponId, eligibility);
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     return PickupSpec.Health(amount, eligibility);
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     return PickupSpec.Armor(amount, eligibility);
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     return PickupSpec.Item(itemId, amount, eligibility);
                 default:
                     throw new ArgumentException("a pickup spawn point cannot hold a " + kind, nameof(kind));
