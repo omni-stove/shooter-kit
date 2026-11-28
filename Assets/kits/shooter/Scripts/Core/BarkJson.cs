@@ -40,28 +40,9 @@ namespace Shooter.Core
 
         public static IReadOnlyList<string> KindItemNames { get; } = KindNames();
 
-        // 列挙の名前から作らないのは、BarkKind の名前を変えても barks.json の項目名が変わらないようにするため。
         public static string KindItem(BarkKind kind)
         {
-            switch (kind)
-            {
-                case BarkKind.Spotted:
-                    return "spotted";
-                case BarkKind.LostTarget:
-                    return "lostTarget";
-                case BarkKind.Reloading:
-                    return "reloading";
-                case BarkKind.Grenade:
-                    return "grenade";
-                case BarkKind.TakingFire:
-                    return "takingFire";
-                case BarkKind.MovingToCover:
-                    return "movingToCover";
-                case BarkKind.AllyDown:
-                    return "allyDown";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind is not a BarkKind");
-            }
+            return BarkSpec.KeyOf(kind);
         }
 
         public static BarkSpec Parse(string text, string sourceName)

@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,17 +13,42 @@ namespace Shooter.Runtime
         public const float BodyScanIntervalSeconds = 1f;
 
         private static BarkSelector _selector;
+        private static BarkSpec _spec;
         private static Damageable[] _bodies = Array.Empty<Damageable>();
         private static float _bodiesScannedAt = float.NegativeInfinity;
 
-        public static BarkSelector Selector => _selector ??= new BarkSelector(KitTuning.Barks);
+        public static BarkSelector Selector
+        {
+            get
+            {
+                if (_selector == null)
+                {
+                    Use(KitTuning.Barks);
+                }
 
-        public static BarkSpec Spec => Selector.Spec;
+                return _selector;
+            }
+        }
+
+        // 判定 (キットの BarkSelector) は手榴弾の知らせの半径を持たないので、作った元の調整値をここで一緒に持つ。
+        public static BarkSpec Spec
+        {
+            get
+            {
+                if (_selector == null)
+                {
+                    Use(KitTuning.Barks);
+                }
+
+                return _spec;
+            }
+        }
 
         // null を断らないのは、null で KitTuning.Barks から作り直す元の振る舞いへ戻せるようにするため。
         public static void Use(BarkSpec spec)
         {
-            _selector = spec == null ? null : new BarkSelector(spec);
+            _spec = spec;
+            _selector = spec == null ? null : new BarkSelector(spec.Pacing);
         }
 
         // Selector を通さないのは、終わり際の OnDestroy から呼ばれたときに、使っていない判定を調整値の読み込みから作り直さないため。
@@ -34,6 +60,7 @@ namespace Shooter.Runtime
         public static void Reset()
         {
             _selector = null;
+            _spec = null;
             _bodies = Array.Empty<Damageable>();
             _bodiesScannedAt = float.NegativeInfinity;
         }

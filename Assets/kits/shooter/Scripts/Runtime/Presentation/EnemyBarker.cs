@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -129,7 +130,7 @@ namespace Shooter.Runtime
             _previous = current;
 
             var selector = BarkBoard.Selector;
-            var kinds = BarkTriggers.Pick(previous, current, selector.Spec);
+            var kinds = BarkTriggers.Pick(previous, current, BarkBoard.Spec);
             if (kinds.Count == 0)
             {
                 return null;
@@ -148,7 +149,7 @@ namespace Shooter.Runtime
                     continue;
                 }
 
-                var cue = new BarkCue(speakerId, agent.Archetype, kind, position, selector.Spec.HearingDistance);
+                var cue = new BarkCue(speakerId, agent.Archetype, kind, position, selector.Pacing.HearingDistance);
                 Speak(cue);
                 return cue;
             }
