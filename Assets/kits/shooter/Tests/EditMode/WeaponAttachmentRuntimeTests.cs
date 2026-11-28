@@ -23,20 +23,20 @@ namespace Shooter.Tests.EditMode
         private const string _compensatorId = "3fc98d19-5fb3-4680-bd5f-30d30d14f84e";
 
         // 小銃 (4x2・5.56) は銃口と弾倉、拳銃 (2x1・9mm) は何も付かない。弾は 60 発で 1 山・1 発 0.01 kg
-        private static readonly ItemSpec _rifleAmmo = new ItemSpec(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f);
-        private static readonly ItemSpec _pistolAmmo = new ItemSpec(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f);
-        private static readonly ItemSpec _rifleItem = new ItemSpec(
+        private static readonly ItemSpec _rifleAmmo = ItemSpecs.Create(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f);
+        private static readonly ItemSpec _pistolAmmo = ItemSpecs.Create(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f);
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(
             _rifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, ammoItemId: _rifleAmmoId,
             attachmentSlots: new[] { "muzzle", "magazine" });
-        private static readonly ItemSpec _handgunItem = new ItemSpec(
+        private static readonly ItemSpec _handgunItem = ItemSpecs.Create(
             _handgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId, ammoItemId: _pistolAmmoId);
 
         // 拡張弾倉 +10 発・0.3 kg、消音器は銃声 0.3 倍・0.4 kg、補正器は反動 0.5 倍・0.2 kg
-        private static readonly ItemSpec _magazine = new ItemSpec(
+        private static readonly ItemSpec _magazine = ItemSpecs.Create(
             _magazineId, "item.extendedMagazine", weight: 0.3f, attachment: new AttachmentSpec("magazine", magazineSizeBonus: 10));
-        private static readonly ItemSpec _suppressor = new ItemSpec(
+        private static readonly ItemSpec _suppressor = ItemSpecs.Create(
             _suppressorId, "item.suppressor", weight: 0.4f, attachment: new AttachmentSpec("muzzle", shotNoiseRadiusMultiplier: 0.3f));
-        private static readonly ItemSpec _compensator = new ItemSpec(
+        private static readonly ItemSpec _compensator = ItemSpecs.Create(
             _compensatorId, "item.compensator", weight: 0.2f, attachment: new AttachmentSpec("muzzle", recoilMultiplier: 0.5f));
 
         private readonly List<Object> _created = new List<Object>();

@@ -339,9 +339,9 @@ namespace Shooter.Net.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: new[] { "light" }),
-                    new ItemSpec(_pistolItemId, "weapon.handgun", weaponId: _pistolId),
-                    new ItemSpec(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: WeaponLightSpec.Default)),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: _rifleId, attachmentSlots: new[] { "light" }),
+                    ItemSpecs.Create(_pistolItemId, "weapon.handgun", weaponId: _pistolId),
+                    ItemSpecs.Create(_lightItemId, "item.weaponLight", attachment: new AttachmentSpec("light", light: WeaponLightSpec.Default)),
                 },
                 InventoryRule.Default);
         }

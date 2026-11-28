@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 
 namespace Shooter.Core
 {
@@ -39,7 +40,7 @@ namespace Shooter.Core
             SightSpec sight = null;
             foreach (var item in attached)
             {
-                var a = item.Attachment;
+                var a = item.Attachment();
                 range *= a.RangeMultiplier;
                 hip *= a.HipSpreadMultiplier;
                 ads *= a.AdsSpreadMultiplier;
@@ -130,9 +131,9 @@ namespace Shooter.Core
 
             foreach (var item in Resolve(catalog, weaponId, attachmentItemIds))
             {
-                if (item.Attachment.IsLight)
+                if (item.Attachment().IsLight)
                 {
-                    return item.Attachment.Light;
+                    return item.Attachment().Light;
                 }
             }
 
@@ -156,7 +157,7 @@ namespace Shooter.Core
             {
                 if (catalog.CanAttach(weaponId, itemId) && catalog.TryFindAttachment(itemId, out var item))
                 {
-                    bySlot[item.Attachment.Slot] = itemId;
+                    bySlot[item.Attachment().Slot] = itemId;
                 }
             }
 
@@ -194,7 +195,7 @@ namespace Shooter.Core
             var next = new List<string>();
             foreach (var itemId in Keep(catalog, weaponId, current))
             {
-                if (catalog.TryFindAttachment(itemId, out var on) && string.Equals(on.Attachment.Slot, item.Attachment.Slot, StringComparison.Ordinal))
+                if (catalog.TryFindAttachment(itemId, out var on) && string.Equals(on.Attachment().Slot, item.Attachment().Slot, StringComparison.Ordinal))
                 {
                     replaced = itemId;
                 }

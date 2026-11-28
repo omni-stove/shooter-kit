@@ -440,7 +440,7 @@ namespace Shooter.Tests.EditMode
         private PlayerInventory GiveInventory(int charges)
         {
             var inventory = _player.AddComponent<PlayerInventory>();
-            inventory.Initialize(new ItemCatalog(new[] { new ItemSpec(ChargeItemId, maxStack: 5) }, InventoryRule.Default));
+            inventory.Initialize(new ItemCatalog(new[] { ItemSpecs.Create(ChargeItemId, maxStack: 5) }, InventoryRule.Default));
             if (charges > 0)
             {
                 Assert.That(inventory.Inventory.Add(ChargeItemId, charges), Is.EqualTo(charges));

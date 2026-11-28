@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct InventoryEntry : IEquatable<InventoryEntry>
     {

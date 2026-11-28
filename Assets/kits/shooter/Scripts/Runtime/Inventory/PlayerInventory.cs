@@ -33,7 +33,7 @@ namespace Shooter.Runtime
         }
 
         // 武器の重さは移動のルール (CarryLoadSpec) が武器として数えるので、持ち物の重さからは除く
-        public float CarriedWeight => Inventory.Rule.CountWeightInCarryLoad ? Inventory.TotalWeight - Inventory.WeaponWeight : 0f;
+        public float CarriedWeight => Inventory.Rule.CountWeightInCarryLoad ? Inventory.TotalWeight - Inventory.WeaponWeight() : 0f;
 
         public WeaponController Weapons => _weapons;
 
@@ -123,10 +123,10 @@ namespace Shooter.Runtime
                 inventory.Catalog.TryFind(stack.ItemId, out item);
             }
 
-            if (item != null && item.IsWeapon)
+            if (item != null && item.IsWeapon())
             {
-                var equipped = _weapons != null && _weapons.IsInitialized && Damageable != null && !Damageable.IsDowned && _weapons.Select(item.WeaponId);
-                Debug.Log($"{LogTag} equip owner={name} weapon={item.WeaponId}{(equipped ? string.Empty : " rejected")}", this);
+                var equipped = _weapons != null && _weapons.IsInitialized && Damageable != null && !Damageable.IsDowned && _weapons.Select(item.WeaponId());
+                Debug.Log($"{LogTag} equip owner={name} weapon={item.WeaponId()}{(equipped ? string.Empty : " rejected")}", this);
                 return;
             }
 

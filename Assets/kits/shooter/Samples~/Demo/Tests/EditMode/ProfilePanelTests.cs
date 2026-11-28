@@ -46,7 +46,7 @@ namespace Shooter.Tests.EditMode
         private static ItemCatalog Items()
         {
             return new ItemCatalog(
-                new[] { new ItemSpec(_suppressor, "item.suppressor", attachment: new AttachmentSpec("muzzle")) },
+                new[] { ItemSpecs.Create(_suppressor, "item.suppressor", attachment: new AttachmentSpec("muzzle")) },
                 InventoryRule.Default);
         }
 

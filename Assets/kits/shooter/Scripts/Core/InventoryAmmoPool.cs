@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 
 namespace Shooter.Core
 {
@@ -14,7 +15,7 @@ namespace Shooter.Core
                 throw new ArgumentException("item " + itemId + " is not one of the inventory's items", nameof(itemId));
             }
 
-            if (item.IsWeapon)
+            if (item.IsWeapon())
             {
                 throw new ArgumentException("item " + itemId + " is a weapon, not ammo", nameof(itemId));
             }

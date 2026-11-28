@@ -1,8 +1,9 @@
 using System;
 using System.Linq;
+using NUnit.Framework;
+using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
@@ -60,9 +61,9 @@ namespace Shooter.Tests.EditMode
                 }
             }
 
-            foreach (var item in KitTuning.Items.Items.Where(i => i.IsAttachment && i.Attachment.Sight != null && i.Attachment.Sight.HasReticle))
+            foreach (var item in KitTuning.Items.Items.Where(i => i.IsAttachment() && i.Attachment().Sight != null && i.Attachment().Sight.HasReticle))
             {
-                Assert.That(ids, Does.Contain(item.Attachment.Sight.ReticleId), item.NameKey);
+                Assert.That(ids, Does.Contain(item.Attachment().Sight.ReticleId), item.NameKey);
             }
         }
 

@@ -181,7 +181,7 @@ namespace Shooter.Core
 
             try
             {
-                return new ItemSpec(
+                return ItemSpecs.Create(
                     fields.ReadString(IdItem, null),
                     fields.ReadString(NameKeyItem, null),
                     fields.ReadString(IconIdItem, null),
@@ -190,8 +190,8 @@ namespace Shooter.Core
                     weight,
                     fields.ReadInt(WidthItem, ItemSpec.DefaultWidth),
                     fields.ReadInt(HeightItem, ItemSpec.DefaultHeight),
-                    fields.ReadInt(UseHealthItem, ItemSpec.DefaultUseHealth),
-                    fields.ReadInt(UseArmorItem, ItemSpec.DefaultUseArmor),
+                    fields.ReadInt(UseHealthItem, ItemSpecs.DefaultUseHealth),
+                    fields.ReadInt(UseArmorItem, ItemSpecs.DefaultUseArmor),
                     weaponId,
                     fields.ReadString(AmmoItemIdItem, null),
                     attachment,

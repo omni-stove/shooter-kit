@@ -51,7 +51,7 @@ namespace Shooter.Core.Tests
             Assert.That(
                 catalog.Starting.Select(s => (catalog.Items.Single(i => i.Id == s.ItemId).NameKey, s.Count)),
                 Is.EqualTo(new[] { ("item.bandage", 2), ("item.redDot", 1), ("item.suppressor", 1), ("item.foregrip", 1), ("item.weaponLight", 1) }));
-            Assert.That(catalog.Items.Where(i => i.IsUsable).Select(i => i.NameKey), Is.EqualTo(_usableNameKeys));
+            Assert.That(catalog.Items.Where(i => i.IsUsable()).Select(i => i.NameKey), Is.EqualTo(_usableNameKeys));
         }
 
         [Test]
@@ -69,13 +69,13 @@ namespace Shooter.Core.Tests
                 ("weapon.shotgun", "item.ammo12ga"),
             };
 
-            var weapons = catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId != null).ToList();
-            Assert.That(weapons.Select(w => (w.NameKey, catalog.Items.Single(i => i.Id == w.AmmoItemId).NameKey)), Is.EqualTo(expected));
+            var weapons = catalog.Items.Where(i => i.IsWeapon() && i.AmmoItemId() != null).ToList();
+            Assert.That(weapons.Select(w => (w.NameKey, catalog.Items.Single(i => i.Id == w.AmmoItemId()).NameKey)), Is.EqualTo(expected));
             foreach (var weapon in weapons)
             {
-                Assert.That(samples.ContainsKey(weapon.WeaponId), weapon.NameKey + " points at a sample weapon");
-                Assert.That(samples[weapon.WeaponId].NameKey, Is.EqualTo(weapon.NameKey));
-                Assert.That(samples[weapon.WeaponId].Ammo.Kind, Is.EqualTo(AmmoKind.Magazine), weapon.NameKey + " fires from a magazine");
+                Assert.That(samples.ContainsKey(weapon.WeaponId()), weapon.NameKey + " points at a sample weapon");
+                Assert.That(samples[weapon.WeaponId()].NameKey, Is.EqualTo(weapon.NameKey));
+                Assert.That(samples[weapon.WeaponId()].Ammo.Kind, Is.EqualTo(AmmoKind.Magazine), weapon.NameKey + " fires from a magazine");
             }
         }
 
@@ -86,13 +86,13 @@ namespace Shooter.Core.Tests
             var catalog = InventoryJson.Parse(File.ReadAllText(UnityPath(root)), "inventory.json");
             var samples = SampleWeapons(root);
 
-            var melee = catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId == null).ToList();
+            var melee = catalog.Items.Where(i => i.IsWeapon() && i.AmmoItemId() == null).ToList();
             Assert.That(melee.Select(w => w.NameKey), Is.EqualTo(_meleeNameKeys));
             foreach (var weapon in melee)
             {
-                Assert.That(samples.ContainsKey(weapon.WeaponId), weapon.NameKey + " points at a sample weapon");
-                Assert.That(samples[weapon.WeaponId].NameKey, Is.EqualTo(weapon.NameKey));
-                Assert.That(samples[weapon.WeaponId].Category, Is.EqualTo(WeaponCategory.Melee), weapon.NameKey);
+                Assert.That(samples.ContainsKey(weapon.WeaponId()), weapon.NameKey + " points at a sample weapon");
+                Assert.That(samples[weapon.WeaponId()].NameKey, Is.EqualTo(weapon.NameKey));
+                Assert.That(samples[weapon.WeaponId()].Category, Is.EqualTo(WeaponCategory.Melee), weapon.NameKey);
                 Assert.That(weapon.AttachmentSlots, Is.Empty, weapon.NameKey + " takes no attachment");
             }
         }
@@ -110,11 +110,11 @@ namespace Shooter.Core.Tests
                 ("weapon.shotgun", new[] { "optic", "underbarrel", "light" }),
             };
 
-            Assert.That(catalog.Items.Where(i => i.IsWeapon && i.AmmoItemId != null).Select(w => (w.NameKey, w.AttachmentSlots.ToArray())), Is.EqualTo(expected));
-            foreach (var attachment in catalog.Items.Where(i => i.IsAttachment))
+            Assert.That(catalog.Items.Where(i => i.IsWeapon() && i.AmmoItemId() != null).Select(w => (w.NameKey, w.AttachmentSlots().ToArray())), Is.EqualTo(expected));
+            foreach (var attachment in catalog.Items.Where(i => i.IsAttachment()))
             {
                 Assert.That(
-                    catalog.Items.Any(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, attachment.Id)),
+                    catalog.Items.Any(w => w.IsWeapon() && catalog.CanAttach(w.WeaponId(), attachment.Id)),
                     Is.True,
                     attachment.NameKey + " fits a shipped weapon");
             }
@@ -129,17 +129,17 @@ namespace Shooter.Core.Tests
 
             foreach (var catalog in new[] { unity, server })
             {
-                var thermal = catalog.Items.Where(i => i.IsAttachment && i.Attachment.Sight != null && i.Attachment.Sight.VisionMode != VisionMode.None).ToList();
+                var thermal = catalog.Items.Where(i => i.IsAttachment() && i.Attachment().Sight != null && i.Attachment().Sight.VisionMode != VisionMode.None).ToList();
                 Assert.That(thermal.Select(i => i.NameKey), Is.EqualTo(_thermalNameKeys));
 
                 var scope = thermal.Single();
                 Assert.That(scope.Id, Is.EqualTo("c8e4f2a1-7b3d-4e95-a6c0-1d2f3b4a5e67"));
-                Assert.That(scope.Attachment.IsOptic, Is.True);
-                Assert.That(scope.Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
-                Assert.That(scope.Attachment.Sight.ScopeOverlay, Is.True);
-                Assert.That(scope.Attachment.Sight.ReticleId, Is.EqualTo("scope4x"));
+                Assert.That(scope.Attachment().IsOptic, Is.True);
+                Assert.That(scope.Attachment().Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
+                Assert.That(scope.Attachment().Sight.ScopeOverlay, Is.True);
+                Assert.That(scope.Attachment().Sight.ReticleId, Is.EqualTo("scope4x"));
                 Assert.That(
-                    catalog.Items.Where(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, scope.Id)).Select(w => w.NameKey),
+                    catalog.Items.Where(w => w.IsWeapon() && catalog.CanAttach(w.WeaponId(), scope.Id)).Select(w => w.NameKey),
                     Is.EqualTo(_thermalWeaponNameKeys));
             }
         }
@@ -153,20 +153,20 @@ namespace Shooter.Core.Tests
 
             foreach (var catalog in new[] { unity, server })
             {
-                var lights = catalog.Items.Where(i => i.IsAttachment && i.Attachment.IsLight).ToList();
+                var lights = catalog.Items.Where(i => i.IsAttachment() && i.Attachment().IsLight).ToList();
                 Assert.That(lights.Select(i => i.NameKey), Is.EqualTo(_lightNameKeys));
 
                 var light = lights.Single();
                 Assert.That(light.Id, Is.EqualTo("f3a7c2e9-58b1-4d06-9e4a-2c7b8d1f6a35"));
-                Assert.That(light.Attachment.Slot, Is.EqualTo("light"));
-                Assert.That(light.Attachment.IsOptic, Is.False);
-                Assert.That(light.Attachment.WeaponIds, Is.Empty, "the light fits any gun with a light slot");
-                Assert.That(light.Attachment.Light.Range, Is.EqualTo(25f));
-                Assert.That(light.Attachment.Light.SpotAngle, Is.EqualTo(45f));
-                Assert.That(light.Attachment.Light.Intensity, Is.EqualTo(3f));
-                Assert.That(light.Attachment.Light.VisualId, Is.EqualTo("weaponLight"));
+                Assert.That(light.Attachment().Slot, Is.EqualTo("light"));
+                Assert.That(light.Attachment().IsOptic, Is.False);
+                Assert.That(light.Attachment().WeaponIds, Is.Empty, "the light fits any gun with a light slot");
+                Assert.That(light.Attachment().Light.Range, Is.EqualTo(25f));
+                Assert.That(light.Attachment().Light.SpotAngle, Is.EqualTo(45f));
+                Assert.That(light.Attachment().Light.Intensity, Is.EqualTo(3f));
+                Assert.That(light.Attachment().Light.VisualId, Is.EqualTo("weaponLight"));
                 Assert.That(
-                    catalog.Items.Where(w => w.IsWeapon && catalog.CanAttach(w.WeaponId, light.Id)).Select(w => w.NameKey),
+                    catalog.Items.Where(w => w.IsWeapon() && catalog.CanAttach(w.WeaponId(), light.Id)).Select(w => w.NameKey),
                     Is.EqualTo(_gunNameKeys),
                     "every gun takes the light and no melee weapon does");
             }

@@ -179,8 +179,8 @@ namespace Shooter.Server.Tests
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(_herbId, "item.herb", maxStack: 5),
-                    new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId),
+                    ItemSpecs.Create(_herbId, "item.herb", maxStack: 5),
+                    ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: TestRules.RifleId),
                 },
                 InventoryRule.Default);
         }

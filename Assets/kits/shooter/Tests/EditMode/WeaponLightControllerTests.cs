@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
+using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
@@ -288,9 +289,9 @@ namespace Shooter.Tests.EditMode
             return new ItemCatalog(
                 new[]
                 {
-                    new ItemSpec(RifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, attachmentSlots: new[] { "light" }),
-                    new ItemSpec(HandgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId),
-                    new ItemSpec(
+                    ItemSpecs.Create(RifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, attachmentSlots: new[] { "light" }),
+                    ItemSpecs.Create(HandgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId),
+                    ItemSpecs.Create(
                         LightItemId,
                         "item.weaponLight",
                         attachment: new AttachmentSpec("light", light: new WeaponLightSpec(30f, 40f, 2f, LightVisualId))),
