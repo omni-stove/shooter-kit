@@ -337,10 +337,21 @@ namespace GameKit.Core
             public T ToEnum<T>(string item, JsonNode node)
                 where T : struct, Enum
             {
-                var names = Enum.GetNames(typeof(T));
+                return Enum.Parse<T>(ToName(item, node, Enum.GetNames(typeof(T))));
+            }
+
+            // 種類を列挙ではなくキーの文字列で持つ値も、列挙と同じ断り方で読めるようにする。
+            public string ToName(string item, JsonNode node, IReadOnlyList<string> names)
+            {
+                if (names == null)
+                {
+                    throw new ArgumentNullException(nameof(names));
+                }
+
+                var listed = string.Join(", ", names);
                 if (Words.EnumErrorsListNames)
                 {
-                    Expect(item, node, JsonNodeKind.String, "one of the names " + string.Join(", ", names));
+                    Expect(item, node, JsonNodeKind.String, "one of the names " + listed);
                 }
 
                 var text = ToText(item, node);
@@ -350,16 +361,16 @@ namespace GameKit.Core
                 {
                     if (string.Equals(name, text, StringComparison.Ordinal))
                     {
-                        return Enum.Parse<T>(name);
+                        return name;
                     }
                 }
 
                 if (Words.EnumErrorsListNames)
                 {
-                    throw Invalid(item, node, $"\"{text}\" is not one of {string.Join(", ", names)}");
+                    throw Invalid(item, node, $"\"{text}\" is not one of {listed}");
                 }
 
-                throw Invalid(item, node, $"must be one of {string.Join(", ", names)}, but is \"{text}\"");
+                throw Invalid(item, node, $"must be one of {listed}, but is \"{text}\"");
             }
 
             public ServerDataJsonException Rejected(string item, string problem, Exception inner = null)

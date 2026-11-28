@@ -175,6 +175,13 @@ namespace GameKit.Core.Tests
             typeof(InventoryRule),
             typeof(InventoryEntry),
             typeof(InventoryMoveResult),
+            typeof(BuyItem),
+            typeof(BuyCatalog),
+            typeof(Economy),
+            typeof(EconomyRules),
+            typeof(EconomySpec),
+            typeof(PurchaseVerdict),
+            typeof(WalletStatus),
             typeof(SpectateTargets),
             typeof(FlatJsonObject),
             typeof(HttpTelemetrySink),
@@ -197,7 +204,7 @@ namespace GameKit.Core.Tests
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(184));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(191));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

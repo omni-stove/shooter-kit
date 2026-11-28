@@ -14,6 +14,7 @@ namespace Shooter.Core.Tests
             "startMoney", "maxMoney", "killReward", "roundWinReward", "roundLossReward", "lossStreakBonus", "maxLossReward", "resetOnSwap", "items",
         };
 
+        private static readonly string[] _oldKindNames = { "Weapon", "Throwable", "Armor" };
         private static readonly string[] _expectedBuyItemNames = { "id", "kind", "price", "slot", "amount", "nameKey" };
 
         [Test]
@@ -40,14 +41,14 @@ namespace Shooter.Core.Tests
 
             Assert.That(rules.Catalog.Count, Is.EqualTo(4));
             Assert.That(rules.Catalog.TryFind("rifle", out var rifle), Is.True);
-            Assert.That(rifle.Kind, Is.EqualTo(BuyItemKind.Weapon));
+            Assert.That(rifle.Kind, Is.EqualTo(BuyItemKinds.Weapon));
             Assert.That(rifle.Price, Is.EqualTo(2700));
             Assert.That(rifle.Slot, Is.Zero);
             Assert.That(rifle.NameKey, Is.EqualTo("weapon.rifle"));
             Assert.That(rules.Catalog.Items[1].Slot, Is.EqualTo(1));
             Assert.That(rules.Catalog.Items[1].NameKey, Is.EqualTo(string.Empty));
-            Assert.That(rules.Catalog.Items[2].Kind, Is.EqualTo(BuyItemKind.Throwable));
-            Assert.That(rules.Catalog.Items[3].Kind, Is.EqualTo(BuyItemKind.Armor));
+            Assert.That(rules.Catalog.Items[2].Kind, Is.EqualTo(BuyItemKinds.Throwable));
+            Assert.That(rules.Catalog.Items[3].Kind, Is.EqualTo(BuyItemKinds.Armor));
             Assert.That(rules.Catalog.Items[3].Amount, Is.EqualTo(100));
         }
 
@@ -99,6 +100,23 @@ namespace Shooter.Core.Tests
             Assert.That(slot.Item, Is.EqualTo("items[0].slot"));
             Assert.That(twice.Item, Is.EqualTo("items"));
             Assert.That(twice.Message, Does.Contain("listed twice"));
+        }
+
+        // 種類を列挙から文字列のキーにしても、これまでの economy.json の名前をそのまま読む
+        [Test]
+        public void TheKindKeysAreTheOldEnumNamesAndOnlyWeaponsTakeASlot()
+        {
+            var rules = EconomyJson.Parse(
+                "{\"items\": [{\"id\": \"rifle\", \"kind\": \"Weapon\", \"price\": 1, \"slot\": 1},"
+                    + " {\"id\": \"frag\", \"kind\": \"Throwable\", \"price\": 1},"
+                    + " {\"id\": \"vest\", \"kind\": \"Armor\", \"price\": 1, \"amount\": 50}]}",
+                _source);
+
+            Assert.That(BuyItemKinds.Names, Is.EqualTo(_oldKindNames));
+            Assert.That(rules.Catalog.Items[0].TakesSlot, Is.True);
+            Assert.That(rules.Catalog.Items[1].TakesSlot, Is.False);
+            Assert.That(rules.Catalog.Items[2].TakesSlot, Is.False);
+            Assert.Throws<TuningJsonException>(() => EconomyJson.Parse("{\"items\": [{\"id\": \"a\", \"kind\": \"weapon\", \"price\": 1}]}", _source));
         }
 
         [Test]

@@ -201,11 +201,11 @@ namespace Shooter.Tests.EditMode
             {
                 Assert.That(item.Price, Is.LessThanOrEqualTo(rules.Spec.MaxMoney), item.Id + " can be afforded");
                 Assert.That(item.NameKey, Is.Not.Empty, item.Id + " has a name key for the buy menu");
-                if (item.Kind == BuyItemKind.Weapon)
+                if (item.Kind == BuyItemKinds.Weapon)
                 {
                     weapons++;
                 }
-                else if (item.Kind == BuyItemKind.Throwable)
+                else if (item.Kind == BuyItemKinds.Throwable)
                 {
                     throwables++;
                     Assert.That(grenades.TryFind(item.Id, out _), Is.True, item.Id + " is a grenade type in grenade.json");

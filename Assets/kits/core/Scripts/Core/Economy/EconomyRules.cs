@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 額 (EconomySpec) はネット対戦の設定 (NetMatchFile) と共有するので、オフラインだけで読む品の一覧と入れ替え時の扱いはこちらに束ねる。
     public sealed class EconomyRules

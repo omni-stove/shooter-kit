@@ -14,6 +14,7 @@ namespace GameKit.Core.Tests
         private static readonly string[] _known = { "d", "kinds", "kind", "inner" };
         private static readonly string[] _innerKnown = { "y" };
         private static readonly JsonNodeKind[] _fallbackKinds = { JsonNodeKind.True };
+        private static readonly string[] _fruitNames = { "Apple", "Pear" };
 
         [Test]
         public void ReadDoubleReadsTheFullPrecision()
@@ -207,6 +208,27 @@ namespace GameKit.Core.Tests
         {
             Assert.Throws<ArgumentNullException>(() => ServerDataJson.Rethrown<int>(null, e => e));
             Assert.Throws<ArgumentNullException>(() => ServerDataJson.Rethrown(() => 1, null));
+        }
+
+        [Test]
+        public void ToNameReadsOneOfTheGivenNamesExactly()
+        {
+            var fields = Fields("{\"kind\": \"Pear\"}");
+
+            Assert.That(fields.ToName("kind", fields.Require("kind"), _fruitNames), Is.EqualTo("Pear"));
+        }
+
+        [Test]
+        public void ToNameRejectsLikeAnEnum()
+        {
+            var lower = Fields("{\"kind\": \"pear\"}");
+            var listed = Fields("{\"kind\": \"Plum\"}", new ServerDataJson.Wording("known items here are", true));
+
+            var e = Assert.Throws<ServerDataJsonException>(() => lower.ToName("kind", lower.Require("kind"), _fruitNames));
+            var l = Assert.Throws<ServerDataJsonException>(() => listed.ToName("kind", listed.Require("kind"), _fruitNames));
+
+            Assert.That(e.Message, Is.EqualTo("test JSON 'test.json' item 'kind' must be one of Apple, Pear, but is \"pear\" (line 1, column 10)"));
+            Assert.That(l.Message, Is.EqualTo("test JSON 'test.json' item 'kind' \"Plum\" is not one of Apple, Pear (line 1, column 10)"));
         }
 
         private static ServerDataJson.Fields Fields(string text, ServerDataJson.Wording wording = null)

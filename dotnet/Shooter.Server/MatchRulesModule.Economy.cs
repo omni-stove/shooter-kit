@@ -225,7 +225,7 @@ namespace Shooter.Server
         // 持っている武器と同じ物と、枠のルール (LoadoutRule) に合わない物は買わせない。持てない品にお金を払わせないため
         private bool CanCarryBought(int playerId, BuyItem item)
         {
-            if (item.Kind != BuyItemKind.Weapon || !_economyWeapons.TryGetValue(item.Id, out var weapon))
+            if (item.Kind != BuyItemKinds.Weapon || !_economyWeapons.TryGetValue(item.Id, out var weapon))
             {
                 return false;
             }
@@ -262,7 +262,7 @@ namespace Shooter.Server
 
             foreach (var item in rules.Catalog.Items)
             {
-                if (item.Kind != BuyItemKind.Weapon)
+                if (item.Kind != BuyItemKinds.Weapon)
                 {
                     _log.WriteLine(EconomyLog.NotSold(item, "the server only hands out bought weapons"));
                     continue;
