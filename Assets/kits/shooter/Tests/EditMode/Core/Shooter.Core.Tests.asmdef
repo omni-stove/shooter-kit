@@ -10,7 +10,6 @@
         "Shooter.Core.BattleRoyale",
         "Shooter.Core.Extraction",
         "Shooter.Core.CoopHold",
-        "Shooter.Core.Telemetry",
         "Shooter.Core.Presentation",
         "Shooter.Core.Vehicle",
         "UnityEngine.TestRunner",

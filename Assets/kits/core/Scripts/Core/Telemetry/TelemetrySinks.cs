@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public static class TelemetrySinks
     {

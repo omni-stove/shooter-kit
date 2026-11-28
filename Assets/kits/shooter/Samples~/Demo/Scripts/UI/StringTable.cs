@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
-using Shooter.Core;
+using GameKit.Core;
 
 namespace Shooter.Runtime
 {

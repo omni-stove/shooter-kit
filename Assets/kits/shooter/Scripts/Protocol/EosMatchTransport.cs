@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Threading;
 using GameKit.Core;
 using GameKit.Net;
-using Shooter.Core;
 
 namespace Shooter.Protocol
 {

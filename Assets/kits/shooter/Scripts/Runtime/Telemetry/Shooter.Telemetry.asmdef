@@ -5,7 +5,6 @@
         "GameKit.Core",
         "GameKit.Navigation",
         "Shooter.Core",
-        "Shooter.Core.Telemetry",
         "Shooter.Runtime",
         "GameKit.Runtime"
     ],

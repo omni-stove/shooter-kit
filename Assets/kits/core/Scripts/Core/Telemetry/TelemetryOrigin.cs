@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // どこで動いた何の版の記録かを 1 行ごとに載せる。セッションの Id は起動ごとに作る乱数で、同じ起動の記録をまとめて読むためだけに使い、人には結びつけない。
     public sealed class TelemetryOrigin

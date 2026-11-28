@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // Unity にも外部ライブラリにも依存しないよう、入れ子の無い文字列だけの JSON オブジェクトを自前で書き、読みは共通の JsonParser に任せる。
     public static class FlatJsonObject
