@@ -1,7 +1,7 @@
 using System;
 using System.Text;
+using GameKit.Core;
 using GameKit.Net;
-using Shooter.Core;
 using Shooter.Protocol;
 
 namespace Shooter.NetV2

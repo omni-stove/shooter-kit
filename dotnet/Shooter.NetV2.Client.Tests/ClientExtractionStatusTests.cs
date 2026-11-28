@@ -254,7 +254,7 @@ namespace Shooter.NetV2.Tests
         private static ItemCatalog Catalog()
         {
             return new ItemCatalog(
-                new[] { new ItemSpec(Ammo, maxStack: 30), new ItemSpec(Bandage, maxStack: 5) },
+                new[] { ItemSpecs.Create(Ammo, maxStack: 30), ItemSpecs.Create(Bandage, maxStack: 5) },
                 InventoryRule.Default);
         }
 

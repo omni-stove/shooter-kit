@@ -77,13 +77,13 @@ namespace Shooter.Tests.EditMode
             var weaponIdOfItem = new Dictionary<string, string>();
             foreach (var item in inventory.Items)
             {
-                if (item.IsWeapon)
+                if (item.IsWeapon())
                 {
-                    known.Add(item.WeaponId);
-                    weaponIdOfItem[item.Id] = item.WeaponId;
+                    known.Add(item.WeaponId());
+                    weaponIdOfItem[item.Id] = item.WeaponId();
                 }
 
-                if (item.IsAttachment)
+                if (item.IsAttachment())
                 {
                     known.Add(item.Id);
                 }

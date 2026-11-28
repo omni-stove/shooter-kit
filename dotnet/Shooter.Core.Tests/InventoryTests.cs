@@ -13,13 +13,13 @@ namespace Shooter.Core.Tests
         private const string _unknownId = "99999999-9999-4999-8999-999999999999";
 
         // 1x1・5 個まで重なる・0.5 kg・体力 25
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb", maxStack: 5, weight: 0.5f, useHealth: 25);
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb", maxStack: 5, weight: 0.5f, useHealth: 25);
 
         // 1x1・30 個まで重なる・全体で 60 個まで・1 個 0.1 kg
-        private static readonly ItemSpec _ammo = new ItemSpec(_ammoId, "item.ammo", maxStack: 30, maxCarried: 60, weight: 0.1f);
+        private static readonly ItemSpec _ammo = ItemSpecs.Create(_ammoId, "item.ammo", maxStack: 30, maxCarried: 60, weight: 0.1f);
 
         // 3x1・重ならない・4 kg
-        private static readonly ItemSpec _rifleCase = new ItemSpec(_rifleCaseId, "item.case", weight: 4f, width: 3, height: 1);
+        private static readonly ItemSpec _rifleCase = ItemSpecs.Create(_rifleCaseId, "item.case", weight: 4f, width: 3, height: 1);
 
         private static int[] Ints(params int[] values) => values;
 

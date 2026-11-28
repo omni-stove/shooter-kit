@@ -70,7 +70,7 @@ namespace Shooter.Tests.EditMode
         {
             var listed = AttachmentModelCatalogAssetStep.Entries().Select(e => e.ItemId).ToList();
 
-            foreach (var item in KitTuning.Items.Items.Where(i => i.IsAttachment))
+            foreach (var item in KitTuning.Items.Items.Where(i => i.IsAttachment()))
             {
                 Assert.That(listed, Does.Contain(item.Id), item.NameKey);
             }
@@ -84,7 +84,7 @@ namespace Shooter.Tests.EditMode
                 Assert.That(KitTuning.Items.TryFindAttachment(entry.ItemId, out var item), Is.True, entry.ItemId);
                 var shape = AttachmentModelCatalogAssetStep.ShapeFor(entry.ItemId);
                 Assert.That(shape.Parts, Is.Not.Empty, entry.ItemId);
-                if (item.Attachment.IsOptic)
+                if (item.Attachment().IsOptic)
                 {
                     Assert.That(shape.SocketName, Is.EqualTo(WeaponSockets.SightName), entry.ItemId);
                     Assert.That(shape.SocketPosition.y, Is.GreaterThan(0f), entry.ItemId);
@@ -122,7 +122,7 @@ namespace Shooter.Tests.EditMode
             var entry = AttachmentModelCatalogAssetStep.Entries().Single(e => e.ItemId == AttachmentModelCatalogAssetStep.ThermalScopeId);
             Assert.That(entry.Anchor, Is.EqualTo(AttachmentAnchor.Top));
             Assert.That(KitTuning.Items.TryFindAttachment(entry.ItemId, out var item), Is.True);
-            Assert.That(item.Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
+            Assert.That(item.Attachment().Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
         }
 
         [Test]
@@ -144,7 +144,7 @@ namespace Shooter.Tests.EditMode
             }
 
             Assert.That(KitTuning.Items.TryFindAttachment(entry.ItemId, out var item), Is.True);
-            Assert.That(item.Attachment.IsLight, Is.True);
+            Assert.That(item.Attachment().IsLight, Is.True);
         }
 
         [TestCase(AttachmentModelCatalogAssetStep.RedDotId)]

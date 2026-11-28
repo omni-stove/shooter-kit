@@ -179,6 +179,12 @@ namespace GameKit.Core.Tests
             typeof(PickupRespawn),
             typeof(PickupSideRule),
             typeof(PickupEligibility),
+            typeof(ItemSpec),
+            typeof(ItemCatalog),
+            typeof(Inventory),
+            typeof(InventoryRule),
+            typeof(InventoryEntry),
+            typeof(InventoryMoveResult),
             typeof(SpectateTargets),
             typeof(FlatJsonObject),
             typeof(HttpTelemetrySink),
@@ -201,7 +207,7 @@ namespace GameKit.Core.Tests
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(188));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(194));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

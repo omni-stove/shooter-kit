@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using UnityEditor;
@@ -77,7 +78,7 @@ namespace Shooter.Editor
             var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var item in items.Items)
             {
-                var light = item != null && item.IsAttachment ? item.Attachment.Light : null;
+                var light = item != null && item.IsAttachment() ? item.Attachment().Light : null;
                 if (light == null || !light.HasVisual || !seen.Add(light.VisualId))
                 {
                     continue;

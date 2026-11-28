@@ -493,17 +493,17 @@ namespace Shooter.Server
                     continue;
                 }
 
-                if (!spec.IsWeapon)
+                if (!spec.IsWeapon())
                 {
                     Merge(box.Items, rolled.ItemId, rolled.Count);
                     continue;
                 }
 
                 // 同じ武器は 2 つ持てないので、数を引いても 1 つだけ入れる
-                var weapon = WeaponFor(spec.WeaponId);
+                var weapon = WeaponFor(spec.WeaponId());
                 if (weapon == null)
                 {
-                    _log.WriteLine(ServerLootLog.NotAWeapon(rolled.ItemId, spec.WeaponId));
+                    _log.WriteLine(ServerLootLog.NotAWeapon(rolled.ItemId, spec.WeaponId()));
                 }
                 else if (!box.Weapons.Contains(weapon))
                 {

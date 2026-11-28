@@ -9,7 +9,7 @@ namespace Shooter.Core.Tests
         private const string _herbId = "0d3c6f1a-5b2e-4c7d-8a9f-1e2b3c4d5e6f";
         private const string _ammoId = "7a8b9c0d-1e2f-4a3b-9c4d-5e6f7a8b9c0d";
 
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb");
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb");
         private const string _rifleItemId = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
         private const string _rifleId = "5e6f7a8b-9c0d-4e1f-8a3b-4c5d6e7f8a9b";
 
@@ -27,7 +27,7 @@ namespace Shooter.Core.Tests
         [Test]
         public void DuplicateIdsAndUnknownStartingItemsAreRefused()
         {
-            Assert.Throws<ArgumentException>(() => new ItemCatalog(new[] { _herb, new ItemSpec(_herbId) }, InventoryRule.Default));
+            Assert.Throws<ArgumentException>(() => new ItemCatalog(new[] { _herb, ItemSpecs.Create(_herbId) }, InventoryRule.Default));
             Assert.Throws<ArgumentException>(() => new ItemCatalog(new[] { _herb }, InventoryRule.Default, new[] { new ItemCount(_ammoId, 1) }));
         }
 
@@ -42,22 +42,22 @@ namespace Shooter.Core.Tests
         [Test]
         public void ItemSpecChecksItsValues()
         {
-            Assert.Throws<ArgumentException>(() => new ItemSpec("herb"));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ItemSpec(_herbId, maxStack: 0));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ItemSpec(_herbId, weight: -1f));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ItemSpec(_herbId, width: ItemSpec.MaxSize + 1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => new ItemSpec(_herbId, useHealth: -1));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create("herb"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ItemSpecs.Create(_herbId, maxStack: 0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ItemSpecs.Create(_herbId, weight: -1f));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ItemSpecs.Create(_herbId, width: ItemSpec.MaxSize + 1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ItemSpecs.Create(_herbId, useHealth: -1));
         }
 
         [Test]
         public void ItemSpecSwapsWidthAndHeightWhenRotated()
         {
-            var item = new ItemSpec(_herbId, width: 3, height: 1);
+            var item = ItemSpecs.Create(_herbId, width: 3, height: 1);
 
             Assert.That(item.WidthWhen(true), Is.EqualTo(1));
             Assert.That(item.HeightWhen(true), Is.EqualTo(3));
             Assert.That(item.IsUsable, Is.False);
-            Assert.That(new ItemSpec(_herbId, useArmor: 5).IsUsable, Is.True);
+            Assert.That(ItemSpecs.Create(_herbId, useArmor: 5).IsUsable, Is.True);
         }
 
         [Test]
@@ -82,8 +82,8 @@ namespace Shooter.Core.Tests
         [Test]
         public void AWeaponItemIsFoundByItsWeaponAndLeadsToItsAmmo()
         {
-            var ammo = new ItemSpec(_ammoId, "item.ammo", maxStack: 30);
-            var rifle = new ItemSpec(_rifleItemId, "weapon.rifle", weaponId: _rifleId, ammoItemId: _ammoId);
+            var ammo = ItemSpecs.Create(_ammoId, "item.ammo", maxStack: 30);
+            var rifle = ItemSpecs.Create(_rifleItemId, "weapon.rifle", weaponId: _rifleId, ammoItemId: _ammoId);
             var catalog = new ItemCatalog(new[] { ammo, rifle }, InventoryRule.Default);
 
             Assert.That(catalog.TryFindWeapon(_rifleId, out var found), Is.True);
@@ -99,14 +99,14 @@ namespace Shooter.Core.Tests
         [Test]
         public void WeaponItemsThatCannotBeHeldAreRefused()
         {
-            var ammo = new ItemSpec(_ammoId, "item.ammo");
-            var rifle = new ItemSpec(_rifleItemId, weaponId: _rifleId, ammoItemId: _ammoId);
+            var ammo = ItemSpecs.Create(_ammoId, "item.ammo");
+            var rifle = ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, ammoItemId: _ammoId);
 
             Assert.Throws<ArgumentException>(() => new ItemCatalog(new[] { rifle }, InventoryRule.Default), "the ammo item is missing");
             Assert.Throws<ArgumentException>(
-                () => new ItemCatalog(new[] { ammo, rifle, new ItemSpec(_herbId, weaponId: _rifleId) }, InventoryRule.Default), "the weapon is listed twice");
+                () => new ItemCatalog(new[] { ammo, rifle, ItemSpecs.Create(_herbId, weaponId: _rifleId) }, InventoryRule.Default), "the weapon is listed twice");
             Assert.Throws<ArgumentException>(
-                () => new ItemCatalog(new[] { new ItemSpec(_ammoId, weaponId: "other"), rifle }, InventoryRule.Default), "the ammo is a weapon");
+                () => new ItemCatalog(new[] { ItemSpecs.Create(_ammoId, weaponId: "other"), rifle }, InventoryRule.Default), "the ammo is a weapon");
             Assert.Throws<ArgumentException>(
                 () => new ItemCatalog(new[] { ammo, rifle }, InventoryRule.Default, new[] { new ItemCount(_rifleItemId, 1) }), "weapons are not starting items");
         }
@@ -114,12 +114,12 @@ namespace Shooter.Core.Tests
         [Test]
         public void AWeaponItemSpecMustHoldOneWeaponAndNotHeal()
         {
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, maxStack: 2, weaponId: _rifleId));
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, useHealth: 10, weaponId: _rifleId));
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, ammoItemId: _ammoId), "ammo needs a weapon");
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, weaponId: _rifleId, ammoItemId: _rifleItemId), "its own ammo");
-            Assert.Throws<ArgumentException>(() => new ItemSpec(_rifleItemId, weaponId: _rifleId, ammoItemId: "9MM"), "not a uuid");
-            Assert.That(new ItemSpec(_rifleItemId, weaponId: "  " + _rifleId + " ").WeaponId, Is.EqualTo(_rifleId));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, maxStack: 2, weaponId: _rifleId));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, useHealth: 10, weaponId: _rifleId));
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, ammoItemId: _ammoId), "ammo needs a weapon");
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, ammoItemId: _rifleItemId), "its own ammo");
+            Assert.Throws<ArgumentException>(() => ItemSpecs.Create(_rifleItemId, weaponId: _rifleId, ammoItemId: "9MM"), "not a uuid");
+            Assert.That(ItemSpecs.Create(_rifleItemId, weaponId: "  " + _rifleId + " ").WeaponId, Is.EqualTo(_rifleId));
         }
     }
 }

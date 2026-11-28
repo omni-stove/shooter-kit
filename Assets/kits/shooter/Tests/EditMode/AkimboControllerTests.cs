@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using GameKit.Core;
+using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Editor;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
@@ -552,8 +553,8 @@ namespace Shooter.Tests.EditMode
 
         private static ItemCatalog MagazineCatalog()
         {
-            var pistolItem = new ItemSpec(PistolItemId, "weapon.pistol", weaponId: PistolId, attachmentSlots: new[] { "magazine" });
-            var magazine = new ItemSpec(MagazineItemId, "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 4));
+            var pistolItem = ItemSpecs.Create(PistolItemId, "weapon.pistol", weaponId: PistolId, attachmentSlots: new[] { "magazine" });
+            var magazine = ItemSpecs.Create(MagazineItemId, "item.extendedMagazine", attachment: new AttachmentSpec("magazine", magazineSizeBonus: 4));
             return new ItemCatalog(new[] { pistolItem, magazine }, InventoryRule.Default);
         }
 

@@ -787,7 +787,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(gear[0].ToSpec().IsShield, Is.True);
             Assert.That(BootstrapSceneBuilder.GearItemIds, Is.EqualTo(new[] { "c8e4f2a1-7b3d-4e95-a6c0-1d2f3b4a5e67" }));
             Assert.That(KitTuning.Items.TryFindAttachment(BootstrapSceneBuilder.GearItemIds[0], out var scope), Is.True);
-            Assert.That(scope.Attachment.Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
+            Assert.That(scope.Attachment().Sight.VisionMode, Is.EqualTo(VisionMode.Thermal));
             Assert.That(KitTuning.Items.CanAttach(gear[1].Id, scope.Id), Is.True, "the thermal scope fits the carbine on the gear table");
             Assert.That(KitTuning.Items.CanAttach(gear[0].Id, scope.Id), Is.False, "the shield takes no scope");
         }

@@ -73,7 +73,7 @@ namespace Shooter.Server
                 if (_context.Bodies.TryGet(playerId, out var body))
                 {
                     // 武器の重さは移動のルール (CarryLoadSpec) が武器として数えるので、持ち物の重さからは除く
-                    body.CarriedItemWeight = _catalog.Rule.CountWeightInCarryLoad ? inventory.TotalWeight - inventory.WeaponWeight : 0f;
+                    body.CarriedItemWeight = _catalog.Rule.CountWeightInCarryLoad ? inventory.TotalWeight - inventory.WeaponWeight() : 0f;
                 }
 
                 if (_match.TryGetPlayer(playerId, out var player))
@@ -240,9 +240,9 @@ namespace Shooter.Server
             }
 
             var refusal = RefusalOf(playerId);
-            if (item != null && item.IsWeapon)
+            if (item != null && item.IsWeapon())
             {
-                Equip(playerId, item.WeaponId, refusal);
+                Equip(playerId, item.WeaponId(), refusal);
                 return;
             }
 

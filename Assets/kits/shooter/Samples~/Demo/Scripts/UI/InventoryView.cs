@@ -468,7 +468,7 @@ namespace Shooter.Runtime
             details.Add(MakeLabel(NameOf(item, stack.ItemId) + "  " + Localizer.Resolve(new LocalizedText(CountKey, stack.Count.ToString(CultureInfo.InvariantCulture)))
                 + "  " + Localizer.Resolve(new LocalizedText(WeightNoLimitKey, Number(weight))), ItemNameClass));
             var handle = stack.Handle;
-            if (item != null && item.IsWeapon)
+            if (item != null && item.IsWeapon())
             {
                 details.Add(MakeButton(EquipKey, () => _source?.Use(handle)));
                 details.Add(MakeButton(DropKey, () => _source?.Drop(handle, 1)));
@@ -476,12 +476,12 @@ namespace Shooter.Runtime
                 return details;
             }
 
-            if (item != null && item.IsUsable)
+            if (item != null && item.IsUsable())
             {
                 details.Add(MakeButton(UseKey, () => _source?.Use(handle)));
             }
 
-            if (item != null && item.IsAttachment)
+            if (item != null && item.IsAttachment())
             {
                 var attach = MakeButton(AttachKey, () => _source?.Attach(handle));
                 details.Add(attach);
@@ -503,7 +503,7 @@ namespace Shooter.Runtime
 
         private void AddAttached(VisualElement details, Inventory inventory, ItemSpec weapon, int weaponHandle)
         {
-            foreach (var itemId in inventory.AttachmentsOf(weapon.WeaponId))
+            foreach (var itemId in inventory.AttachmentsOf(weapon.WeaponId()))
             {
                 inventory.Catalog.TryFind(itemId, out var attached);
                 var row = new VisualElement();

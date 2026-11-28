@@ -681,7 +681,7 @@ namespace Shooter.Server.Tests
         {
             var starts = starting > 0 ? new[] { new ItemCount(_chargeItemId, starting) } : Array.Empty<ItemCount>();
             return new ItemCatalog(
-                new[] { new ItemSpec(_chargeItemId, "item.breachCharge", maxStack: 3, weight: 0.5f) },
+                new[] { ItemSpecs.Create(_chargeItemId, "item.breachCharge", maxStack: 3, weight: 0.5f) },
                 new InventoryRule(gridWidth: 4, gridHeight: 2),
                 starts);
         }

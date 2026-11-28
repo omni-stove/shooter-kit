@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using GameKit.Core;
 using Shooter.Core;
 using Shooter.Runtime;
 using UnityEngine;
@@ -63,7 +64,7 @@ namespace Shooter.Editor
             var ids = new List<string>();
             foreach (var item in items.Items)
             {
-                if (item.IsAttachment && item.Attachment.IsOptic)
+                if (item.IsAttachment() && item.Attachment().IsOptic)
                 {
                     ids.Add(item.Id);
                 }

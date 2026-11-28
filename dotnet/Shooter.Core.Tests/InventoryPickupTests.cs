@@ -1,3 +1,4 @@
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -11,9 +12,9 @@ namespace Shooter.Core.Tests
         private const string _rifleId = "5e6f7a8b-9c0d-4e1f-8a3b-4c5d6e7f8a9b";
         private const string _pistolId = "6f7a8b9c-0d1e-4f2a-9b4c-5d6e7f8a9b0c";
 
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb", maxStack: 3, maxCarried: 4, weight: 0.5f, useHealth: 40);
-        private static readonly ItemSpec _plate = new ItemSpec(_plateId, "item.plate", useArmor: 50);
-        private static readonly ItemSpec _key = new ItemSpec(_keyId, "item.key");
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb", maxStack: 3, maxCarried: 4, weight: 0.5f, useHealth: 40);
+        private static readonly ItemSpec _plate = ItemSpecs.Create(_plateId, "item.plate", useArmor: 50);
+        private static readonly ItemSpec _key = ItemSpecs.Create(_keyId, "item.key");
 
         private static Inventory Make(InventoryRule rule = null)
         {
@@ -127,8 +128,8 @@ namespace Shooter.Core.Tests
 
         private static Inventory WeaponGrid(int width, int height, float maxWeight = 0f)
         {
-            var rifle = new ItemSpec(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: _rifleId);
-            var pistol = new ItemSpec(_plateId, "weapon.handgun", width: 2, height: 1, weaponId: _pistolId);
+            var rifle = ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 4, height: 2, weaponId: _rifleId);
+            var pistol = ItemSpecs.Create(_plateId, "weapon.handgun", width: 2, height: 1, weaponId: _pistolId);
             return new Inventory(new ItemCatalog(new[] { rifle, pistol }, new InventoryRule(maxWeight: maxWeight, gridWidth: width, gridHeight: height)));
         }
 

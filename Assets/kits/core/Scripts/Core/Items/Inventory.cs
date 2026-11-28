@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class Inventory
     {
@@ -12,8 +11,10 @@ namespace Shooter.Core
         // 重さの比べで、足した重さの丸めの誤差だけで上限を超えたことにしない
         private const float _weightTolerance = 1e-4f;
 
+        public static readonly IReadOnlyList<string> NoAttachments = Array.AsReadOnly(Array.Empty<string>());
+
         private readonly List<InventoryEntry> _stacks = new List<InventoryEntry>();
-        private readonly Dictionary<string, float> _weaponWeights = new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> _heldWeights = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly Dictionary<string, IReadOnlyList<string>> _attachments = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         private int _nextHandle = 1;
 
@@ -33,14 +34,14 @@ namespace Shooter.Core
 
         public float TotalWeight => WeightOf(_stacks);
 
-        public float WeaponWeight
+        public float HeldWeight
         {
             get
             {
                 var total = 0f;
                 foreach (var stack in _stacks)
                 {
-                    if (Catalog.TryFind(stack.ItemId, out var item) && item.IsWeapon)
+                    if (Catalog.TryFind(stack.ItemId, out var item) && item.IsHeld)
                     {
                         total += WeightOf(item) * stack.Count;
                     }
@@ -77,7 +78,7 @@ namespace Shooter.Core
             return at >= 0;
         }
 
-        // 武器の山は持ち武器から作る (HoldWeapons) ので、アイテムとしては入らない
+        // 手に持つ物の山は持ち主が持つ物から作る (Hold) ので、アイテムとしては入らない
         public int RoomFor(string itemId)
         {
             return RoomFor(itemId, 0f);
@@ -86,7 +87,7 @@ namespace Shooter.Core
         public int RoomFor(string itemId, float freedWeight)
         {
             SpecGuard.NonNegativeFinite(freedWeight, nameof(freedWeight));
-            if (!Catalog.TryFind(itemId, out var item) || item.IsWeapon)
+            if (!Catalog.TryFind(itemId, out var item) || item.IsHeld)
             {
                 return 0;
             }
@@ -100,7 +101,7 @@ namespace Shooter.Core
         {
             SpecGuard.NonNegativeFinite(freedWeight, nameof(freedWeight));
             var at = IndexOfHandle(handle);
-            if (at < 0 || !Catalog.TryFind(itemId, out var item) || item.IsWeapon)
+            if (at < 0 || !Catalog.TryFind(itemId, out var item) || item.IsHeld)
             {
                 return false;
             }
@@ -119,9 +120,9 @@ namespace Shooter.Core
             return Place(copy, item, WeightOf(item), 1, ref next, freedWeight) == 1;
         }
 
-        public IReadOnlyList<string> AttachmentsOf(string weaponId)
+        public IReadOnlyList<string> AttachmentsOf(string heldId)
         {
-            return weaponId != null && _attachments.TryGetValue(weaponId, out var attached) ? attached : WeaponAttachments.None;
+            return heldId != null && _attachments.TryGetValue(heldId, out var attached) ? attached : NoAttachments;
         }
 
         public void ReplaceAttachments(IEnumerable<KeyValuePair<string, IReadOnlyList<string>>> attachments)
@@ -153,49 +154,49 @@ namespace Shooter.Core
                 throw new ArgumentNullException(nameof(item));
             }
 
-            return item.IsWeapon && _weaponWeights.TryGetValue(item.WeaponId, out var weight) ? weight : item.Weight;
+            return item.IsHeld && _heldWeights.TryGetValue(item.HeldId, out var weight) ? weight : item.Weight;
         }
 
-        public bool TryGetWeaponWeight(string weaponId, out float weight)
+        public bool TryGetHeldWeight(string heldId, out float weight)
         {
             weight = 0f;
-            return weaponId != null && _weaponWeights.TryGetValue(weaponId, out weight);
+            return heldId != null && _heldWeights.TryGetValue(heldId, out weight);
         }
 
-        // 武器の値を作り直すと HoldWeapons で重さが揃うが、それは溢れる弾の空きを判定した後になる。付け外しの前に重さだけ先に替えられるようにする
-        public void SetWeaponWeight(string weaponId, float weight)
+        // 手に持つ物の値を作り直すと Hold で重さが揃うが、それは溢れる物の空きを判定した後になる。付け外しの前に重さだけ先に替えられるようにする
+        public void SetHeldWeight(string heldId, float weight)
         {
             SpecGuard.NonNegativeFinite(weight, nameof(weight));
-            if (weaponId == null || !_weaponWeights.TryGetValue(weaponId, out var current) || current == weight)
+            if (heldId == null || !_heldWeights.TryGetValue(heldId, out var current) || current == weight)
             {
                 return;
             }
 
-            _weaponWeights[weaponId] = weight;
+            _heldWeights[heldId] = weight;
             Changed?.Invoke();
         }
 
-        public string WeaponIdOf(int handle)
+        public string HeldIdOf(int handle)
         {
-            return TryGetStack(handle, out var stack) && Catalog.TryFind(stack.ItemId, out var item) ? item.WeaponId : null;
+            return TryGetStack(handle, out var stack) && Catalog.TryFind(stack.ItemId, out var item) ? item.HeldId : null;
         }
 
-        public bool HoldsWeapon(string weaponId)
+        public bool IsHolding(string heldId)
         {
-            return Catalog.TryFindWeapon(weaponId, out var item) && CountIn(_stacks, item.Id) > 0;
+            return Catalog.TryFindHeld(heldId, out var item) && CountIn(_stacks, item.Id) > 0;
         }
 
-        // 持ち物に入らない武器 (表に無い武器) は、持ち物の外で持つので入るものとして扱う
-        public bool CanHoldWeapon(string weaponId, float weight, string replacedWeaponId = null)
+        // 持ち物に入らない物 (表に無い物) は、持ち物の外で持つので入るものとして扱う
+        public bool CanHold(string heldId, float weight, string replacedHeldId = null)
         {
             SpecGuard.NonNegativeFinite(weight, nameof(weight));
-            if (!Catalog.TryFindWeapon(weaponId, out var item) || CountIn(_stacks, item.Id) > 0)
+            if (!Catalog.TryFindHeld(heldId, out var item) || CountIn(_stacks, item.Id) > 0)
             {
                 return true;
             }
 
             var copy = new List<InventoryEntry>(_stacks);
-            if (Catalog.TryFindWeapon(replacedWeaponId, out var replaced))
+            if (Catalog.TryFindHeld(replacedHeldId, out var replaced))
             {
                 copy.RemoveAll(stack => string.Equals(stack.ItemId, replaced.Id, StringComparison.Ordinal));
             }
@@ -204,12 +205,8 @@ namespace Shooter.Core
             return Place(copy, item, weight, 1, ref next) == 1;
         }
 
-        public IReadOnlyList<string> HoldWeapons(IReadOnlyList<WeaponSpec> held)
-        {
-            return HoldWeapons(held, null);
-        }
-
-        public IReadOnlyList<string> HoldWeapons(IReadOnlyList<WeaponSpec> held, Func<string, IReadOnlyList<string>> attachmentsOf)
+        // 持ち主が今持つ物の山だけを残し、足りない山を置く。置けなかった物の Id を返す。
+        public IReadOnlyList<string> Hold(IReadOnlyList<HeldItem> held)
         {
             if (held == null)
             {
@@ -217,27 +214,26 @@ namespace Shooter.Core
             }
 
             var attachments = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
-            foreach (var spec in held)
+            foreach (var one in held)
             {
-                var attached = spec != null ? attachmentsOf?.Invoke(spec.Id) : null;
-                if (attached != null && attached.Count > 0)
+                if (one.Id != null && one.Attachments.Count > 0)
                 {
-                    attachments[spec.Id] = attached;
+                    attachments[one.Id] = one.Attachments;
                 }
             }
 
             var changed = SetAttachments(attachments);
-            foreach (var spec in held)
+            foreach (var one in held)
             {
-                if (spec != null)
+                if (one.Id != null)
                 {
-                    _weaponWeights[spec.Id] = spec.Weight;
+                    _heldWeights[one.Id] = one.Weight;
                 }
             }
 
             for (var i = _stacks.Count - 1; i >= 0; i--)
             {
-                if (Catalog.TryFind(_stacks[i].ItemId, out var item) && item.IsWeapon && !Holds(held, item.WeaponId))
+                if (Catalog.TryFind(_stacks[i].ItemId, out var item) && item.IsHeld && !Holds(held, item.HeldId))
                 {
                     _stacks.RemoveAt(i);
                     changed = true;
@@ -245,9 +241,9 @@ namespace Shooter.Core
             }
 
             var missing = new List<string>();
-            foreach (var spec in held)
+            foreach (var one in held)
             {
-                if (spec == null || !Catalog.TryFindWeapon(spec.Id, out var item) || CountIn(_stacks, item.Id) > 0)
+                if (one.Id == null || !Catalog.TryFindHeld(one.Id, out var item) || CountIn(_stacks, item.Id) > 0)
                 {
                     continue;
                 }
@@ -258,7 +254,7 @@ namespace Shooter.Core
                 }
                 else
                 {
-                    missing.Add(spec.Id);
+                    missing.Add(one.Id);
                 }
             }
 
@@ -284,7 +280,7 @@ namespace Shooter.Core
                 throw new ArgumentOutOfRangeException(nameof(count), count, "count must not be negative");
             }
 
-            if (count == 0 || !Catalog.TryFind(itemId, out var item) || item.IsWeapon)
+            if (count == 0 || !Catalog.TryFind(itemId, out var item) || item.IsHeld)
             {
                 return 0;
             }
@@ -397,23 +393,23 @@ namespace Shooter.Core
             return IsFree(_stacks, x, y, width, height, handle) ? InventoryMoveResult.Moved : InventoryMoveResult.Blocked;
         }
 
-        // 武器を先に置くのは、大きい武器の場所を小さいアイテムに取られないようにするため
+        // 手に持つ物を先に置くのは、大きい武器などの場所を小さいアイテムに取られないようにするため
         public void Fill()
         {
-            var weapons = new List<ItemSpec>();
+            var held = new List<ItemSpec>();
             foreach (var stack in _stacks)
             {
-                if (Catalog.TryFind(stack.ItemId, out var item) && item.IsWeapon)
+                if (Catalog.TryFind(stack.ItemId, out var item) && item.IsHeld)
                 {
-                    weapons.Add(item);
+                    held.Add(item);
                 }
             }
 
             _stacks.Clear();
             _nextHandle = 1;
-            foreach (var weapon in weapons)
+            foreach (var item in held)
             {
-                Place(_stacks, weapon, WeightOf(weapon), 1, ref _nextHandle);
+                Place(_stacks, item, WeightOf(item), 1, ref _nextHandle);
             }
 
             foreach (var entry in Catalog.Starting)
@@ -714,7 +710,7 @@ namespace Shooter.Core
             {
                 foreach (var pair in next)
                 {
-                    if (!_attachments.TryGetValue(pair.Key, out var current) || !WeaponAttachments.SameAs(current, pair.Value))
+                    if (!_attachments.TryGetValue(pair.Key, out var current) || !SameList(current, pair.Value))
                     {
                         same = false;
                         break;
@@ -736,11 +732,31 @@ namespace Shooter.Core
             return true;
         }
 
-        private static bool Holds(IReadOnlyList<WeaponSpec> held, string weaponId)
+        private static bool SameList(IReadOnlyList<string> a, IReadOnlyList<string> b)
         {
-            foreach (var spec in held)
+            var left = a ?? NoAttachments;
+            var right = b ?? NoAttachments;
+            if (left.Count != right.Count)
             {
-                if (spec != null && string.Equals(spec.Id, weaponId, StringComparison.Ordinal))
+                return false;
+            }
+
+            for (var i = 0; i < left.Count; i++)
+            {
+                if (!string.Equals(left[i], right[i], StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool Holds(IReadOnlyList<HeldItem> held, string heldId)
+        {
+            foreach (var one in held)
+            {
+                if (string.Equals(one.Id, heldId, StringComparison.Ordinal))
                 {
                     return true;
                 }

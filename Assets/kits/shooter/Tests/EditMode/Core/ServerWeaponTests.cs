@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
 
 namespace Shooter.Core.Tests
@@ -713,7 +714,7 @@ namespace Shooter.Core.Tests
             const string ammoId = "00000000-0000-4000-8000-000000000002";
             const string rifleItemId = "00000000-0000-4000-8000-000000000003";
             var catalog = new ItemCatalog(
-                new[] { new ItemSpec(ammoId, maxStack: 100), new ItemSpec(rifleItemId, weaponId: _rifleId, ammoItemId: ammoId) },
+                new[] { ItemSpecs.Create(ammoId, maxStack: 100), ItemSpecs.Create(rifleItemId, weaponId: _rifleId, ammoItemId: ammoId) },
                 InventoryRule.Default);
             var inventory = new Inventory(catalog);
             inventory.Add(ammoId, 5);
@@ -737,7 +738,7 @@ namespace Shooter.Core.Tests
             const string ammoId = "00000000-0000-4000-8000-000000000002";
             const string rifleItemId = "00000000-0000-4000-8000-000000000003";
             var catalog = new ItemCatalog(
-                new[] { new ItemSpec(ammoId, maxStack: 6), new ItemSpec(rifleItemId, weaponId: _rifleId, ammoItemId: ammoId) },
+                new[] { ItemSpecs.Create(ammoId, maxStack: 6), ItemSpecs.Create(rifleItemId, weaponId: _rifleId, ammoItemId: ammoId) },
                 new InventoryRule(gridWidth: 1, gridHeight: 1));
             var inventory = new Inventory(catalog);
             inventory.Add(ammoId, 5);

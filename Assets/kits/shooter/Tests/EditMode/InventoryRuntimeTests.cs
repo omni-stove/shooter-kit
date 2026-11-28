@@ -18,9 +18,9 @@ namespace Shooter.Tests.EditMode
         private const string _caseId = "542515db-5705-497c-8fe6-076a6709131b";
         private const string _keyId = "6879cab0-d2cd-4ace-b51a-cc882b7c8aa9";
 
-        private static readonly ItemSpec _bandage = new ItemSpec(_bandageId, "item.bandage", maxStack: 5, weight: 0.1f, useHealth: 15);
-        private static readonly ItemSpec _case = new ItemSpec(_caseId, "item.toolbox", weight: 6f, width: 3, height: 2);
-        private static readonly ItemSpec _key = new ItemSpec(_keyId, "item.keycard", maxCarried: 1);
+        private static readonly ItemSpec _bandage = ItemSpecs.Create(_bandageId, "item.bandage", maxStack: 5, weight: 0.1f, useHealth: 15);
+        private static readonly ItemSpec _case = ItemSpecs.Create(_caseId, "item.toolbox", weight: 6f, width: 3, height: 2);
+        private static readonly ItemSpec _key = ItemSpecs.Create(_keyId, "item.keycard", maxCarried: 1);
 
         private const string _rifleAmmoId = "212170da-0998-4fa9-9457-761c75a2a797";
         private const string _pistolAmmoId = "02e07a84-f063-4b41-8f63-17a410a3d069";
@@ -28,11 +28,11 @@ namespace Shooter.Tests.EditMode
         private const string _handgunItemId = "b5b5df13-2868-4b0a-b2c0-fbe6a055a4fa";
 
         // 小銃 (4x2・5.56) と拳銃 (2x1・9mm)。弾は 60 発で 1 山・1 発 0.01 kg
-        private static readonly ItemSpec _rifleAmmo = new ItemSpec(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f);
-        private static readonly ItemSpec _pistolAmmo = new ItemSpec(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f);
-        private static readonly ItemSpec _rifleItem = new ItemSpec(
+        private static readonly ItemSpec _rifleAmmo = ItemSpecs.Create(_rifleAmmoId, "item.ammo556", maxStack: 60, weight: 0.01f);
+        private static readonly ItemSpec _pistolAmmo = ItemSpecs.Create(_pistolAmmoId, "item.ammo9mm", maxStack: 60, weight: 0.01f);
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(
             _rifleItemId, TestWeapons.RifleNameKey, width: 4, height: 2, weaponId: TestWeapons.RifleId, ammoItemId: _rifleAmmoId);
-        private static readonly ItemSpec _handgunItem = new ItemSpec(
+        private static readonly ItemSpec _handgunItem = ItemSpecs.Create(
             _handgunItemId, TestWeapons.HandgunNameKey, width: 2, height: 1, weaponId: TestWeapons.HandgunId, ammoItemId: _pistolAmmoId);
 
         private readonly List<Object> _created = new List<Object>();

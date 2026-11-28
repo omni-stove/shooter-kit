@@ -1,4 +1,5 @@
 using System.Linq;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;
@@ -10,8 +11,8 @@ namespace Shooter.Protocol.Tests
         private const string _herbId = "0d3c6f1a-5b2e-4c7d-8a9f-1e2b3c4d5e6f";
         private const string _caseId = "2f4e6d8c-0b1a-4c3e-8d5f-7a9b1c3d5e7f";
 
-        private static readonly ItemSpec _herb = new ItemSpec(_herbId, "item.herb", "herb", maxStack: 5, weight: 0.5f, useHealth: 25);
-        private static readonly ItemSpec _case = new ItemSpec(_caseId, "item.case", weight: 4f, width: 3, height: 1);
+        private static readonly ItemSpec _herb = ItemSpecs.Create(_herbId, "item.herb", "herb", maxStack: 5, weight: 0.5f, useHealth: 25);
+        private static readonly ItemSpec _case = ItemSpecs.Create(_caseId, "item.case", weight: 4f, width: 3, height: 1);
 
         private static readonly int[] _onlySecond = { 2 };
 
@@ -22,9 +23,9 @@ namespace Shooter.Protocol.Tests
 
         private static readonly string[] _opticAndUnder = { "optic", "underbarrel" };
         private static readonly string[] _onlyScope = { _scopeId };
-        private static readonly ItemSpec _rifleItem = new ItemSpec(_rifleItemId, "weapon.rifle", width: 2, weaponId: _rifleId, attachmentSlots: _opticAndUnder);
-        private static readonly ItemSpec _scope = new ItemSpec(_scopeId, "item.scope", weight: 0.75f, attachment: new AttachmentSpec("optic", adsSpreadMultiplier: 0.5f));
-        private static readonly ItemSpec _grip = new ItemSpec(_gripId, "item.grip", weight: 0.25f, attachment: new AttachmentSpec("underbarrel"));
+        private static readonly ItemSpec _rifleItem = ItemSpecs.Create(_rifleItemId, "weapon.rifle", width: 2, weaponId: _rifleId, attachmentSlots: _opticAndUnder);
+        private static readonly ItemSpec _scope = ItemSpecs.Create(_scopeId, "item.scope", weight: 0.75f, attachment: new AttachmentSpec("optic", adsSpreadMultiplier: 0.5f));
+        private static readonly ItemSpec _grip = ItemSpecs.Create(_gripId, "item.grip", weight: 0.25f, attachment: new AttachmentSpec("underbarrel"));
         private static readonly WeaponSpec _rifle = new WeaponSpec(_rifleId, "weapon.rifle", WeaponCategory.AssaultRifle, weight: 3f);
 
         private readonly MessageTable _server = MatchMessages.CreateServerTable();
@@ -147,8 +148,8 @@ namespace Shooter.Protocol.Tests
             const string ammoId = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
             const string rifleItemId = "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e";
             const string rifleId = "6c1f3b2a-8d4e-4f7a-9b0c-2e5d7a1f4c83";
-            var ammo = new ItemSpec(ammoId, "item.ammo556", maxStack: 60, weight: 0.01f);
-            var rifleItem = new ItemSpec(rifleItemId, "weapon.rifle", "rifle", width: 4, height: 2, weaponId: rifleId, ammoItemId: ammoId);
+            var ammo = ItemSpecs.Create(ammoId, "item.ammo556", maxStack: 60, weight: 0.01f);
+            var rifleItem = ItemSpecs.Create(rifleItemId, "weapon.rifle", "rifle", width: 4, height: 2, weaponId: rifleId, ammoItemId: ammoId);
             var local = new ItemCatalog(new[] { ammo, rifleItem }, new InventoryRule(gridWidth: 8, gridHeight: 4));
             var inventory = new Inventory(local);
             inventory.HoldWeapons(new[] { new WeaponSpec(rifleId, "weapon.rifle", WeaponCategory.AssaultRifle, weight: 3.5f) });
@@ -214,7 +215,7 @@ namespace Shooter.Protocol.Tests
 
             Assert.That(copy.AttachmentsOf(_rifleId), Is.EqualTo(attached));
             Assert.That(received.TryFindAttachment(_scopeId, out var scope), Is.True);
-            Assert.That(scope.Attachment.AdsSpreadMultiplier, Is.EqualTo(0.5f));
+            Assert.That(scope.Attachment().AdsSpreadMultiplier, Is.EqualTo(0.5f));
             Assert.That(received.SlotsOf(_rifleId), Is.EqualTo(_opticAndUnder));
         }
 
