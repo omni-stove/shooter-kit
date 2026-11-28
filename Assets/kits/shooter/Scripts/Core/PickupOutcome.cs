@@ -5,7 +5,7 @@ namespace Shooter.Core
     public readonly struct PickupOutcome
     {
         private PickupOutcome(
-            PickupKind kind,
+            string kind,
             PickupRejection rejection,
             string weaponId,
             bool addsWeapon,
@@ -34,7 +34,7 @@ namespace Shooter.Core
             DroppedWeaponId = droppedWeaponId;
         }
 
-        public PickupKind Kind { get; }
+        public string Kind { get; }
 
         public PickupRejection Rejection { get; }
 
@@ -62,7 +62,7 @@ namespace Shooter.Core
 
         public int Items { get; }
 
-        public static PickupOutcome Rejected(PickupKind kind, PickupRejection rejection)
+        public static PickupOutcome Rejected(string kind, PickupRejection rejection)
         {
             if (rejection == PickupRejection.None)
             {
@@ -74,37 +74,37 @@ namespace Shooter.Core
 
         internal static PickupOutcome WeaponAdded(string weaponId)
         {
-            return new PickupOutcome(PickupKind.Weapon, PickupRejection.None, weaponId, true, 0, 0, 0, PickupSpec.NoOwner, null, false);
+            return new PickupOutcome(PickupKinds.Weapon, PickupRejection.None, weaponId, true, 0, 0, 0, PickupSpec.NoOwner, null, false);
         }
 
         internal static PickupOutcome WeaponSwapped(string weaponId, string droppedWeaponId)
         {
-            return new PickupOutcome(PickupKind.Weapon, PickupRejection.None, weaponId, true, 0, 0, 0, PickupSpec.NoOwner, null, false, droppedWeaponId);
+            return new PickupOutcome(PickupKinds.Weapon, PickupRejection.None, weaponId, true, 0, 0, 0, PickupSpec.NoOwner, null, false, droppedWeaponId);
         }
 
-        internal static PickupOutcome AmmoAdded(PickupKind kind, string weaponId, int amount)
+        internal static PickupOutcome AmmoAdded(string kind, string weaponId, int amount)
         {
             return new PickupOutcome(kind, PickupRejection.None, weaponId, false, amount, 0, 0, PickupSpec.NoOwner, null, false);
         }
 
         internal static PickupOutcome Healed(int amount)
         {
-            return new PickupOutcome(PickupKind.Health, PickupRejection.None, null, false, 0, amount, 0, PickupSpec.NoOwner, null, false);
+            return new PickupOutcome(PickupKinds.Health, PickupRejection.None, null, false, 0, amount, 0, PickupSpec.NoOwner, null, false);
         }
 
         internal static PickupOutcome ArmorAdded(int amount)
         {
-            return new PickupOutcome(PickupKind.Armor, PickupRejection.None, null, false, 0, 0, amount, PickupSpec.NoOwner, null, false);
+            return new PickupOutcome(PickupKinds.Armor, PickupRejection.None, null, false, 0, 0, amount, PickupSpec.NoOwner, null, false);
         }
 
         internal static PickupOutcome ItemsAdded(string itemId, int count)
         {
-            return new PickupOutcome(PickupKind.Item, PickupRejection.None, null, false, 0, 0, 0, PickupSpec.NoOwner, null, false, null, itemId, count);
+            return new PickupOutcome(PickupKinds.Item, PickupRejection.None, null, false, 0, 0, 0, PickupSpec.NoOwner, null, false, null, itemId, count);
         }
 
         internal static PickupOutcome TagTaken(int ownerId, Side? ownerSide, bool isOwnSide)
         {
-            return new PickupOutcome(PickupKind.Tag, PickupRejection.None, null, false, 0, 0, 0, ownerId, ownerSide, isOwnSide);
+            return new PickupOutcome(PickupKinds.Tag, PickupRejection.None, null, false, 0, 0, 0, ownerId, ownerSide, isOwnSide);
         }
     }
 }

@@ -105,10 +105,10 @@ namespace Shooter.Tests.EditMode
 
             Assert.That(inventory.Inventory.CountOf(_bandageId), Is.Zero);
             var pickup = Object.FindObjectsByType<Pickup>(FindObjectsInactive.Include).Single();
-            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKind.Item));
+            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKinds.Item));
             Assert.That(pickup.Spec.ItemId, Is.EqualTo(_bandageId));
             Assert.That(pickup.Spec.Amount, Is.EqualTo(2));
-            Assert.That(pickup.name, Is.EqualTo(Pickup.ObjectName(PickupKind.Item)));
+            Assert.That(pickup.name, Is.EqualTo(Pickup.ObjectName(PickupKinds.Item)));
         }
 
         [Test]
@@ -302,7 +302,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(inventory.Inventory.HoldsWeapon(TestWeapons.RifleId), Is.False);
             Assert.That(inventory.Inventory.CountOf(_rifleAmmoId), Is.EqualTo(90), "the reserve stays in the inventory");
             var pickup = Object.FindObjectsByType<Pickup>(FindObjectsInactive.Include).Single();
-            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKind.Weapon));
+            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKinds.Weapon));
             Assert.That(pickup.Spec.WeaponId, Is.EqualTo(TestWeapons.RifleId));
             Assert.That(pickup.Contents.CarriedAmmo.AmmoInMagazine, Is.EqualTo(30));
             Assert.That(pickup.Contents.CarriedAmmo.ReserveAmmo, Is.Zero);

@@ -377,7 +377,7 @@ namespace Shooter.Tests.EditMode
             var pickup = thrown.Land();
 
             Assert.That(thrown == null, Is.True, "the flying weapon is replaced by the pickup");
-            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKind.Weapon));
+            Assert.That(pickup.Spec.Kind, Is.EqualTo(PickupKinds.Weapon));
             Assert.That(pickup.Contents.Weapon, Is.SameAs(_crowbar));
             Assert.That(pickup.CollectMode, Is.EqualTo(PickupCollectMode.Touch));
         }

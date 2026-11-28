@@ -336,7 +336,7 @@ namespace Shooter.Tests.EditMode
         {
             foreach (var pickup in KillAndCollectDrops(victim, killer))
             {
-                if (pickup.Spec.Kind == PickupKind.Tag)
+                if (pickup.Spec.Kind == PickupKinds.Tag)
                 {
                     return pickup;
                 }

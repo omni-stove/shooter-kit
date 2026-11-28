@@ -56,7 +56,7 @@ namespace Shooter.Server
             _log.WriteLine(ServerPickupsLog.Collected(spot.ItemId, playerId, outcome));
 
             // 入り切らなかったアイテムは、残りの数にしてこの場に置いておく
-            if (spec.Kind == PickupKind.Item && itemsPut < spec.Amount)
+            if (spec.Kind == PickupKinds.Item && itemsPut < spec.Amount)
             {
                 var left = spec.Amount - itemsPut;
                 spot.Spec = PickupSpec.Item(spec.ItemId, left, spec.Eligibility);
@@ -145,23 +145,23 @@ namespace Shooter.Server
             var weapons = _combat.WeaponsOf(playerId);
             switch (outcome.Kind)
             {
-                case PickupKind.Weapon when outcome.AddsWeapon:
+                case PickupKinds.Weapon when outcome.AddsWeapon:
                     return TryGiveWeapon(playerId, spot, outcome, weapons, out failure);
-                case PickupKind.Weapon:
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.Weapon:
+                case PickupKinds.ReserveAmmo:
                     if (weapons.AddReserveAmmo(outcome.WeaponId, outcome.ReserveAmmo) <= 0)
                     {
                         failure = "could not add ammo to weapon " + outcome.WeaponId;
                         return false;
                     }
 
-                    if (outcome.Kind == PickupKind.Weapon && spot.Carried != null)
+                    if (outcome.Kind == PickupKinds.Weapon && spot.Carried != null)
                     {
                         HandOverAttachments(playerId, spot, spot.Carried.Attachments);
                     }
 
                     return true;
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     if (_rules.Session.Heal(playerId, outcome.Health) <= 0)
                     {
                         failure = "could not heal";
@@ -169,7 +169,7 @@ namespace Shooter.Server
                     }
 
                     return true;
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     itemsPut = _inventories?.Give(playerId, outcome.ItemId, outcome.Items) ?? 0;
                     if (itemsPut <= 0)
                     {
@@ -272,7 +272,7 @@ namespace Shooter.Server
         private PickupSpec WithWeight(Spot spot)
         {
             var spec = spot.Spec;
-            if (spec.Kind != PickupKind.Weapon)
+            if (spec.Kind != PickupKinds.Weapon)
             {
                 return spec;
             }

@@ -239,7 +239,7 @@ namespace Shooter.Tests.EditMode
                 {
                     Assert.That(names.Add(placement.Name), Is.True, $"'{placement.Name}' is used twice");
                     Assert.That(() => placement.Contents.ToSpec(), Throws.Nothing);
-                    if (placement.Contents.Kind == PickupKind.Weapon)
+                    if (placement.Contents.Kind == PickupKinds.Weapon)
                     {
                         weapons++;
                     }
@@ -288,7 +288,7 @@ namespace Shooter.Tests.EditMode
                     var near = 0;
                     foreach (var placement in placements)
                     {
-                        if (placement.Contents.Kind == PickupKind.Weapon && Vector3.Distance(side.Spawns[0].Feet, placement.Position) < 15f)
+                        if (placement.Contents.Kind == PickupKinds.Weapon && Vector3.Distance(side.Spawns[0].Feet, placement.Position) < 15f)
                         {
                             near++;
                         }
@@ -328,11 +328,11 @@ namespace Shooter.Tests.EditMode
                 var contents = BattleRoyaleSceneBuilder.SupplyCrateContents(rifle);
 
                 Assert.That(contents.Count, Is.EqualTo(3));
-                Assert.That(contents[0].Kind, Is.EqualTo(PickupKind.Weapon));
+                Assert.That(contents[0].Kind, Is.EqualTo(PickupKinds.Weapon));
                 Assert.That(contents[0].Weapon, Is.SameAs(rifle));
-                Assert.That(contents[1].Kind, Is.EqualTo(PickupKind.Health));
+                Assert.That(contents[1].Kind, Is.EqualTo(PickupKinds.Health));
                 Assert.That(contents[1].Amount, Is.EqualTo(BattleRoyaleSceneBuilder.HealthPickupAmount));
-                Assert.That(contents[2].Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+                Assert.That(contents[2].Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
                 Assert.That(contents[2].Amount, Is.EqualTo(BattleRoyaleSceneBuilder.AmmoPickupAmount));
                 foreach (var content in contents)
                 {

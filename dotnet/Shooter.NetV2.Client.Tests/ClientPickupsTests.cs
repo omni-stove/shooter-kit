@@ -52,7 +52,7 @@ namespace Shooter.NetV2.Tests
             Assert.That(_pickups.Items.Select(i => i.Id), Is.EqualTo(_keptIds));
             Assert.That(_pickups.Items[0].OwnerId, Is.EqualTo(7));
             Assert.That(_pickups.Items[0].TryGetPickupKind(out var kind), Is.True);
-            Assert.That(kind, Is.EqualTo(PickupKind.Weapon));
+            Assert.That(kind, Is.EqualTo(PickupKinds.Weapon));
             Assert.That(_pickups.Items[1].IsAvailable, Is.False);
             Assert.That(_pickups.Items[1].OwnerId, Is.Null);
             Assert.That(_pickups.Items[2].IsAmmoCrate, Is.True);

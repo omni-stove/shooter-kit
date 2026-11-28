@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
@@ -14,8 +15,13 @@ namespace Shooter.Runtime
 
         public const int NoCarriedAmmo = -1;
 
-        [SerializeField, Tooltip("種類")]
-        private PickupKind _kind = PickupKind.Health;
+        [SerializeField, Tooltip("種類のキー (PickupKinds の Weapon・ReserveAmmo・Health・Armor・Tag・Item)。空なら下の数の種類")]
+        private string _kindKey = string.Empty;
+
+        // 種類が列挙だった頃のシーンとプレハブは種類を数で保存しているので、キーが空ならこの数を PickupKinds の順で読む。
+        // 初めの値を回復 (2) にするのは、列挙だった頃に新しく置いた拾い物が回復だったのと同じにするため。
+        [SerializeField, HideInInspector, Tooltip("列挙だった頃に数で保存した種類")]
+        private int _kind = 2;
 
         [SerializeField, Min(0), Tooltip("量。武器は持っていたときに足す予備弾、予備弾は数、回復・防具は量、アイテムは数。タグでは使わない")]
         private int _amount = DefaultHealthAmount;
@@ -47,21 +53,24 @@ namespace Shooter.Runtime
         [SerializeField, Min(-1), Tooltip("タグの持ち主の陣営の ID。-1 なら分からない")]
         private int _tagOwnerSideId = -1;
 
-        public PickupKind Kind => _kind;
+        // 範囲の外の数は知らない種類として数のまま返し、種類で分ける所 (Validate など) に知らない種類として断らせる。
+        public string Kind => !string.IsNullOrEmpty(_kindKey) ? _kindKey
+            : _kind >= 0 && _kind < PickupKinds.Names.Count ? PickupKinds.FromNumber(_kind)
+            : _kind.ToString(CultureInfo.InvariantCulture);
 
         public int Amount => _amount;
 
         public WeaponDefinition Weapon => _weapon;
 
         public WeaponAmmo CarriedAmmo =>
-            _kind == PickupKind.Weapon && _weapon != null && _carriedMagazine >= 0
+            Kind == PickupKinds.Weapon && _weapon != null && _carriedMagazine >= 0
                 ? new WeaponAmmo(_weapon.Id, _carriedMagazine, Math.Max(0, _carriedReserve))
                 : null;
 
         public IReadOnlyList<string> Attachments =>
-            _kind == PickupKind.Weapon && _attachments != null && _attachments.Length > 0 ? _attachments : WeaponAttachments.None;
+            Kind == PickupKinds.Weapon && _attachments != null && _attachments.Length > 0 ? _attachments : WeaponAttachments.None;
 
-        public string ItemId => _kind == PickupKind.Item ? _itemId : null;
+        public string ItemId => Kind == PickupKinds.Item ? _itemId : null;
 
         public PickupEligibility Eligibility => PickupEligibility.Of(_sideRule, new Side(Math.Max(0, _sideId)));
 
@@ -72,7 +81,7 @@ namespace Shooter.Runtime
                 throw new ArgumentNullException(nameof(weapon));
             }
 
-            return Create(PickupKind.Weapon, ammoIfOwned, weapon, eligibility, PickupSpec.NoOwner, null);
+            return Create(PickupKinds.Weapon, ammoIfOwned, weapon, eligibility, PickupSpec.NoOwner, null);
         }
 
         public static PickupContents ForDroppedWeapon(
@@ -93,7 +102,7 @@ namespace Shooter.Runtime
                 throw new ArgumentException($"ammo is for weapon '{ammo.WeaponId}', not '{weapon.Id}'", nameof(ammo));
             }
 
-            var contents = Create(PickupKind.Weapon, ammo.AmmoInMagazine + ammo.ReserveAmmo, weapon, eligibility, PickupSpec.NoOwner, null);
+            var contents = Create(PickupKinds.Weapon, ammo.AmmoInMagazine + ammo.ReserveAmmo, weapon, eligibility, PickupSpec.NoOwner, null);
             contents._carriedMagazine = ammo.AmmoInMagazine;
             contents._carriedReserve = ammo.ReserveAmmo;
             contents._attachments = ToArray(attachments);
@@ -102,24 +111,24 @@ namespace Shooter.Runtime
 
         public static PickupContents ForReserveAmmo(int amount, WeaponDefinition weapon = null, PickupEligibility eligibility = default)
         {
-            return Create(PickupKind.ReserveAmmo, amount, weapon, eligibility, PickupSpec.NoOwner, null);
+            return Create(PickupKinds.ReserveAmmo, amount, weapon, eligibility, PickupSpec.NoOwner, null);
         }
 
         public static PickupContents ForHealth(int amount, PickupEligibility eligibility = default)
         {
-            return Create(PickupKind.Health, amount, null, eligibility, PickupSpec.NoOwner, null);
+            return Create(PickupKinds.Health, amount, null, eligibility, PickupSpec.NoOwner, null);
         }
 
         public static PickupContents ForArmor(int amount, PickupEligibility eligibility = default)
         {
-            return Create(PickupKind.Armor, amount, null, eligibility, PickupSpec.NoOwner, null);
+            return Create(PickupKinds.Armor, amount, null, eligibility, PickupSpec.NoOwner, null);
         }
 
         public static PickupContents ForItem(string itemId, int amount, PickupEligibility eligibility = default)
         {
             var contents = new PickupContents
             {
-                _kind = PickupKind.Item,
+                _kindKey = PickupKinds.Item,
                 _amount = amount,
                 _itemId = itemId,
                 _sideRule = eligibility.Rule,
@@ -131,7 +140,7 @@ namespace Shooter.Runtime
 
         public PickupContents WithAttachments(IReadOnlyList<string> attachments)
         {
-            if (_kind != PickupKind.Weapon)
+            if (Kind != PickupKinds.Weapon)
             {
                 throw new ArgumentException("only a Weapon pickup carries attachments", nameof(attachments));
             }
@@ -151,36 +160,36 @@ namespace Shooter.Runtime
 
         public static PickupContents ForTag(int ownerId, Side? ownerSide, PickupEligibility eligibility = default)
         {
-            return Create(PickupKind.Tag, 1, null, eligibility, ownerId, ownerSide);
+            return Create(PickupKinds.Tag, 1, null, eligibility, ownerId, ownerSide);
         }
 
         public PickupSpec ToSpec()
         {
             var eligibility = Eligibility;
-            switch (_kind)
+            switch (Kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     if (_weapon == null)
                     {
                         throw new ArgumentException("a Weapon pickup needs a WeaponDefinition");
                     }
 
                     return PickupSpec.Weapon(_weapon.Id, _amount, eligibility, _weapon.Weight + AttachedWeight());
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     return PickupSpec.ReserveAmmo(_amount, _weapon != null ? _weapon.Id : null, eligibility);
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     return PickupSpec.Health(_amount, eligibility);
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     return PickupSpec.Armor(_amount, eligibility);
-                case PickupKind.Tag:
+                case PickupKinds.Tag:
                     return PickupSpec.Tag(
                         Math.Max(PickupSpec.NoOwner, _tagOwnerId),
                         _tagOwnerSideId >= 0 ? new Side(_tagOwnerSideId) : (Side?)null,
                         eligibility);
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     return PickupSpec.Item(_itemId, _amount, eligibility);
                 default:
-                    throw new ArgumentException($"unknown PickupKind {_kind}");
+                    throw new ArgumentException($"unknown pickup kind {Kind}");
             }
         }
 
@@ -231,12 +240,12 @@ namespace Shooter.Runtime
             }
             catch (ArgumentException e)
             {
-                return $"kind={_kind} (invalid: {e.Message})";
+                return $"kind={Kind} (invalid: {e.Message})";
             }
         }
 
         private static PickupContents Create(
-            PickupKind kind,
+            string kind,
             int amount,
             WeaponDefinition weapon,
             PickupEligibility eligibility,
@@ -245,7 +254,7 @@ namespace Shooter.Runtime
         {
             var contents = new PickupContents
             {
-                _kind = kind,
+                _kindKey = PickupKinds.Require(kind, nameof(kind)),
                 _amount = amount,
                 _weapon = weapon,
                 _sideRule = eligibility.Rule,

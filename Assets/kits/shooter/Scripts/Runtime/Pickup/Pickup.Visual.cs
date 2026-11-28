@@ -162,7 +162,7 @@ namespace Shooter.Runtime
             trigger.center = new Vector3(0f, _radius, 0f);
         }
 
-        private Transform CreateVisual(PickupKind kind)
+        private Transform CreateVisual(string kind)
         {
             var prefab = _visualPrefab != null ? _visualPrefab : WeaponModelOf(_contents);
             if (prefab != null)
@@ -174,7 +174,7 @@ namespace Shooter.Runtime
                 return instance.transform;
             }
 
-            if (kind == PickupKind.Weapon)
+            if (kind == PickupKinds.Weapon)
             {
                 var gun = CreateGunShape();
                 AttachVisuals(gun);
@@ -196,7 +196,7 @@ namespace Shooter.Runtime
 
         public static GameObject WeaponModelOf(PickupContents contents)
         {
-            if (contents == null || contents.Kind != PickupKind.Weapon || contents.Weapon == null)
+            if (contents == null || contents.Kind != PickupKinds.Weapon || contents.Weapon == null)
             {
                 return null;
             }
@@ -240,19 +240,19 @@ namespace Shooter.Runtime
             return part.transform;
         }
 
-        public static Color ColorOf(PickupKind kind)
+        public static Color ColorOf(string kind)
         {
             switch (kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     return new Color(0.75f, 0.75f, 0.8f);
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     return new Color(0.95f, 0.75f, 0.2f);
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     return new Color(0.3f, 0.9f, 0.4f);
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     return new Color(0.3f, 0.6f, 1f);
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     return new Color(0.7f, 0.45f, 0.95f);
                 default:
                     return new Color(0.95f, 0.3f, 0.3f);

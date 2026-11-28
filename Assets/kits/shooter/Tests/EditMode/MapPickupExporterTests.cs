@@ -52,13 +52,13 @@ namespace Shooter.Tests.EditMode
             Assert.That(pickups.Pickups.Count, Is.EqualTo(2));
             var first = pickups.Pickups[0];
             Assert.That(first.Id, Is.EqualTo("Pickups/Medkit"));
-            Assert.That(first.Spec.Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(first.Spec.Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(first.Spec.Amount, Is.EqualTo(40));
             Assert.That(first.Position, Is.EqualTo(new System.Numerics.Vector3(1f, 0.5f, 2f)));
             Assert.That(first.Radius, Is.EqualTo(1.5f));
             Assert.That(first.RespawnSeconds, Is.EqualTo(12f));
             Assert.That(first.Touch, Is.False, "Interact waits for the pickup request");
-            Assert.That(pickups.Pickups[1].Spec.Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+            Assert.That(pickups.Pickups[1].Spec.Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
             Assert.That(pickups.Pickups[1].Touch, Is.True, "the default collect mode is Touch");
             Assert.That(pickups.Pickups[1].RespawnSeconds, Is.EqualTo(PickupSpawnPoint.DefaultRespawnSeconds));
             Assert.That(pickups.AmmoCrates.Count, Is.EqualTo(1));

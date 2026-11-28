@@ -47,14 +47,14 @@ namespace Shooter.Tests.EditMode
 
                 Assert.That(placed.name, Is.EqualTo(RangeWeaponRackFixture.RootName));
                 Assert.That(placed.scene, Is.EqualTo(scene));
-                var points = placed.GetComponentsInChildren<PickupSpawnPoint>().Where(p => p.Contents.Kind == PickupKind.Weapon).ToArray();
+                var points = placed.GetComponentsInChildren<PickupSpawnPoint>().Where(p => p.Contents.Kind == PickupKinds.Weapon).ToArray();
                 Assert.That(points.Select(p => p.Contents.Weapon), Is.EqualTo(range.Weapons));
                 for (var i = 0; i < points.Length; i++)
                 {
                     Assert.That(points[i].transform.position, Is.EqualTo(RangeWeaponRackFixture.SlotPosition(i)));
                     Assert.That(points[i].CollectMode, Is.EqualTo(PickupCollectMode.Look));
                     Assert.That(points[i].Radius, Is.EqualTo(RangeWeaponRackFixture.PickupRadius));
-                    Assert.That(points[i].Contents.Kind, Is.EqualTo(PickupKind.Weapon));
+                    Assert.That(points[i].Contents.Kind, Is.EqualTo(PickupKinds.Weapon));
                     Assert.That(points[i].Contents.Amount, Is.EqualTo(range.Weapons[i].ToSpec().MagazineSize));
                     Assert.That(fixture.Footprint.Contains(points[i].transform.position + (Vector3.up * 0.5f)), Is.True, points[i].name);
                 }
@@ -82,7 +82,7 @@ namespace Shooter.Tests.EditMode
                 var fixture = new RangeWeaponRackFixture();
                 var placed = fixture.Place(scene, GameRules.Default);
 
-                var items = placed.GetComponentsInChildren<PickupSpawnPoint>().Where(p => p.Contents.Kind == PickupKind.Item).ToArray();
+                var items = placed.GetComponentsInChildren<PickupSpawnPoint>().Where(p => p.Contents.Kind == PickupKinds.Item).ToArray();
                 Assert.That(items.Select(p => p.Contents.ItemId), Is.EqualTo(optics));
                 for (var i = 0; i < items.Length; i++)
                 {

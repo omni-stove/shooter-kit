@@ -195,7 +195,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(point.CollectMode, Is.EqualTo(PickupCollectMode.Touch));
             Assert.That(point.RespawnSeconds, Is.EqualTo(BreachFeatureSceneBuilder.ChargePickupRespawnSeconds));
             var contents = point.Contents.ToSpec();
-            Assert.That(contents.Kind, Is.EqualTo(PickupKind.Item));
+            Assert.That(contents.Kind, Is.EqualTo(PickupKinds.Item));
             Assert.That(contents.ItemId, Is.EqualTo(BreachFeatureSceneBuilder.ChargeItemId));
             Assert.That(contents.Amount, Is.EqualTo(1));
         }

@@ -83,7 +83,7 @@ namespace Shooter.Core.Tests
             Assert.That(PickupLog.Respawned("Pickup-Health"), Is.EqualTo("[Pickup] respawned pickup=Pickup-Health"));
             Assert.That(PickupLog.Expired("Pickup-Tag"), Is.EqualTo("[Pickup] expired pickup=Pickup-Tag"));
             Assert.That(
-                PickupLog.Failed("Pickup-Weapon", "Player", PickupKind.Weapon, "no WeaponDefinition"),
+                PickupLog.Failed("Pickup-Weapon", "Player", PickupKinds.Weapon, "no WeaponDefinition"),
                 Is.EqualTo("[Pickup] failed pickup=Pickup-Weapon by=Player kind=Weapon reason=no WeaponDefinition"));
         }
     }

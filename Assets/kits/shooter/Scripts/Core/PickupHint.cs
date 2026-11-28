@@ -49,25 +49,25 @@ namespace Shooter.Core
 
             switch (outcome.Kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     var action = outcome.DroppedWeaponId != null ? PickupHintAction.SwapWeapon
                         : outcome.AddsWeapon ? PickupHintAction.TakeWeapon
                         : PickupHintAction.WeaponAmmo;
                     hint = new PickupHint(action, outcome.WeaponId, nameKey, 0, inputActionPath);
                     return true;
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     hint = new PickupHint(PickupHintAction.ReserveAmmo, null, null, 0, inputActionPath);
                     return true;
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     hint = new PickupHint(PickupHintAction.Health, null, null, 0, inputActionPath);
                     return true;
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     hint = new PickupHint(PickupHintAction.Armor, null, null, 0, inputActionPath);
                     return true;
-                case PickupKind.Tag:
+                case PickupKinds.Tag:
                     hint = new PickupHint(PickupHintAction.Tag, null, null, 0, inputActionPath);
                     return true;
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     hint = new PickupHint(PickupHintAction.Item, outcome.ItemId, nameKey, outcome.Items, inputActionPath);
                     return true;
                 default:

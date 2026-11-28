@@ -84,7 +84,7 @@ namespace Shooter.Server.Tests
 
             Assert.That(ServerMapData.TryLoad("NetArena01", Roots(), out var data, out error), Is.True, error);
             Assert.That(data.Pickups.Pickups, Has.Count.EqualTo(1));
-            Assert.That(data.Pickups.Pickups[0].Spec.Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(data.Pickups.Pickups[0].Spec.Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(data.Pickups.AmmoCrates[0].Id, Is.EqualTo("crate"));
         }
 

@@ -1,5 +1,4 @@
 using System.Numerics;
-using Shooter.Core;
 using Shooter.Protocol;
 
 namespace Shooter.NetV2
@@ -37,7 +36,7 @@ namespace Shooter.NetV2
         public bool IsAvailable => !Opened;
 
         // 弾薬箱なら false
-        public bool TryGetPickupKind(out PickupKind kind)
+        public bool TryGetPickupKind(out string kind)
         {
             return PickupItemKinds.TryGetPickupKind(Kind, out kind);
         }

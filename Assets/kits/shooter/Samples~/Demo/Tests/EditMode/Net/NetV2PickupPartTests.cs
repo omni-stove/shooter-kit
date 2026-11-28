@@ -91,7 +91,7 @@ namespace Shooter.Net.Tests
             Assert.That(visual, Is.Not.Null);
             Assert.That(visual.localPosition, Is.EqualTo(new Vector3(0f, Pickup.VisualHeight, 0f)));
             Assert.That(root.GetComponentsInChildren<Collider>(true), Is.Empty, "the server's movement does not collide with it");
-            AssertColor(ColorOf(visual), Pickup.ColorOf(PickupKind.Health));
+            AssertColor(ColorOf(visual), Pickup.ColorOf(PickupKinds.Health));
             Assert.That(_logs, Does.Contain("[Pickup] net look item=5 kind=HealthPickup prefab=False"));
         }
 

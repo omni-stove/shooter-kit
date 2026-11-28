@@ -17,7 +17,7 @@ namespace Shooter.Core
             Spec = spec ?? throw new ArgumentNullException(nameof(spec));
 
             // タグは倒れた人から出す物で、モード (Kill Confirmed) が置くので出現点には置けない
-            if (spec.Kind == PickupKind.Tag)
+            if (spec.Kind == PickupKinds.Tag)
             {
                 throw new ArgumentException("a pickup spawn point cannot hold a tag", nameof(spec));
             }

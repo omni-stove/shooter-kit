@@ -264,7 +264,7 @@ namespace Shooter.Runtime
         // DropOnDeath とこの Runner のどちらが先に倒れたことを受けても同じになるよう、ここではモードの状態を変えず、登録は OnDropped で行う。
         private void DecideTagDrop(DropContext context, List<PickupContents> drops)
         {
-            drops.RemoveAll(item => item == null || item.Kind == PickupKind.Tag);
+            drops.RemoveAll(item => item == null || item.Kind == PickupKinds.Tag);
             if (_killConfirmed == null)
             {
                 return;
@@ -283,7 +283,7 @@ namespace Shooter.Runtime
         {
             foreach (var pickup in pickups)
             {
-                if (pickup == null || pickup.Spec.Kind != PickupKind.Tag)
+                if (pickup == null || pickup.Spec.Kind != PickupKinds.Tag)
                 {
                     continue;
                 }

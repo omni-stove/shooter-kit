@@ -93,7 +93,7 @@ namespace Shooter.Editor
             var respawn = definition != null ? definition.RespawnSeconds : point.RespawnSeconds;
 
             // 持ち物に入るかを見る武器の重さはサーバーが持ち物の表から足すので、書き出さない
-            if (spec.Kind == PickupKind.Weapon)
+            if (spec.Kind == PickupKinds.Weapon)
             {
                 spec = PickupSpec.Weapon(spec.WeaponId, spec.Amount, spec.Eligibility);
             }

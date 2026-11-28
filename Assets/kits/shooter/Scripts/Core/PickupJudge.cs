@@ -28,16 +28,16 @@ namespace Shooter.Core
 
             switch (spec.Kind)
             {
-                case PickupKind.Weapon:
+                case PickupKinds.Weapon:
                     return JudgeWeapon(spec, collector);
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.ReserveAmmo:
                     return JudgeAmmo(spec, collector);
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     var missingHealth = collector.MaxHealth - collector.Health;
                     return missingHealth > 0
                         ? PickupOutcome.Healed(Math.Min(spec.Amount, missingHealth))
                         : PickupOutcome.Rejected(spec.Kind, PickupRejection.HealthFull);
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     if (collector.MaxArmor <= 0)
                     {
                         return PickupOutcome.Rejected(spec.Kind, PickupRejection.NoArmor);
@@ -47,10 +47,10 @@ namespace Shooter.Core
                     return missingArmor > 0
                         ? PickupOutcome.ArmorAdded(Math.Min(spec.Amount, missingArmor))
                         : PickupOutcome.Rejected(spec.Kind, PickupRejection.ArmorFull);
-                case PickupKind.Tag:
+                case PickupKinds.Tag:
                     var ownSide = spec.TagOwnerSide.HasValue && collector.Side.HasValue && spec.TagOwnerSide.Value == collector.Side.Value;
                     return PickupOutcome.TagTaken(spec.TagOwnerId, spec.TagOwnerSide, ownSide);
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     if (collector.Inventory == null)
                     {
                         return PickupOutcome.Rejected(spec.Kind, PickupRejection.NoInventory);
@@ -61,7 +61,7 @@ namespace Shooter.Core
                         ? PickupOutcome.ItemsAdded(spec.ItemId, items)
                         : PickupOutcome.Rejected(spec.Kind, PickupRejection.InventoryFull);
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(spec), spec.Kind, "spec has an unknown PickupKind");
+                    throw new ArgumentOutOfRangeException(nameof(spec), spec.Kind, "spec has an unknown pickup kind");
             }
         }
 

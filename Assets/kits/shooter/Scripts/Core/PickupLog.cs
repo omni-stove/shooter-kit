@@ -27,7 +27,7 @@ namespace Shooter.Core
                 text.Append(" item=").Append(spec.ItemId);
             }
 
-            if (spec.Kind == PickupKind.Tag)
+            if (spec.Kind == PickupKinds.Tag)
             {
                 text.Append(" owner=").Append(Number(spec.TagOwnerId))
                     .Append(" owner-side=").Append(spec.TagOwnerSide.HasValue ? Number(spec.TagOwnerSide.Value.Id) : "-");
@@ -85,7 +85,7 @@ namespace Shooter.Core
             }
 
             AppendGain(text, "items", outcome.Items);
-            if (outcome.Kind == PickupKind.Tag)
+            if (outcome.Kind == PickupKinds.Tag)
             {
                 text.Append(" owner=").Append(Number(outcome.TagOwnerId))
                     .Append(" owner-side=").Append(outcome.TagOwnerSide.HasValue ? Number(outcome.TagOwnerSide.Value.Id) : "-")
@@ -105,7 +105,7 @@ namespace Shooter.Core
             return Tag + " rejected pickup=" + Name(pickupName) + " by=" + Name(collectorName) + " kind=" + outcome.Kind + " reason=" + outcome.Rejection;
         }
 
-        public static string Failed(string pickupName, string collectorName, PickupKind kind, string reason)
+        public static string Failed(string pickupName, string collectorName, string kind, string reason)
         {
             return Tag + " failed pickup=" + Name(pickupName) + " by=" + Name(collectorName) + " kind=" + kind + " reason=" + Name(reason);
         }

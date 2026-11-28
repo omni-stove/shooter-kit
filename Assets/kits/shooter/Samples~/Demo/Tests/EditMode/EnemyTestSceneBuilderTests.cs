@@ -198,16 +198,16 @@ namespace Shooter.Tests.EditMode
                 Assert.That(points, Has.Length.EqualTo(4));
 
                 var weapon = root.transform.Find(EnemyTestSceneBuilder.WeaponPickupName).GetComponent<PickupSpawnPoint>();
-                Assert.That(weapon.Contents.Kind, Is.EqualTo(PickupKind.Weapon));
+                Assert.That(weapon.Contents.Kind, Is.EqualTo(PickupKinds.Weapon));
                 Assert.That(weapon.Contents.Weapon, Is.SameAs(launcher));
                 Assert.That(weapon.transform.position, Is.EqualTo(EnemyTestSceneBuilder.WeaponPickupPosition));
 
                 var ammo = root.transform.Find(EnemyTestSceneBuilder.AmmoPickupName).GetComponent<PickupSpawnPoint>();
-                Assert.That(ammo.Contents.Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+                Assert.That(ammo.Contents.Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
                 Assert.That(ammo.Contents.Weapon, Is.Null, "fills the weapon in hand");
 
                 var health = root.transform.Find(EnemyTestSceneBuilder.HealthPickupName).GetComponent<PickupSpawnPoint>();
-                Assert.That(health.Contents.Kind, Is.EqualTo(PickupKind.Health));
+                Assert.That(health.Contents.Kind, Is.EqualTo(PickupKinds.Health));
                 Assert.That(health.CollectMode, Is.EqualTo(PickupCollectMode.Touch));
 
                 var interact = root.transform.Find(EnemyTestSceneBuilder.InteractHealthPickupName).GetComponent<PickupSpawnPoint>();
@@ -269,9 +269,9 @@ namespace Shooter.Tests.EditMode
             var drop = agent.GetComponent<DropOnDeath>();
             Assert.That(drop, Is.Not.Null, "the enemy drops pickups when it falls");
             Assert.That(drop.Drops.Count(), Is.EqualTo(2));
-            Assert.That(drop.Drops[0].Kind, Is.EqualTo(PickupKind.ReserveAmmo));
+            Assert.That(drop.Drops[0].Kind, Is.EqualTo(PickupKinds.ReserveAmmo));
             Assert.That(drop.Drops[0].Amount, Is.EqualTo(EnemyTestSceneBuilder.EnemyDropAmmoAmount));
-            Assert.That(drop.Drops[1].Kind, Is.EqualTo(PickupKind.Health));
+            Assert.That(drop.Drops[1].Kind, Is.EqualTo(PickupKinds.Health));
             Assert.That(drop.Drops[1].Amount, Is.EqualTo(EnemyTestSceneBuilder.EnemyDropHealthAmount));
 
             var registry = agent.CoverRegistry;

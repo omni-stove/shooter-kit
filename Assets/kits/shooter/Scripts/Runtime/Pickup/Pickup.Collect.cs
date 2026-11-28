@@ -36,7 +36,7 @@ namespace Shooter.Runtime
             var collector = Describe(player);
             var outcome = PickupJudge.Judge(_spec, collector);
             var nameKey = _contents.Weapon != null ? _contents.Weapon.NameKey : null;
-            if (_spec.Kind == PickupKind.Item && collector.Inventory != null && collector.Inventory.Catalog.TryFind(_spec.ItemId, out var item))
+            if (_spec.Kind == PickupKinds.Item && collector.Inventory != null && collector.Inventory.Catalog.TryFind(_spec.ItemId, out var item))
             {
                 nameKey = item.NameKey;
             }
@@ -53,7 +53,7 @@ namespace Shooter.Runtime
 
             if (!TryResolveSpec())
             {
-                outcome = PickupOutcome.Rejected(_contents != null ? _contents.Kind : PickupKind.Health, PickupRejection.ApplyFailed);
+                outcome = PickupOutcome.Rejected(_contents != null ? _contents.Kind : PickupKinds.Health, PickupRejection.ApplyFailed);
                 return false;
             }
 
@@ -85,7 +85,7 @@ namespace Shooter.Runtime
             }
 
             // 入り切らなかったアイテムは、残りの数にしてこの場に置いておく
-            if (spec.Kind == PickupKind.Item && outcome.Items < spec.Amount)
+            if (spec.Kind == PickupKinds.Item && outcome.Items < spec.Amount)
             {
                 var stocked = _stocked ?? _contents;
                 Contents = _contents.WithAmount(spec.Amount - outcome.Items);
@@ -166,7 +166,7 @@ namespace Shooter.Runtime
             failure = null;
             switch (outcome.Kind)
             {
-                case PickupKind.Weapon when outcome.AddsWeapon:
+                case PickupKinds.Weapon when outcome.AddsWeapon:
                     var definition = _contents.Weapon;
                     if (definition == null)
                     {
@@ -199,27 +199,27 @@ namespace Shooter.Runtime
                     }
 
                     return true;
-                case PickupKind.Weapon:
-                case PickupKind.ReserveAmmo:
+                case PickupKinds.Weapon:
+                case PickupKinds.ReserveAmmo:
                     if (weapons.AddReserveAmmo(outcome.WeaponId, outcome.ReserveAmmo) <= 0)
                     {
                         failure = $"could not add ammo to weapon '{outcome.WeaponId}'";
                         return false;
                     }
 
-                    if (outcome.Kind == PickupKind.Weapon)
+                    if (outcome.Kind == PickupKinds.Weapon)
                     {
                         HandOverAttachments(collector);
                     }
 
                     return true;
-                case PickupKind.Health:
+                case PickupKinds.Health:
                     collector.Health.Heal(outcome.Health);
                     return true;
-                case PickupKind.Armor:
+                case PickupKinds.Armor:
                     armor.AddArmor(outcome.Armor);
                     return true;
-                case PickupKind.Item:
+                case PickupKinds.Item:
                     var inventory = collector.GetComponent<PlayerInventory>();
                     if (inventory == null || inventory.Inventory.Add(outcome.ItemId, outcome.Items) != outcome.Items)
                     {
