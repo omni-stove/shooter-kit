@@ -5,7 +5,6 @@
         "GameKit.Core",
         "GameKit.Navigation",
         "Shooter.Core",
-        "Shooter.Progression.Core",
         "Shooter.Runtime",
         "Shooter.Services",
         "GameKit.Runtime"

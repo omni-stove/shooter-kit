@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 項目の名前を ProgressionSpec のコンストラクターの引数名にそろえるのは、値の検査を ProgressionSpec と ProgressionUnlock に任せたまま、
     // 引っかかった項目 (unlocks[2].level など) を例外の引数名から示せるようにするため。

@@ -17,7 +17,6 @@
         "Shooter.Campaign",
         "Shooter.Stealth.Core",
         "Shooter.Stealth",
-        "Shooter.Progression.Core",
         "Shooter.Progression",
         "Shooter.Editor",
         "Shooter.Samples.Editor",

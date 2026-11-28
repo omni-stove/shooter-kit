@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class PlayerProfile : IEquatable<PlayerProfile>
     {

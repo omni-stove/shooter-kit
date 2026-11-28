@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
-    // Unity の EditMode テストと dotnet/Shooter.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
+    // Unity の EditMode テストと dotnet/GameKit.Core.Tests の両方でコンパイルする。どちらの NUnit でも通る書き方に留める
     // 期待値は AchievementSpec.Default (first-blood キル 1・marksman 頭 50・veteran 試合 25・victor 勝ち 10、近接は knife) から出す。
     public sealed class AchievementTrackerTests
     {

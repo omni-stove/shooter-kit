@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 数はプロフィールにだけ持ち、ここは条件と照らすだけにする。数を 2 か所に持つと、保存と画面の数が食い違うため。
     public sealed class AchievementTracker

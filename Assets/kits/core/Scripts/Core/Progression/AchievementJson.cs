@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public static class AchievementJson
     {
