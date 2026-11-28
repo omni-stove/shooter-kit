@@ -11,7 +11,6 @@
         "Shooter.Core.Grapple",
         "Shooter.Core.BattleRoyale",
         "Shooter.Core.Extraction",
-        "Shooter.Core.Party",
         "Shooter.Core.Spectate",
         "Shooter.Core.CoopHold",
         "Shooter.Core.Telemetry",

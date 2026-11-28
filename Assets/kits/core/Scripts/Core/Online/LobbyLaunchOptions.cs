@@ -145,7 +145,7 @@ namespace GameKit.Core
             return true;
         }
 
-        // internal にしないのは、GameKit.Core は内部をキットのアセンブリに見せないので、版を同じ形で載せるキットのロビー (Shooter.Core.Party の PartyLobby など) から呼べなくなるため
+        // internal にしないのは、GameKit.Core は内部をキットのアセンブリに見せないので、版を同じ形で載せるキットのロビー (PartyLobby など) から呼べなくなるため
         public static string BucketVersion(string version)
         {
             var trimmed = string.IsNullOrWhiteSpace(version) ? "0" : version.Trim();

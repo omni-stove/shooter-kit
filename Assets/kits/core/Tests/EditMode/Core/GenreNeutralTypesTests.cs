@@ -148,12 +148,17 @@ namespace GameKit.Core.Tests
             typeof(BarkPacing),
             typeof(BarkSelector),
             typeof(BarkVerdict),
+            typeof(PartyLobby),
+            typeof(PartyMember),
+            typeof(PartyStage),
+            typeof(PartyState),
+            typeof(PartyStatus),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(140));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(145));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

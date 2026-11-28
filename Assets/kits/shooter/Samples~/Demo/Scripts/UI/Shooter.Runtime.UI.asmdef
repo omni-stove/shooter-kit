@@ -7,7 +7,6 @@
         "Shooter.Core",
         "Shooter.Core.BattleRoyale",
         "Shooter.Core.Extraction",
-        "Shooter.Core.Party",
         "Shooter.Core.Spectate",
         "Shooter.Core.Telemetry",
         "Shooter.Core.Presentation",

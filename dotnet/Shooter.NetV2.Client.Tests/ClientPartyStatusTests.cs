@@ -1,7 +1,7 @@
 using System;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
-using CorePartyStatus = Shooter.Core.PartyStatus;
+using CorePartyStatus = GameKit.Core.PartyStatus;
 
 namespace Shooter.NetV2.Tests
 {
