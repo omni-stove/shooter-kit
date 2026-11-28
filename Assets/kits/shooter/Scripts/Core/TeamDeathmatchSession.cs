@@ -225,7 +225,7 @@ namespace Shooter.Core
             var current = Math.Min(health.Current, maxHealth);
             var resized = new Health(maxHealth);
             resized.TakeDamage(maxHealth - current);
-            var regenerator = new HealthRegenerator(resized, Spec.Rules);
+            var regenerator = new HealthRegenerator(resized, Spec.Rules.Match);
             regenerator.ContinueFrom(_regenerators[playerId]);
             _health[playerId] = resized;
             _regenerators[playerId] = regenerator;
@@ -937,7 +937,7 @@ namespace Shooter.Core
             var health = new Health(_maxHealthOf.TryGetValue(playerId, out var max) ? max : MaxHealth);
             _health[playerId] = health;
             _ledger.Clear(playerId);
-            _regenerators[playerId] = new HealthRegenerator(health, Spec.Rules);
+            _regenerators[playerId] = new HealthRegenerator(health, Spec.Rules.Match);
 
             var protection = Spec.Rules.SpawnProtectionSeconds;
             if (protection > 0f)
@@ -1034,7 +1034,7 @@ namespace Shooter.Core
             var max = _maxHealthOf.TryGetValue(playerId, out var changed) ? changed : MaxHealth;
             var health = new Health(max);
             health.TakeDamage(Math.Max(0, max - current));
-            var regenerator = new HealthRegenerator(health, Spec.Rules);
+            var regenerator = new HealthRegenerator(health, Spec.Rules.Match);
             regenerator.NotifyDamaged();
             _health[playerId] = health;
             _regenerators[playerId] = regenerator;

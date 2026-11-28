@@ -1,7 +1,6 @@
 using System;
-using GameKit.Core;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class HealthRegenerator
     {
@@ -18,7 +17,7 @@ namespace Shooter.Core
         // float だと大きな Tick を足したときに桁落ちしやすいので double でためる
         private double _pending;
 
-        public HealthRegenerator(Health health, GameRules rules)
+        public HealthRegenerator(Health health, MatchRules rules)
             : this(
                 health,
                 (rules ?? throw new ArgumentNullException(nameof(rules))).RegenDelaySeconds,
@@ -50,8 +49,9 @@ namespace Shooter.Core
         }
 
         // 体力の上限を替えるときは Health を作り直すので、被弾からの待ちと回復の端数を作り直す前の分から引き継ぐ。
-        // NotifyDamaged で済ませないのは、上限を替えただけで回復の待ちが初めからになるため
-        internal void ContinueFrom(HealthRegenerator previous)
+        // NotifyDamaged で済ませないのは、上限を替えただけで回復の待ちが初めからになるため。
+        // internal にしないのは、GameKit.Core は内部をキットのアセンブリに見せないので、作り直す側 (Shooter.Core.TeamDeathmatchSession など) から呼べなくなるため
+        public void ContinueFrom(HealthRegenerator previous)
         {
             if (previous == null)
             {

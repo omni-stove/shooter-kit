@@ -1,8 +1,7 @@
 using System;
-using GameKit.Core;
 using NUnit.Framework;
 
-namespace Shooter.Core.Tests
+namespace GameKit.Core.Tests
 {
     public sealed class HealthRegeneratorTests
     {
@@ -13,19 +12,9 @@ namespace Shooter.Core.Tests
             return health;
         }
 
-        private static GameRules Rules(float regenDelaySeconds, float regenPerSecond)
+        private static MatchRules Rules(float regenDelaySeconds, float regenPerSecond)
         {
-            return new GameRules(
-                FriendlyFire.Off,
-                RespawnMode.Individual,
-                GameRules.DefaultWaveIntervalSeconds,
-                regenDelaySeconds,
-                regenPerSecond,
-                DeathBody.Vanish,
-                DeathCamera.None,
-                false,
-                1f,
-                Destruction.Off);
+            return new MatchRules(regenDelaySeconds: regenDelaySeconds, regenPerSecond: regenPerSecond);
         }
 
         [Test]
@@ -170,7 +159,7 @@ namespace Shooter.Core.Tests
         public void DoesNothingWithZeroRate()
         {
             var health = Damaged(100, 50);
-            var regenerator = new HealthRegenerator(health, GameRules.Default);
+            var regenerator = new HealthRegenerator(health, MatchRules.Default);
             var changes = 0;
             health.Changed += () => changes++;
 
@@ -209,7 +198,7 @@ namespace Shooter.Core.Tests
             var health = new Health(100);
 
             Assert.Throws<ArgumentNullException>(() => new HealthRegenerator(null, 0f, 1f));
-            Assert.Throws<ArgumentNullException>(() => new HealthRegenerator(null, GameRules.Default));
+            Assert.Throws<ArgumentNullException>(() => new HealthRegenerator(null, MatchRules.Default));
             Assert.Throws<ArgumentNullException>(() => new HealthRegenerator(health, null));
             Assert.Throws<ArgumentOutOfRangeException>(() => new HealthRegenerator(health, -1f, 1f));
             Assert.Throws<ArgumentOutOfRangeException>(() => new HealthRegenerator(health, float.NaN, 1f));
