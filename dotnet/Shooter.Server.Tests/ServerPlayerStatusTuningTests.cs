@@ -27,7 +27,7 @@ namespace Shooter.Server.Tests
         {
             Assert.That(ServerPlayerStatusTuning.TryLoad(new[] { _root.Path }, out var tuning, out var error), Is.True, error);
 
-            Assert.That(tuning.Stamina, Is.SameAs(StaminaSpec.Default));
+            Assert.That(tuning.Stamina, Is.SameAs(StaminaUse.DefaultSpec));
             Assert.That(tuning.Stagger, Is.SameAs(StaggerTuning.Default));
             Assert.That(tuning.Suppression, Is.SameAs(SuppressionSpec.Default));
             Assert.That(tuning.StaminaPath, Is.Null);

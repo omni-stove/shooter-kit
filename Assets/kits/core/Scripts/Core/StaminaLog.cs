@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public static class StaminaLog
     {
@@ -14,18 +16,27 @@ namespace Shooter.Core
                 throw new ArgumentNullException(nameof(spec));
             }
 
-            return string.Format(
+            var line = string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} rule={1} max={2:0.00} sprintPerSecond={3:0.00} slide={4:0.00} dodge={5:0.00} regenPerSecond={6:0.00} regenDelay={7:0.00} recover={8:0.00}",
+                "{0} rule={1} max={2:0.00} sprintPerSecond={3:0.00} regenPerSecond={4:0.00} regenDelay={5:0.00} recover={6:0.00}",
                 LogTag,
                 rule,
                 spec.Max,
                 spec.SprintCostPerSecond,
-                spec.SlideCost,
-                spec.DodgeCost,
                 spec.RegenPerSecond,
                 spec.RegenDelaySeconds,
                 spec.RecoverAmount);
+
+            // 辞書の並びに任せず並べ直すのは、同じ調整値ならいつも同じ行になり、ログを比べられるようにするため。
+            var uses = new List<string>(spec.UseCosts.Keys);
+            uses.Sort(StringComparer.Ordinal);
+            var builder = new StringBuilder(line);
+            foreach (var use in uses)
+            {
+                builder.Append(" cost.").Append(use).Append('=').Append(spec.UseCosts[use].ToString("0.00", CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
         }
 
         public static string FormatDepleted(StaminaStatus status)
@@ -48,12 +59,12 @@ namespace Shooter.Core
             return LogTag + " refilled " + FormatStatus(status);
         }
 
-        public static string FormatSpent(StaminaUse use, float cost, StaminaStatus status)
+        public static string FormatSpent(string use, float cost, StaminaStatus status)
         {
             return string.Format(CultureInfo.InvariantCulture, "{0} spent use={1} cost={2:0.00} ", LogTag, use, cost) + FormatStatus(status);
         }
 
-        public static string FormatRefused(StaminaUse use, float cost, StaminaStatus status)
+        public static string FormatRefused(string use, float cost, StaminaStatus status)
         {
             return string.Format(CultureInfo.InvariantCulture, "{0} refused use={1} cost={2:0.00} ", LogTag, use, cost) + FormatStatus(status);
         }

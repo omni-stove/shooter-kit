@@ -133,12 +133,18 @@ namespace GameKit.Core.Tests
             typeof(ClientBuildOptions),
             typeof(Health),
             typeof(InteractHint),
+            typeof(Stamina),
+            typeof(StaminaJson),
+            typeof(StaminaLog),
+            typeof(StaminaMeter),
+            typeof(StaminaSpec),
+            typeof(StaminaStatus),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(125));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(131));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

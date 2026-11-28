@@ -1,4 +1,5 @@
 using System;
+using GameKit.Core;
 using Shooter.Core;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace Shooter.Runtime
         public const int InstallOrder = 350;
 
         public StaminaActionInstaller()
-            : this(StaminaSpec.Default)
+            : this(StaminaUse.DefaultSpec)
         {
         }
 

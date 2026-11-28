@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // 時間を自分で読まず Tick で受けるのは、Unity の外 (dotnet のテスト) でも同じ計算を回すため。
     public sealed class StaminaMeter
@@ -32,7 +32,7 @@ namespace Shooter.Core
             return cost <= 0f || (!IsDepleted && Current >= cost);
         }
 
-        public bool CanAfford(StaminaUse use)
+        public bool CanAfford(string use)
         {
             return CanAfford(Spec.CostOf(use));
         }
@@ -48,7 +48,7 @@ namespace Shooter.Core
             return true;
         }
 
-        public bool TrySpend(StaminaUse use)
+        public bool TrySpend(string use)
         {
             return TrySpend(Spec.CostOf(use));
         }

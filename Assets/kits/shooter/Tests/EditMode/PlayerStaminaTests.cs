@@ -29,7 +29,7 @@ namespace Shooter.Tests.EditMode
 
         // 最大 10、走ると毎秒 10 (1 秒で尽きる)、滑ると 3、回避で 4、毎秒 10 戻る、待ち 0.5 秒、尽きたら 5 まで戻るまで使えない。
         private static StaminaSpec Spec(float regenDelaySeconds = 0.5f, float dodgeCost = 4f) =>
-            new StaminaSpec(10f, 10f, 3f, dodgeCost, 10f, regenDelaySeconds, 5f);
+            StaminaUse.Spec(10f, 10f, 3f, dodgeCost, 10f, regenDelaySeconds, 5f);
 
         [SetUp]
         public void SetUp()
@@ -75,7 +75,7 @@ namespace Shooter.Tests.EditMode
             var installers = PlayerActions.Installers.OfType<StaminaActionInstaller>().ToArray();
 
             Assert.That(installers, Has.Length.EqualTo(1));
-            Assert.That(installers[0].Spec, Is.SameAs(StaminaSpec.Default));
+            Assert.That(installers[0].Spec, Is.SameAs(StaminaUse.DefaultSpec));
         }
 
         [Test]
@@ -198,7 +198,7 @@ namespace Shooter.Tests.EditMode
             var stamina = Install(Stamina.On, Spec(regenDelaySeconds: 30f));
             _player.DodgeRule = Dodge.On;
 
-            LogAssert.Expect(LogType.Log, "[Stamina] spent use=Dodge cost=4.00 current=6.00 max=10.00 depleted=false");
+            LogAssert.Expect(LogType.Log, "[Stamina] spent use=dodge cost=4.00 current=6.00 max=10.00 depleted=false");
             Assert.That(_player.TryStartDodge(new Vector2(1f, 0f)), Is.True);
             Assert.That(stamina.Meter.Current, Is.EqualTo(6f).Within(1e-5f));
 
@@ -210,7 +210,7 @@ namespace Shooter.Tests.EditMode
                 _player.Tick(Vector2.zero, false, false, false, StepSeconds);
             }
 
-            LogAssert.Expect(LogType.Log, "[Stamina] refused use=Dodge cost=4.00 current=2.00 max=10.00 depleted=false");
+            LogAssert.Expect(LogType.Log, "[Stamina] refused use=dodge cost=4.00 current=2.00 max=10.00 depleted=false");
             Assert.That(_player.TryStartDodge(new Vector2(-1f, 0f)), Is.False, "the cooldown has passed but 2 is short of 4");
             Assert.That(_player.IsDodging, Is.False);
             Assert.That(stamina.Meter.Current, Is.EqualTo(2f).Within(1e-5f), "a refused dodge spends nothing");
@@ -225,7 +225,7 @@ namespace Shooter.Tests.EditMode
 
             Run(8f);
             Assert.That(_slide.TryStart(), Is.True);
-            LogAssert.Expect(LogType.Log, "[Stamina] spent use=Slide cost=3.00 current=7.00 max=10.00 depleted=false");
+            LogAssert.Expect(LogType.Log, "[Stamina] spent use=slide cost=3.00 current=7.00 max=10.00 depleted=false");
             _player.Tick(Vector2.zero, false, false, false, StepSeconds);
             Assert.That(_slide.IsSliding, Is.True);
             Assert.That(stamina.Meter.Current, Is.EqualTo(7f).Within(1e-5f));
@@ -235,7 +235,7 @@ namespace Shooter.Tests.EditMode
             Assert.That(stamina.Meter.Current, Is.EqualTo(2f).Within(1e-5f));
 
             Run(8f);
-            LogAssert.Expect(LogType.Log, "[Stamina] refused use=Slide cost=3.00 current=2.00 max=10.00 depleted=false");
+            LogAssert.Expect(LogType.Log, "[Stamina] refused use=slide cost=3.00 current=2.00 max=10.00 depleted=false");
             Assert.That(_slide.TryStart(), Is.False);
             Assert.That(stamina.Meter.Current, Is.EqualTo(2f).Within(1e-5f));
         }
@@ -293,7 +293,7 @@ namespace Shooter.Tests.EditMode
             }
 
             Assert.Throws<System.ArgumentNullException>(() => new StaminaActionInstaller(null));
-            Assert.That(new StaminaActionInstaller().Spec, Is.SameAs(StaminaSpec.Default));
+            Assert.That(new StaminaActionInstaller().Spec, Is.SameAs(StaminaUse.DefaultSpec));
         }
 
         private PlayerStamina Install(Stamina rule, StaminaSpec spec)

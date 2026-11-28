@@ -10,7 +10,7 @@ namespace Shooter.Runtime
     {
         private PlayerController _mover;
         private Damageable _damageable;
-        private StaminaMeter _meter = new StaminaMeter(StaminaSpec.Default);
+        private StaminaMeter _meter = new StaminaMeter(StaminaUse.DefaultSpec);
         private Stamina _rule = Stamina.Off;
         private StaminaStatus? _published;
 
@@ -29,17 +29,17 @@ namespace Shooter.Runtime
 
         public bool CanSprint => !IsOn || _meter.CanSprint;
 
-        public float CostOf(StaminaUse use)
+        public float CostOf(string use)
         {
             return Spec.CostOf(use);
         }
 
-        public bool CanAfford(StaminaUse use)
+        public bool CanAfford(string use)
         {
             return !IsOn || _meter.CanAfford(use);
         }
 
-        public void Spend(StaminaUse use)
+        public void Spend(string use)
         {
             if (!IsOn)
             {
