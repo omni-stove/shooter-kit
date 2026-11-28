@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Shooter.Core;
+using GameKit.Core;
 using UnityEngine.UIElements;
 
 namespace Shooter.Runtime

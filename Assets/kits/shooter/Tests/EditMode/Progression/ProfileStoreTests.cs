@@ -1,8 +1,8 @@
 using System;
 using System.Text.RegularExpressions;
-using Shooter.Core;
-using Shooter.Runtime;
+using GameKit.Core;
 using NUnit.Framework;
+using Shooter.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 

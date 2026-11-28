@@ -1,6 +1,5 @@
 using System;
 using GameKit.Core;
-using Shooter.Core;
 using Shooter.Runtime;
 using NUnit.Framework;
 using UnityEngine.UIElements;

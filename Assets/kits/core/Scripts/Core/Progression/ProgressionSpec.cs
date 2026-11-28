@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public sealed class ProgressionSpec
     {

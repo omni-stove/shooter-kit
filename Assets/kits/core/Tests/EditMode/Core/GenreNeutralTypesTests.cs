@@ -153,12 +153,25 @@ namespace GameKit.Core.Tests
             typeof(PartyStage),
             typeof(PartyState),
             typeof(PartyStatus),
+            typeof(AchievementDefinition),
+            typeof(AchievementJson),
+            typeof(AchievementLog),
+            typeof(AchievementProgress),
+            typeof(AchievementSpec),
+            typeof(AchievementTracker),
+            typeof(PlayerProfile),
+            typeof(ProgressionAward),
+            typeof(ProgressionJson),
+            typeof(ProgressionLedger),
+            typeof(ProgressionLog),
+            typeof(ProgressionSpec),
+            typeof(ProgressionUnlock),
         };
 
         [Test]
         public void GenreNeutralTypesLiveInTheGameKitCore()
         {
-            Assert.That(_movedFromShooter, Has.Length.EqualTo(145));
+            Assert.That(_movedFromShooter, Has.Length.EqualTo(158));
             foreach (var type in _movedFromShooter)
             {
                 Assert.That(type.Assembly.GetName().Name, Is.EqualTo("GameKit.Core"), type.Name);

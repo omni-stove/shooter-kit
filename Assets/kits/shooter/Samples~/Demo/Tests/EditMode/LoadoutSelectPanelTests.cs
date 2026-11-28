@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameKit.Core;
+using NUnit.Framework;
 using Shooter.Core;
 using Shooter.Runtime;
-using NUnit.Framework;
 using UnityEngine.UIElements;
 
 namespace Shooter.Tests.EditMode

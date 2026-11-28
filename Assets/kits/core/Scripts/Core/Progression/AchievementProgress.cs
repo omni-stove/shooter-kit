@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     public readonly struct AchievementProgress : IEquatable<AchievementProgress>
     {
