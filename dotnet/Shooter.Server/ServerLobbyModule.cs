@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using GameKit.Core;
 using GameKit.Net;
 using Shooter.Core;
 using Shooter.Server.Eos;
@@ -83,7 +84,7 @@ namespace Shooter.Server
             get
             {
                 var rules = _currentRules?.Invoke() ?? _context?.Rules?.Rules;
-                return ServerLobby.ModeName(rules?.Objective ?? MatchObjective.None);
+                return ServerLobbyModes.ModeName(rules?.Objective ?? MatchObjective.None);
             }
         }
 

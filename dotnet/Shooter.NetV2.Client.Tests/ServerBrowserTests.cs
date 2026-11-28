@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 
 namespace Shooter.NetV2.Tests
 {
@@ -55,11 +54,11 @@ namespace Shooter.NetV2.Tests
         }
 
         private static LobbyInfo Server(
-            string id, string endpoint, int players, string region = null, string map = null, NetMatchSettings match = null, string version = _version)
+            string id, string endpoint, int players, string region = null, string map = null, LobbySettings match = null, string version = _version)
         {
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
-                ServerLobby.Attributes(endpoint, version, players, match ?? NetMatchSettings.Default, null, region, map));
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
+                ServerLobby.Attributes(endpoint, version, players, match ?? LobbySettings.Default, null, region, map));
         }
 
         private void Load(params LobbyInfo[] lobbies)
@@ -96,9 +95,9 @@ namespace Shooter.NetV2.Tests
             {
                 Server("one", "203.0.113.1:7777", 3, "europe", "harbor"),
                 Server("two", "203.0.113.2:7777", 0, "asia", "quarry"),
-                Server("private", "203.0.113.3:7777", 0, match: new NetMatchSettings(privateMatch: true, joinCode: "ABC234")),
+                Server("private", "203.0.113.3:7777", 0, match: new LobbySettings(privateMatch: true, joinCode: "ABC234")),
                 Server("old", "203.0.113.4:7777", 0, version: "0.2.0"),
-                Server("full", "203.0.113.5:7777", NetMatchSettings.DefaultMaxPlayers),
+                Server("full", "203.0.113.5:7777", LobbySettings.DefaultMaxPlayers),
                 null,
             });
 
@@ -259,7 +258,7 @@ namespace Shooter.NetV2.Tests
         [Test]
         public void JoiningAFullServerOrOneWithoutRoomForTheParty()
         {
-            Load(Server("full", "203.0.113.1:7777", NetMatchSettings.DefaultMaxPlayers), Server("six", "203.0.113.2:7777", 6));
+            Load(Server("full", "203.0.113.1:7777", LobbySettings.DefaultMaxPlayers), Server("six", "203.0.113.2:7777", 6));
 
             _browser.Join("full", 1, _results.Add);
             _browser.Join("six", 3, _results.Add);
@@ -279,7 +278,7 @@ namespace Shooter.NetV2.Tests
             Assert.That(_results[0].Outcome, Is.EqualTo(ServerJoinOutcome.Failed));
             Assert.That(_results[0].Reason, Is.EqualTo("the server list has not been loaded"));
 
-            Load(Server("one", "203.0.113.1:7777", 1), Server("private", "203.0.113.3:7777", 0, match: new NetMatchSettings(privateMatch: true)));
+            Load(Server("one", "203.0.113.1:7777", 1), Server("private", "203.0.113.3:7777", 0, match: new LobbySettings(privateMatch: true)));
 
             _browser.Join("private", 1, _results.Add);
             _browser.Join(null, 1, _results.Add);

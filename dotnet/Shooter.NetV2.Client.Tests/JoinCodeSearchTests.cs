@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 
 namespace Shooter.NetV2.Tests
 {
@@ -40,9 +39,9 @@ namespace Shooter.NetV2.Tests
 
         private static LobbyInfo Server(string id, string endpoint, int players, string code = null, string version = _version)
         {
-            var match = code == null ? NetMatchSettings.Default : new NetMatchSettings(privateMatch: true, joinCode: code);
+            var match = code == null ? LobbySettings.Default : new LobbySettings(privateMatch: true, joinCode: code);
             return new LobbyInfo(
-                id, _owner, ServerLobby.MaxMembers(NetMatchSettings.DefaultMaxPlayers), new[] { _owner },
+                id, _owner, ServerLobby.MaxMembers(LobbySettings.DefaultMaxPlayers), new[] { _owner },
                 ServerLobby.Attributes(endpoint, version, players, match));
         }
 
@@ -136,7 +135,7 @@ namespace Shooter.NetV2.Tests
         {
             Begin(_code);
             _backend.CompleteLogin(_self);
-            _backend.CompleteSearch(new List<LobbyInfo> { Server("mine", "203.0.113.3:7777", NetMatchSettings.DefaultMaxPlayers, _code) });
+            _backend.CompleteSearch(new List<LobbyInfo> { Server("mine", "203.0.113.3:7777", LobbySettings.DefaultMaxPlayers, _code) });
 
             var result = Result();
             Assert.That(result.Outcome, Is.EqualTo(JoinCodeOutcome.Full));
@@ -149,7 +148,7 @@ namespace Shooter.NetV2.Tests
         {
             Begin(_code, 3);
             _backend.CompleteLogin(_self);
-            _backend.CompleteSearch(new List<LobbyInfo> { Server("mine", "203.0.113.3:7777", NetMatchSettings.DefaultMaxPlayers - 2, _code) });
+            _backend.CompleteSearch(new List<LobbyInfo> { Server("mine", "203.0.113.3:7777", LobbySettings.DefaultMaxPlayers - 2, _code) });
 
             var result = Result();
             Assert.That(result.Outcome, Is.EqualTo(JoinCodeOutcome.Full));
@@ -373,7 +372,7 @@ namespace Shooter.NetV2.Tests
             search.Begin(0f, _code, _results.Add);
             _backend.CompleteLogin(_self);
             var attributes = new List<LobbyAttribute>();
-            foreach (var attribute in ServerLobby.Attributes("203.0.113.3:7777", _version, 0, new NetMatchSettings(privateMatch: true, joinCode: _code)))
+            foreach (var attribute in ServerLobby.Attributes("203.0.113.3:7777", _version, 0, new LobbySettings(privateMatch: true, joinCode: _code)))
             {
                 if (attribute.Key != ServerLobby.VoiceEnabledKey)
                 {
@@ -383,7 +382,7 @@ namespace Shooter.NetV2.Tests
 
             _backend.CompleteSearch(new List<LobbyInfo>
             {
-                new LobbyInfo("quiet", _owner, NetMatchSettings.DefaultMaxPlayers, new[] { _owner }, attributes),
+                new LobbyInfo("quiet", _owner, LobbySettings.DefaultMaxPlayers, new[] { _owner }, attributes),
             });
 
             Assert.That(_backend.MatchLobbyJoins, Is.Empty);

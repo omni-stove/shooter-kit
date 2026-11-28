@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
 using Shooter.Core;

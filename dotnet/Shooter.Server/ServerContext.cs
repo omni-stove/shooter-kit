@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using GameKit.Core;
 using GameKit.Navigation;
 using GameKit.Net;
 using GameKit.World;

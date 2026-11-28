@@ -358,7 +358,7 @@ namespace Shooter.Server.Tests
             Tick();
             _backend.CompleteLogin(_server);
 
-            Assert.That(_module.Mode, Is.EqualTo(ServerLobby.TeamDeathmatchMode));
+            Assert.That(_module.Mode, Is.EqualTo(ServerLobbyModes.TeamDeathmatchMode));
             Assert.That(_backend.CreatedAttributes, Has.Some.Matches<LobbyAttribute>(a => a.Key == ServerLobby.ModeKey && a.Text == "tdm"));
         }
 

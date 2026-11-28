@@ -6,7 +6,6 @@ using System.Threading;
 using GameKit.Core;
 using GameKit.Net;
 using NUnit.Framework;
-using Shooter.Core;
 
 namespace Shooter.Protocol.Tests
 {
