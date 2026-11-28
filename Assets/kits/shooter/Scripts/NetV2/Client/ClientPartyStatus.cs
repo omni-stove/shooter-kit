@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GameKit.Core;
-using Shooter.Core;
-using CorePartyStatus = Shooter.Core.PartyStatus;
+using CorePartyStatus = GameKit.Core.PartyStatus;
 
 namespace Shooter.NetV2
 {

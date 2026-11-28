@@ -1,6 +1,6 @@
 using System;
 
-namespace Shooter.Core
+namespace GameKit.Core
 {
     // パーティのメンバーは試合の参加者でないので IParticipants に引けない。そのため Id でなく名前の文字を持つ。
     public readonly struct PartyMember : IEquatable<PartyMember>

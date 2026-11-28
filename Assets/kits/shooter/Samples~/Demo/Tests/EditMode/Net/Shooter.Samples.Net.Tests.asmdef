@@ -8,7 +8,6 @@
         "GameKit.Navigation",
         "Shooter.Core.BattleRoyale",
         "Shooter.Core.Extraction",
-        "Shooter.Core.Party",
         "Shooter.Core.Spectate",
         "Shooter.Core.Presentation",
         "Shooter.Core.Vehicle",

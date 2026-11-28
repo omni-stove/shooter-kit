@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using GameKit.Core;
 using NUnit.Framework;
-using Shooter.Core;
 using Shooter.NetV2;
 using Shooter.Runtime;
-using CorePartyStatus = Shooter.Core.PartyStatus;
+using CorePartyStatus = GameKit.Core.PartyStatus;
 
 namespace Shooter.Net.Tests
 {
